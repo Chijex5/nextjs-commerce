@@ -1,4 +1,7 @@
 {
+  "name": "politician-portfolio",
+  "version": "1.0.0",
+  "description": "A professional portfolio website for public office holders",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",

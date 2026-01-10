@@ -1,19 +1,19 @@
 import Link from "next/link";
-
-import FooterMenu from "components/layout/footer-menu";
 import LogoSquare from "components/logo-square";
-import { getMenu } from "lib/shopify";
-import { Suspense } from "react";
 
-const { COMPANY_NAME, SITE_NAME } = process.env;
+const SITE_NAME = "Politician Portfolio";
+const OFFICE_NAME = "[Office Name]";
 
 export default async function Footer() {
   const currentYear = new Date().getFullYear();
-  const copyrightDate = 2023 + (currentYear > 2023 ? `-${currentYear}` : "");
-  const skeleton =
-    "w-full h-6 animate-pulse rounded-sm bg-neutral-200 dark:bg-neutral-700";
-  const menu = await getMenu("next-js-frontend-footer-menu");
-  const copyrightName = COMPANY_NAME || SITE_NAME || "";
+
+  const footerLinks = [
+    { title: "About", href: "/about" },
+    { title: "Achievements", href: "/achievements" },
+    { title: "News", href: "/news" },
+    { title: "Media", href: "/media" },
+    { title: "Contact", href: "/contact" },
+  ];
 
   return (
     <footer className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -26,50 +26,56 @@ export default async function Footer() {
             <LogoSquare size="sm" />
             <span className="uppercase">{SITE_NAME}</span>
           </Link>
+          <p className="mt-4 max-w-xs text-sm">
+            Official website of {OFFICE_NAME}. Dedicated to transparency, accountability, and public service.
+          </p>
         </div>
-        <Suspense
-          fallback={
-            <div className="flex h-[188px] w-[200px] flex-col gap-2">
-              <div className={skeleton} />
-              <div className={skeleton} />
-              <div className={skeleton} />
-              <div className={skeleton} />
-              <div className={skeleton} />
-              <div className={skeleton} />
-            </div>
-          }
-        >
-          <FooterMenu menu={menu} />
-        </Suspense>
+        
+        <div className="md:ml-8">
+          <h3 className="mb-4 font-semibold text-black dark:text-white">Quick Links</h3>
+          <ul className="space-y-2">
+            {footerLinks.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="underline-offset-4 hover:text-black hover:underline dark:hover:text-neutral-300"
+                >
+                  {link.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
         <div className="md:ml-auto">
-          <a
-            className="flex h-8 w-max flex-none items-center justify-center rounded-md border border-neutral-200 bg-white text-xs text-black dark:border-neutral-700 dark:bg-black dark:text-white"
-            aria-label="Deploy on Vercel"
-            href="https://vercel.com/templates/next.js/nextjs-commerce"
-          >
-            <span className="px-3">▲</span>
-            <hr className="h-full border-r border-neutral-200 dark:border-neutral-700" />
-            <span className="px-3">Deploy</span>
-          </a>
+          <h3 className="mb-4 font-semibold text-black dark:text-white">Connect</h3>
+          <div className="space-y-2">
+            <p>
+              <a href="#" className="underline-offset-4 hover:underline">
+                Twitter
+              </a>
+            </p>
+            <p>
+              <a href="#" className="underline-offset-4 hover:underline">
+                Facebook
+              </a>
+            </p>
+            <p>
+              <a href="#" className="underline-offset-4 hover:underline">
+                Instagram
+              </a>
+            </p>
+          </div>
         </div>
       </div>
       <div className="border-t border-neutral-200 py-6 text-sm dark:border-neutral-700">
         <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-1 px-4 md:flex-row md:gap-0 md:px-4 min-[1320px]:px-0">
           <p>
-            &copy; {copyrightDate} {copyrightName}
-            {copyrightName.length && !copyrightName.endsWith(".")
-              ? "."
-              : ""}{" "}
-            All rights reserved.
+            &copy; {currentYear} {OFFICE_NAME}. All rights reserved.
           </p>
           <hr className="mx-4 hidden h-4 w-[1px] border-l border-neutral-400 md:inline-block" />
           <p>
-            <a href="https://github.com/vercel/commerce">View the source</a>
-          </p>
-          <p className="md:ml-auto">
-            <a href="https://vercel.com" className="text-black dark:text-white">
-              Created by ▲ Vercel
-            </a>
+            Built with Next.js
           </p>
         </div>
       </div>
