@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Achievements & Initiatives",
-  description: "Explore the key achievements, initiatives, and legislative accomplishments.",
+  description:
+    "Explore the key achievements, initiatives, and legislative accomplishments.",
   openGraph: {
     type: "article",
   },
@@ -14,19 +15,22 @@ export default function AchievementsPage() {
       year: "2024",
       title: "[Achievement Title]",
       category: "Legislative",
-      description: "[Description of the achievement and its impact on the community]",
+      description:
+        "[Description of the achievement and its impact on the community]",
     },
     {
       year: "2023",
       title: "[Achievement Title]",
       category: "Community",
-      description: "[Description of the achievement and its impact on the community]",
+      description:
+        "[Description of the achievement and its impact on the community]",
     },
     {
       year: "2023",
       title: "[Achievement Title]",
       category: "Infrastructure",
-      description: "[Description of the achievement and its impact on the community]",
+      description:
+        "[Description of the achievement and its impact on the community]",
     },
   ];
 
@@ -45,8 +49,10 @@ export default function AchievementsPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
-      <h1 className="mb-8 text-4xl font-bold md:text-5xl">Achievements & Initiatives</h1>
-      
+      <h1 className="mb-8 text-4xl font-bold md:text-5xl">
+        Achievements & Initiatives
+      </h1>
+
       <section className="mb-16">
         <h2 className="mb-6 text-3xl font-semibold">Key Achievements</h2>
         <div className="space-y-6">

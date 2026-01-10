@@ -27,12 +27,15 @@ export default async function Footer() {
             <span className="uppercase">{SITE_NAME}</span>
           </Link>
           <p className="mt-4 max-w-xs text-sm">
-            Official website of {OFFICE_NAME}. Dedicated to transparency, accountability, and public service.
+            Official website of {OFFICE_NAME}. Dedicated to transparency,
+            accountability, and public service.
           </p>
         </div>
-        
+
         <div className="md:ml-8">
-          <h3 className="mb-4 font-semibold text-black dark:text-white">Quick Links</h3>
+          <h3 className="mb-4 font-semibold text-black dark:text-white">
+            Quick Links
+          </h3>
           <ul className="space-y-2">
             {footerLinks.map((link) => (
               <li key={link.href}>
@@ -48,7 +51,9 @@ export default async function Footer() {
         </div>
 
         <div className="md:ml-auto">
-          <h3 className="mb-4 font-semibold text-black dark:text-white">Connect</h3>
+          <h3 className="mb-4 font-semibold text-black dark:text-white">
+            Connect
+          </h3>
           <div className="space-y-2">
             <p>
               <a href="#" className="underline-offset-4 hover:underline">
@@ -74,9 +79,7 @@ export default async function Footer() {
             &copy; {currentYear} {OFFICE_NAME}. All rights reserved.
           </p>
           <hr className="mx-4 hidden h-4 w-[1px] border-l border-neutral-400 md:inline-block" />
-          <p>
-            Built with Next.js
-          </p>
+          <p>Built with Next.js</p>
         </div>
       </div>
     </footer>

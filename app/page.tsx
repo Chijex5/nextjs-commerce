@@ -23,7 +23,8 @@ export default function HomePage() {
     },
     {
       title: "News",
-      description: "Stay updated with the latest announcements and press releases",
+      description:
+        "Stay updated with the latest announcements and press releases",
       href: "/news",
     },
     {
@@ -50,7 +51,8 @@ export default function HomePage() {
             [Current Position/Title]
           </p>
           <p className="mx-auto mb-8 max-w-2xl text-lg text-neutral-600 dark:text-neutral-400">
-            Dedicated to serving the community with integrity, transparency, and a commitment to positive change.
+            Dedicated to serving the community with integrity, transparency, and
+            a commitment to positive change.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
@@ -79,19 +81,22 @@ export default function HomePage() {
             <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-neutral-800">
               <h3 className="mb-3 text-xl font-bold">Community Development</h3>
               <p className="text-neutral-700 dark:text-neutral-300">
-                Working to improve infrastructure, services, and quality of life for all constituents.
+                Working to improve infrastructure, services, and quality of life
+                for all constituents.
               </p>
             </div>
             <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-neutral-800">
               <h3 className="mb-3 text-xl font-bold">Education & Youth</h3>
               <p className="text-neutral-700 dark:text-neutral-300">
-                Championing educational initiatives and opportunities for young people.
+                Championing educational initiatives and opportunities for young
+                people.
               </p>
             </div>
             <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-neutral-800">
               <h3 className="mb-3 text-xl font-bold">Economic Growth</h3>
               <p className="text-neutral-700 dark:text-neutral-300">
-                Supporting local businesses and creating sustainable economic opportunities.
+                Supporting local businesses and creating sustainable economic
+                opportunities.
               </p>
             </div>
           </div>

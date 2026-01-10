@@ -26,23 +26,26 @@ This website provides a centralized, well-structured digital platform where the 
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - pnpm (recommended) or npm
 
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/Chijex5/nextjs-commerce.git
 cd nextjs-commerce
 ```
 
 2. Install dependencies:
+
 ```bash
 pnpm install
 ```
 
 3. Run the development server:
+
 ```bash
 pnpm dev
 ```

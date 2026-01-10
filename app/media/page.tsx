@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Media & Gallery",
-  description: "Browse photos and media from public events, official visits, and community engagements.",
+  description:
+    "Browse photos and media from public events, official visits, and community engagements.",
   openGraph: {
     type: "website",
   },
@@ -31,7 +32,8 @@ export default function MediaPage() {
     <div className="mx-auto max-w-6xl px-4 py-12">
       <h1 className="mb-8 text-4xl font-bold md:text-5xl">Media & Gallery</h1>
       <p className="mb-12 text-lg text-neutral-700 dark:text-neutral-300">
-        Browse photos and media from public events, official visits, and community engagements.
+        Browse photos and media from public events, official visits, and
+        community engagements.
       </p>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -72,7 +74,8 @@ export default function MediaPage() {
       <section className="mt-16">
         <h2 className="mb-6 text-3xl font-semibold">Video Archive</h2>
         <p className="mb-6 text-neutral-700 dark:text-neutral-300">
-          Access recordings of public speeches, town halls, and important announcements.
+          Access recordings of public speeches, town halls, and important
+          announcements.
         </p>
         <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-8 text-center dark:border-neutral-800 dark:bg-neutral-900">
           <p className="text-neutral-600 dark:text-neutral-400">
