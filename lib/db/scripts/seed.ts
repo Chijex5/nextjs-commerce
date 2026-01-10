@@ -1,4 +1,5 @@
-import { db } from "../index";
+import prisma from "lib/prisma";
+const db = prisma;
 
 async function seed() {
   console.log("🌱 Seeding database...");

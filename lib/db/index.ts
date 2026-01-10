@@ -16,5 +16,5 @@ export type {
   Page,
   Menu,
   MenuItem,
-} from "@prisma/client";
+} from "prisma/generated/prisma/client";
 

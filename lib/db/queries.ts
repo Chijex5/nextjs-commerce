@@ -1,4 +1,4 @@
-import { db } from "./index";
+
 import type {
   Product,
   Collection,
@@ -11,8 +11,10 @@ import type {
   Money,
   SEO,
 } from "../shopify/types";
+import prisma from "lib/prisma";
 import { Prisma } from "@prisma/client";
 
+const db = prisma;
 // Helper function to reshape database product to match Shopify Product type
 export async function reshapeDbProduct(
   dbProduct: any,
