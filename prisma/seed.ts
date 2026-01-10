@@ -55,7 +55,8 @@ async function seed() {
       data: {
         handle: "classic-leather-slide",
         title: "Classic Leather Slide",
-        description: "A timeless classic slide with elegant design and premium leather finish",
+        description:
+          "A timeless classic slide with elegant design and premium leather finish",
         descriptionHtml:
           "<p>A timeless classic slide with elegant design. Perfect for everyday wear. Made with premium leather.</p>",
         availableForSale: true,
@@ -70,7 +71,8 @@ async function seed() {
       data: {
         handle: "luxury-velvet-slipper",
         title: "Luxury Velvet Slipper",
-        description: "Premium handcrafted slipper with superior comfort and velvet finish",
+        description:
+          "Premium handcrafted slipper with superior comfort and velvet finish",
         descriptionHtml:
           "<p>Premium handcrafted slipper with superior comfort. Made with the finest velvet materials.</p>",
         availableForSale: true,
@@ -142,7 +144,8 @@ async function seed() {
       data: {
         handle: "traditional-palm-slipper",
         title: "Traditional Palm Slipper",
-        description: "Authentic traditional slippers made from natural palm materials",
+        description:
+          "Authentic traditional slippers made from natural palm materials",
         descriptionHtml:
           "<p>Authentic traditional slippers crafted from natural palm materials. Eco-friendly and comfortable.</p>",
         availableForSale: true,
@@ -198,7 +201,8 @@ async function seed() {
       data: {
         handle: "orthopedic-comfort-slipper",
         title: "Orthopedic Comfort Slipper",
-        description: "Ergonomically designed slippers for foot health and comfort",
+        description:
+          "Ergonomically designed slippers for foot health and comfort",
         descriptionHtml:
           "<p>Orthopedic slippers with ergonomic design to support foot health. Recommended by podiatrists.</p>",
         availableForSale: true,
@@ -736,15 +740,51 @@ async function seed() {
     await db.productCollection.createMany({
       data: [
         // All products go to "all" collection
-        { productId: product1.id, collectionId: allCollection!.id, position: 0 },
-        { productId: product2.id, collectionId: allCollection!.id, position: 1 },
-        { productId: product3.id, collectionId: allCollection!.id, position: 2 },
-        { productId: product4.id, collectionId: allCollection!.id, position: 3 },
-        { productId: product5.id, collectionId: allCollection!.id, position: 4 },
-        { productId: product6.id, collectionId: allCollection!.id, position: 5 },
-        { productId: product7.id, collectionId: allCollection!.id, position: 6 },
-        { productId: product8.id, collectionId: allCollection!.id, position: 7 },
-        { productId: product9.id, collectionId: allCollection!.id, position: 8 },
+        {
+          productId: product1.id,
+          collectionId: allCollection!.id,
+          position: 0,
+        },
+        {
+          productId: product2.id,
+          collectionId: allCollection!.id,
+          position: 1,
+        },
+        {
+          productId: product3.id,
+          collectionId: allCollection!.id,
+          position: 2,
+        },
+        {
+          productId: product4.id,
+          collectionId: allCollection!.id,
+          position: 3,
+        },
+        {
+          productId: product5.id,
+          collectionId: allCollection!.id,
+          position: 4,
+        },
+        {
+          productId: product6.id,
+          collectionId: allCollection!.id,
+          position: 5,
+        },
+        {
+          productId: product7.id,
+          collectionId: allCollection!.id,
+          position: 6,
+        },
+        {
+          productId: product8.id,
+          collectionId: allCollection!.id,
+          position: 7,
+        },
+        {
+          productId: product9.id,
+          collectionId: allCollection!.id,
+          position: 8,
+        },
         {
           productId: product10.id,
           collectionId: allCollection!.id,

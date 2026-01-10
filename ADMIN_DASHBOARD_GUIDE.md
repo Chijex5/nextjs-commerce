@@ -45,11 +45,13 @@ model AdminUser {
 1. **Update the schema** (already done in `prisma/schema.prisma`)
 
 2. **Generate Prisma Client:**
+
 ```bash
 pnpm db:generate
 ```
 
 3. **Push schema to database:**
+
 ```bash
 pnpm db:push
 ```
@@ -101,6 +103,7 @@ Since this is a secure system, you need to manually create the first admin user 
 ### Option 1: Using Prisma Studio (Recommended)
 
 1. **Start Prisma Studio:**
+
 ```bash
 pnpm db:studio
 ```
@@ -110,6 +113,7 @@ pnpm db:studio
 3. **Click "Add record"**
 
 4. **Generate password hash:**
+
 ```bash
 # In a Node.js environment or using online bcrypt generator
 # Password: your-password
@@ -117,14 +121,16 @@ pnpm db:studio
 ```
 
 You can use this Node script:
+
 ```javascript
-const bcrypt = require('bcryptjs');
-const password = 'your-secure-password';
+const bcrypt = require("bcryptjs");
+const password = "your-secure-password";
 const hash = await bcrypt.hash(password, 10);
 console.log(hash);
 ```
 
 5. **Fill in the fields:**
+
    - `id`: Auto-generated (leave empty or generate UUID)
    - `email`: `admin@dfootprint.com`
    - `name`: `Admin User`
@@ -174,8 +180,8 @@ async function createAdmin() {
       name,
       passwordHash,
       role: "admin",
-      isActive: true
-    }
+      isActive: true,
+    },
   });
 
   console.log("✅ Admin user created:");
@@ -193,6 +199,7 @@ createAdmin()
 ```
 
 Run it:
+
 ```bash
 tsx lib/db/scripts/create-admin.ts
 ```
@@ -210,12 +217,14 @@ tsx lib/db/scripts/create-admin.ts
 ### Dashboard Sections
 
 #### 1. **Dashboard Home** (`/admin/dashboard`)
+
 - Overview statistics
 - Total products count
 - Total collections count
 - Quick actions
 
 #### 2. **Products Management** (`/admin/products`)
+
 - List all products
 - Search and filter products
 - Edit product details
@@ -223,6 +232,7 @@ tsx lib/db/scripts/create-admin.ts
 - View product images
 
 #### 3. **Add New Product** (`/admin/products/new`)
+
 - Product information form
 - Image upload via Cloudinary
 - Variant management
@@ -238,12 +248,14 @@ tsx lib/db/scripts/create-admin.ts
 1. **Navigate to** `/admin/products/new`
 
 2. **Fill in Basic Information:**
+
    - **Title**: Product name (e.g., "Classic Leather Sandal")
    - **Handle**: URL-friendly slug (auto-generated from title)
    - **Description**: Full product description
    - **Available for Sale**: Toggle product visibility
 
 3. **Upload Images:**
+
    - Click "Upload Image" or drag and drop
    - Images are automatically uploaded to Cloudinary
    - Set featured image
@@ -254,6 +266,7 @@ tsx lib/db/scripts/create-admin.ts
      - WebP format when supported
 
 4. **Add Variants:**
+
    - Click "Add Variant"
    - Enter variant title (e.g., "Size 40 / Black")
    - Set price in NGN
@@ -261,16 +274,19 @@ tsx lib/db/scripts/create-admin.ts
    - Add selected options (color, size, etc.)
 
 5. **Configure Options:**
+
    - Add product options (Size, Color, Material)
    - Define option values
    - Options are used for variant selection on the frontend
 
 6. **SEO Settings:**
+
    - SEO Title
    - SEO Description
    - These improve search engine visibility
 
 7. **Collections:**
+
    - Select which collections this product belongs to
    - Products can be in multiple collections
 
@@ -297,11 +313,13 @@ tsx lib/db/scripts/create-admin.ts
 ### How It Works
 
 1. **Client-side Upload:**
+
    - User selects image file
    - File is converted to base64
    - Sent to API route
 
 2. **Server-side Processing:**
+
    - API route `/api/admin/upload` receives image
    - Image is uploaded to Cloudinary
    - Cloudinary returns secure URL
@@ -316,16 +334,19 @@ tsx lib/db/scripts/create-admin.ts
 ### Image Management
 
 **Uploading:**
+
 ```typescript
 // Component handles this automatically
 <ImageUpload onUpload={(url) => setImageUrl(url)} />
 ```
 
 **Deleting:**
+
 - When product image is deleted, it's also removed from Cloudinary
 - Prevents orphaned images and saves storage
 
 **Folder Structure in Cloudinary:**
+
 ```
 dfootprint/
   └── products/
@@ -357,18 +378,22 @@ The `middleware.ts` file protects admin routes:
 ### Best Practices
 
 1. **Use Strong Passwords:**
+
    - Minimum 12 characters
    - Mix of uppercase, lowercase, numbers, symbols
 
 2. **Change Default Password:**
+
    - Immediately after first login
    - Regularly update passwords
 
 3. **Limit Admin Access:**
+
    - Only create accounts for trusted team members
    - Use the `isActive` flag to disable accounts
 
 4. **Monitor Activity:**
+
    - Check `lastLoginAt` field
    - Review admin actions
 
@@ -397,6 +422,7 @@ The `middleware.ts` file protects admin routes:
 2. **Connect to Vercel**
 
 3. **Add Environment Variables:**
+
    - Go to Project Settings → Environment Variables
    - Add all variables from `.env.local`
    - Make sure to use production values
@@ -404,6 +430,7 @@ The `middleware.ts` file protects admin routes:
 4. **Deploy**
 
 5. **Run Migrations:**
+
 ```bash
 pnpm db:push
 ```
@@ -433,6 +460,7 @@ pnpm db:push
 **Issue**: "Invalid credentials" error
 
 **Solutions:**
+
 1. Verify admin user exists in database
 2. Check `isActive` is `true`
 3. Verify password hash is correct
@@ -443,6 +471,7 @@ pnpm db:push
 **Issue**: Upload fails or returns error
 
 **Solutions:**
+
 1. Verify Cloudinary credentials in `.env.local`
 2. Check image file size (max 10MB)
 3. Verify API route `/api/admin/upload` exists
@@ -453,6 +482,7 @@ pnpm db:push
 **Issue**: Database queries fail
 
 **Solutions:**
+
 1. Run `pnpm db:generate`
 2. Run `pnpm db:push`
 3. Verify `DIRECT_DATABASE_URL` is correct
@@ -463,6 +493,7 @@ pnpm db:push
 **Issue**: Constant redirects between login and dashboard
 
 **Solutions:**
+
 1. Clear browser cookies
 2. Verify `NEXTAUTH_SECRET` matches between requests
 3. Check `NEXTAUTH_URL` is correct
@@ -473,15 +504,18 @@ pnpm db:push
 ## API Routes Reference
 
 ### Authentication
+
 - `POST /api/auth/[...nextauth]` - NextAuth handlers
 - `GET /api/auth/session` - Get current session
 
 ### Product Management
+
 - `POST /api/admin/products` - Create product
 - `PUT /api/admin/products/[id]` - Update product
 - `DELETE /api/admin/products/[id]` - Delete product
 
 ### Image Upload
+
 - `POST /api/admin/upload` - Upload image to Cloudinary
 - `DELETE /api/admin/upload` - Delete image from Cloudinary
 
@@ -526,6 +560,7 @@ AdminUser
 ## Support
 
 For issues or questions:
+
 1. Check the troubleshooting section
 2. Review environment variables
 3. Check database connections

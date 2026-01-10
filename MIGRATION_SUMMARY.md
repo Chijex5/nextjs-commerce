@@ -7,6 +7,7 @@ This project has been successfully migrated from Shopify to a self-hosted Postgr
 ## 📋 Summary
 
 ### Before (Shopify)
+
 - ❌ Dependent on Shopify API
 - ❌ Limited customization
 - ❌ Monthly fees
@@ -14,6 +15,7 @@ This project has been successfully migrated from Shopify to a self-hosted Postgr
 - ✅ Professional UI
 
 ### After (PostgreSQL)
+
 - ✅ Full control over data
 - ✅ Complete customization freedom
 - ✅ No Shopify fees
@@ -23,7 +25,9 @@ This project has been successfully migrated from Shopify to a self-hosted Postgr
 ## 🏗️ What Was Built
 
 ### 1. Database Schema (`lib/db/schema.ts`)
+
 Complete PostgreSQL schema with:
+
 - Products table (with SEO, tags, descriptions)
 - Product variants (size, color combinations)
 - Product options (dynamic size/color definitions)
@@ -34,7 +38,9 @@ Complete PostgreSQL schema with:
 - Navigation menus
 
 ### 2. Database Layer (`lib/database/index.ts`)
+
 Drop-in replacement for Shopify with:
+
 - Identical function signatures
 - Same caching strategy
 - All cart operations (create, add, remove, update)
@@ -43,12 +49,14 @@ Drop-in replacement for Shopify with:
 - Full type safety
 
 ### 3. Migration Tools
+
 - ✅ Prisma ORM integration
 - ✅ Migration scripts
 - ✅ Seed data script
 - ✅ NPM commands for database management
 
 ### 4. Documentation
+
 - `DATABASE_SETUP.md` - Quick start guide
 - `DATABASE_MIGRATION.md` - Comprehensive design decisions
 - `PRD.md` - Updated to reflect current implementation
@@ -60,22 +68,26 @@ Drop-in replacement for Shopify with:
 Pick one option:
 
 **A. Vercel Postgres** (Easiest for Vercel deployments)
+
 ```bash
 vercel storage create postgres
 vercel env pull .env.local
 ```
 
 **B. Supabase** (Free tier available)
+
 - Sign up at supabase.com
 - Create project, copy connection string
 - Add to `.env.local`
 
 **C. Neon** (Serverless Postgres)
+
 - Sign up at neon.tech
 - Create project, copy connection string
 - Add to `.env.local`
 
 **D. Local PostgreSQL**
+
 ```bash
 createdb nextjs_commerce
 # Add DATABASE_URL to .env.local
@@ -104,15 +116,15 @@ Open [http://localhost:3000](http://localhost:3000) - Your site is live! 🎉
 
 ## 📦 NPM Scripts
 
-| Command | Description |
-|---------|-------------|
+| Command            | Description                          |
+| ------------------ | ------------------------------------ |
 | `pnpm db:generate` | Generate migration files from schema |
-| `pnpm db:migrate` | Run pending migrations |
-| `pnpm db:push` | Push schema to database (dev) |
-| `pnpm db:studio` | Open Prisma Studio (database GUI) |
-| `pnpm db:seed` | Load sample data |
-| `pnpm dev` | Start development server |
-| `pnpm build` | Build for production |
+| `pnpm db:migrate`  | Run pending migrations               |
+| `pnpm db:push`     | Push schema to database (dev)        |
+| `pnpm db:studio`   | Open Prisma Studio (database GUI)    |
+| `pnpm db:seed`     | Load sample data                     |
+| `pnpm dev`         | Start development server             |
+| `pnpm build`       | Build for production                 |
 
 ## 🗂️ Project Structure
 
@@ -138,6 +150,7 @@ nextjs-commerce/
 ## 🎨 UI Status
 
 **No changes to UI!** The beautiful Next.js Commerce template remains exactly as it was:
+
 - ✅ All pages look identical
 - ✅ Same smooth animations
 - ✅ Same responsive design
@@ -154,6 +167,7 @@ pnpm db:studio
 ```
 
 Opens a web interface where you can:
+
 - 👀 Browse all data
 - ✏️ Add/edit products
 - 🖼️ Manage images
@@ -170,12 +184,15 @@ If you prefer SQL, connect directly to your database using your favorite client.
 Two options:
 
 ### Option 1: Use Prisma Studio (Easy)
+
 ```bash
 pnpm db:studio
 ```
+
 Then use the web UI to add products, images, variants, etc.
 
 ### Option 2: Create a Seed Script (Advanced)
+
 Edit `lib/db/scripts/seed.ts` to add your products programmatically.
 
 ## 🔐 Environment Variables
@@ -206,12 +223,14 @@ REVALIDATION_SECRET="your-secret-here"
 Now that the database migration is complete:
 
 ### Immediate (Your Call)
+
 1. Set up your database
 2. Add your actual products
 3. Upload your product photos
 4. Test thoroughly
 
 ### Future Enhancements
+
 - [ ] Admin dashboard for product management
 - [ ] Paystack payment integration
 - [ ] WhatsApp integration
@@ -296,4 +315,4 @@ Everything is set up and ready to go. Just need to:
 
 ---
 
-*For detailed information about design decisions and architecture, see `DATABASE_MIGRATION.md`*
+_For detailed information about design decisions and architecture, see `DATABASE_MIGRATION.md`_

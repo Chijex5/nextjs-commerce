@@ -18,4 +18,3 @@ export type {
   Menu,
   MenuItem,
 } from "../../app/generated/prisma/client";
-

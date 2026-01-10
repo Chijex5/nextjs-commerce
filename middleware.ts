@@ -24,15 +24,15 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const isAdminPath = req.nextUrl.pathname.startsWith("/admin");
         const isLoginPage = req.nextUrl.pathname === "/admin/login";
-        
+
         if (isLoginPage) return true;
         if (isAdminPath) return !!token;
         return true;
-      }
-    }
-  }
+      },
+    },
+  },
 );
 
 export const config = {
-  matcher: ["/admin/:path*"]
+  matcher: ["/admin/:path*"],
 };

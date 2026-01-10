@@ -36,6 +36,7 @@ pnpm install
 ```
 
 This installs:
+
 - `next-auth@^5.0.0-beta.25` - Authentication
 - `bcryptjs@^2.4.3` - Password hashing
 - `cloudinary@^2.5.1` - Image management
@@ -59,6 +60,7 @@ CLOUDINARY_API_SECRET="your-api-secret"
 ```
 
 **Generate NEXTAUTH_SECRET:**
+
 ```bash
 openssl rand -base64 32
 ```
@@ -74,6 +76,7 @@ This generates the TypeScript client with the new `AdminUser` model.
 ### Step 5: Push Schema to Database
 
 **Option A: Using db:push (Development)**
+
 ```bash
 pnpm db:push
 ```
@@ -81,6 +84,7 @@ pnpm db:push
 This creates the `admin_users` table immediately.
 
 **Option B: Using Migrations (Production)**
+
 ```bash
 # Create migration
 pnpm db:migrate
@@ -91,6 +95,7 @@ pnpm db:migrate
 ### Step 6: Verify Table Creation
 
 **Using Prisma Studio:**
+
 ```bash
 pnpm db:studio
 ```
@@ -98,6 +103,7 @@ pnpm db:studio
 Navigate to the `AdminUser` model - you should see an empty table.
 
 **Using SQL:**
+
 ```sql
 \dt admin_users  -- In psql
 -- or
@@ -121,7 +127,7 @@ async function createAdmin() {
 
   // Check if admin already exists
   const existing = await prisma.adminUser.findUnique({
-    where: { email }
+    where: { email },
   });
 
   if (existing) {
@@ -137,8 +143,8 @@ async function createAdmin() {
       name,
       passwordHash,
       role: "admin",
-      isActive: true
-    }
+      isActive: true,
+    },
   });
 
   console.log("✅ Admin user created successfully!");
@@ -146,7 +152,9 @@ async function createAdmin() {
   console.log("==================");
   console.log(`Email:    ${admin.email}`);
   console.log(`Password: ${password}`);
-  console.log("\n⚠️  IMPORTANT: Change this password immediately after first login!");
+  console.log(
+    "\n⚠️  IMPORTANT: Change this password immediately after first login!",
+  );
 }
 
 createAdmin()
@@ -161,6 +169,7 @@ createAdmin()
 ```
 
 Run the script:
+
 ```bash
 tsx lib/db/scripts/create-admin.ts
 ```
@@ -212,20 +221,24 @@ INSERT INTO admin_users (
 ### Step 8: Test the Admin Dashboard
 
 1. **Start the development server:**
+
 ```bash
 pnpm dev
 ```
 
 2. **Navigate to the admin login:**
+
 ```
 http://localhost:3000/admin/login
 ```
 
 3. **Login with your credentials:**
+
 - Email: `admin@dfootprint.com`
 - Password: (the one you set)
 
 4. **You should be redirected to:**
+
 ```
 http://localhost:3000/admin/dashboard
 ```
@@ -288,11 +301,11 @@ Make sure you're using bcrypt properly:
 
 ```javascript
 // Correct
-const bcrypt = require('bcryptjs');
-const hash = await bcrypt.hash('password', 10);
+const bcrypt = require("bcryptjs");
+const hash = await bcrypt.hash("password", 10);
 
 // Incorrect - don't use fewer than 10 rounds
-const hash = await bcrypt.hash('password', 4); // Too weak
+const hash = await bcrypt.hash("password", 4); // Too weak
 ```
 
 ## Production Deployment
@@ -300,6 +313,7 @@ const hash = await bcrypt.hash('password', 4); // Too weak
 ### Before Deploying
 
 1. **Run migrations on production database:**
+
 ```bash
 # Set production DIRECT_DATABASE_URL
 export DIRECT_DATABASE_URL="postgresql://prod-host:5432/db"
@@ -309,6 +323,7 @@ pnpm db:push
 ```
 
 2. **Create production admin user:**
+
    - Use strong password
    - Use your real email
    - Document credentials securely
