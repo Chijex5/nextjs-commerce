@@ -1001,10 +1001,11 @@ async function seed() {
 
     await db.menuItem.createMany({
       data: [
+        // Main menu items
         {
           menuId: mainMenu.id,
-          title: "Shop",
-          url: "/search",
+          title: "All Products",
+          url: "/products",
           position: 0,
         },
         {
@@ -1018,6 +1019,43 @@ async function seed() {
           title: "Contact",
           url: "/contact",
           position: 2,
+        },
+        // Footer menu items
+        {
+          menuId: footerMenu.id,
+          title: "About",
+          url: "/about",
+          position: 0,
+        },
+        {
+          menuId: footerMenu.id,
+          title: "FAQ",
+          url: "/faq",
+          position: 1,
+        },
+        {
+          menuId: footerMenu.id,
+          title: "Shipping & Returns",
+          url: "/shipping-returns",
+          position: 2,
+        },
+        {
+          menuId: footerMenu.id,
+          title: "Contact",
+          url: "/contact",
+          position: 3,
+        },
+        {
+          menuId: footerMenu.id,
+          title: "Privacy Policy",
+          url: "/privacy-policy",
+          position: 4,
+        },
+        {
+          menuId: footerMenu.id,
+          title: "Terms & Conditions",
+          url: "/terms-conditions",
+          position: 5,
         },
       ],
     });
