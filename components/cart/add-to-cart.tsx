@@ -7,13 +7,16 @@ import { Product, ProductVariant } from "lib/shopify/types";
 import { useSearchParams } from "next/navigation";
 import { useActionState } from "react";
 import { useCart } from "./cart-context";
+import LoadingDots from "components/loading-dots";
 
 function SubmitButton({
   availableForSale,
   selectedVariantId,
+  pending,
 }: {
   availableForSale: boolean;
   selectedVariantId: string | undefined;
+  pending: boolean;
 }) {
   const buttonClasses =
     "relative flex w-full items-center justify-center rounded-full bg-blue-600 p-4 tracking-wide text-white";
@@ -45,14 +48,22 @@ function SubmitButton({
   return (
     <button
       aria-label="Add to cart"
+      disabled={pending}
       className={clsx(buttonClasses, {
-        "hover:opacity-90": true,
+        "hover:opacity-90": !pending,
+        "cursor-not-allowed opacity-60": pending,
       })}
     >
-      <div className="absolute left-0 ml-4">
-        <PlusIcon className="h-5" />
-      </div>
-      Add To Cart
+      {pending ? (
+        <LoadingDots className="mb-3 bg-white" />
+      ) : (
+        <>
+          <div className="absolute left-0 ml-4">
+            <PlusIcon className="h-5" />
+          </div>
+          Add To Cart
+        </>
+      )}
     </button>
   );
 }
@@ -61,7 +72,7 @@ export function AddToCart({ product }: { product: Product }) {
   const { variants, availableForSale } = product;
   const { addCartItem } = useCart();
   const searchParams = useSearchParams();
-  const [message, formAction] = useActionState(addItem, null);
+  const [message, formAction, pending] = useActionState(addItem, null);
 
   const variant = variants.find((variant: ProductVariant) =>
     variant.selectedOptions.every(
@@ -85,6 +96,7 @@ export function AddToCart({ product }: { product: Product }) {
       <SubmitButton
         availableForSale={availableForSale}
         selectedVariantId={selectedVariantId}
+        pending={pending}
       />
       <p aria-live="polite" className="sr-only" role="status">
         {message}
