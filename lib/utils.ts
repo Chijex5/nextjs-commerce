@@ -21,8 +21,7 @@ export const ensureStartsWith = (stringToCheck: string, startsWith: string) =>
 
 export const validateEnvironmentVariables = () => {
   const requiredEnvironmentVariables = [
-    "SHOPIFY_STORE_DOMAIN",
-    "SHOPIFY_STOREFRONT_ACCESS_TOKEN",
+    "DATABASE_URL",
   ];
   const missingEnvironmentVariables = [] as string[];
 
@@ -34,18 +33,15 @@ export const validateEnvironmentVariables = () => {
 
   if (missingEnvironmentVariables.length) {
     throw new Error(
-      `The following environment variables are missing. Your site will not work without them. Read more: https://vercel.com/docs/integrations/shopify#configure-environment-variables\n\n${missingEnvironmentVariables.join(
+      `The following environment variables are missing. Your site will not work without them. Read more about setup: https://github.com/yourusername/nextjs-commerce/blob/main/DATABASE_SETUP.md\n\n${missingEnvironmentVariables.join(
         "\n",
       )}\n`,
     );
   }
 
-  if (
-    process.env.SHOPIFY_STORE_DOMAIN?.includes("[") ||
-    process.env.SHOPIFY_STORE_DOMAIN?.includes("]")
-  ) {
+  if (!process.env.DATABASE_URL?.startsWith("postgresql://") && !process.env.DATABASE_URL?.startsWith("postgres://")) {
     throw new Error(
-      "Your `SHOPIFY_STORE_DOMAIN` environment variable includes brackets (ie. `[` and / or `]`). Your site will not work with them there. Please remove them.",
+      "Your `DATABASE_URL` environment variable must be a valid PostgreSQL connection string starting with postgresql:// or postgres://",
     );
   }
 };
