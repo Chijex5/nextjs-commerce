@@ -1,4 +1,8 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from "app/generated/prisma/client"
+import { PrismaPg } from '@prisma/adapter-pg'
+import 'dotenv/config'
+
+const accelerateUrl = process.env.DATABASE_URL || ''
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -7,7 +11,7 @@ const globalForPrisma = globalThis as unknown as {
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+    accelerateUrl,
   })
 
 if (process.env.NODE_ENV !== 'production') {
