@@ -27,7 +27,7 @@ vercel env pull .env.local
 3. Copy the connection string from Settings > Database
 4. Create `.env.local` with:
 ```
-DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@[YOUR-HOST]:5432/postgres"
+PRISMA_DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@[YOUR-HOST]:5432/postgres"
 ```
 
 #### Option C: Neon (Serverless Postgres)
@@ -36,7 +36,7 @@ DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@[YOUR-HOST]:5432/postgres"
 3. Copy the connection string
 4. Create `.env.local` with:
 ```
-DATABASE_URL="postgresql://[USER]:[PASSWORD]@[HOST]/[DATABASE]?sslmode=require"
+PRISMA_DATABASE_URL="postgresql://[USER]:[PASSWORD]@[HOST]/[DATABASE]?sslmode=require"
 ```
 
 #### Option D: Local PostgreSQL
@@ -46,7 +46,7 @@ DATABASE_URL="postgresql://[USER]:[PASSWORD]@[HOST]/[DATABASE]?sslmode=require"
 createdb nextjs_commerce
 
 # Create .env.local with:
-DATABASE_URL="postgresql://localhost:5432/nextjs_commerce"
+PRISMA_DATABASE_URL="postgresql://localhost:5432/nextjs_commerce"
 ```
 
 ### 2. Generate and run migrations
@@ -129,7 +129,7 @@ See `DATABASE_MIGRATION.md` for detailed schema documentation.
 ## Troubleshooting
 
 ### "Cannot connect to database"
-- Check `DATABASE_URL` in `.env.local`
+- Check `PRISMA_DATABASE_URL` in `.env.local`
 - Verify database is running
 - Check firewall/network settings
 - Ensure IP is whitelisted (for cloud databases)
@@ -147,7 +147,7 @@ See `DATABASE_MIGRATION.md` for detailed schema documentation.
 
 ### On Vercel
 
-1. Add `DATABASE_URL` to Vercel environment variables
+1. Add `PRISMA_DATABASE_URL` to Vercel environment variables
 2. Push your code to GitHub
 3. Deploy will automatically run
 4. After first deploy, run migrations:
@@ -160,7 +160,7 @@ pnpm db:seed
 ### Environment Variables
 
 Required:
-- `DATABASE_URL` - PostgreSQL connection string
+- `PRISMA_DATABASE_URL` - PostgreSQL connection string
 - `SITE_NAME` - Your site name (e.g., "D'FOOTPRINT")
 - `COMPANY_NAME` - Your company name
 
@@ -181,7 +181,7 @@ Optional:
 - **Full Documentation**: See `DATABASE_MIGRATION.md`
 - **Schema Details**: View `lib/db/schema.ts`
 - **Query Functions**: Check `lib/db/queries.ts`
-- **Drizzle ORM**: [orm.drizzle.team](https://orm.drizzle.team)
+- **Drizzle ORM**: [www.prisma.io](https://www.prisma.io)
 
 ## Support
 

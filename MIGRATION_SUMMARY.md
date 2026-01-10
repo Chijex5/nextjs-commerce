@@ -43,7 +43,7 @@ Drop-in replacement for Shopify with:
 - Full type safety
 
 ### 3. Migration Tools
-- ✅ Drizzle ORM integration
+- ✅ Prisma ORM integration
 - ✅ Migration scripts
 - ✅ Seed data script
 - ✅ NPM commands for database management
@@ -109,7 +109,7 @@ Open [http://localhost:3000](http://localhost:3000) - Your site is live! 🎉
 | `pnpm db:generate` | Generate migration files from schema |
 | `pnpm db:migrate` | Run pending migrations |
 | `pnpm db:push` | Push schema to database (dev) |
-| `pnpm db:studio` | Open Drizzle Studio (database GUI) |
+| `pnpm db:studio` | Open Prisma Studio (database GUI) |
 | `pnpm db:seed` | Load sample data |
 | `pnpm dev` | Start development server |
 | `pnpm build` | Build for production |
@@ -132,7 +132,7 @@ nextjs-commerce/
 ├── components/                # React components (unchanged!)
 ├── DATABASE_SETUP.md          # Quick setup guide
 ├── DATABASE_MIGRATION.md      # Detailed documentation
-└── drizzle.config.ts          # Drizzle ORM configuration
+└── drizzle.config.ts          # Prisma ORM configuration
 ```
 
 ## 🎨 UI Status
@@ -147,7 +147,7 @@ nextjs-commerce/
 
 ## 📊 Database Management
 
-### Using Drizzle Studio (Recommended)
+### Using Prisma Studio (Recommended)
 
 ```bash
 pnpm db:studio
@@ -169,7 +169,7 @@ If you prefer SQL, connect directly to your database using your favorite client.
 
 Two options:
 
-### Option 1: Use Drizzle Studio (Easy)
+### Option 1: Use Prisma Studio (Easy)
 ```bash
 pnpm db:studio
 ```
@@ -245,7 +245,7 @@ Now that the database migration is complete:
 - **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
 - **Database**: PostgreSQL
-- **ORM**: Drizzle ORM
+- **ORM**: Prisma ORM
 - **Styling**: Tailwind CSS
 - **UI Components**: Headless UI
 - **Icons**: Heroicons
@@ -264,7 +264,7 @@ This migration followed these principles:
 
 ## 💡 Pro Tips
 
-1. **Use Drizzle Studio**: It's your best friend for data management
+1. **Use Prisma Studio**: It's your best friend for data management
 2. **Start with Seed Data**: Get a feel for the structure
 3. **Read the Docs**: `DATABASE_MIGRATION.md` has all the details
 4. **Backup Regularly**: Especially when in production

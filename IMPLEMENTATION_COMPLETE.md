@@ -69,7 +69,7 @@ I have successfully migrated your Next.js Commerce project from Shopify to Postg
 2. Set up environment variables:
    ```bash
    # Create .env.local
-   DATABASE_URL="postgresql://user:password@host:5432/database"
+   PRISMA_DATABASE_URL="postgresql://user:password@host:5432/database"
    SITE_NAME="D'FOOTPRINT"
    COMPANY_NAME="D'FOOTPRINT"
    ```
@@ -206,7 +206,7 @@ pnpm db:studio
 All design decisions, troubleshooting tips, and setup instructions are documented in the markdown files. Key things to remember:
 
 1. **Database URL** is the only required setup
-2. **Drizzle Studio** (`pnpm db:studio`) is your friend for data management
+2. **Prisma Studio** (`pnpm db:studio`) is your friend for data management
 3. **Migrations folder** is gitignored - regenerate as needed
 4. **Seed script** creates sample products to test with
 
@@ -234,7 +234,7 @@ This migration gives you:
 - ✅ Full documentation (35+ KB of guides)
 - ✅ Easy setup (just configure database URL)
 - ✅ Sample data (to test immediately)
-- ✅ Management tools (Drizzle Studio)
+- ✅ Management tools (Prisma Studio)
 
 The code is production-ready. Just needs a database connection to run!
 

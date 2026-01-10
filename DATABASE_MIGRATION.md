@@ -36,17 +36,18 @@ Based on your PRD (Product Requirements Document), D'FOOTPRINT is a handmade foo
 - Free and open-source
 - Supported by all major hosting providers (Vercel, Railway, Supabase, etc.)
 
-#### 2. Drizzle ORM
-**Why Drizzle?**
+#### 2. Prisma ORM
+**Why Prisma?**
 - TypeScript-first with excellent type safety
-- Lightweight and performant (no runtime overhead)
-- SQL-like query builder (easy to understand and debug)
+- Intuitive and developer-friendly API
+- Auto-generated type-safe client
 - Built-in migration system
 - Great for serverless environments (Next.js on Vercel)
 - Modern and actively maintained
+- Excellent documentation and tooling
 
 **Alternatives Considered:**
-- **Prisma**: More popular but heavier, slower cold starts
+- **Drizzle**: Lighter but less mature ecosystem
 - **TypeORM**: Older, less TypeScript-friendly
 - **Raw SQL**: No type safety, more error-prone
 
@@ -178,7 +179,7 @@ Indexes were added on:
 ┌─────────────────────────────────────┐
 │  Database Queries Layer             │
 │  /lib/db/queries.ts                 │
-│  (Drizzle ORM queries)              │
+│  (Prisma ORM queries)               │
 └─────────────────────────────────────┘
                  ↓
 ┌─────────────────────────────────────┐
@@ -225,7 +226,7 @@ Runs pending migrations on the database.
 **When to use**: Production deployments, applying schema changes
 
 ### `npm run db:studio`
-Opens Drizzle Studio - a web UI for browsing/editing database.
+Opens Prisma Studio - a web UI for browsing/editing database.
 
 **When to use**: Viewing data, debugging, manual data entry
 
@@ -268,7 +269,7 @@ SHOPIFY_REVALIDATION_SECRET="..."
 
 ### New (PostgreSQL):
 ```
-DATABASE_URL="postgresql://user:password@host:5432/database"
+PRISMA_DATABASE_URL="postgresql://user:password@host:5432/database"
 ```
 
 ### Where to Host Database
@@ -356,7 +357,7 @@ Images stored as URLs:
 ## Security Considerations
 
 ### SQL Injection Prevention
-Drizzle ORM uses parameterized queries:
+Prisma ORM uses parameterized queries:
 - Automatic escaping
 - No raw SQL concatenation
 - Type-safe query building
@@ -413,7 +414,7 @@ Regular PostgreSQL backups:
 ## Troubleshooting
 
 ### "Database URL not set"
-- Check `.env.local` has `DATABASE_URL`
+- Check `.env.local` has `PRISMA_DATABASE_URL`
 - Verify environment variable in Vercel dashboard
 
 ### "Cannot connect to database"
@@ -427,9 +428,10 @@ Regular PostgreSQL backups:
 - Ensure database is empty for first migration
 - Check database user has CREATE permissions
 
-### "Drizzle Kit not found"
+### "Prisma not found"
 - Run `pnpm install`
-- Check `package.json` has `drizzle-kit` in devDependencies
+- Check `package.json` has `prisma` in devDependencies
+- Run `pnpm prisma generate` to generate the client
 
 ## Future Enhancements
 

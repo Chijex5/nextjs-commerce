@@ -29,7 +29,7 @@ pnpm install
 Choose a PostgreSQL host and create `.env.local`:
 
 ```env
-DATABASE_URL="postgresql://user:password@host:5432/database"
+PRISMA_DATABASE_URL="postgresql://user:password@host:5432/database"
 SITE_NAME="D'FOOTPRINT"
 COMPANY_NAME="D'FOOTPRINT"
 ```
@@ -147,7 +147,7 @@ Opens a web interface to:
 ## 🔐 Environment Variables
 
 Required:
-- `DATABASE_URL` - PostgreSQL connection string
+- `PRISMA_DATABASE_URL` - PostgreSQL connection string
 - `SITE_NAME` - Your site name
 - `COMPANY_NAME` - Your company name
 
@@ -162,7 +162,7 @@ See `.env.example` for details.
 
 1. Push code to GitHub
 2. Import to Vercel
-3. Add `DATABASE_URL` environment variable
+3. Add `PRISMA_DATABASE_URL` environment variable
 4. Deploy
 5. Run migrations:
    ```bash
