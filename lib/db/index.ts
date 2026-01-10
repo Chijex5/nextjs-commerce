@@ -10,11 +10,12 @@ export type {
   ProductOption,
   ProductImage,
   Collection,
+  AdminUser,
   ProductCollection,
   Cart,
   CartLine,
   Page,
   Menu,
   MenuItem,
-} from "prisma/generated/prisma/client";
+} from "../../app/generated/prisma/client";
 

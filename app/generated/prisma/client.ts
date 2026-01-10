@@ -94,3 +94,8 @@ export type Menu = Prisma.MenuModel
  * 
  */
 export type MenuItem = Prisma.MenuItemModel
+/**
+ * Model AdminUser
+ * 
+ */
+export type AdminUser = Prisma.AdminUserModel
