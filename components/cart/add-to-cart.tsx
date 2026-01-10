@@ -55,7 +55,7 @@ function SubmitButton({
       })}
     >
       {pending ? (
-        <LoadingDots className="mb-3 bg-white" />
+        <LoadingDots className="bg-white" />
       ) : (
         <>
           <div className="absolute left-0 ml-4">
