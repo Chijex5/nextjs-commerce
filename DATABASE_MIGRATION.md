@@ -269,7 +269,7 @@ SHOPIFY_REVALIDATION_SECRET="..."
 
 ### New (PostgreSQL):
 ```
-PRISMA_DATABASE_URL="postgresql://user:password@host:5432/database"
+DATABASE_URL="postgresql://user:password@host:5432/database"
 ```
 
 ### Where to Host Database
@@ -414,7 +414,7 @@ Regular PostgreSQL backups:
 ## Troubleshooting
 
 ### "Database URL not set"
-- Check `.env.local` has `PRISMA_DATABASE_URL`
+- Check `.env.local` has `DATABASE_URL`
 - Verify environment variable in Vercel dashboard
 
 ### "Cannot connect to database"

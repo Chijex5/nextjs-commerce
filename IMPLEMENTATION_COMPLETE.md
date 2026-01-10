@@ -69,7 +69,7 @@ I have successfully migrated your Next.js Commerce project from Shopify to Postg
 2. Set up environment variables:
    ```bash
    # Create .env.local
-   PRISMA_DATABASE_URL="postgresql://user:password@host:5432/database"
+   DATABASE_URL="postgresql://user:password@host:5432/database"
    SITE_NAME="D'FOOTPRINT"
    COMPANY_NAME="D'FOOTPRINT"
    ```
