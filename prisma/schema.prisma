@@ -2,12 +2,13 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 // Products table - stores the main product information
@@ -197,5 +198,21 @@ model MenuItem {
   @@index([menuId], name: "menu_items_menu_id_idx")
   @@index([position], name: "menu_items_position_idx")
   @@map("menu_items")
+}
+
+// Admin users for dashboard access
+model AdminUser {
+  id            String    @id @default(uuid())
+  email         String    @unique @db.VarChar(255)
+  name          String?   @db.VarChar(255)
+  passwordHash  String    @map("password_hash") @db.Text
+  role          String    @default("admin") @db.VarChar(50)
+  isActive      Boolean   @default(true) @map("is_active")
+  lastLoginAt   DateTime? @map("last_login_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@index([email], name: "admin_users_email_idx")
+  @@map("admin_users")
 }
 
