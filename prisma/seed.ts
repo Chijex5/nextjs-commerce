@@ -534,7 +534,7 @@ async function seed() {
         },
         {
           productId: product2.id,
-          url: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=800&h=800&fit=crop",
+          url: "https://images.unsplash.com/photo-1582897085656-c84d8f5cd7fc?w=800&h=800&fit=crop",
           altText: "Luxury Velvet Slipper Detail",
           width: 800,
           height: 800,
@@ -553,7 +553,7 @@ async function seed() {
         },
         {
           productId: product3.id,
-          url: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=800&h=800&fit=crop",
+          url: "https://images.unsplash.com/photo-1584302179602-e4c3d3fd629d?w=800&h=800&fit=crop",
           altText: "Comfort Home Slipper Detail",
           width: 800,
           height: 800,
@@ -582,7 +582,7 @@ async function seed() {
         // Product 5 - Designer Embroidered Slipper
         {
           productId: product5.id,
-          url: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=800&h=800&fit=crop",
+          url: "https://images.unsplash.com/photo-1519415387722-a1c3bbef716c?w=800&h=800&fit=crop",
           altText: "Designer Embroidered Slipper",
           width: 800,
           height: 800,
@@ -591,7 +591,7 @@ async function seed() {
         },
         {
           productId: product5.id,
-          url: "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=800&h=800&fit=crop",
+          url: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&h=800&fit=crop",
           altText: "Designer Embroidered Slipper Detail",
           width: 800,
           height: 800,
@@ -649,7 +649,7 @@ async function seed() {
         // Product 9 - Premium Suede Slipper
         {
           productId: product9.id,
-          url: "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=800&h=800&fit=crop",
+          url: "https://images.unsplash.com/photo-1560343090-f0409e92791a?w=800&h=800&fit=crop",
           altText: "Premium Suede Slipper",
           width: 800,
           height: 800,
@@ -658,7 +658,7 @@ async function seed() {
         },
         {
           productId: product9.id,
-          url: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=800&h=800&fit=crop",
+          url: "https://images.unsplash.com/photo-1603487742131-4160ec999306?w=800&h=800&fit=crop",
           altText: "Premium Suede Slipper Detail",
           width: 800,
           height: 800,
@@ -678,7 +678,7 @@ async function seed() {
         // Product 11 - Orthopedic Comfort Slipper
         {
           productId: product11.id,
-          url: "https://images.unsplash.com/photo-1631545805976-146c7bdacbe7?w=800&h=800&fit=crop",
+          url: "https://images.unsplash.com/photo-1521093470119-a3acdc43374a?w=800&h=800&fit=crop",
           altText: "Orthopedic Comfort Slipper",
           width: 800,
           height: 800,
@@ -687,7 +687,7 @@ async function seed() {
         },
         {
           productId: product11.id,
-          url: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=800&h=800&fit=crop",
+          url: "https://images.unsplash.com/photo-1524638431109-93d95c968f03?w=800&h=800&fit=crop",
           altText: "Orthopedic Comfort Slipper Side",
           width: 800,
           height: 800,
