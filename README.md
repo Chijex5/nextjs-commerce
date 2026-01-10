@@ -1,75 +1,210 @@
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fcommerce&project-name=commerce&repo-name=commerce&demo-title=Next.js%20Commerce&demo-url=https%3A%2F%2Fdemo.vercel.store&demo-image=https%3A%2F%2Fbigcommerce-demo-asset-ksvtgfvnd.vercel.app%2Fbigcommerce.png&env=COMPANY_NAME,SHOPIFY_REVALIDATION_SECRET,SHOPIFY_STORE_DOMAIN,SHOPIFY_STOREFRONT_ACCESS_TOKEN,SITE_NAME)
+# D'FOOTPRINT - Next.js Commerce with PostgreSQL
 
-# Next.js Commerce
+A high-performance, server-rendered Next.js App Router ecommerce application for D'FOOTPRINT handmade footwear, powered by PostgreSQL.
 
-A high-performance, server-rendered Next.js App Router ecommerce application.
+> **Note**: This is a PostgreSQL-powered fork of Vercel's Next.js Commerce template. The beautiful UI remains unchanged, but the backend now uses a self-hosted PostgreSQL database instead of Shopify.
 
-This template uses React Server Components, Server Actions, `Suspense`, `useOptimistic`, and more.
+## ✨ What Makes This Special
 
-<h3 id="v1-note"></h3>
+- 🎨 **Professional UI** - Kept the beautiful Vercel Next.js Commerce design
+- 🗄️ **PostgreSQL Backend** - Full control over your data
+- 🚀 **Modern Stack** - Next.js 15, TypeScript, Drizzle ORM
+- 🔒 **Type Safe** - End-to-end TypeScript
+- ⚡ **Fast** - Optimized queries and caching
+- 📱 **Mobile First** - Responsive design
+- 🛒 **Full Cart** - Complete shopping cart functionality
 
-> Note: Looking for Next.js Commerce v1? View the [code](https://github.com/vercel/commerce/tree/v1), [demo](https://commerce-v1.vercel.store), and [release notes](https://github.com/vercel/commerce/releases/tag/v1).
+## 🚀 Quick Start
 
-## Providers
-
-Vercel will only be actively maintaining a Shopify version [as outlined in our vision and strategy for Next.js Commerce](https://github.com/vercel/commerce/pull/966).
-
-Vercel is happy to partner and work with any commerce provider to help them get a similar template up and running and listed below. Alternative providers should be able to fork this repository and swap out the `lib/shopify` file with their own implementation while leaving the rest of the template mostly unchanged.
-
-- Shopify (this repository)
-- [BigCommerce](https://github.com/bigcommerce/nextjs-commerce) ([Demo](https://next-commerce-v2.vercel.app/))
-- [Ecwid by Lightspeed](https://github.com/Ecwid/ecwid-nextjs-commerce/) ([Demo](https://ecwid-nextjs-commerce.vercel.app/))
-- [Geins](https://github.com/geins-io/vercel-nextjs-commerce) ([Demo](https://geins-nextjs-commerce-starter.vercel.app/))
-- [Medusa](https://github.com/medusajs/vercel-commerce) ([Demo](https://medusa-nextjs-commerce.vercel.app/))
-- [Prodigy Commerce](https://github.com/prodigycommerce/nextjs-commerce) ([Demo](https://prodigy-nextjs-commerce.vercel.app/))
-- [Saleor](https://github.com/saleor/nextjs-commerce) ([Demo](https://saleor-commerce.vercel.app/))
-- [Shopware](https://github.com/shopwareLabs/vercel-commerce) ([Demo](https://shopware-vercel-commerce-react.vercel.app/))
-- [Swell](https://github.com/swellstores/verswell-commerce) ([Demo](https://verswell-commerce.vercel.app/))
-- [Umbraco](https://github.com/umbraco/Umbraco.VercelCommerce.Demo) ([Demo](https://vercel-commerce-demo.umbraco.com/))
-- [Wix](https://github.com/wix/headless-templates/tree/main/nextjs/commerce) ([Demo](https://wix-nextjs-commerce.vercel.app/))
-- [Fourthwall](https://github.com/FourthwallHQ/vercel-commerce) ([Demo](https://vercel-storefront.fourthwall.app/))
-
-> Note: Providers, if you are looking to use similar products for your demo, you can [download these assets](https://drive.google.com/file/d/1q_bKerjrwZgHwCw0ovfUMW6He9VtepO_/view?usp=sharing).
-
-## Integrations
-
-Integrations enable upgraded or additional functionality for Next.js Commerce
-
-- [Orama](https://github.com/oramasearch/nextjs-commerce) ([Demo](https://vercel-commerce.oramasearch.com/))
-
-  - Upgrades search to include typeahead with dynamic re-rendering, vector-based similarity search, and JS-based configuration.
-  - Search runs entirely in the browser for smaller catalogs or on a CDN for larger.
-
-- [React Bricks](https://github.com/ReactBricks/nextjs-commerce-rb) ([Demo](https://nextjs-commerce.reactbricks.com/))
-  - Edit pages, product details, and footer content visually using [React Bricks](https://www.reactbricks.com) visual headless CMS.
-
-## Running locally
-
-You will need to use the environment variables [defined in `.env.example`](.env.example) to run Next.js Commerce. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/concepts/projects/environment-variables) for this, but a `.env` file is all that is necessary.
-
-> Note: You should not commit your `.env` file or it will expose secrets that will allow others to control your Shopify store.
-
-1. Install Vercel CLI: `npm i -g vercel`
-2. Link local instance with Vercel and GitHub accounts (creates `.vercel` directory): `vercel link`
-3. Download your environment variables: `vercel env pull`
+### 1. Clone and Install
 
 ```bash
+git clone <your-repo-url>
+cd nextjs-commerce
 pnpm install
+```
+
+### 2. Set Up Database
+
+Choose a PostgreSQL host and create `.env.local`:
+
+```env
+DATABASE_URL="postgresql://user:password@host:5432/database"
+SITE_NAME="D'FOOTPRINT"
+COMPANY_NAME="D'FOOTPRINT"
+```
+
+**Recommended Hosts:**
+- [Vercel Postgres](https://vercel.com/storage/postgres) - Easiest for Vercel deployments
+- [Supabase](https://supabase.com) - Free tier available
+- [Neon](https://neon.tech) - Serverless Postgres
+- Local PostgreSQL
+
+### 3. Initialize Database
+
+```bash
+pnpm db:push    # Create tables
+pnpm db:seed    # Add sample data
+```
+
+### 4. Start Development
+
+```bash
 pnpm dev
 ```
 
-Your app should now be running on [localhost:3000](http://localhost:3000/).
+Open [http://localhost:3000](http://localhost:3000) 🎉
 
-<details>
-  <summary>Expand if you work at Vercel and want to run locally and / or contribute</summary>
+## 📖 Documentation
 
-1. Run `vc link`.
-1. Select the `Vercel Solutions` scope.
-1. Connect to the existing `commerce-shopify` project.
-1. Run `vc env pull` to get environment variables.
-1. Run `pnpm dev` to ensure everything is working correctly.
-</details>
+- **[MIGRATION_SUMMARY.md](MIGRATION_SUMMARY.md)** - Overview of changes and quick guide
+- **[DATABASE_SETUP.md](DATABASE_SETUP.md)** - Detailed setup instructions
+- **[DATABASE_MIGRATION.md](DATABASE_MIGRATION.md)** - Design decisions and architecture
+- **[PRD.md](PRD.md)** - Product requirements for D'FOOTPRINT
 
-## Vercel, Next.js Commerce, and Shopify Integration Guide
+## 🛠️ NPM Scripts
 
-You can use this comprehensive [integration guide](https://vercel.com/docs/integrations/ecommerce/shopify) with step-by-step instructions on how to configure Shopify as a headless CMS using Next.js Commerce as your headless Shopify storefront on Vercel.
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Start development server |
+| `pnpm build` | Build for production |
+| `pnpm start` | Start production server |
+| `pnpm db:generate` | Generate migration files |
+| `pnpm db:migrate` | Run migrations |
+| `pnpm db:push` | Push schema to database |
+| `pnpm db:studio` | Open database GUI |
+| `pnpm db:seed` | Load sample data |
+
+## 🗄️ Database Management
+
+### Drizzle Studio (Recommended)
+
+```bash
+pnpm db:studio
+```
+
+Opens a web interface to:
+- Browse and edit products
+- Manage collections
+- Update pages
+- Configure menus
+- No SQL required!
+
+## 📦 Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript
+- **Database**: PostgreSQL
+- **ORM**: Drizzle ORM
+- **Styling**: Tailwind CSS
+- **UI**: Headless UI + Heroicons
+- **Hosting**: Vercel (recommended)
+
+## 🏗️ Project Structure
+
+```
+├── app/                    # Next.js App Router pages
+├── components/             # React components
+├── lib/
+│   ├── db/
+│   │   ├── schema.ts      # Database schema
+│   │   ├── queries.ts     # Database queries
+│   │   └── scripts/       # Migration scripts
+│   ├── database/          # Database abstraction layer
+│   └── constants.ts       # App constants
+├── DATABASE_SETUP.md      # Setup guide
+├── DATABASE_MIGRATION.md  # Architecture docs
+└── MIGRATION_SUMMARY.md   # Migration overview
+```
+
+## 🎨 Features
+
+### Products
+- Multiple images per product
+- Size and color variants
+- SEO optimization
+- Tags and categories
+- Dynamic pricing
+
+### Shopping Cart
+- Add/remove items
+- Update quantities
+- Persistent cart
+- Checkout integration ready
+
+### Collections
+- Organize products
+- Custom descriptions
+- SEO for each collection
+
+### Pages
+- About
+- Shipping & Returns
+- Privacy Policy
+- Terms & Conditions
+- Custom pages support
+
+## 🔐 Environment Variables
+
+Required:
+- `DATABASE_URL` - PostgreSQL connection string
+- `SITE_NAME` - Your site name
+- `COMPANY_NAME` - Your company name
+
+Optional:
+- `REVALIDATION_SECRET` - For webhook revalidation
+
+See `.env.example` for details.
+
+## 🚢 Deployment
+
+### Vercel (Recommended)
+
+1. Push code to GitHub
+2. Import to Vercel
+3. Add `DATABASE_URL` environment variable
+4. Deploy
+5. Run migrations:
+   ```bash
+   pnpm db:push
+   pnpm db:seed
+   ```
+
+## 🆚 Shopify vs PostgreSQL
+
+| Feature | Shopify | PostgreSQL |
+|---------|---------|------------|
+| Data Control | Limited | Full |
+| Customization | Limited | Unlimited |
+| Monthly Costs | Yes | No |
+| UI Quality | Great | Same! |
+| Setup Time | Fast | Medium |
+| Flexibility | Limited | High |
+
+## 📚 Learn More
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Drizzle ORM](https://orm.drizzle.team)
+- [PostgreSQL](https://www.postgresql.org)
+- [Tailwind CSS](https://tailwindcss.com)
+
+## 🤝 Contributing
+
+This is a private project for D'FOOTPRINT, but you can:
+1. Report issues
+2. Suggest features
+3. Share feedback
+
+## 📝 License
+
+See [license.md](license.md)
+
+## 🙏 Credits
+
+- UI Template: [Vercel Next.js Commerce](https://github.com/vercel/commerce)
+- Built for: D'FOOTPRINT Handmade Footwear
+- Database Migration: Custom PostgreSQL implementation
+
+---
+
+**Need Help?** Check the documentation files or open an issue.

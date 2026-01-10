@@ -30,6 +30,10 @@ yarn-error.log*
 .env*
 !.env.example
 
+# database
+prisma/migrations/
+lib/db/migrations/
+
 # vercel
 .vercel
 
@@ -37,3 +41,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*.local
+
+/generated/prisma
