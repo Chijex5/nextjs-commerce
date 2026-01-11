@@ -52,10 +52,7 @@ export async function PUT(request: NextRequest) {
 
     // Validate inputs
     if (!name || name.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Name is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
     // Update user profile (email cannot be changed)

@@ -1,9 +1,9 @@
 /**
  * Order Delivery Status Management Utilities
- * 
+ *
  * This module provides utilities for calculating estimated delivery dates
  * based on order status and shipping location.
- * 
+ *
  * DELIVERY STATUS TYPES:
  * - production: Item is being manufactured/prepared
  * - sorting: Item is being sorted and packaged
@@ -11,19 +11,19 @@
  * - paused: Order processing is temporarily paused
  * - completed: Order has been delivered
  * - cancelled: Order has been cancelled
- * 
+ *
  * DELIVERY TIME CALCULATION RULES:
- * 
+ *
  * For Lagos State:
  * - Production: 7 days from order date
  * - Sorting: 3 days from order date
  * - Dispatch: 1 day (24 hours) from order date
- * 
+ *
  * For Other States:
  * - Production: 7 days from order date
  * - Sorting: 5 days from order date
  * - Dispatch: 2 days from order date
- * 
+ *
  * Special Cases:
  * - Paused: No estimated arrival (null)
  * - Completed: Actual delivery date (already passed)
@@ -45,7 +45,7 @@ interface ShippingAddress {
 
 /**
  * Calculate estimated arrival date based on order date, delivery status, and shipping location
- * 
+ *
  * @param orderDate - The date when the order was placed
  * @param deliveryStatus - Current delivery status of the order
  * @param shippingAddress - Shipping address containing state information
@@ -119,8 +119,7 @@ export function getDeliveryStatusColor(status: DeliveryStatus): string {
       "text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/20",
     completed:
       "text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20",
-    cancelled:
-      "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20",
+    cancelled: "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20",
   };
 
   return (

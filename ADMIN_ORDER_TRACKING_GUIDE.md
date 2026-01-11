@@ -13,13 +13,13 @@ The `Order` model in `prisma/schema.prisma` has been enhanced with the following
 ```prisma
 model Order {
   // ... existing fields ...
-  
+
   // NEW FIELDS for delivery tracking
   deliveryStatus      String    @default("production") @map("delivery_status") @db.VarChar(50)
   estimatedArrival    DateTime? @map("estimated_arrival")
-  
+
   // ... rest of fields ...
-  
+
   @@index([deliveryStatus], name: "orders_delivery_status_idx")
 }
 ```
@@ -38,6 +38,7 @@ The `deliveryStatus` field can have the following values:
 ## Delivery Time Calculation Logic
 
 The system automatically calculates estimated delivery dates based on:
+
 - Current delivery status
 - Customer's shipping location (state)
 - Order date
@@ -45,16 +46,19 @@ The system automatically calculates estimated delivery dates based on:
 ### Calculation Rules
 
 #### For Lagos State:
+
 - **Production**: 7 days from order date
-- **Sorting**: 3 days from order date  
+- **Sorting**: 3 days from order date
 - **Dispatch**: 1 day (24 hours) from order date
 
 #### For Other States:
+
 - **Production**: 7 days from order date
 - **Sorting**: 5 days from order date
 - **Dispatch**: 2 days from order date
 
 #### Special Cases:
+
 - **Paused**: No estimated arrival date
 - **Completed**: Shows actual delivery date
 - **Cancelled**: No estimated arrival date
@@ -66,6 +70,7 @@ The system automatically calculates estimated delivery dates based on:
 The admin dashboard should provide:
 
 #### Order List View
+
 - Display all orders with filters for:
   - Order status (pending, processing, completed, cancelled)
   - Delivery status (production, sorting, dispatch, paused, completed, cancelled)
@@ -74,6 +79,7 @@ The admin dashboard should provide:
   - Order number search
 
 #### Order Detail View
+
 - Show full order information
 - Display current delivery status
 - Show estimated arrival date
@@ -99,6 +105,7 @@ Body:
 #### Automatic Estimated Arrival Calculation
 
 When updating delivery status, the system should:
+
 1. Get the order's shipping address
 2. Determine if it's Lagos or another state
 3. Calculate estimated arrival based on the new status
@@ -107,13 +114,13 @@ When updating delivery status, the system should:
 Use the utility function from `lib/order-utils/delivery-tracking.ts`:
 
 ```typescript
-import { calculateEstimatedArrival } from 'lib/order-utils/delivery-tracking';
+import { calculateEstimatedArrival } from "lib/order-utils/delivery-tracking";
 
 // Example usage in admin API
 const estimatedArrival = calculateEstimatedArrival(
   order.createdAt,
   newDeliveryStatus,
-  order.shippingAddress
+  order.shippingAddress,
 );
 
 await prisma.order.update({
@@ -121,7 +128,7 @@ await prisma.order.update({
   data: {
     deliveryStatus: newDeliveryStatus,
     estimatedArrival: estimatedArrival,
-  }
+  },
 });
 ```
 
@@ -153,9 +160,9 @@ model OrderStatusHistory {
   changedBy       String   @map("changed_by") // Admin user ID
   notes           String?  @db.Text
   createdAt       DateTime @default(now()) @map("created_at")
-  
+
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
+
   @@index([orderId])
   @@map("order_status_history")
 }
@@ -164,6 +171,7 @@ model OrderStatusHistory {
 ## API Endpoints to Implement
 
 ### 1. Get Orders (Admin)
+
 ```typescript
 GET /api/admin/orders
 Query params:
@@ -175,6 +183,7 @@ Query params:
 ```
 
 ### 2. Update Delivery Status
+
 ```typescript
 PUT /api/admin/orders/:orderId/delivery-status
 Body:
@@ -185,6 +194,7 @@ Body:
 ```
 
 ### 3. Get Order Statistics
+
 ```typescript
 GET /api/admin/orders/stats
 Response:
@@ -204,6 +214,7 @@ Response:
 ## UI Components Needed
 
 ### 1. Status Dropdown/Select
+
 ```tsx
 <select value={deliveryStatus} onChange={handleStatusChange}>
   <option value="production">Production</option>
@@ -216,18 +227,22 @@ Response:
 ```
 
 ### 2. Status Badge Component
+
 Reuse the utility functions from `lib/order-utils/delivery-tracking.ts`:
+
 - `getDeliveryStatusColor()` - Get color classes
 - `getDeliveryStatusDescription()` - Get user-friendly description
 - `getDeliveryProgress()` - Get progress percentage
 
 ### 3. Delivery Timeline Visualization
+
 Show visual progress of order through stages:
 Production → Sorting → Dispatch → Delivered
 
 ## Customer Notifications (Future Enhancement)
 
 When delivery status is updated in admin dashboard, consider:
+
 1. Email notifications to customers
 2. SMS notifications (if phone number provided)
 3. In-app notifications (if implemented)
@@ -261,19 +276,19 @@ All delivery tracking utilities are in `lib/order-utils/delivery-tracking.ts`:
 
 ```typescript
 // Calculate estimated arrival date
-calculateEstimatedArrival(orderDate, deliveryStatus, shippingAddress)
+calculateEstimatedArrival(orderDate, deliveryStatus, shippingAddress);
 
 // Get human-readable status description
-getDeliveryStatusDescription(status)
+getDeliveryStatusDescription(status);
 
 // Get CSS classes for status badge
-getDeliveryStatusColor(status)
+getDeliveryStatusColor(status);
 
 // Format date for display
-formatEstimatedArrival(date)
+formatEstimatedArrival(date);
 
 // Get progress percentage (0-100)
-getDeliveryProgress(status)
+getDeliveryProgress(status);
 ```
 
 ## Migration Steps
@@ -288,23 +303,23 @@ If you already have existing orders in the database:
 // Example migration script
 const orders = await prisma.order.findMany({
   where: {
-    status: { not: 'completed' }
-  }
+    status: { not: "completed" },
+  },
 });
 
 for (const order of orders) {
   const estimatedArrival = calculateEstimatedArrival(
     order.createdAt,
-    'production',
-    order.shippingAddress
+    "production",
+    order.shippingAddress,
   );
-  
+
   await prisma.order.update({
     where: { id: order.id },
     data: {
-      deliveryStatus: 'production',
-      estimatedArrival
-    }
+      deliveryStatus: "production",
+      estimatedArrival,
+    },
   });
 }
 ```
@@ -312,6 +327,7 @@ for (const order of orders) {
 ## Support
 
 For questions or issues with the delivery tracking system:
+
 1. Review this documentation
 2. Check the utility functions in `lib/order-utils/delivery-tracking.ts`
 3. Review the customer-facing implementation in `app/orders/page.tsx`

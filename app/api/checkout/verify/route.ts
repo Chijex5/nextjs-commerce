@@ -140,11 +140,12 @@ export async function GET(request: NextRequest) {
 
     // Redirect to success page
     return redirect(`/checkout/success?order=${orderNumber}`);
-    
   } catch (error) {
     // ✅ FIX: Check if the error is a Next.js redirect
-    if ((error as Error & { digest?: string }).digest?.startsWith("NEXT_REDIRECT")) {
-        throw error;
+    if (
+      (error as Error & { digest?: string }).digest?.startsWith("NEXT_REDIRECT")
+    ) {
+      throw error;
     }
 
     console.error("Payment verification error:", error);

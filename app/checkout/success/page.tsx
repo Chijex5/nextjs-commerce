@@ -16,10 +16,10 @@ function CheckoutSuccessSkeleton() {
   );
 }
 
-export default function CheckoutSuccessPage(){
+export default function CheckoutSuccessPage() {
   return (
-    <Suspense fallback={<CheckoutSuccessSkeleton/>}>
+    <Suspense fallback={<CheckoutSuccessSkeleton />}>
       <CheckoutSuccess />
     </Suspense>
-  )
+  );
 }
