@@ -57,8 +57,8 @@ export default function AccountPage() {
       if (response.ok) {
         toast.success("Profile updated successfully");
         setIsEditing(false);
-        // Refresh session
-        window.location.reload();
+        // Refresh the page data using Next.js router
+        router.refresh();
       } else {
         const data = await response.json();
         toast.error(data.error || "Failed to update profile");

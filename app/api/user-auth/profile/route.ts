@@ -51,7 +51,7 @@ export async function PUT(request: NextRequest) {
     const { name, phone } = body;
 
     // Validate inputs
-    if (!name || name.trim().length === 0) {
+    if (!name?.trim()) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
