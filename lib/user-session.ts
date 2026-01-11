@@ -7,6 +7,7 @@ export interface UserSession {
   id: string;
   email: string;
   name: string | null;
+  phone?: string | null;
 }
 
 interface TokenPayload {

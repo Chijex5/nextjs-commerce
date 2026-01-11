@@ -7,26 +7,26 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 // Products table - stores the main product information
 model Product {
-  id                String   @id @default(uuid())
-  handle            String   @unique @db.VarChar(255)
-  title             String   @db.VarChar(255)
-  description       String?  @db.Text
-  descriptionHtml   String?  @map("description_html") @db.Text
-  availableForSale  Boolean  @default(true) @map("available_for_sale")
-  seoTitle          String?  @map("seo_title") @db.VarChar(255)
-  seoDescription    String?  @map("seo_description") @db.Text
-  tags              String[] @default([])
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+  id               String   @id @default(uuid())
+  handle           String   @unique @db.VarChar(255)
+  title            String   @db.VarChar(255)
+  description      String?  @db.Text
+  descriptionHtml  String?  @map("description_html") @db.Text
+  availableForSale Boolean  @default(true) @map("available_for_sale")
+  seoTitle         String?  @map("seo_title") @db.VarChar(255)
+  seoDescription   String?  @map("seo_description") @db.Text
+  tags             String[] @default([])
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
 
-  variants          ProductVariant[]
-  images            ProductImage[]
-  options           ProductOption[]
+  variants           ProductVariant[]
+  images             ProductImage[]
+  options            ProductOption[]
   productCollections ProductCollection[]
 
   @@index([handle], name: "products_handle_idx")
@@ -120,15 +120,15 @@ model ProductCollection {
 
 // Carts table
 model Cart {
-  id              String   @id @default(uuid())
-  checkoutUrl     String?  @map("checkout_url") @db.Text
-  totalQuantity   Int      @default(0) @map("total_quantity")
-  subtotalAmount  Decimal  @default(0.00) @map("subtotal_amount") @db.Decimal(10, 2)
-  totalAmount     Decimal  @default(0.00) @map("total_amount") @db.Decimal(10, 2)
-  totalTaxAmount  Decimal  @default(0.00) @map("total_tax_amount") @db.Decimal(10, 2)
-  currencyCode    String   @default("NGN") @map("currency_code") @db.VarChar(3)
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+  id             String   @id @default(uuid())
+  checkoutUrl    String?  @map("checkout_url") @db.Text
+  totalQuantity  Int      @default(0) @map("total_quantity")
+  subtotalAmount Decimal  @default(0.00) @map("subtotal_amount") @db.Decimal(10, 2)
+  totalAmount    Decimal  @default(0.00) @map("total_amount") @db.Decimal(10, 2)
+  totalTaxAmount Decimal  @default(0.00) @map("total_tax_amount") @db.Decimal(10, 2)
+  currencyCode   String   @default("NGN") @map("currency_code") @db.VarChar(3)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
 
   lines CartLine[]
 
@@ -201,15 +201,15 @@ model MenuItem {
 
 // Admin users for dashboard access
 model AdminUser {
-  id            String    @id @default(uuid())
-  email         String    @unique @db.VarChar(255)
-  name          String?   @db.VarChar(255)
-  passwordHash  String    @map("password_hash") @db.Text
-  role          String    @default("admin") @db.VarChar(50)
-  isActive      Boolean   @default(true) @map("is_active")
-  lastLoginAt   DateTime? @map("last_login_at")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+  id           String    @id @default(uuid())
+  email        String    @unique @db.VarChar(255)
+  name         String?   @db.VarChar(255)
+  passwordHash String    @map("password_hash") @db.Text
+  role         String    @default("admin") @db.VarChar(50)
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at")
 
   @@index([email], name: "admin_users_email_idx")
   @@map("admin_users")
@@ -217,15 +217,17 @@ model AdminUser {
 
 // Customer users for shopping
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique @db.VarChar(255)
-  name          String?   @db.VarChar(255)
-  passwordHash  String    @map("password_hash") @db.Text
-  phone         String?   @db.VarChar(50)
-  isActive      Boolean   @default(true) @map("is_active")
-  lastLoginAt   DateTime? @map("last_login_at")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+  id              String    @id @default(uuid())
+  email           String    @unique @db.VarChar(255)
+  name            String?   @db.VarChar(255)
+  passwordHash    String    @map("password_hash") @db.Text
+  phone           String?   @db.VarChar(50)
+  shippingAddress Json?     @map("shipping_address")
+  billingAddress  Json?     @map("billing_address")
+  isActive        Boolean   @default(true) @map("is_active")
+  lastLoginAt     DateTime? @map("last_login_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
 
   orders Order[]
 
@@ -266,17 +268,17 @@ model Order {
 
 // Order items
 model OrderItem {
-  id               String  @id @default(uuid())
-  orderId          String  @map("order_id")
-  productId        String  @map("product_id")
-  productVariantId String  @map("product_variant_id")
-  productTitle     String  @map("product_title") @db.VarChar(255)
-  variantTitle     String  @map("variant_title") @db.VarChar(255)
+  id               String   @id @default(uuid())
+  orderId          String   @map("order_id")
+  productId        String   @map("product_id")
+  productVariantId String   @map("product_variant_id")
+  productTitle     String   @map("product_title") @db.VarChar(255)
+  variantTitle     String   @map("variant_title") @db.VarChar(255)
   quantity         Int
-  price            Decimal @db.Decimal(10, 2)
-  totalAmount      Decimal @map("total_amount") @db.Decimal(10, 2)
-  currencyCode     String  @default("NGN") @map("currency_code") @db.VarChar(3)
-  productImage     String? @map("product_image") @db.Text
+  price            Decimal  @db.Decimal(10, 2)
+  totalAmount      Decimal  @map("total_amount") @db.Decimal(10, 2)
+  currencyCode     String   @default("NGN") @map("currency_code") @db.VarChar(3)
+  productImage     String?  @map("product_image") @db.Text
   createdAt        DateTime @default(now()) @map("created_at")
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -284,4 +286,3 @@ model OrderItem {
   @@index([orderId], name: "order_items_order_id_idx")
   @@map("order_items")
 }
-
