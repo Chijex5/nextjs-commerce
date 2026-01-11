@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import LoadingDots from "components/loading-dots";
+import PageLoader from "components/page-loader";
 import { useUserSession } from "hooks/useUserSession";
 
 // Nigerian States
@@ -164,17 +165,7 @@ export default function AddressesPage() {
   };
 
   if (status === "loading" || loading) {
-    return (
-      <div className="mx-auto mt-20 max-w-4xl px-4">
-        <div className="animate-pulse">
-          <div className="mb-6 h-8 w-48 rounded bg-neutral-200 dark:bg-neutral-800"></div>
-          <div className="space-y-4">
-            <div className="h-64 rounded-lg bg-neutral-200 dark:bg-neutral-800"></div>
-            <div className="h-64 rounded-lg bg-neutral-200 dark:bg-neutral-800"></div>
-          </div>
-        </div>
-      </div>
-    );
+    return <PageLoader size="lg" message="Loading addresses..." />;
   }
 
   if (!session) {

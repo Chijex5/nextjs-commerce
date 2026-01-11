@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
 import Price from "components/price";
+import PageLoader from "components/page-loader";
 import { useUserSession } from "hooks/useUserSession";
 
 interface OrderItem {
@@ -159,14 +160,7 @@ export default function OrdersPage() {
   );
 
   if (status === "loading") {
-    return (
-      <div className="mx-auto mt-20 max-w-4xl px-4">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 w-48 rounded bg-neutral-200 dark:bg-neutral-800"></div>
-          <div className="h-64 rounded-lg bg-neutral-200 dark:bg-neutral-800"></div>
-        </div>
-      </div>
-    );
+    return <PageLoader size="lg" message="Loading orders..." />;
   }
 
   return (

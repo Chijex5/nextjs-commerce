@@ -6,6 +6,7 @@ import Image from "next/image";
 import { toast } from "sonner";
 import Price from "components/price";
 import LoadingDots from "components/loading-dots";
+import PageLoader from "components/page-loader";
 import { useUserSession } from "hooks/useUserSession";
 
 // Nigerian States
@@ -259,19 +260,7 @@ export default function CheckoutPage() {
   };
 
   if (loading) {
-    return (
-      <div className="mx-auto mt-20 max-w-7xl px-4">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 w-48 rounded bg-neutral-200 dark:bg-neutral-800"></div>
-          <div className="grid gap-8 lg:grid-cols-3">
-            <div className="lg:col-span-2">
-              <div className="h-96 rounded-lg bg-neutral-200 dark:bg-neutral-800"></div>
-            </div>
-            <div className="h-96 rounded-lg bg-neutral-200 dark:bg-neutral-800"></div>
-          </div>
-        </div>
-      </div>
-    );
+    return <PageLoader size="lg" message="Loading checkout..." />;
   }
 
   if (!cart || cart.lines.length === 0) {
