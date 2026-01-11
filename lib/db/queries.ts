@@ -11,7 +11,7 @@ import type {
   SEO,
 } from "../shopify/types";
 import prisma from "lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/app/generated/prisma/client";
 
 const db = prisma;
 // Helper function to reshape database product to match Shopify Product type
