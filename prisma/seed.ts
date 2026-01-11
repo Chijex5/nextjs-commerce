@@ -1010,15 +1010,21 @@ async function seed() {
         },
         {
           menuId: mainMenu.id,
+          title: "Custom Orders",
+          url: "/custom-orders",
+          position: 1,
+        },
+        {
+          menuId: mainMenu.id,
           title: "About",
           url: "/about",
-          position: 1,
+          position: 2,
         },
         {
           menuId: mainMenu.id,
           title: "Contact",
           url: "/contact",
-          position: 2,
+          position: 3,
         },
         // Footer menu items
         {
