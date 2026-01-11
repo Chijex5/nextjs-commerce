@@ -102,6 +102,7 @@ export async function PUT(
         seoTitle: body.seoTitle,
         seoDescription: body.seoDescription,
         tags: body.tags || [],
+        images: body.image
       },
     });
 

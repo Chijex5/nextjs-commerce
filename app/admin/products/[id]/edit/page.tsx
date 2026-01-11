@@ -1,9 +1,9 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../../../../lib/auth";
+import { authOptions } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
-import AdminNav from "../../../../../components/admin/AdminNav";
-import ProductForm from "../../../../../components/admin/ProductForm";
-import prisma from "../../../../../lib/prisma";
+import AdminNav from "@/components/admin/AdminNav";
+import ProductForm from "@/components/admin/ProductForm";
+import prisma from "@/lib/prisma";
 
 export default async function EditProductPage({
   params,
