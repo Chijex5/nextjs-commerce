@@ -62,7 +62,10 @@ export const ModelName = {
   Page: 'Page',
   Menu: 'Menu',
   MenuItem: 'MenuItem',
-  AdminUser: 'AdminUser'
+  AdminUser: 'AdminUser',
+  User: 'User',
+  Order: 'Order',
+  OrderItem: 'OrderItem'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -246,6 +249,63 @@ export const AdminUserScalarFieldEnum = {
 export type AdminUserScalarFieldEnum = (typeof AdminUserScalarFieldEnum)[keyof typeof AdminUserScalarFieldEnum]
 
 
+export const UserScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  name: 'name',
+  passwordHash: 'passwordHash',
+  phone: 'phone',
+  isActive: 'isActive',
+  lastLoginAt: 'lastLoginAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const OrderScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  orderNumber: 'orderNumber',
+  email: 'email',
+  phone: 'phone',
+  customerName: 'customerName',
+  shippingAddress: 'shippingAddress',
+  billingAddress: 'billingAddress',
+  status: 'status',
+  subtotalAmount: 'subtotalAmount',
+  taxAmount: 'taxAmount',
+  shippingAmount: 'shippingAmount',
+  totalAmount: 'totalAmount',
+  currencyCode: 'currencyCode',
+  notes: 'notes',
+  trackingNumber: 'trackingNumber',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
+
+
+export const OrderItemScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  productId: 'productId',
+  productVariantId: 'productVariantId',
+  productTitle: 'productTitle',
+  variantTitle: 'variantTitle',
+  quantity: 'quantity',
+  price: 'price',
+  totalAmount: 'totalAmount',
+  currencyCode: 'currencyCode',
+  productImage: 'productImage',
+  createdAt: 'createdAt'
+} as const
+
+export type OrderItemScalarFieldEnum = (typeof OrderItemScalarFieldEnum)[keyof typeof OrderItemScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -259,6 +319,14 @@ export const JsonNullValueInput = {
 } as const
 
 export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: 'DbNull',
+  JsonNull: 'JsonNull'
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const QueryMode = {

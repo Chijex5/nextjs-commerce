@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import MobileMenu from "./mobile-menu";
 import Search, { SearchSkeleton } from "./search";
+import UserAccountIcon from "./user-account-icon";
 
 const { SITE_NAME } = process.env;
 
@@ -52,7 +53,8 @@ export async function Navbar() {
             <Search />
           </Suspense>
         </div>
-        <div className="flex justify-end md:w-1/3">
+        <div className="flex justify-end gap-2 md:w-1/3">
+          <UserAccountIcon />
           <CartModal />
         </div>
       </div>

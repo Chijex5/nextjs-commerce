@@ -215,3 +215,73 @@ model AdminUser {
   @@map("admin_users")
 }
 
+// Customer users for shopping
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique @db.VarChar(255)
+  name          String?   @db.VarChar(255)
+  passwordHash  String    @map("password_hash") @db.Text
+  phone         String?   @db.VarChar(50)
+  isActive      Boolean   @default(true) @map("is_active")
+  lastLoginAt   DateTime? @map("last_login_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  orders Order[]
+
+  @@index([email], name: "users_email_idx")
+  @@map("users")
+}
+
+// Orders for tracking purchases
+model Order {
+  id              String   @id @default(uuid())
+  userId          String?  @map("user_id")
+  orderNumber     String   @unique @db.VarChar(50)
+  email           String   @db.VarChar(255)
+  phone           String?  @db.VarChar(50)
+  customerName    String   @map("customer_name") @db.VarChar(255)
+  shippingAddress Json     @map("shipping_address")
+  billingAddress  Json?    @map("billing_address")
+  status          String   @default("pending") @db.VarChar(50)
+  subtotalAmount  Decimal  @map("subtotal_amount") @db.Decimal(10, 2)
+  taxAmount       Decimal  @default(0.00) @map("tax_amount") @db.Decimal(10, 2)
+  shippingAmount  Decimal  @default(0.00) @map("shipping_amount") @db.Decimal(10, 2)
+  totalAmount     Decimal  @map("total_amount") @db.Decimal(10, 2)
+  currencyCode    String   @default("NGN") @map("currency_code") @db.VarChar(3)
+  notes           String?  @db.Text
+  trackingNumber  String?  @map("tracking_number") @db.VarChar(100)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user  User?       @relation(fields: [userId], references: [id])
+  items OrderItem[]
+
+  @@index([orderNumber], name: "orders_order_number_idx")
+  @@index([userId], name: "orders_user_id_idx")
+  @@index([email], name: "orders_email_idx")
+  @@index([status], name: "orders_status_idx")
+  @@map("orders")
+}
+
+// Order items
+model OrderItem {
+  id               String  @id @default(uuid())
+  orderId          String  @map("order_id")
+  productId        String  @map("product_id")
+  productVariantId String  @map("product_variant_id")
+  productTitle     String  @map("product_title") @db.VarChar(255)
+  variantTitle     String  @map("variant_title") @db.VarChar(255)
+  quantity         Int
+  price            Decimal @db.Decimal(10, 2)
+  totalAmount      Decimal @map("total_amount") @db.Decimal(10, 2)
+  currencyCode     String  @default("NGN") @map("currency_code") @db.VarChar(3)
+  productImage     String? @map("product_image") @db.Text
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId], name: "order_items_order_id_idx")
+  @@map("order_items")
+}
+
