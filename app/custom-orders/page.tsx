@@ -199,10 +199,7 @@ export default function CustomOrdersPage() {
           >
             Contact Us
           </a>
-          <a
-            href="/products"
-            className="text-sm font-semibold hover:underline"
-          >
+          <a href="/products" className="text-sm font-semibold hover:underline">
             Browse Ready-Made Designs
           </a>
         </div>
