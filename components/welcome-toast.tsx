@@ -17,7 +17,7 @@ export function WelcomeToast() {
         description: (
           <>
             Discover our collection of handcrafted footwear. Every pair is made
-            with love and attention to detail.
+            with love and attention to detail in Lagos, Nigeria.
           </>
         ),
       });
