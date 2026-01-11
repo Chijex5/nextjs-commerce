@@ -1,12 +1,12 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
+import { useUserSession } from "hooks/useUserSession";
 
 export default function AccountPage() {
-  const { data: session, status } = useSession();
+  const { data: session, status } = useUserSession();
   const router = useRouter();
 
   useEffect(() => {
@@ -47,14 +47,14 @@ export default function AccountPage() {
                 Name
               </p>
               <p className="font-medium">
-                {session.user?.name || "Not provided"}
+                {session.name || "Not provided"}
               </p>
             </div>
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
                 Email
               </p>
-              <p className="font-medium">{session.user?.email}</p>
+              <p className="font-medium">{session.email}</p>
             </div>
           </div>
         </div>

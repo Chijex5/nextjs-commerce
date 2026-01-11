@@ -1,14 +1,16 @@
 "use client";
 
 import { UserIcon } from "@heroicons/react/24/outline";
-import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import { useUserSession } from "hooks/useUserSession";
+import { useRouter } from "next/navigation";
 
 export default function UserAccountIcon() {
-  const { data: session, status } = useSession();
+  const { data: session, status, signOut } = useUserSession();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -25,7 +27,10 @@ export default function UserAccountIcon() {
   }, []);
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/" });
+    await signOut();
+    setIsOpen(false);
+    router.push("/");
+    router.refresh();
   };
 
   if (status === "loading") {
@@ -52,10 +57,10 @@ export default function UserAccountIcon() {
             <>
               <div className="border-b border-neutral-200 px-4 py-3 dark:border-neutral-700">
                 <p className="text-sm font-medium">
-                  {session.user?.name || "User"}
+                  {session.name || "User"}
                 </p>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  {session.user?.email}
+                  {session.email}
                 </p>
               </div>
               <div className="py-1">

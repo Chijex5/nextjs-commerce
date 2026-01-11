@@ -1,6 +1,5 @@
 "use client";
 
-import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
@@ -18,18 +17,20 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const result = await signIn("credentials", {
-        redirect: false,
-        email,
-        password,
-        callbackUrl: searchParams.get("callbackUrl") || "/account",
+      const response = await fetch("/api/user-auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (result?.error) {
-        toast.error("Invalid email or password");
-      } else if (result?.ok) {
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.error || "Invalid email or password");
+      } else {
         toast.success("Logged in successfully!");
-        router.push(searchParams.get("callbackUrl") || "/account");
+        const callbackUrl = searchParams.get("callbackUrl") || "/account";
+        router.push(callbackUrl);
         router.refresh();
       }
     } catch (error) {

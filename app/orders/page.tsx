@@ -1,11 +1,11 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
 import Price from "components/price";
+import { useUserSession } from "hooks/useUserSession";
 
 interface OrderItem {
   id?: string;
@@ -29,7 +29,7 @@ interface Order {
 }
 
 export default function OrdersPage() {
-  const { data: session, status } = useSession();
+  const { data: session, status } = useUserSession();
   const [orders, setOrders] = useState<Order[]>([]);
   const [trackingId, setTrackingId] = useState("");
   const [trackedOrder, setTrackedOrder] = useState<Order | null>(null);
