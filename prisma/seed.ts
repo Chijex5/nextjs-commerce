@@ -1064,7 +1064,7 @@ async function seed() {
 
     console.log("Seeding completed successfully!");
   } catch (error) {
-    console.error("❌ Error seeding database:", error);
+    console.error("Error seeding database:", error);
     throw error;
   } finally {
     await db.$disconnect();
@@ -1074,10 +1074,10 @@ async function seed() {
 // Run the seed function
 seed()
   .then(() => {
-    console.log("👍 Done!");
+    console.log("Done!");
     process.exit(0);
   })
   .catch((error) => {
-    console.error("💥 Seed failed:", error);
+    console.error("Seed failed:", error);
     process.exit(1);
   });
