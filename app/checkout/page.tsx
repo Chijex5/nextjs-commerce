@@ -8,6 +8,47 @@ import Price from "components/price";
 import LoadingDots from "components/loading-dots";
 import { useUserSession } from "hooks/useUserSession";
 
+// Nigerian States
+const NIGERIAN_STATES = [
+  "Abia",
+  "Adamawa",
+  "Akwa Ibom",
+  "Anambra",
+  "Bauchi",
+  "Bayelsa",
+  "Benue",
+  "Borno",
+  "Cross River",
+  "Delta",
+  "Ebonyi",
+  "Edo",
+  "Ekiti",
+  "Enugu",
+  "FCT",
+  "Gombe",
+  "Imo",
+  "Jigawa",
+  "Kaduna",
+  "Kano",
+  "Katsina",
+  "Kebbi",
+  "Kogi",
+  "Kwara",
+  "Lagos",
+  "Nasarawa",
+  "Niger",
+  "Ogun",
+  "Ondo",
+  "Osun",
+  "Oyo",
+  "Plateau",
+  "Rivers",
+  "Sokoto",
+  "Taraba",
+  "Yobe",
+  "Zamfara",
+];
+
 interface CartItem {
   id?: string;
   quantity: number;
@@ -55,10 +96,13 @@ interface Cart {
 interface Address {
   firstName: string;
   lastName: string;
-  address: string;
-  city: string;
+  streetAddress: string;
+  nearestBusStop: string;
+  landmark: string;
+  lga: string;
   state: string;
-  postalCode: string;
+  phone1: string;
+  phone2: string;
   country: string;
 }
 
@@ -83,19 +127,25 @@ export default function CheckoutPage() {
     shippingAddress: {
       firstName: "",
       lastName: "",
-      address: "",
-      city: "",
+      streetAddress: "",
+      nearestBusStop: "",
+      landmark: "",
+      lga: "",
       state: "",
-      postalCode: "",
+      phone1: "",
+      phone2: "",
       country: "Nigeria",
     },
     billingAddress: {
       firstName: "",
       lastName: "",
-      address: "",
-      city: "",
+      streetAddress: "",
+      nearestBusStop: "",
+      landmark: "",
+      lga: "",
       state: "",
-      postalCode: "",
+      phone1: "",
+      phone2: "",
       country: "Nigeria",
     },
     saveAddress: false,
@@ -263,14 +313,25 @@ export default function CheckoutPage() {
                   <label className="mb-1 block text-sm font-medium">
                     Phone Number *
                   </label>
-                  <input
-                    type="tel"
-                    required
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
-                    className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                    placeholder="+234 XXX XXX XXXX"
-                  />
+                  <div className="flex gap-2">
+                    <div className="flex items-center gap-2 rounded-md border border-neutral-300 bg-neutral-50 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900">
+                      <span className="text-xl">🇳🇬</span>
+                      <span className="text-sm font-medium">+234</span>
+                    </div>
+                    <input
+                      type="tel"
+                      required
+                      value={formData.phone}
+                      onChange={(e) => {
+                        // Only allow numbers
+                        const value = e.target.value.replace(/\D/g, "");
+                        handleInputChange("phone", value);
+                      }}
+                      className="flex-1 rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                      placeholder="801 2345 678"
+                      maxLength={10}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -317,50 +378,92 @@ export default function CheckoutPage() {
                     />
                   </div>
                 </div>
+
                 <div>
                   <label className="mb-1 block text-sm font-medium">
-                    Address *
+                    Street Address *
                   </label>
                   <input
                     type="text"
                     required
-                    value={formData.shippingAddress.address}
+                    value={formData.shippingAddress.streetAddress}
                     onChange={(e) =>
                       handleInputChange(
-                        "address",
+                        "streetAddress",
                         e.target.value,
                         "shippingAddress",
                       )
                     }
                     className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                    placeholder="Street address"
+                    placeholder="House number and street name"
                   />
                 </div>
-                <div className="grid gap-4 sm:grid-cols-3">
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium">
+                    Nearest Bus Stop / Junction *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.shippingAddress.nearestBusStop}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "nearestBusStop",
+                        e.target.value,
+                        "shippingAddress",
+                      )
+                    }
+                    className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                    placeholder="e.g., Obalende Bus Stop"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium">
+                    Closest Landmark *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.shippingAddress.landmark}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "landmark",
+                        e.target.value,
+                        "shippingAddress",
+                      )
+                    }
+                    className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                    placeholder="e.g., Opposite First Bank, Beside Redeemed Church, Black Gate"
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-sm font-medium">
-                      City *
+                      LGA (Local Government Area) *
                     </label>
                     <input
                       type="text"
                       required
-                      value={formData.shippingAddress.city}
+                      value={formData.shippingAddress.lga}
                       onChange={(e) =>
                         handleInputChange(
-                          "city",
+                          "lga",
                           e.target.value,
                           "shippingAddress",
                         )
                       }
                       className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                      placeholder="e.g., Ikeja, Ikorodu"
                     />
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium">
                       State *
                     </label>
-                    <input
-                      type="text"
+                    <select
                       required
                       value={formData.shippingAddress.state}
                       onChange={(e) =>
@@ -371,43 +474,64 @@ export default function CheckoutPage() {
                         )
                       }
                       className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                    />
+                    >
+                      <option value="">Select State</option>
+                      {NIGERIAN_STATES.map((state) => (
+                        <option key={state} value={state}>
+                          {state}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      Phone Number 1 *
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="flex items-center gap-2 rounded-md border border-neutral-300 bg-neutral-50 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900">
+                        <span className="text-xl">🇳🇬</span>
+                        <span className="text-sm font-medium">+234</span>
+                      </div>
+                      <input
+                        type="tel"
+                        required
+                        value={formData.shippingAddress.phone1}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, "");
+                          handleInputChange("phone1", value, "shippingAddress");
+                        }}
+                        className="flex-1 rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                        placeholder="801 2345 678"
+                        maxLength={10}
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium">
-                      Postal Code
+                      Phone Number 2 *
                     </label>
-                    <input
-                      type="text"
-                      value={formData.shippingAddress.postalCode}
-                      onChange={(e) =>
-                        handleInputChange(
-                          "postalCode",
-                          e.target.value,
-                          "shippingAddress",
-                        )
-                      }
-                      className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                    />
+                    <div className="flex gap-2">
+                      <div className="flex items-center gap-2 rounded-md border border-neutral-300 bg-neutral-50 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900">
+                        <span className="text-xl">🇳🇬</span>
+                        <span className="text-sm font-medium">+234</span>
+                      </div>
+                      <input
+                        type="tel"
+                        required
+                        value={formData.shippingAddress.phone2}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, "");
+                          handleInputChange("phone2", value, "shippingAddress");
+                        }}
+                        className="flex-1 rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                        placeholder="802 3456 789"
+                        maxLength={10}
+                      />
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium">
-                    Country *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.shippingAddress.country}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "country",
-                        e.target.value,
-                        "shippingAddress",
-                      )
-                    }
-                    className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                  />
                 </div>
               </div>
             </div>
@@ -469,49 +593,92 @@ export default function CheckoutPage() {
                       />
                     </div>
                   </div>
+
                   <div>
                     <label className="mb-1 block text-sm font-medium">
-                      Address *
+                      Street Address *
                     </label>
                     <input
                       type="text"
                       required
-                      value={formData.billingAddress.address}
+                      value={formData.billingAddress.streetAddress}
                       onChange={(e) =>
                         handleInputChange(
-                          "address",
+                          "streetAddress",
                           e.target.value,
                           "billingAddress",
                         )
                       }
                       className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                      placeholder="House number and street name"
                     />
                   </div>
-                  <div className="grid gap-4 sm:grid-cols-3">
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      Nearest Bus Stop / Junction *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.billingAddress.nearestBusStop}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "nearestBusStop",
+                          e.target.value,
+                          "billingAddress",
+                        )
+                      }
+                      className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                      placeholder="e.g., Obalende Bus Stop"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      Closest Landmark *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.billingAddress.landmark}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "landmark",
+                          e.target.value,
+                          "billingAddress",
+                        )
+                      }
+                      className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                      placeholder="e.g., Opposite First Bank, Beside Redeemed Church, Black Gate"
+                    />
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <label className="mb-1 block text-sm font-medium">
-                        City *
+                        LGA (Local Government Area) *
                       </label>
                       <input
                         type="text"
                         required
-                        value={formData.billingAddress.city}
+                        value={formData.billingAddress.lga}
                         onChange={(e) =>
                           handleInputChange(
-                            "city",
+                            "lga",
                             e.target.value,
                             "billingAddress",
                           )
                         }
                         className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                        placeholder="e.g., Ikeja, Ikorodu"
                       />
                     </div>
                     <div>
                       <label className="mb-1 block text-sm font-medium">
                         State *
                       </label>
-                      <input
-                        type="text"
+                      <select
                         required
                         value={formData.billingAddress.state}
                         onChange={(e) =>
@@ -522,43 +689,72 @@ export default function CheckoutPage() {
                           )
                         }
                         className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                      />
+                      >
+                        <option value="">Select State</option>
+                        {NIGERIAN_STATES.map((state) => (
+                          <option key={state} value={state}>
+                            {state}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">
+                        Phone Number 1 *
+                      </label>
+                      <div className="flex gap-2">
+                        <div className="flex items-center gap-2 rounded-md border border-neutral-300 bg-neutral-50 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900">
+                          <span className="text-xl">🇳🇬</span>
+                          <span className="text-sm font-medium">+234</span>
+                        </div>
+                        <input
+                          type="tel"
+                          required
+                          value={formData.billingAddress.phone1}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, "");
+                            handleInputChange(
+                              "phone1",
+                              value,
+                              "billingAddress",
+                            );
+                          }}
+                          className="flex-1 rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                          placeholder="801 2345 678"
+                          maxLength={10}
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="mb-1 block text-sm font-medium">
-                        Postal Code
+                        Phone Number 2 *
                       </label>
-                      <input
-                        type="text"
-                        value={formData.billingAddress.postalCode}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "postalCode",
-                            e.target.value,
-                            "billingAddress",
-                          )
-                        }
-                        className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                      />
+                      <div className="flex gap-2">
+                        <div className="flex items-center gap-2 rounded-md border border-neutral-300 bg-neutral-50 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900">
+                          <span className="text-xl">🇳🇬</span>
+                          <span className="text-sm font-medium">+234</span>
+                        </div>
+                        <input
+                          type="tel"
+                          required
+                          value={formData.billingAddress.phone2}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, "");
+                            handleInputChange(
+                              "phone2",
+                              value,
+                              "billingAddress",
+                            );
+                          }}
+                          className="flex-1 rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                          placeholder="802 3456 789"
+                          maxLength={10}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">
-                      Country *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.billingAddress.country}
-                      onChange={(e) =>
-                        handleInputChange(
-                          "country",
-                          e.target.value,
-                          "billingAddress",
-                        )
-                      }
-                      className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                    />
                   </div>
                 </div>
               )}
