@@ -220,6 +220,8 @@ export default function ProductForm({
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+
+        if (!file) return;
         
         if (file.size > 5 * 1024 * 1024) {
           toast.error(`Image ${file.name} is too large (max 5MB)`);
@@ -278,6 +280,7 @@ export default function ProductForm({
   const moveImage = (fromIndex: number, toIndex: number) => {
     const newImages = [...images];
     const [movedImage] = newImages.splice(fromIndex, 1);
+    if (!movedImage) return null;
     newImages.splice(toIndex, 0, movedImage);
     
     // Reassign positions
