@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
+import PageLoader from "components/page-loader";
 import { useUserSession } from "hooks/useUserSession";
 
 export default function AccountPage() {
@@ -16,17 +17,7 @@ export default function AccountPage() {
   }, [status, router]);
 
   if (status === "loading") {
-    return (
-      <div className="mx-auto mt-20 max-w-4xl px-4">
-        <div className="animate-pulse">
-          <div className="mb-6 h-8 w-48 rounded bg-neutral-200 dark:bg-neutral-800"></div>
-          <div className="space-y-4">
-            <div className="h-32 rounded-lg bg-neutral-200 dark:bg-neutral-800"></div>
-            <div className="h-32 rounded-lg bg-neutral-200 dark:bg-neutral-800"></div>
-          </div>
-        </div>
-      </div>
-    );
+    return <PageLoader size="lg" message="Loading account..." />;
   }
 
   if (!session) {
