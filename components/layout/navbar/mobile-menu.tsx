@@ -4,8 +4,9 @@ import { Dialog, Transition } from "@headlessui/react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, Suspense, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, XMarkIcon, UserIcon } from "@heroicons/react/24/outline";
 import { Menu } from "lib/shopify/types";
 import Search, { SearchSkeleton } from "./search";
 
@@ -13,6 +14,7 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
+  const { data: session } = useSession();
   const openMobileMenu = () => setIsOpen(true);
   const closeMobileMenu = () => setIsOpen(false);
 
@@ -93,6 +95,27 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                         </Link>
                       </li>
                     ))}
+                    <li className="border-b border-neutral-200 py-4 dark:border-neutral-700">
+                      <Link
+                        href={session ? "/account" : "/auth/login"}
+                        prefetch={true}
+                        onClick={closeMobileMenu}
+                        className="flex items-center gap-3 text-2xl font-medium text-black transition-colors hover:text-neutral-500 dark:text-white"
+                      >
+                        <UserIcon className="h-6 w-6" />
+                        {session ? "My Account" : "Login"}
+                      </Link>
+                    </li>
+                    <li className="border-b border-neutral-200 py-4 dark:border-neutral-700">
+                      <Link
+                        href="/orders"
+                        prefetch={true}
+                        onClick={closeMobileMenu}
+                        className="text-2xl font-medium text-black transition-colors hover:text-neutral-500 dark:text-white"
+                      >
+                        Orders
+                      </Link>
+                    </li>
                   </ul>
                 ) : null}
               </div>
