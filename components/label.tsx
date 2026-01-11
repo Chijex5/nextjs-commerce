@@ -13,6 +13,8 @@ const Label = ({
   minAmount?: string;
   position?: "bottom" | "center";
 }) => {
+  // Format prices inline instead of using the Price component
+  // This allows us to combine min and max prices into a single display
   const formatPrice = (price: string) => {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
@@ -43,7 +45,7 @@ const Label = ({
           className="flex-none rounded-full bg-blue-600 p-2 text-white"
         >
           {priceDisplay}
-          <span className={clsx("ml-1 inline", "hidden @[275px]/label:inline")}>
+          <span className="ml-1 inline hidden @[275px]/label:inline">
             {currencyCode}
           </span>
         </p>
