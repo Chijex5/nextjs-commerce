@@ -5,19 +5,31 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      role: string;
+      /**
+       * User role - used for admin authentication.
+       * Optional for regular user authentication (customer accounts).
+       */
+      role?: string;
     } & DefaultSession["user"];
   }
 
   interface User {
     id: string;
-    role: string;
+    /**
+     * User role - used for admin authentication.
+     * Optional for regular user authentication (customer accounts).
+     */
+    role?: string;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT extends DefaultJWT {
     id: string;
-    role: string;
+    /**
+     * User role - used for admin authentication.
+     * Optional for regular user authentication (customer accounts).
+     */
+    role?: string;
   }
 }
