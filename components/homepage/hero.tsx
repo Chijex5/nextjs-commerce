@@ -10,8 +10,9 @@ export function Hero() {
           Made Just for You
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-neutral-600 dark:text-neutral-400">
-          Discover beautifully crafted slippers and slides, made by hand with premium materials. 
-          Each pair is a unique expression of comfort and style.
+          Discover beautifully crafted slippers and slides, made by hand with
+          premium materials. Each pair is a unique expression of comfort and
+          style.
         </p>
         <div className="mt-10 flex items-center justify-center gap-x-6">
           <Link

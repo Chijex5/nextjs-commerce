@@ -8,9 +8,10 @@ export function CustomCTA() {
           Have a Unique Design in Mind?
         </h2>
         <p className="mt-6 text-lg text-neutral-600 dark:text-neutral-400">
-          We specialize in bringing your footwear ideas to life. Submit your design reference 
-          or let us know what modifications you'd like, and our team will work with you to create 
-          the perfect pair. All custom orders are reviewed for feasibility and pricing.
+          We specialize in bringing your footwear ideas to life. Submit your
+          design reference or let us know what modifications you'd like, and our
+          team will work with you to create the perfect pair. All custom orders
+          are reviewed for feasibility and pricing.
         </p>
         <div className="mt-10 flex items-center justify-center gap-x-6">
           <Link
@@ -27,7 +28,8 @@ export function CustomCTA() {
           </Link>
         </div>
         <p className="mt-6 text-xs text-neutral-500 dark:text-neutral-500">
-          Note: Custom orders require approval and may have additional costs or extended production times.
+          Note: Custom orders require approval and may have additional costs or
+          extended production times.
         </p>
       </div>
     </section>
