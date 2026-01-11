@@ -11,13 +11,16 @@ We have successfully replaced the Shopify backend with a PostgreSQL database whi
 ## Why These Changes Were Made
 
 ### Business Context
+
 Based on your PRD (Product Requirements Document), D'FOOTPRINT is a handmade footwear business that needs:
+
 - Full control over product data and customization workflows
 - A custom dashboard for managing products (future implementation)
 - Independence from Shopify's limitations and costs
 - Flexibility to implement custom features specific to handmade footwear
 
 ### Technical Goals
+
 1. **Maintain the existing UI**: You love the current Vercel/Next.js Commerce UI, so we preserved it completely
 2. **Replace Shopify with PostgreSQL**: All data now lives in your database
 3. **Keep the same data patterns**: Products, carts, collections work exactly as before
@@ -28,7 +31,9 @@ Based on your PRD (Product Requirements Document), D'FOOTPRINT is a handmade foo
 ### Technology Stack
 
 #### 1. PostgreSQL Database
+
 **Why PostgreSQL?**
+
 - Industry-standard, reliable, and mature
 - Excellent JSON support for flexible data structures
 - Strong data integrity with foreign keys and constraints
@@ -37,7 +42,9 @@ Based on your PRD (Product Requirements Document), D'FOOTPRINT is a handmade foo
 - Supported by all major hosting providers (Vercel, Railway, Supabase, etc.)
 
 #### 2. Prisma ORM
+
 **Why Prisma?**
+
 - TypeScript-first with excellent type safety
 - Intuitive and developer-friendly API
 - Auto-generated type-safe client
@@ -47,6 +54,7 @@ Based on your PRD (Product Requirements Document), D'FOOTPRINT is a handmade foo
 - Excellent documentation and tooling
 
 **Alternatives Considered:**
+
 - **Drizzle**: Lighter but less mature ecosystem
 - **TypeORM**: Older, less TypeScript-friendly
 - **Raw SQL**: No type safety, more error-prone
@@ -56,7 +64,9 @@ Based on your PRD (Product Requirements Document), D'FOOTPRINT is a handmade foo
 #### Core Tables
 
 ##### 1. **products** Table
+
 Stores main product information:
+
 - `id`: UUID primary key (unique identifier)
 - `handle`: URL-friendly slug (e.g., "classic-slide")
 - `title`: Product name
@@ -70,7 +80,9 @@ Stores main product information:
 **Design Decision**: We use UUIDs instead of auto-incrementing integers for better security and distributed systems compatibility.
 
 ##### 2. **productVariants** Table
+
 Stores product variations (size, color combinations):
+
 - Links to products via `productId`
 - Stores price per variant
 - `selectedOptions`: JSON field storing [{name: "Size", value: "40"}]
@@ -79,7 +91,9 @@ Stores product variations (size, color combinations):
 **Design Decision**: Using JSON for `selectedOptions` provides flexibility for custom options without schema changes. This is crucial for handmade products where options might vary.
 
 ##### 3. **productOptions** Table
+
 Stores available options for products:
+
 - Links to products via `productId`
 - `name`: Option name (e.g., "Size", "Color")
 - `values`: Array of possible values (e.g., ["38", "39", "40"])
@@ -87,7 +101,9 @@ Stores available options for products:
 **Design Decision**: Separate table allows dynamic option management. You can add new sizes or colors without code changes.
 
 ##### 4. **productImages** Table
+
 Stores product images:
+
 - Links to products via `productId`
 - `url`: Image URL (can be CDN, cloud storage, or local)
 - `position`: Order of images
@@ -97,7 +113,9 @@ Stores product images:
 **Design Decision**: Separate table allows multiple images per product with ordering. Critical for showcasing handmade products from multiple angles.
 
 ##### 5. **collections** Table
+
 Product categories (Slippers, Slides, etc.):
+
 - `handle`: URL-friendly identifier
 - SEO fields for each collection
 - Similar structure to products for consistency
@@ -105,7 +123,9 @@ Product categories (Slippers, Slides, etc.):
 **Design Decision**: Collections are separate entities, not just tags, allowing rich metadata and better organization.
 
 ##### 6. **productCollections** Table
+
 Many-to-many relationship between products and collections:
+
 - A product can be in multiple collections
 - Collections can have many products
 - `position`: Order within a collection
@@ -113,7 +133,9 @@ Many-to-many relationship between products and collections:
 **Design Decision**: Junction table pattern is standard for many-to-many relationships, allowing flexible categorization.
 
 ##### 7. **carts** Table
+
 Shopping cart storage:
+
 - Stores cart totals and quantities
 - `checkoutUrl`: For payment integration (Paystack)
 - Calculations stored for performance
@@ -121,7 +143,9 @@ Shopping cart storage:
 **Design Decision**: Storing calculated totals avoids recalculation on every request, improving performance.
 
 ##### 8. **cartLines** Table
+
 Individual items in carts:
+
 - Links to both cart and product variant
 - Quantity and calculated total
 - Stores price snapshot (in case product price changes)
@@ -129,12 +153,16 @@ Individual items in carts:
 **Design Decision**: Linking to variants (not products) ensures size/color selection is preserved. Price snapshot protects against price changes during checkout.
 
 ##### 9. **pages** Table
+
 Static content pages (About, Shipping, etc.):
+
 - Simple structure with HTML body
 - SEO fields for each page
 
 ##### 10. **menus** & **menuItems** Tables
+
 Navigation menus:
+
 - Flexible menu system
 - Ordered items with positions
 - Supports multiple menus (header, footer, etc.)
@@ -142,6 +170,7 @@ Navigation menus:
 ### Indexing Strategy
 
 Indexes were added on:
+
 - All foreign keys (cart_id, product_id, etc.)
 - Frequently queried fields (handle, tags)
 - Position/ordering fields
@@ -195,6 +224,7 @@ Indexes were added on:
 3. **Schema Layer** (`lib/db/schema.ts`): Single source of truth for database structure
 
 This separation of concerns makes the code:
+
 - Easier to maintain
 - Easier to test
 - Easier to swap implementations if needed
@@ -202,6 +232,7 @@ This separation of concerns makes the code:
 ### Data Transformation
 
 The `reshapeDbProduct` and `reshapeDbCart` functions transform database records into the exact format expected by the UI components. This ensures:
+
 - No UI changes needed
 - Type safety maintained
 - Easy debugging (clear transformation point)
@@ -211,26 +242,31 @@ The `reshapeDbProduct` and `reshapeDbCart` functions transform database records 
 We added the following scripts to `package.json`:
 
 ### `npm run db:generate`
+
 Generates SQL migration files from schema changes.
 
 **When to use**: After modifying `lib/db/schema.ts`
 
 ### `npm run db:push`
+
 Pushes schema changes directly to database (development only).
 
 **When to use**: Rapid iteration during development
 
 ### `npm run db:migrate`
+
 Runs pending migrations on the database.
 
 **When to use**: Production deployments, applying schema changes
 
 ### `npm run db:studio`
+
 Opens Prisma Studio - a web UI for browsing/editing database.
 
 **When to use**: Viewing data, debugging, manual data entry
 
 ### `npm run db:seed`
+
 Populates database with sample data.
 
 **When to use**: Initial setup, testing, demo data
@@ -238,6 +274,7 @@ Populates database with sample data.
 ## Migration Path
 
 ### Phase 1: Database Setup (Current)
+
 ✅ Schema design
 ✅ Database connection
 ✅ Migration scripts
@@ -246,12 +283,14 @@ Populates database with sample data.
 ✅ Abstraction layer
 
 ### Phase 2: Integration (Next Steps)
+
 - [ ] Update imports in UI components (from `lib/shopify` to `lib/database`)
 - [ ] Test all pages
 - [ ] Deploy database
 - [ ] Update environment variables
 
 ### Phase 3: Dashboard (Future)
+
 - [ ] Admin authentication
 - [ ] Product management UI
 - [ ] Order management
@@ -261,6 +300,7 @@ Populates database with sample data.
 ## Environment Variables
 
 ### Old (Shopify):
+
 ```
 SHOPIFY_STORE_DOMAIN="..."
 SHOPIFY_STOREFRONT_ACCESS_TOKEN="..."
@@ -268,6 +308,7 @@ SHOPIFY_REVALIDATION_SECRET="..."
 ```
 
 ### New (PostgreSQL):
+
 ```
 DATABASE_URL="postgresql://user:password@host:5432/database"
 ```
@@ -277,16 +318,19 @@ DATABASE_URL="postgresql://user:password@host:5432/database"
 **Recommended Options:**
 
 1. **Vercel Postgres** (Easiest)
+
    - Integrated with Vercel
    - Auto-scaling
    - $20/month for starter
 
 2. **Supabase** (Feature-rich)
+
    - Free tier available
    - Built-in authentication
    - Real-time capabilities
 
 3. **Railway** (Developer-friendly)
+
    - Simple setup
    - Good free tier
    - Easy scaling
@@ -299,20 +343,26 @@ DATABASE_URL="postgresql://user:password@host:5432/database"
 ## Data Integrity Features
 
 ### Foreign Key Constraints
+
 All relationships use `ON DELETE CASCADE`:
+
 - Deleting a product automatically deletes its variants, images, and options
 - Deleting a cart automatically deletes its lines
 - Prevents orphaned data
 
 ### Indexes
+
 Strategic indexes ensure:
+
 - Fast product lookups by handle
 - Fast cart operations
 - Efficient collection queries
 - Quick image loading
 
 ### Timestamps
+
 All tables have `createdAt` and `updatedAt`:
+
 - Track when data was created
 - Track when data was modified
 - Useful for auditing and caching
@@ -320,6 +370,7 @@ All tables have `createdAt` and `updatedAt`:
 ## Caching Strategy
 
 We maintained the same caching strategy as Shopify:
+
 - **Products**: Cache for days (products rarely change)
 - **Collections**: Cache for days (categories stable)
 - **Cart**: Cache for seconds only (cart changes frequently)
@@ -330,6 +381,7 @@ We maintained the same caching strategy as Shopify:
 ## Nigerian Naira (NGN) Support
 
 All prices default to NGN:
+
 - `currencyCode` defaults to "NGN"
 - Price formatting throughout the app
 - Aligns with your Nigerian market focus
@@ -337,19 +389,24 @@ All prices default to NGN:
 ## Performance Considerations
 
 ### Query Optimization
+
 - Selective loading (only fetch needed fields)
 - Eager loading of relations when needed
 - Indexes on frequently queried columns
 - Limit results to prevent large datasets
 
 ### Connection Pooling
+
 Set to `max: 1` for serverless environments:
+
 - Vercel Functions have connection limits
 - Prevents connection exhaustion
 - Suitable for serverless architecture
 
 ### Image Handling
+
 Images stored as URLs:
+
 - Use CDN (Cloudinary, Vercel Blob, S3)
 - Lazy loading supported
 - Responsive images with width/height
@@ -357,19 +414,25 @@ Images stored as URLs:
 ## Security Considerations
 
 ### SQL Injection Prevention
+
 Prisma ORM uses parameterized queries:
+
 - Automatic escaping
 - No raw SQL concatenation
 - Type-safe query building
 
 ### Data Validation
+
 TypeScript provides compile-time validation:
+
 - Type checking prevents invalid data
 - Schema types auto-generated
 - Runtime validation at API boundaries
 
 ### Environment Variables
+
 Sensitive data in environment:
+
 - Database URL never committed
 - Use `.env.local` for development
 - Vercel environment variables for production
@@ -377,6 +440,7 @@ Sensitive data in environment:
 ## Testing Strategy
 
 ### Manual Testing Checklist
+
 1. ✅ View product list
 2. ✅ View product details
 3. ✅ Add to cart
@@ -387,6 +451,7 @@ Sensitive data in environment:
 8. ✅ Navigation menus
 
 ### Future Automated Testing
+
 - Unit tests for query functions
 - Integration tests for cart operations
 - E2E tests for checkout flow
@@ -394,19 +459,24 @@ Sensitive data in environment:
 ## Maintenance Guidelines
 
 ### Adding a New Product
+
 ```bash
 npm run db:studio
 ```
+
 Then use the web UI to add products, or create a seed script.
 
 ### Adding a New Field
+
 1. Edit `lib/db/schema.ts`
 2. Run `npm run db:generate`
 3. Run `npm run db:migrate`
 4. Update query functions if needed
 
 ### Backup Strategy
+
 Regular PostgreSQL backups:
+
 - Most hosting providers offer automatic backups
 - Export data periodically: `pg_dump`
 - Test restore procedure
@@ -414,21 +484,25 @@ Regular PostgreSQL backups:
 ## Troubleshooting
 
 ### "Database URL not set"
+
 - Check `.env.local` has `DATABASE_URL`
 - Verify environment variable in Vercel dashboard
 
 ### "Cannot connect to database"
+
 - Check database is running
 - Verify connection string format
 - Check firewall/network settings
 - Ensure IP is whitelisted (cloud databases)
 
 ### "Migration failed"
+
 - Check for syntax errors in schema
 - Ensure database is empty for first migration
 - Check database user has CREATE permissions
 
 ### "Prisma not found"
+
 - Run `pnpm install`
 - Check `package.json` has `prisma` in devDependencies
 - Run `pnpm prisma generate` to generate the client
@@ -436,18 +510,21 @@ Regular PostgreSQL backups:
 ## Future Enhancements
 
 ### Short Term
+
 - [ ] Product search functionality
 - [ ] Inventory management
 - [ ] Order tracking
 - [ ] Customer accounts
 
 ### Medium Term
+
 - [ ] Admin dashboard
 - [ ] Bulk product import
 - [ ] Advanced filtering
 - [ ] Product reviews
 
 ### Long Term
+
 - [ ] Custom design upload flow
 - [ ] WhatsApp integration
 - [ ] Paystack integration
@@ -456,6 +533,7 @@ Regular PostgreSQL backups:
 ## Conclusion
 
 This migration gives you:
+
 1. ✅ Full control over your data
 2. ✅ Same beautiful UI you love
 3. ✅ Foundation for custom features
@@ -467,6 +545,7 @@ The architecture is designed to grow with your business while maintaining the pr
 ## Questions & Support
 
 For questions about:
+
 - **Database setup**: See "Where to Host Database" section
 - **Schema changes**: See "Adding a New Field" section
 - **Data management**: Use `npm run db:studio`

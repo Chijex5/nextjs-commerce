@@ -7,13 +7,7 @@ import {
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import * as dbQueries from "../db/queries";
-import type {
-  Cart,
-  Collection,
-  Menu,
-  Page,
-  Product,
-} from "../shopify/types";
+import type { Cart, Collection, Menu, Page, Product } from "../shopify/types";
 
 // Re-export types from shopify for compatibility
 export type {
@@ -37,7 +31,7 @@ export async function createCart(): Promise<Cart> {
 }
 
 export async function addToCart(
-  lines: { merchandiseId: string; quantity: number }[]
+  lines: { merchandiseId: string; quantity: number }[],
 ): Promise<Cart> {
   const cartId = (await cookies()).get("cartId")?.value!;
   return dbQueries.addToCart(cartId, lines);
@@ -49,7 +43,7 @@ export async function removeFromCart(lineIds: string[]): Promise<Cart> {
 }
 
 export async function updateCart(
-  lines: { id: string; merchandiseId: string; quantity: number }[]
+  lines: { id: string; merchandiseId: string; quantity: number }[],
 ): Promise<Cart> {
   const cartId = (await cookies()).get("cartId")?.value!;
   return dbQueries.updateCart(cartId, lines);
@@ -71,7 +65,7 @@ export async function getCart(): Promise<Cart | undefined> {
 
 // Collection operations
 export async function getCollection(
-  handle: string
+  handle: string,
 ): Promise<Collection | undefined> {
   "use cache";
   cacheTag(TAGS.collections);
@@ -121,7 +115,7 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
 }
 
 export async function getProductRecommendations(
-  productId: string
+  productId: string,
 ): Promise<Product[]> {
   "use cache";
   cacheTag(TAGS.products);
@@ -146,7 +140,9 @@ export async function getProducts({
   const products = await dbQueries.getProducts({ query, reverse, sortKey });
 
   // Filter out hidden products
-  return products.filter((product) => !product.tags.includes(HIDDEN_PRODUCT_TAG));
+  return products.filter(
+    (product) => !product.tags.includes(HIDDEN_PRODUCT_TAG),
+  );
 }
 
 // Menu operations

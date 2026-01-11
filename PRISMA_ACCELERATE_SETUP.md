@@ -9,7 +9,8 @@ Prisma Accelerate is a global database cache and connection pooler that makes yo
 
 ## Why Two URLs?
 
-- **DATABASE_URL** (`prisma+postgres://accelerate.prisma-data.net/...`): 
+- **DATABASE_URL** (`prisma+postgres://accelerate.prisma-data.net/...`):
+
   - Used by your application at runtime
   - Routes through Accelerate for caching and connection pooling
   - Fast global edge network
@@ -46,12 +47,15 @@ datasource db {
 ### 3. How to Get These URLs
 
 #### DATABASE_URL (Prisma Accelerate):
+
 1. Go to [Prisma Data Platform](https://cloud.prisma.io)
 2. Create a project and enable Accelerate
 3. Copy the connection string that starts with `prisma+postgres://`
 
 #### DIRECT_DATABASE_URL:
+
 Use your actual PostgreSQL connection string from:
+
 - **Neon**: `postgresql://user:pass@ep-xxx.neon.tech/dbname?sslmode=require`
 - **Supabase**: `postgresql://postgres:pass@db.xxx.supabase.co:5432/postgres`
 - **Railway**: `postgresql://postgres:pass@containers-us-west-xxx.railway.app:5432/railway`
@@ -92,6 +96,7 @@ pnpm db:seed
 #### Error: "Invalid connection string"
 
 Make sure:
+
 - `DATABASE_URL` starts with `prisma+postgres://`
 - `DIRECT_DATABASE_URL` starts with `postgresql://`
 - Both are in your `.env.local` file
@@ -99,6 +104,7 @@ Make sure:
 #### Error: "Cannot connect to database"
 
 For direct URL, ensure:
+
 - Database exists
 - Credentials are correct
 - IP is whitelisted (for cloud databases)

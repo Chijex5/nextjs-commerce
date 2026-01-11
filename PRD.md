@@ -167,9 +167,9 @@ The website must:
 - Nationwide delivery across Nigeria
 - Buyer pays delivery fees
 - Fulfillment via:
-    - Pickup
-    - Dispatch rider
-    - Waybill
+  - Pickup
+  - Dispatch rider
+  - Waybill
 
 ### 6.2 Returns & Exchanges
 
@@ -239,7 +239,6 @@ The system now uses PostgreSQL database supporting:
 ### 9.1 Core Design Principle
 
 > Must not feel cheap
-> 
 
 This is the dominant constraint guiding all visual decisions.
 
@@ -248,6 +247,7 @@ This is the dominant constraint guiding all visual decisions.
 **The current Next.js Commerce UI is perfect and must be maintained.**
 
 We are using the professional Vercel Next.js Commerce template which already implements:
+
 - ✅ Clean, modern, and minimal design
 - ✅ Product-first layout with excellent image presentation
 - ✅ Mobile-responsive with smooth interactions
@@ -262,6 +262,7 @@ We are using the professional Vercel Next.js Commerce template which already imp
 ### 9.3 Typography (Current Implementation)
 
 Current implementation uses:
+
 - **Geist Sans**: Primary font for all text
 - Excellent readability on all devices
 - Clear hierarchy maintained throughout
@@ -270,6 +271,7 @@ Current implementation uses:
 ### 9.4 Color & Visual Style (Current Implementation)
 
 Current implementation features:
+
 - Monochromatic color scheme with high contrast
 - Clean black and white with subtle grays
 - Product images as primary visual elements
@@ -381,12 +383,12 @@ Required:
 
 ## 15. RISKS & MITIGATIONS
 
-| Risk | Mitigation |
-| --- | --- |
-| Trust issues | Clear copy, past work showcase |
-| Merchant rejection | Strict product accuracy |
-| Custom order confusion | Explicit UX explanations |
-| Phone-quality images | Clean layout, good spacing |
+| Risk                   | Mitigation                     |
+| ---------------------- | ------------------------------ |
+| Trust issues           | Clear copy, past work showcase |
+| Merchant rejection     | Strict product accuracy        |
+| Custom order confusion | Explicit UX explanations       |
+| Phone-quality images   | Clean layout, good spacing     |
 
 ---
 

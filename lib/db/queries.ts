@@ -1,4 +1,3 @@
-
 import type {
   Product,
   Collection,
@@ -18,7 +17,7 @@ const db = prisma;
 // Helper function to reshape database product to match Shopify Product type
 export async function reshapeDbProduct(
   dbProduct: any,
-  includeRelations: boolean = true
+  includeRelations: boolean = true,
 ): Promise<Product | undefined> {
   if (!dbProduct) return undefined;
 
@@ -231,14 +230,14 @@ export async function getProducts({
   });
 
   const productsWithDetails = await Promise.all(
-    dbProducts.map((p) => reshapeDbProduct(p))
+    dbProducts.map((p) => reshapeDbProduct(p)),
   );
 
   return productsWithDetails.filter((p): p is Product => p !== undefined);
 }
 
 export async function getProductRecommendations(
-  productId: string
+  productId: string,
 ): Promise<Product[]> {
   // Get products from same collections
   const productCols = await db.productCollection.findMany({
@@ -252,7 +251,7 @@ export async function getProductRecommendations(
       take: 4,
     });
     const productsWithDetails = await Promise.all(
-      dbProducts.map((p) => reshapeDbProduct(p))
+      dbProducts.map((p) => reshapeDbProduct(p)),
     );
     return productsWithDetails.filter((p): p is Product => p !== undefined);
   }
@@ -270,7 +269,7 @@ export async function getProductRecommendations(
   });
 
   const productsWithDetails = await Promise.all(
-    relatedProducts.map((rp) => reshapeDbProduct(rp.product))
+    relatedProducts.map((rp) => reshapeDbProduct(rp.product)),
   );
 
   return productsWithDetails.filter((p): p is Product => p !== undefined);
@@ -278,7 +277,7 @@ export async function getProductRecommendations(
 
 // Collection queries
 export async function getCollection(
-  handle: string
+  handle: string,
 ): Promise<Collection | undefined> {
   const dbCollection = await db.collection.findUnique({
     where: { handle },
@@ -360,7 +359,7 @@ export async function getCollectionProducts({
   }
 
   const productsWithDetails = await Promise.all(
-    productCollections.map((pc) => reshapeDbProduct(pc.product))
+    productCollections.map((pc) => reshapeDbProduct(pc.product)),
   );
 
   return productsWithDetails.filter((p): p is Product => p !== undefined);
@@ -391,7 +390,7 @@ export async function getCart(cartId: string): Promise<Cart | undefined> {
 
 export async function addToCart(
   cartId: string,
-  lines: { merchandiseId: string; quantity: number }[]
+  lines: { merchandiseId: string; quantity: number }[],
 ): Promise<Cart> {
   // Add each line to cart
   for (const line of lines) {
@@ -417,8 +416,7 @@ export async function addToCart(
         where: { id: existingLine.id },
         data: {
           quantity: existingLine.quantity + line.quantity,
-          totalAmount:
-            existingLine.totalAmount.toNumber() + totalAmount,
+          totalAmount: existingLine.totalAmount.toNumber() + totalAmount,
           updatedAt: new Date(),
         },
       });
@@ -444,7 +442,7 @@ export async function addToCart(
 
 export async function removeFromCart(
   cartId: string,
-  lineIds: string[]
+  lineIds: string[],
 ): Promise<Cart> {
   await db.cartLine.deleteMany({
     where: { id: { in: lineIds } },
@@ -458,7 +456,7 @@ export async function removeFromCart(
 
 export async function updateCart(
   cartId: string,
-  lines: { id: string; merchandiseId: string; quantity: number }[]
+  lines: { id: string; merchandiseId: string; quantity: number }[],
 ): Promise<Cart> {
   for (const line of lines) {
     if (line.quantity === 0) {
@@ -499,7 +497,7 @@ async function recalculateCartTotals(cartId: string): Promise<void> {
   const totalQuantity = lines.reduce((sum, line) => sum + line.quantity, 0);
   const subtotalAmount = lines.reduce(
     (sum, line) => sum + line.totalAmount.toNumber(),
-    0
+    0,
   );
 
   await db.cart.update({

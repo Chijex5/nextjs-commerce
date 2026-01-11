@@ -33,7 +33,7 @@ export const products = pgTable(
   (table) => ({
     handleIdx: index("products_handle_idx").on(table.handle),
     tagsIdx: index("products_tags_idx").on(table.tags),
-  })
+  }),
 );
 
 // Product variants - stores size, color, and other variant options
@@ -57,7 +57,7 @@ export const productVariants = pgTable(
   },
   (table) => ({
     productIdIdx: index("product_variants_product_id_idx").on(table.productId),
-  })
+  }),
 );
 
 // Product options - stores available options like "Size", "Color"
@@ -90,7 +90,7 @@ export const productImages = pgTable(
   (table) => ({
     productIdIdx: index("product_images_product_id_idx").on(table.productId),
     positionIdx: index("product_images_position_idx").on(table.position),
-  })
+  }),
 );
 
 // Collections (categories)
@@ -109,7 +109,7 @@ export const collections = pgTable(
   },
   (table) => ({
     handleIdx: index("collections_handle_idx").on(table.handle),
-  })
+  }),
 );
 
 // Many-to-many relationship between products and collections
@@ -128,12 +128,12 @@ export const productCollections = pgTable(
   },
   (table) => ({
     productIdIdx: index("product_collections_product_id_idx").on(
-      table.productId
+      table.productId,
     ),
     collectionIdIdx: index("product_collections_collection_id_idx").on(
-      table.collectionId
+      table.collectionId,
     ),
-  })
+  }),
 );
 
 // Carts table
@@ -182,7 +182,7 @@ export const cartLines = pgTable(
   (table) => ({
     cartIdIdx: index("cart_lines_cart_id_idx").on(table.cartId),
     variantIdIdx: index("cart_lines_variant_id_idx").on(table.productVariantId),
-  })
+  }),
 );
 
 // Pages table for static content
@@ -202,7 +202,7 @@ export const pages = pgTable(
   },
   (table) => ({
     handleIdx: index("pages_handle_idx").on(table.handle),
-  })
+  }),
 );
 
 // Menus for navigation
@@ -230,7 +230,7 @@ export const menuItems = pgTable(
   (table) => ({
     menuIdIdx: index("menu_items_menu_id_idx").on(table.menuId),
     positionIdx: index("menu_items_position_idx").on(table.position),
-  })
+  }),
 );
 
 // Define relations for better querying with Drizzle
@@ -248,7 +248,7 @@ export const productVariantsRelations = relations(
       fields: [productVariants.productId],
       references: [products.id],
     }),
-  })
+  }),
 );
 
 export const productImagesRelations = relations(productImages, ({ one }) => ({
@@ -280,7 +280,7 @@ export const productCollectionsRelations = relations(
       fields: [productCollections.collectionId],
       references: [collections.id],
     }),
-  })
+  }),
 );
 
 export const cartsRelations = relations(carts, ({ many }) => ({

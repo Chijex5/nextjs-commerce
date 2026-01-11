@@ -35,6 +35,7 @@ COMPANY_NAME="D'FOOTPRINT"
 ```
 
 **Recommended Hosts:**
+
 - [Vercel Postgres](https://vercel.com/storage/postgres) - Easiest for Vercel deployments
 - [Supabase](https://supabase.com) - Free tier available
 - [Neon](https://neon.tech) - Serverless Postgres
@@ -64,16 +65,16 @@ Open [http://localhost:3000](http://localhost:3000) 🎉
 
 ## 🛠️ NPM Scripts
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start development server |
-| `pnpm build` | Build for production |
-| `pnpm start` | Start production server |
+| Command            | Description              |
+| ------------------ | ------------------------ |
+| `pnpm dev`         | Start development server |
+| `pnpm build`       | Build for production     |
+| `pnpm start`       | Start production server  |
 | `pnpm db:generate` | Generate migration files |
-| `pnpm db:migrate` | Run migrations |
-| `pnpm db:push` | Push schema to database |
-| `pnpm db:studio` | Open database GUI |
-| `pnpm db:seed` | Load sample data |
+| `pnpm db:migrate`  | Run migrations           |
+| `pnpm db:push`     | Push schema to database  |
+| `pnpm db:studio`   | Open database GUI        |
+| `pnpm db:seed`     | Load sample data         |
 
 ## 🗄️ Database Management
 
@@ -84,6 +85,7 @@ pnpm db:studio
 ```
 
 Opens a web interface to:
+
 - Browse and edit products
 - Manage collections
 - Update pages
@@ -120,6 +122,7 @@ Opens a web interface to:
 ## 🎨 Features
 
 ### Products
+
 - Multiple images per product
 - Size and color variants
 - SEO optimization
@@ -127,17 +130,20 @@ Opens a web interface to:
 - Dynamic pricing
 
 ### Shopping Cart
+
 - Add/remove items
 - Update quantities
 - Persistent cart
 - Checkout integration ready
 
 ### Collections
+
 - Organize products
 - Custom descriptions
 - SEO for each collection
 
 ### Pages
+
 - About
 - Shipping & Returns
 - Privacy Policy
@@ -147,11 +153,13 @@ Opens a web interface to:
 ## 🔐 Environment Variables
 
 Required:
+
 - `DATABASE_URL` - PostgreSQL connection string
 - `SITE_NAME` - Your site name
 - `COMPANY_NAME` - Your company name
 
 Optional:
+
 - `REVALIDATION_SECRET` - For webhook revalidation
 
 See `.env.example` for details.
@@ -172,14 +180,14 @@ See `.env.example` for details.
 
 ## 🆚 Shopify vs PostgreSQL
 
-| Feature | Shopify | PostgreSQL |
-|---------|---------|------------|
-| Data Control | Limited | Full |
-| Customization | Limited | Unlimited |
-| Monthly Costs | Yes | No |
-| UI Quality | Great | Same! |
-| Setup Time | Fast | Medium |
-| Flexibility | Limited | High |
+| Feature       | Shopify | PostgreSQL |
+| ------------- | ------- | ---------- |
+| Data Control  | Limited | Full       |
+| Customization | Limited | Unlimited  |
+| Monthly Costs | Yes     | No         |
+| UI Quality    | Great   | Same!      |
+| Setup Time    | Fast    | Medium     |
+| Flexibility   | Limited | High       |
 
 ## 📚 Learn More
 
@@ -191,6 +199,7 @@ See `.env.example` for details.
 ## 🤝 Contributing
 
 This is a private project for D'FOOTPRINT, but you can:
+
 1. Report issues
 2. Suggest features
 3. Share feedback

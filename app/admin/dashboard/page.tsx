@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   // Get dashboard stats
   const [productsCount, collectionsCount] = await Promise.all([
     prisma.product.count(),
-    prisma.collection.count()
+    prisma.collection.count(),
   ]);
 
   return (
@@ -42,7 +42,9 @@ export default async function DashboardPage() {
               </div>
             </div>
             <div className="flex items-center">
-              <span className="text-sm text-gray-700">{session.user?.email}</span>
+              <span className="text-sm text-gray-700">
+                {session.user?.email}
+              </span>
             </div>
           </div>
         </div>

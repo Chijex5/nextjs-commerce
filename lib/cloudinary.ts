@@ -4,7 +4,7 @@ import { v2 as cloudinary } from "cloudinary";
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 export interface CloudinaryUploadResult {
@@ -24,15 +24,15 @@ export interface CloudinaryUploadResult {
  */
 export async function uploadImage(
   file: string,
-  folder: string = "products"
+  folder: string = "products",
 ): Promise<CloudinaryUploadResult> {
   try {
     const result = await cloudinary.uploader.upload(file, {
       folder: `dfootprint/${folder}`,
       transformation: [
         { width: 1200, height: 1200, crop: "limit" },
-        { quality: "auto", fetch_format: "auto" }
-      ]
+        { quality: "auto", fetch_format: "auto" },
+      ],
     });
 
     return {
@@ -41,7 +41,7 @@ export async function uploadImage(
       width: result.width,
       height: result.height,
       format: result.format,
-      resource_type: result.resource_type
+      resource_type: result.resource_type,
     };
   } catch (error) {
     console.error("Cloudinary upload error:", error);
@@ -72,13 +72,13 @@ export async function deleteImage(publicId: string): Promise<void> {
 export function getOptimizedImageUrl(
   publicId: string,
   width?: number,
-  height?: number
+  height?: number,
 ): string {
   return cloudinary.url(publicId, {
     transformation: [
       { width, height, crop: "fill" },
-      { quality: "auto", fetch_format: "auto" }
-    ]
+      { quality: "auto", fetch_format: "auto" },
+    ],
   });
 }
 

@@ -7,6 +7,7 @@
 Choose one of these hosting options:
 
 #### Option A: Vercel Postgres (Recommended for Vercel deployments)
+
 ```bash
 # Install Vercel CLI if you haven't
 npm i -g vercel
@@ -22,24 +23,29 @@ vercel env pull .env.local
 ```
 
 #### Option B: Supabase (Free tier available)
+
 1. Go to [supabase.com](https://supabase.com)
 2. Create a new project
 3. Copy the connection string from Settings > Database
 4. Create `.env.local` with:
+
 ```
 DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@[YOUR-HOST]:5432/postgres"
 ```
 
 #### Option C: Neon (Serverless Postgres)
+
 1. Go to [neon.tech](https://neon.tech)
 2. Create a new project
 3. Copy the connection string
 4. Create `.env.local` with:
+
 ```
 DATABASE_URL="postgresql://[USER]:[PASSWORD]@[HOST]/[DATABASE]?sslmode=require"
 ```
 
 #### Option D: Local PostgreSQL
+
 ```bash
 # Install PostgreSQL locally
 # Then create a database
@@ -66,6 +72,7 @@ pnpm db:seed
 ```
 
 This will create:
+
 - Sample products (Classic Slide, Luxury Slipper)
 - Collections (All Products, Slippers, Slides)
 - Product variants (different sizes and colors)
@@ -89,6 +96,7 @@ pnpm db:studio
 ```
 
 This opens a web interface at `https://local.drizzle.studio` where you can:
+
 - Browse all tables
 - Add/edit/delete records
 - Run custom queries
@@ -129,17 +137,20 @@ See `DATABASE_MIGRATION.md` for detailed schema documentation.
 ## Troubleshooting
 
 ### "Cannot connect to database"
+
 - Check `DATABASE_URL` in `.env.local`
 - Verify database is running
 - Check firewall/network settings
 - Ensure IP is whitelisted (for cloud databases)
 
 ### "Migration failed"
+
 - Ensure database exists
 - Check database user has CREATE permissions
 - For first migration, database should be empty
 
 ### "Module not found: lib/database"
+
 - Run `pnpm install` to ensure all dependencies are installed
 - Restart your dev server
 
@@ -151,6 +162,7 @@ See `DATABASE_MIGRATION.md` for detailed schema documentation.
 2. Push your code to GitHub
 3. Deploy will automatically run
 4. After first deploy, run migrations:
+
 ```bash
 vercel env pull
 pnpm db:push
@@ -160,11 +172,13 @@ pnpm db:seed
 ### Environment Variables
 
 Required:
+
 - `DATABASE_URL` - PostgreSQL connection string
 - `SITE_NAME` - Your site name (e.g., "D'FOOTPRINT")
 - `COMPANY_NAME` - Your company name
 
 Optional:
+
 - `REVALIDATION_SECRET` - For webhook revalidation
 
 ## Next Steps
@@ -186,6 +200,7 @@ Optional:
 ## Support
 
 For issues or questions:
+
 1. Check `DATABASE_MIGRATION.md` for detailed explanations
 2. Review error messages in terminal
 3. Use `pnpm db:studio` to inspect database state

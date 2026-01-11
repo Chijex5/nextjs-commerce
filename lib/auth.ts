@@ -9,7 +9,7 @@ export const authOptions: NextAuthOptions = {
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -17,7 +17,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         const user = await prisma.adminUser.findUnique({
-          where: { email: credentials.email }
+          where: { email: credentials.email },
         });
 
         if (!user || !user.isActive) {
@@ -26,7 +26,7 @@ export const authOptions: NextAuthOptions = {
 
         const isPasswordValid = await compare(
           credentials.password,
-          user.passwordHash
+          user.passwordHash,
         );
 
         if (!isPasswordValid) {
@@ -36,23 +36,23 @@ export const authOptions: NextAuthOptions = {
         // Update last login
         await prisma.adminUser.update({
           where: { id: user.id },
-          data: { lastLoginAt: new Date() }
+          data: { lastLoginAt: new Date() },
         });
 
         return {
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role
+          role: user.role,
         };
-      }
-    })
+      },
+    }),
   ],
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
   },
   pages: {
-    signIn: "/admin/login"
+    signIn: "/admin/login",
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -68,7 +68,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as string;
       }
       return session;
-    }
+    },
   },
-  secret: process.env.NEXTAUTH_SECRET
+  secret: process.env.NEXTAUTH_SECRET,
 };
