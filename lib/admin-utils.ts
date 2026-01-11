@@ -52,18 +52,22 @@ export function parseCSV(csvContent: string): Record<string, string>[] {
     throw new Error("CSV file must have at least a header row and one data row");
   }
 
-  const headers = lines[0].split(",").map((h) => h.trim());
+  const headers = lines[0]?.split(",").map((h) => h.trim()) || [];
   const data: Record<string, string>[] = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(",");
+    const line = lines[i];
+    if (!line) continue;
+    
+    const values = line.split(",");
     if (values.length !== headers.length) {
       continue; // Skip malformed rows
     }
 
     const row: Record<string, string> = {};
     headers.forEach((header, index) => {
-      row[header] = values[index].trim();
+      const value = values[index];
+      row[header] = value?.trim() || "";
     });
     data.push(row);
   }

@@ -79,6 +79,8 @@ export default function BulkImportWizard() {
 
     for (let i = 0; i < products.length; i++) {
       const product = products[i];
+      if (!product) continue;
+      
       setProgress({ current: i + 1, total: products.length });
 
       try {
