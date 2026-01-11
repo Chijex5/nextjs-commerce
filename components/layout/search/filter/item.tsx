@@ -55,9 +55,12 @@ function SortFilterItem({ item }: { item: SortFilterItem }) {
       <DynamicTag
         prefetch={!active ? false : undefined}
         href={href}
-        className={clsx("w-full md:hover:underline md:hover:underline-offset-4", {
-          "underline underline-offset-4": active,
-        })}
+        className={clsx(
+          "w-full md:hover:underline md:hover:underline-offset-4",
+          {
+            "underline underline-offset-4": active,
+          },
+        )}
       >
         {item.title}
       </DynamicTag>
@@ -90,7 +93,8 @@ export function PathFilterChip({ item }: { item: PathFilterItem }) {
         "inline-block whitespace-nowrap rounded-full px-4 py-2 text-sm transition-all",
         {
           "bg-black text-white dark:bg-white dark:text-black": active,
-          "bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700": !active,
+          "bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700":
+            !active,
         },
       )}
     >
@@ -121,7 +125,8 @@ export function SortFilterChip({ item }: { item: SortFilterItem }) {
         "inline-block whitespace-nowrap rounded-full px-4 py-2 text-sm transition-all",
         {
           "bg-black text-white dark:bg-white dark:text-black": active,
-          "bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700": !active,
+          "bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700":
+            !active,
         },
       )}
     >
