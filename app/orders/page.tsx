@@ -3,8 +3,20 @@
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { toast } from "sonner";
 import Price from "components/price";
+
+interface OrderItem {
+  id?: string;
+  productId?: string;
+  productVariantId?: string;
+  productTitle: string;
+  variantTitle: string;
+  quantity: number;
+  price: string;
+  productImage?: string;
+}
 
 interface Order {
   id: string;
@@ -13,13 +25,7 @@ interface Order {
   totalAmount: string;
   currencyCode: string;
   createdAt: string;
-  items: {
-    productTitle: string;
-    variantTitle: string;
-    quantity: number;
-    price: string;
-    productImage?: string;
-  }[];
+  items: OrderItem[];
 }
 
 export default function OrdersPage() {
@@ -113,23 +119,28 @@ export default function OrdersPage() {
       </div>
 
       <div className="mb-4 space-y-3">
-        {order.items.map((item, index) => (
-          <div key={index} className="flex items-center gap-3">
-            {item.productImage && (
-              <img
-                src={item.productImage}
-                alt={item.productTitle}
-                className="h-16 w-16 rounded-md object-cover"
-              />
-            )}
-            <div className="flex-1">
-              <p className="font-medium">{item.productTitle}</p>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                {item.variantTitle} × {item.quantity}
-              </p>
+        {order.items.map((item) => {
+          const itemKey = item.id || `${order.id}-${item.productVariantId || item.productTitle}-${item.variantTitle}`;
+          return (
+            <div key={itemKey} className="flex items-center gap-3">
+              {item.productImage && (
+                <Image
+                  src={item.productImage}
+                  alt={item.productTitle}
+                  width={64}
+                  height={64}
+                  className="rounded-md object-cover"
+                />
+              )}
+              <div className="flex-1">
+                <p className="font-medium">{item.productTitle}</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  {item.variantTitle} × {item.quantity}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="flex items-center justify-between border-t border-neutral-200 pt-4 dark:border-neutral-700">
