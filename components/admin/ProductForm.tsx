@@ -15,7 +15,9 @@ type FormData = {
   seoDescription: string;
   tags: string;
   price: string;
-  variantTitle: string;
+  sizeFrom: string;
+  sizeTo: string;
+  colors: string;
 };
 
 export default function ProductForm({
@@ -29,6 +31,7 @@ export default function ProductForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>(product?.images?.[0]?.url || "");
   const [uploading, setUploading] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const {
     register,
@@ -46,7 +49,9 @@ export default function ProductForm({
       seoDescription: product?.seoDescription || "",
       tags: product?.tags?.join(", ") || "",
       price: product?.variants?.[0]?.price?.toString() || "",
-      variantTitle: product?.variants?.[0]?.title || "Default",
+      sizeFrom: "38",
+      sizeTo: "44",
+      colors: "Black, Brown, Navy",
     },
   });
 
@@ -78,6 +83,20 @@ export default function ProductForm({
     setIsSubmitting(true);
 
     try {
+      // Generate size range
+      const sizeFrom = parseInt(data.sizeFrom);
+      const sizeTo = parseInt(data.sizeTo);
+      const sizes: string[] = [];
+      for (let i = sizeFrom; i <= sizeTo; i++) {
+        sizes.push(i.toString());
+      }
+
+      // Parse colors
+      const colors = data.colors
+        .split(",")
+        .map((c) => c.trim())
+        .filter((c) => c);
+
       const payload = {
         title: data.title,
         handle: data.handle,
@@ -93,12 +112,9 @@ export default function ProductForm({
               .filter((t) => t)
           : [],
         image: imageUrl || undefined,
-        variant: {
-          title: data.variantTitle,
-          price: parseFloat(data.price),
-          currencyCode: "NGN",
-          availableForSale: data.availableForSale,
-        },
+        price: parseFloat(data.price),
+        sizes,
+        colors,
       };
 
       const url = product
@@ -195,27 +211,92 @@ export default function ProductForm({
             </p>
           </div>
 
-          {/* Handle (Slug) */}
+          {/* Handle (Slug) - Collapsible */}
           <div className="mb-4">
-            <label
-              htmlFor="handle"
-              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="mb-2 flex items-center gap-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
             >
-              Handle (URL Slug) *
-            </label>
-            <input
-              type="text"
-              id="handle"
-              {...register("handle", { required: "Handle is required" })}
-              className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-              placeholder="e.g., classic-leather-slide"
-            />
-            {errors.handle && (
-              <p className="mt-1 text-sm text-red-600">{errors.handle.message}</p>
+              <svg
+                className={`h-4 w-4 transition-transform ${showAdvanced ? "rotate-90" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+              Advanced Options (Auto-generated)
+            </button>
+
+            {showAdvanced && (
+              <div className="space-y-4 rounded-md border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-800">
+                <div>
+                  <label
+                    htmlFor="handle"
+                    className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                  >
+                    Handle (URL Slug) *
+                  </label>
+                  <input
+                    type="text"
+                    id="handle"
+                    {...register("handle", { required: "Handle is required" })}
+                    className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                    placeholder="e.g., classic-leather-slide"
+                  />
+                  {errors.handle && (
+                    <p className="mt-1 text-sm text-red-600">{errors.handle.message}</p>
+                  )}
+                  <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                    Auto-generated from title. Edit if needed.
+                  </p>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="seoTitle"
+                    className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                  >
+                    SEO Title
+                  </label>
+                  <input
+                    type="text"
+                    id="seoTitle"
+                    {...register("seoTitle")}
+                    className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                    placeholder="Auto-generated from title"
+                  />
+                  <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                    Auto-generated as "Title - D'FOOTPRINT"
+                  </p>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="seoDescription"
+                    className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                  >
+                    SEO Description
+                  </label>
+                  <textarea
+                    id="seoDescription"
+                    {...register("seoDescription")}
+                    rows={3}
+                    className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                    placeholder="Auto-generated from description"
+                  />
+                  <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                    Auto-truncated to 160 characters from description
+                  </p>
+                </div>
+              </div>
             )}
-            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-              Auto-generated from title. Edit if needed.
-            </p>
           </div>
 
           {/* Description */}
@@ -274,52 +355,104 @@ export default function ProductForm({
         </div>
       </div>
 
-      {/* Pricing */}
+      {/* Pricing & Variants */}
       <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
         <div className="p-6">
           <h2 className="mb-4 text-lg font-medium text-neutral-900 dark:text-neutral-100">
-            Pricing
+            Pricing & Variants
           </h2>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label
-                htmlFor="price"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
-              >
-                Price (NGN) *
-              </label>
-              <input
-                type="number"
-                id="price"
-                step="0.01"
-                {...register("price", { required: "Price is required" })}
-                className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                placeholder="12000"
-              />
-              {errors.price && (
-                <p className="mt-1 text-sm text-red-600">{errors.price.message}</p>
-              )}
-            </div>
+          {/* Price */}
+          <div className="mb-4">
+            <label
+              htmlFor="price"
+              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+            >
+              Base Price (NGN) *
+            </label>
+            <input
+              type="number"
+              id="price"
+              step="0.01"
+              {...register("price", { required: "Price is required" })}
+              className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              placeholder="12000"
+            />
+            {errors.price && (
+              <p className="mt-1 text-sm text-red-600">{errors.price.message}</p>
+            )}
+          </div>
 
-            <div>
-              <label
-                htmlFor="variantTitle"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
-              >
-                Variant Title
-              </label>
-              <input
-                type="text"
-                id="variantTitle"
-                {...register("variantTitle")}
-                className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                placeholder="Default"
-              />
-              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                e.g., "Size 40 / Black" or "Default"
-              </p>
+          {/* Size Range */}
+          <div className="mb-4">
+            <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              Size Range *
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="sizeFrom"
+                  className="mb-1 block text-xs text-neutral-600 dark:text-neutral-400"
+                >
+                  From
+                </label>
+                <input
+                  type="number"
+                  id="sizeFrom"
+                  {...register("sizeFrom", { required: "Size from is required" })}
+                  className="block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                  placeholder="38"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="sizeTo"
+                  className="mb-1 block text-xs text-neutral-600 dark:text-neutral-400"
+                >
+                  To
+                </label>
+                <input
+                  type="number"
+                  id="sizeTo"
+                  {...register("sizeTo", { required: "Size to is required" })}
+                  className="block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                  placeholder="44"
+                />
+              </div>
             </div>
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              System will create variants for all sizes in this range (e.g., 38-44 creates 7 sizes)
+            </p>
+          </div>
+
+          {/* Colors */}
+          <div className="mb-4">
+            <label
+              htmlFor="colors"
+              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+            >
+              Available Colors *
+            </label>
+            <input
+              type="text"
+              id="colors"
+              {...register("colors", { required: "At least one color is required" })}
+              className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              placeholder="Black, Brown, Navy"
+            />
+            {errors.colors && (
+              <p className="mt-1 text-sm text-red-600">{errors.colors.message}</p>
+            )}
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              Separate colors with commas (e.g., "Black, Brown, Navy")
+            </p>
+          </div>
+
+          <div className="rounded-md bg-blue-50 p-3 dark:bg-blue-900/20">
+            <p className="text-xs text-blue-700 dark:text-blue-300">
+              <strong>Note:</strong> System will automatically create all size × color combinations.
+              For example: Size 38-40 with Black, Brown = 6 variants (38-Black, 38-Brown, 39-Black, 39-Brown, 40-Black, 40-Brown)
+            </p>
           </div>
         </div>
       </div>
@@ -361,47 +494,6 @@ export default function ProductForm({
                 Uploading...
               </p>
             )}
-          </div>
-        </div>
-      </div>
-
-      {/* SEO */}
-      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-        <div className="p-6">
-          <h2 className="mb-4 text-lg font-medium text-neutral-900 dark:text-neutral-100">
-            SEO (Auto-generated)
-          </h2>
-
-          <div className="mb-4">
-            <label
-              htmlFor="seoTitle"
-              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
-            >
-              SEO Title
-            </label>
-            <input
-              type="text"
-              id="seoTitle"
-              {...register("seoTitle")}
-              className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-              placeholder="Auto-generated from title"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label
-              htmlFor="seoDescription"
-              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
-            >
-              SEO Description
-            </label>
-            <textarea
-              id="seoDescription"
-              {...register("seoDescription")}
-              rows={3}
-              className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-              placeholder="Auto-generated from description"
-            />
           </div>
         </div>
       </div>

@@ -42,17 +42,91 @@ export async function POST(request: Request) {
       });
     }
 
-    // Create product variant
-    if (body.variant) {
-      await prisma.productVariant.create({
+    // Create product options for Size and Color
+    const sizes = body.sizes || [];
+    const colors = body.colors || [];
+
+    if (sizes.length > 0) {
+      await prisma.productOption.create({
         data: {
           productId: product.id,
-          title: body.variant.title || "Default",
-          price: body.variant.price,
-          currencyCode: body.variant.currencyCode || "NGN",
-          availableForSale: body.variant.availableForSale ?? true,
-          selectedOptions: body.variant.selectedOptions || [],
+          name: "Size",
+          values: sizes,
         },
+      });
+    }
+
+    if (colors.length > 0) {
+      await prisma.productOption.create({
+        data: {
+          productId: product.id,
+          name: "Color",
+          values: colors,
+        },
+      });
+    }
+
+    // Create product variants for all size × color combinations
+    const variants = [];
+    const price = body.price || 0;
+
+    if (sizes.length > 0 && colors.length > 0) {
+      // Create all combinations
+      for (const size of sizes) {
+        for (const color of colors) {
+          variants.push({
+            productId: product.id,
+            title: `${size} / ${color}`,
+            price: price,
+            currencyCode: "NGN",
+            availableForSale: body.availableForSale ?? true,
+            selectedOptions: [
+              { name: "Size", value: size },
+              { name: "Color", value: color },
+            ],
+          });
+        }
+      }
+    } else if (sizes.length > 0) {
+      // Only sizes
+      for (const size of sizes) {
+        variants.push({
+          productId: product.id,
+          title: `Size ${size}`,
+          price: price,
+          currencyCode: "NGN",
+          availableForSale: body.availableForSale ?? true,
+          selectedOptions: [{ name: "Size", value: size }],
+        });
+      }
+    } else if (colors.length > 0) {
+      // Only colors
+      for (const color of colors) {
+        variants.push({
+          productId: product.id,
+          title: color,
+          price: price,
+          currencyCode: "NGN",
+          availableForSale: body.availableForSale ?? true,
+          selectedOptions: [{ name: "Color", value: color }],
+        });
+      }
+    } else {
+      // No variants, create default
+      variants.push({
+        productId: product.id,
+        title: "Default",
+        price: price,
+        currencyCode: "NGN",
+        availableForSale: body.availableForSale ?? true,
+        selectedOptions: [],
+      });
+    }
+
+    // Batch create all variants
+    if (variants.length > 0) {
+      await prisma.productVariant.createMany({
+        data: variants,
       });
     }
 
