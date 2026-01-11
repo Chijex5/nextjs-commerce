@@ -78,12 +78,16 @@ export async function POST(request: Request) {
       if (colorPrices[colorKey] !== undefined) {
         return colorPrices[colorKey];
       }
-      
+
       // Check size-based price
-      if (largeSizeFrom !== null && largeSizePrice !== null && parseInt(size) >= largeSizeFrom) {
+      if (
+        largeSizeFrom !== null &&
+        largeSizePrice !== null &&
+        parseInt(size) >= largeSizeFrom
+      ) {
         return largeSizePrice;
       }
-      
+
       return basePrice;
     };
 
@@ -155,7 +159,7 @@ export async function POST(request: Request) {
     console.error("Error creating product:", error);
     return NextResponse.json(
       { error: "Failed to create product" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

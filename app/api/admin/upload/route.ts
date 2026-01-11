@@ -44,7 +44,7 @@ export async function POST(request: Request) {
           (error, result) => {
             if (error) reject(error);
             else resolve(result);
-          }
+          },
         )
         .end(buffer);
     });
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     console.error("Upload error:", error);
     return NextResponse.json(
       { error: "Failed to upload image" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -76,7 +76,7 @@ export async function DELETE(request: Request) {
     if (!publicId) {
       return NextResponse.json(
         { error: "No publicId provided" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -88,7 +88,7 @@ export async function DELETE(request: Request) {
     console.error("Delete error:", error);
     return NextResponse.json(
       { error: "Failed to delete image" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

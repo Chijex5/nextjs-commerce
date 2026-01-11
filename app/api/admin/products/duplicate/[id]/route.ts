@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -91,7 +91,7 @@ export async function POST(
     console.error("Error duplicating product:", error);
     return NextResponse.json(
       { error: "Failed to duplicate product" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

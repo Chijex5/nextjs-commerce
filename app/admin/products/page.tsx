@@ -148,7 +148,9 @@ export default async function ProductsPage({
                 <div>
                   <p className="text-sm text-neutral-700 dark:text-neutral-300">
                     Showing{" "}
-                    <span className="font-medium">{(page - 1) * perPage + 1}</span>{" "}
+                    <span className="font-medium">
+                      {(page - 1) * perPage + 1}
+                    </span>{" "}
                     to{" "}
                     <span className="font-medium">
                       {Math.min(page * perPage, total)}

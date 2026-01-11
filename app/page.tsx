@@ -1,10 +1,11 @@
 import { Carousel } from "components/carousel";
 import { ThreeItemGrid } from "components/grid/three-items";
+import { CustomShowcase } from "components/custom-showcase";
 import Footer from "components/layout/footer";
 
 export const metadata = {
   description:
-    "High-performance ecommerce store built with Next.js, Vercel, and Shopify.",
+    "D'FOOTPRINT - Handcrafted footwear including slippers and slides. Premium handmade designs with custom order options. Nationwide delivery across Nigeria.",
   openGraph: {
     type: "website",
   },
@@ -15,6 +16,7 @@ export default function HomePage() {
     <>
       <ThreeItemGrid />
       <Carousel />
+      <CustomShowcase />
       <Footer />
     </>
   );

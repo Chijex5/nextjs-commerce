@@ -80,7 +80,7 @@ export default function BulkImportWizard() {
     for (let i = 0; i < products.length; i++) {
       const product = products[i];
       if (!product) continue;
-      
+
       setProgress({ current: i + 1, total: products.length });
 
       try {
@@ -97,12 +97,17 @@ export default function BulkImportWizard() {
           title: product.title,
           handle: handle + `-${Date.now()}-${i}`, // Ensure unique handle
           description: product.description || "",
-          descriptionHtml: product.description ? `<p>${product.description}</p>` : "",
+          descriptionHtml: product.description
+            ? `<p>${product.description}</p>`
+            : "",
           availableForSale: product.available_for_sale !== "false",
           seoTitle: `${product.title} - D'FOOTPRINT`,
           seoDescription: product.description?.substring(0, 160) || "",
           tags: product.tags
-            ? product.tags.split(",").map((t) => t.trim()).filter((t) => t)
+            ? product.tags
+                .split(",")
+                .map((t) => t.trim())
+                .filter((t) => t)
             : [],
           image: product.image_url || undefined,
           variant: {
@@ -144,7 +149,7 @@ export default function BulkImportWizard() {
       } catch (error: any) {
         importResults.failed++;
         importResults.errors.push(
-          `Row ${i + 1} (${product.title}): ${error.message}`
+          `Row ${i + 1} (${product.title}): ${error.message}`,
         );
       }
 
@@ -212,8 +217,8 @@ export default function BulkImportWizard() {
                     />
                   </svg>
                   <p className="mb-2 text-sm text-neutral-600 dark:text-neutral-400">
-                    <span className="font-semibold">Click to upload</span> or drag
-                    and drop
+                    <span className="font-semibold">Click to upload</span> or
+                    drag and drop
                   </p>
                   <p className="text-xs text-neutral-500 dark:text-neutral-500">
                     CSV file only

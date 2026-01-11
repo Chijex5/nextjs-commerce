@@ -15,11 +15,7 @@ type Product = {
   _count: { variants: number };
 };
 
-export default function ProductsTable({
-  products,
-}: {
-  products: Product[];
-}) {
+export default function ProductsTable({ products }: { products: Product[] }) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -124,7 +120,10 @@ export default function ProductsTable({
           </thead>
           <tbody className="divide-y divide-neutral-200 bg-white dark:divide-neutral-800 dark:bg-neutral-900">
             {products.map((product) => (
-              <tr key={product.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800">
+              <tr
+                key={product.id}
+                className="hover:bg-neutral-50 dark:hover:bg-neutral-800"
+              >
                 <td className="whitespace-nowrap px-6 py-4">
                   <div className="flex items-center">
                     <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded bg-neutral-100 dark:bg-neutral-800">

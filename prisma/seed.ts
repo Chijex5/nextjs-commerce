@@ -2,7 +2,7 @@ import prisma from "lib/prisma";
 const db = prisma;
 
 async function seed() {
-  console.log("🌱 Seeding database...");
+  console.log("Seeding database...");
 
   try {
     // Create collections
@@ -47,7 +47,7 @@ async function seed() {
       ],
     });
 
-    console.log(`✅ Created 5 collections`);
+    console.log(`Created 5 collections`);
 
     // Create sample products
     console.log("Creating sample products...");
@@ -226,7 +226,7 @@ async function seed() {
       },
     });
 
-    console.log(`✅ Created 12 products`);
+    console.log(`Created 12 products`);
 
     // Create product options
     console.log("Creating product options...");
@@ -296,7 +296,7 @@ async function seed() {
       ],
     });
 
-    console.log(`✅ Created product options`);
+    console.log(`Created product options`);
 
     // Create product variants
     console.log("Creating product variants...");
@@ -497,7 +497,7 @@ async function seed() {
       ],
     });
 
-    console.log(`✅ Created product variants`);
+    console.log(`Created product variants`);
 
     // Create product images (using Unsplash URLs)
     console.log("Creating product images...");
@@ -716,7 +716,7 @@ async function seed() {
       ],
     });
 
-    console.log(`✅ Created product images`);
+    console.log(`Created product images`);
 
     // Get collections for product-collection relationships
     console.log("Linking products to collections...");
@@ -921,7 +921,7 @@ async function seed() {
       ],
     });
 
-    console.log(`✅ Linked products to collections`);
+    console.log(`Linked products to collections`);
 
     // Create pages
     console.log("Creating pages...");
@@ -981,7 +981,7 @@ async function seed() {
       ],
     });
 
-    console.log(`✅ Created pages`);
+    console.log(`Created pages`);
 
     // Create menus
     console.log("Creating menus...");
@@ -1010,15 +1010,21 @@ async function seed() {
         },
         {
           menuId: mainMenu.id,
+          title: "Custom Orders",
+          url: "/custom-orders",
+          position: 1,
+        },
+        {
+          menuId: mainMenu.id,
           title: "About",
           url: "/about",
-          position: 1,
+          position: 2,
         },
         {
           menuId: mainMenu.id,
           title: "Contact",
           url: "/contact",
-          position: 2,
+          position: 3,
         },
         // Footer menu items
         {
@@ -1060,11 +1066,11 @@ async function seed() {
       ],
     });
 
-    console.log(`✅ Created menus and menu items`);
+    console.log(`Created menus and menu items`);
 
-    console.log("✨ Seeding completed successfully!");
+    console.log("Seeding completed successfully!");
   } catch (error) {
-    console.error("❌ Error seeding database:", error);
+    console.error("Error seeding database:", error);
     throw error;
   } finally {
     await db.$disconnect();
@@ -1074,10 +1080,10 @@ async function seed() {
 // Run the seed function
 seed()
   .then(() => {
-    console.log("👍 Done!");
+    console.log("Done!");
     process.exit(0);
   })
   .catch((error) => {
-    console.error("💥 Seed failed:", error);
+    console.error("Seed failed:", error);
     process.exit(1);
   });
