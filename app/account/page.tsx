@@ -70,6 +70,15 @@ export default function AccountPage() {
                 View and track your orders
               </p>
             </Link>
+            <Link
+              href="/account/addresses"
+              className="block rounded-md border border-neutral-200 p-4 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-900"
+            >
+              <h3 className="font-medium">Saved Addresses</h3>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Manage your shipping and billing addresses
+              </p>
+            </Link>
           </div>
         </div>
       </div>

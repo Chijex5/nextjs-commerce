@@ -105,13 +105,27 @@ export default function CheckoutPage() {
   useEffect(() => {
     fetchCart();
     if (session) {
-      setFormData((prev) => ({
-        ...prev,
-        email: session.email || "",
-        phone: session.phone || "",
-      }));
+      fetchUserAddresses();
     }
   }, [session]);
+
+  const fetchUserAddresses = async () => {
+    try {
+      const response = await fetch("/api/user-auth/addresses");
+      if (response.ok) {
+        const data = await response.json();
+        setFormData((prev) => ({
+          ...prev,
+          email: session?.email || "",
+          phone: session?.phone || "",
+          shippingAddress: data.addresses.shippingAddress || prev.shippingAddress,
+          billingAddress: data.addresses.billingAddress || prev.billingAddress,
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to fetch addresses:", error);
+    }
+  };
 
   const fetchCart = async () => {
     try {
