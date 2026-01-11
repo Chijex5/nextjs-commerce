@@ -2,7 +2,7 @@ import { PrismaClient } from "app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import "dotenv/config";
 
-const accelerateUrl = process.env.DATABASE_URL || "";
+const accelerateUrl = process.env.PRISMA_DATABASE_URL || "";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
