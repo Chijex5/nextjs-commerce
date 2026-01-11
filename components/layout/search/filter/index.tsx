@@ -27,7 +27,7 @@ export default function FilterList({
     <>
       <nav>
         {title ? (
-          <h3 className="hidden text-xs text-neutral-500 md:block dark:text-neutral-400">
+          <h3 className="mb-3 text-sm font-medium text-neutral-900 md:text-xs md:font-normal md:text-neutral-500 dark:text-neutral-100 dark:md:text-neutral-400">
             {title}
           </h3>
         ) : null}
@@ -36,11 +36,11 @@ export default function FilterList({
             <FilterItemList list={list} />
           </Suspense>
         </ul>
-        <ul className="md:hidden">
+        <div className="md:hidden">
           <Suspense fallback={null}>
             <FilterItemDropdown list={list} />
           </Suspense>
-        </ul>
+        </div>
       </nav>
     </>
   );
