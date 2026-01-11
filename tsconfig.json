@@ -18,6 +18,9 @@
     "baseUrl": ".",
     "noUncheckedIndexedAccess": true,
     "types": ["node"],
+    "paths": {
+      "@/*": ["./*"]
+    },
     "plugins": [
       {
         "name": "next"
