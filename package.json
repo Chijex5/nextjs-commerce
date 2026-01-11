@@ -27,6 +27,7 @@
     "geist": "^1.5.1",
     "next": "15.6.0-canary.60",
     "next-cloudinary": "^6.16.0",
+    "pnpm": "^10.28.0",
     "postgres": "^3.4.8",
     "react": "19.0.0",
     "react-dom": "19.0.0",
