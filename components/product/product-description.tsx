@@ -18,9 +18,7 @@ export function ProductDescription({ product }: { product: Product }) {
   );
 
   // Use the selected variant's price, or fall back to the first variant or max price
-  const defaultVariant =
-    product.variants.length === 1 ? product.variants[0] : undefined;
-  const displayVariant = selectedVariant || defaultVariant;
+  const displayVariant = selectedVariant || product.variants[0];
   const displayPrice = displayVariant
     ? displayVariant.price
     : product.priceRange.maxVariantPrice;
