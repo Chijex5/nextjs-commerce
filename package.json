@@ -9,7 +9,7 @@
     "test": "pnpm prettier:check",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:push": "prisma db push",
+    "db:g": "prisma db push",
     "db:studio": "prisma studio",
     "db:seed": "tsx lib/db/scripts/seed.ts",
     "postinstall": "prisma generate"
