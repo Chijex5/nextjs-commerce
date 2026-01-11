@@ -27,18 +27,18 @@ export async function POST(request: Request) {
       },
     });
 
-    // Create product image if provided
-    if (body.image) {
-      await prisma.productImage.create({
-        data: {
+    // Create product images if provided (up to 5)
+    if (body.images && Array.isArray(body.images) && body.images.length > 0) {
+      await prisma.productImage.createMany({
+        data: body.images.map((img: any) => ({
           productId: product.id,
-          url: body.image,
+          url: img.url,
           altText: product.title,
           width: 800,
           height: 800,
-          position: 0,
-          isFeatured: true,
-        },
+          position: img.position || 0,
+          isFeatured: img.isFeatured || false,
+        })),
       });
     }
 
@@ -66,9 +66,29 @@ export async function POST(request: Request) {
       });
     }
 
-    // Create product variants for all size × color combinations
+    // Function to calculate variant price based on rules
+    const getVariantPrice = (size: string, color: string): number => {
+      const basePrice = body.basePrice || 0;
+      const colorPrices = body.colorPrices || {};
+      const largeSizePrice = body.largeSizePrice;
+      const largeSizeFrom = body.largeSizeFrom;
+
+      // Check color-specific price first (highest priority)
+      const colorKey = color.trim().toLowerCase();
+      if (colorPrices[colorKey] !== undefined) {
+        return colorPrices[colorKey];
+      }
+      
+      // Check size-based price
+      if (largeSizeFrom !== null && largeSizePrice !== null && parseInt(size) >= largeSizeFrom) {
+        return largeSizePrice;
+      }
+      
+      return basePrice;
+    };
+
+    // Create product variants for all size × color combinations with appropriate prices
     const variants = [];
-    const price = body.price || 0;
 
     if (sizes.length > 0 && colors.length > 0) {
       // Create all combinations
@@ -77,7 +97,7 @@ export async function POST(request: Request) {
           variants.push({
             productId: product.id,
             title: `${size} / ${color}`,
-            price: price,
+            price: getVariantPrice(size, color),
             currencyCode: "NGN",
             availableForSale: body.availableForSale ?? true,
             selectedOptions: [
@@ -93,7 +113,7 @@ export async function POST(request: Request) {
         variants.push({
           productId: product.id,
           title: `Size ${size}`,
-          price: price,
+          price: getVariantPrice(size, ""),
           currencyCode: "NGN",
           availableForSale: body.availableForSale ?? true,
           selectedOptions: [{ name: "Size", value: size }],
@@ -105,7 +125,7 @@ export async function POST(request: Request) {
         variants.push({
           productId: product.id,
           title: color,
-          price: price,
+          price: getVariantPrice("", color),
           currencyCode: "NGN",
           availableForSale: body.availableForSale ?? true,
           selectedOptions: [{ name: "Color", value: color }],
@@ -116,7 +136,7 @@ export async function POST(request: Request) {
       variants.push({
         productId: product.id,
         title: "Default",
-        price: price,
+        price: body.basePrice || 0,
         currencyCode: "NGN",
         availableForSale: body.availableForSale ?? true,
         selectedOptions: [],
