@@ -1,17 +1,30 @@
 import clsx from "clsx";
-import Price from "./price";
 
 const Label = ({
   title,
   amount,
   currencyCode,
+  minAmount,
   position = "bottom",
 }: {
   title: string;
   amount: string;
   currencyCode: string;
+  minAmount?: string;
   position?: "bottom" | "center";
 }) => {
+  const formatPrice = (price: string) => {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: currencyCode,
+      currencyDisplay: "narrowSymbol",
+    }).format(parseFloat(price));
+  };
+
+  const priceDisplay = minAmount
+    ? `${formatPrice(minAmount)} - ${formatPrice(amount)}`
+    : formatPrice(amount);
+
   return (
     <div
       className={clsx(
@@ -25,12 +38,15 @@ const Label = ({
         <h3 className="mr-4 line-clamp-2 grow pl-2 leading-none tracking-tight">
           {title}
         </h3>
-        <Price
+        <p
+          suppressHydrationWarning={true}
           className="flex-none rounded-full bg-blue-600 p-2 text-white"
-          amount={amount}
-          currencyCode={currencyCode}
-          currencyCodeClassName="hidden @[275px]/label:inline"
-        />
+        >
+          {priceDisplay}
+          <span className={clsx("ml-1 inline", "hidden @[275px]/label:inline")}>
+            {currencyCode}
+          </span>
+        </p>
       </div>
     </div>
   );

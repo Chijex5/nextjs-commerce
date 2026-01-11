@@ -12,6 +12,10 @@ function ThreeItemGridItem({
   size: "full" | "half";
   priority?: boolean;
 }) {
+  const minPrice = parseFloat(item.priceRange.minVariantPrice.amount);
+  const maxPrice = parseFloat(item.priceRange.maxVariantPrice.amount);
+  const hasVariedPricing = minPrice !== maxPrice;
+
   return (
     <div
       className={
@@ -40,6 +44,9 @@ function ThreeItemGridItem({
             title: item.title as string,
             amount: item.priceRange.maxVariantPrice.amount,
             currencyCode: item.priceRange.maxVariantPrice.currencyCode,
+            minAmount: hasVariedPricing
+              ? item.priceRange.minVariantPrice.amount
+              : undefined,
           }}
         />
       </Link>
