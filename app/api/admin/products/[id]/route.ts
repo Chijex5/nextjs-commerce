@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -26,14 +26,14 @@ export async function DELETE(
     console.error("Error deleting product:", error);
     return NextResponse.json(
       { error: "Failed to delete product" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -71,14 +71,14 @@ export async function GET(
     console.error("Error fetching product:", error);
     return NextResponse.json(
       { error: "Failed to fetch product" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -170,12 +170,16 @@ export async function PUT(
         if (colorPrices[colorKey] !== undefined) {
           return colorPrices[colorKey];
         }
-        
+
         // Check size-based price
-        if (largeSizeFrom !== null && largeSizePrice !== null && parseInt(size) >= largeSizeFrom) {
+        if (
+          largeSizeFrom !== null &&
+          largeSizePrice !== null &&
+          parseInt(size) >= largeSizeFrom
+        ) {
           return largeSizePrice;
         }
-        
+
         return basePrice;
       };
 
@@ -234,7 +238,7 @@ export async function PUT(
     console.error("Error updating product:", error);
     return NextResponse.json(
       { error: "Failed to update product" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

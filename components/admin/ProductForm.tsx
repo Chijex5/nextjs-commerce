@@ -3,7 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { generateSlug, generateSeoTitle, generateSeoDescription } from "../../lib/admin-utils";
+import {
+  generateSlug,
+  generateSeoTitle,
+  generateSeoDescription,
+} from "../../lib/admin-utils";
 import { toast } from "sonner";
 
 type ImageUpload = {
@@ -44,7 +48,7 @@ export default function ProductForm({
       url: img.url,
       position: img.position || idx,
       isFeatured: img.isFeatured || idx === 0,
-    })) || []
+    })) || [],
   );
   const [uploading, setUploading] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -119,8 +123,12 @@ export default function ProductForm({
 
       // Calculate price for each variant based on rules
       const basePrice = parseFloat(data.price);
-      const largeSizePrice = data.largeSizePrice ? parseFloat(data.largeSizePrice) : basePrice;
-      const largeSizeFrom = data.largeSizeFrom ? parseInt(data.largeSizeFrom) : null;
+      const largeSizePrice = data.largeSizePrice
+        ? parseFloat(data.largeSizePrice)
+        : basePrice;
+      const largeSizeFrom = data.largeSizeFrom
+        ? parseInt(data.largeSizeFrom)
+        : null;
 
       // Parse color-specific prices if provided
       const colorPrices: Record<string, number> = {};
@@ -142,12 +150,12 @@ export default function ProductForm({
         if (colorPrices[colorKey]) {
           return colorPrices[colorKey];
         }
-        
+
         // Check size-based price
         if (largeSizeFrom !== null && parseInt(size) >= largeSizeFrom) {
           return largeSizePrice;
         }
-        
+
         return basePrice;
       };
 
@@ -192,7 +200,11 @@ export default function ProductForm({
         throw new Error("Failed to save product");
       }
 
-      toast.success(product ? "Product updated successfully" : "Product created successfully");
+      toast.success(
+        product
+          ? "Product updated successfully"
+          : "Product created successfully",
+      );
       router.push("/admin/products");
       router.refresh();
     } catch (error) {
@@ -222,7 +234,7 @@ export default function ProductForm({
         const file = files[i];
 
         if (!file) return;
-        
+
         if (file.size > 5 * 1024 * 1024) {
           toast.error(`Image ${file.name} is too large (max 5MB)`);
           continue;
@@ -282,12 +294,12 @@ export default function ProductForm({
     const [movedImage] = newImages.splice(fromIndex, 1);
     if (!movedImage) return null;
     newImages.splice(toIndex, 0, movedImage);
-    
+
     // Reassign positions
     newImages.forEach((img, i) => {
       img.position = i;
     });
-    
+
     setImages(newImages);
   };
 
@@ -315,7 +327,9 @@ export default function ProductForm({
               placeholder="e.g., Classic Leather Slide"
             />
             {errors.title && (
-              <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.title.message}
+              </p>
             )}
             <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
               This will auto-generate the URL slug
@@ -362,7 +376,9 @@ export default function ProductForm({
                     placeholder="e.g., classic-leather-slide"
                   />
                   {errors.handle && (
-                    <p className="mt-1 text-sm text-red-600">{errors.handle.message}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.handle.message}
+                    </p>
                   )}
                   <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
                     Auto-generated from title. Edit if needed.
@@ -490,7 +506,9 @@ export default function ProductForm({
               placeholder="12000"
             />
             {errors.price && (
-              <p className="mt-1 text-sm text-red-600">{errors.price.message}</p>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.price.message}
+              </p>
             )}
           </div>
 
@@ -510,7 +528,9 @@ export default function ProductForm({
                 <input
                   type="number"
                   id="sizeFrom"
-                  {...register("sizeFrom", { required: "Size from is required" })}
+                  {...register("sizeFrom", {
+                    required: "Size from is required",
+                  })}
                   className="block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                   placeholder="38"
                 />
@@ -532,7 +552,8 @@ export default function ProductForm({
               </div>
             </div>
             <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-              System will create variants for all sizes in this range (e.g., 38-44 creates 7 sizes)
+              System will create variants for all sizes in this range (e.g.,
+              38-44 creates 7 sizes)
             </p>
           </div>
 
@@ -547,12 +568,16 @@ export default function ProductForm({
             <input
               type="text"
               id="colors"
-              {...register("colors", { required: "At least one color is required" })}
+              {...register("colors", {
+                required: "At least one color is required",
+              })}
               className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
               placeholder="Black, Brown, Navy"
             />
             {errors.colors && (
-              <p className="mt-1 text-sm text-red-600">{errors.colors.message}</p>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.colors.message}
+              </p>
             )}
             <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
               Separate colors with commas (e.g., "Black, Brown, Navy")
@@ -561,8 +586,10 @@ export default function ProductForm({
 
           <div className="rounded-md bg-blue-50 p-3 dark:bg-blue-900/20">
             <p className="text-xs text-blue-700 dark:text-blue-300">
-              <strong>Note:</strong> System will automatically create all size × color combinations.
-              For example: Size 38-40 with Black, Brown = 6 variants (38-Black, 38-Brown, 39-Black, 39-Brown, 40-Black, 40-Brown)
+              <strong>Note:</strong> System will automatically create all size ×
+              color combinations. For example: Size 38-40 with Black, Brown = 6
+              variants (38-Black, 38-Brown, 39-Black, 39-Brown, 40-Black,
+              40-Brown)
             </p>
           </div>
 
@@ -654,13 +681,15 @@ export default function ProductForm({
                     placeholder='{"Gold": 15000, "Silver": 13000}'
                   />
                   <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                    Example: {`{"Gold": 15000, "Silver": 13000}`} - Gold costs 15000, Silver costs 13000
+                    Example: {`{"Gold": 15000, "Silver": 13000}`} - Gold costs
+                    15000, Silver costs 13000
                   </p>
                 </div>
 
                 <div className="rounded-md bg-yellow-50 p-3 dark:bg-yellow-900/20">
                   <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                    <strong>Priority:</strong> Color-specific prices override size-based prices. If both are set, color price wins.
+                    <strong>Priority:</strong> Color-specific prices override
+                    size-based prices. If both are set, color price wins.
                   </p>
                 </div>
               </div>
@@ -689,7 +718,7 @@ export default function ProductForm({
                     alt={`Product image ${index + 1}`}
                     className="h-32 w-full object-cover"
                   />
-                  
+
                   {/* Featured Badge */}
                   {image.isFeatured && (
                     <div className="absolute left-2 top-2 rounded bg-yellow-400 px-2 py-0.5 text-xs font-semibold text-neutral-900">
@@ -772,7 +801,8 @@ export default function ProductForm({
                 </p>
               )}
               <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                Select multiple images (max 5 total). First image or starred image will be featured. Drag to reorder.
+                Select multiple images (max 5 total). First image or starred
+                image will be featured. Drag to reorder.
               </p>
             </div>
           )}
@@ -801,7 +831,11 @@ export default function ProductForm({
           disabled={isSubmitting}
           className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
         >
-          {isSubmitting ? "Saving..." : product ? "Update Product" : "Create Product"}
+          {isSubmitting
+            ? "Saving..."
+            : product
+              ? "Update Product"
+              : "Create Product"}
         </button>
       </div>
     </form>

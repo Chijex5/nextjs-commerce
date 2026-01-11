@@ -22,7 +22,8 @@ export default async function BulkImportPage() {
               Bulk Import Products
             </h1>
             <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-              Upload multiple products at once using a CSV file. Perfect for adding 200+ products efficiently.
+              Upload multiple products at once using a CSV file. Perfect for
+              adding 200+ products efficiently.
             </p>
           </div>
 

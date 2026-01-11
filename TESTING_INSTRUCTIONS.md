@@ -1,10 +1,13 @@
 # Testing Instructions for UI Cleanup and Product Enhancement
 
 ## Overview
+
 This PR adds 12 products with Unsplash images, creates homepage collections, and ensures the UI displays correctly.
 
 ## Prerequisites
+
 Before testing, you need:
+
 1. A PostgreSQL database (local or hosted)
 2. Node.js and npm/pnpm installed
 3. Git repository cloned
@@ -12,6 +15,7 @@ Before testing, you need:
 ## Setup Steps
 
 ### 1. Configure Environment Variables
+
 Create `.env.local` in the root directory:
 
 ```bash
@@ -25,12 +29,14 @@ SITE_NAME="D'FOOTPRINT"
 ```
 
 **Database Options:**
+
 - Local PostgreSQL: `postgresql://postgres:password@localhost:5432/nextjs_commerce`
 - [Vercel Postgres](https://vercel.com/storage/postgres)
 - [Supabase](https://supabase.com) (free tier)
 - [Neon](https://neon.tech) (serverless)
 
 ### 2. Install Dependencies
+
 ```bash
 npm install --legacy-peer-deps
 # or
@@ -38,6 +44,7 @@ pnpm install
 ```
 
 ### 3. Initialize Database
+
 ```bash
 # Push schema to database
 npm run db:push
@@ -47,6 +54,7 @@ npm run db:seed
 ```
 
 **Expected Output:**
+
 ```
 🌱 Seeding database...
 Creating collections...
@@ -70,6 +78,7 @@ Creating menus...
 ```
 
 ### 4. Start Development Server
+
 ```bash
 npm run dev
 ```
@@ -79,6 +88,7 @@ Visit: http://localhost:3000
 ## Testing Checklist
 
 ### Homepage (http://localhost:3000)
+
 - [ ] **Hero Section** displays 3 featured products:
   - Classic Leather Slide
   - Designer Embroidered Slipper
@@ -88,6 +98,7 @@ Visit: http://localhost:3000
 - [ ] Clicking products navigates to product pages
 
 ### Carousel Section
+
 - [ ] **Carousel** displays 7 products in a scrolling view
 - [ ] Products included:
   - Classic Leather Slide
@@ -102,7 +113,9 @@ Visit: http://localhost:3000
 - [ ] Products are clickable
 
 ### Product Pages
+
 Navigate to any product (e.g., `/product/classic-leather-slide`):
+
 - [ ] Product images load from Unsplash
 - [ ] Product title and description display
 - [ ] Price is shown in NGN (Nigerian Naira)
@@ -111,7 +124,9 @@ Navigate to any product (e.g., `/product/classic-leather-slide`):
 - [ ] Image gallery functions properly
 
 ### Collections/Search
+
 Visit: http://localhost:3000/search
+
 - [ ] "All Products" shows all 12 products
 - [ ] "Slippers" collection shows 6 slipper products
 - [ ] "Slides" collection shows 6 slide products
@@ -119,6 +134,7 @@ Visit: http://localhost:3000/search
 - [ ] Product grid layout is clean and responsive
 
 ### Shopping Cart
+
 - [ ] Add products to cart
 - [ ] Cart updates correctly
 - [ ] Quantities can be increased/decreased
@@ -126,7 +142,9 @@ Visit: http://localhost:3000/search
 - [ ] Cart persists across page navigation
 
 ### Mobile Responsiveness
+
 Test on mobile viewport (DevTools):
+
 - [ ] Homepage hero adapts to mobile
 - [ ] Carousel is swipeable
 - [ ] Product cards stack properly
@@ -136,12 +154,14 @@ Test on mobile viewport (DevTools):
 ## Image Verification
 
 All product images should load from Unsplash:
+
 - No "example.com" URLs
 - No placeholder images that cause crashes
 - Images are properly optimized by Next.js
 - Different products show different images
 
 **Image URLs Used:**
+
 - `https://images.unsplash.com/photo-1603808033192-082d6919d3e1`
 - `https://images.unsplash.com/photo-1560769629-975ec94e6a86`
 - `https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77`
@@ -153,11 +173,13 @@ All product images should load from Unsplash:
 ## Database Verification
 
 Optional: Use Prisma Studio to inspect the database:
+
 ```bash
 npm run db:studio
 ```
 
 Verify:
+
 - [ ] 12 products exist
 - [ ] 5 collections exist (including 2 hidden ones)
 - [ ] Products have images
@@ -168,31 +190,39 @@ Verify:
 ## Common Issues
 
 ### Issue: npm install fails
+
 **Solution:** Use `--legacy-peer-deps` flag:
+
 ```bash
 npm install --legacy-peer-deps
 ```
 
 ### Issue: Prisma generate fails
+
 **Solution:** Set DATABASE_URL environment variable:
+
 ```bash
 export DATABASE_URL="postgresql://..."
 npm install
 ```
 
 ### Issue: Images don't load
+
 **Solution:** Check that `next.config.ts` includes Unsplash:
+
 ```typescript
 remotePatterns: [
   {
     protocol: "https",
     hostname: "images.unsplash.com",
   },
-]
+];
 ```
 
 ### Issue: Homepage shows no products
-**Solution:** 
+
+**Solution:**
+
 1. Verify seed completed successfully
 2. Check that hidden collections exist:
    - `hidden-homepage-featured-items`
@@ -200,7 +230,9 @@ remotePatterns: [
 3. Re-run seed: `npm run db:seed`
 
 ### Issue: Database connection fails
+
 **Solution:**
+
 1. Verify DATABASE_URL is correct
 2. Check database is running
 3. Ensure database exists
@@ -217,6 +249,7 @@ remotePatterns: [
 ## Browser Compatibility
 
 Test in:
+
 - [ ] Chrome/Edge (latest)
 - [ ] Firefox (latest)
 - [ ] Safari (latest)
@@ -234,6 +267,7 @@ When ready to deploy:
 5. Deploy
 
 **Vercel Deployment:**
+
 ```bash
 vercel --prod
 ```
@@ -241,6 +275,7 @@ vercel --prod
 ## Support
 
 If issues persist:
+
 1. Check IMPLEMENTATION_SUMMARY.md for details
 2. Review seed.ts for product data
 3. Verify next.config.ts image configuration
@@ -261,6 +296,7 @@ If issues persist:
 ## Next Steps
 
 After successful testing:
+
 1. Replace Unsplash images with real product photos
 2. Update product descriptions with accurate details
 3. Add more products as needed

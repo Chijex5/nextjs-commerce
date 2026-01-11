@@ -13,24 +13,30 @@ export function generateSlug(title: string): string {
 /**
  * Generate SEO title from product title
  */
-export function generateSeoTitle(title: string, brandName: string = "D'FOOTPRINT"): string {
+export function generateSeoTitle(
+  title: string,
+  brandName: string = "D'FOOTPRINT",
+): string {
   return `${title} - ${brandName}`;
 }
 
 /**
  * Generate SEO description from product description
  */
-export function generateSeoDescription(description: string, maxLength: number = 160): string {
+export function generateSeoDescription(
+  description: string,
+  maxLength: number = 160,
+): string {
   if (!description) return "";
-  
+
   // Strip HTML tags if present
   const plainText = description.replace(/<[^>]*>/g, "");
-  
+
   // Truncate to maxLength
   if (plainText.length <= maxLength) {
     return plainText;
   }
-  
+
   // Truncate and add ellipsis
   return plainText.substring(0, maxLength - 3).trim() + "...";
 }
@@ -38,7 +44,10 @@ export function generateSeoDescription(description: string, maxLength: number = 
 /**
  * Format price for display
  */
-export function formatPrice(price: number | string, currency: string = "NGN"): string {
+export function formatPrice(
+  price: number | string,
+  currency: string = "NGN",
+): string {
   const numPrice = typeof price === "string" ? parseFloat(price) : price;
   return `${currency} ${numPrice.toLocaleString("en-NG")}`;
 }
@@ -49,7 +58,9 @@ export function formatPrice(price: number | string, currency: string = "NGN"): s
 export function parseCSV(csvContent: string): Record<string, string>[] {
   const lines = csvContent.trim().split("\n");
   if (lines.length < 2) {
-    throw new Error("CSV file must have at least a header row and one data row");
+    throw new Error(
+      "CSV file must have at least a header row and one data row",
+    );
   }
 
   const headers = lines[0]?.split(",").map((h) => h.trim()) || [];
@@ -58,7 +69,7 @@ export function parseCSV(csvContent: string): Record<string, string>[] {
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i];
     if (!line) continue;
-    
+
     const values = line.split(",");
     if (values.length !== headers.length) {
       continue; // Skip malformed rows
