@@ -237,24 +237,28 @@ model User {
 
 // Orders for tracking purchases
 model Order {
-  id              String   @id @default(uuid())
-  userId          String?  @map("user_id")
-  orderNumber     String   @unique @db.VarChar(50)
-  email           String   @db.VarChar(255)
-  phone           String?  @db.VarChar(50)
-  customerName    String   @map("customer_name") @db.VarChar(255)
-  shippingAddress Json     @map("shipping_address")
-  billingAddress  Json?    @map("billing_address")
-  status          String   @default("pending") @db.VarChar(50)
-  subtotalAmount  Decimal  @map("subtotal_amount") @db.Decimal(10, 2)
-  taxAmount       Decimal  @default(0.00) @map("tax_amount") @db.Decimal(10, 2)
-  shippingAmount  Decimal  @default(0.00) @map("shipping_amount") @db.Decimal(10, 2)
-  totalAmount     Decimal  @map("total_amount") @db.Decimal(10, 2)
-  currencyCode    String   @default("NGN") @map("currency_code") @db.VarChar(3)
-  notes           String?  @db.Text
-  trackingNumber  String?  @map("tracking_number") @db.VarChar(100)
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+  id                  String    @id @default(uuid())
+  userId              String?   @map("user_id")
+  orderNumber         String    @unique @db.VarChar(50)
+  email               String    @db.VarChar(255)
+  phone               String?   @db.VarChar(50)
+  customerName        String    @map("customer_name") @db.VarChar(255)
+  shippingAddress     Json      @map("shipping_address")
+  billingAddress      Json?     @map("billing_address")
+  status              String    @default("pending") @db.VarChar(50)
+  // Delivery tracking fields
+  deliveryStatus      String    @default("production") @map("delivery_status") @db.VarChar(50)
+  estimatedArrival    DateTime? @map("estimated_arrival")
+  // Financial fields
+  subtotalAmount      Decimal   @map("subtotal_amount") @db.Decimal(10, 2)
+  taxAmount           Decimal   @default(0.00) @map("tax_amount") @db.Decimal(10, 2)
+  shippingAmount      Decimal   @default(0.00) @map("shipping_amount") @db.Decimal(10, 2)
+  totalAmount         Decimal   @map("total_amount") @db.Decimal(10, 2)
+  currencyCode        String    @default("NGN") @map("currency_code") @db.VarChar(3)
+  notes               String?   @db.Text
+  trackingNumber      String?   @map("tracking_number") @db.VarChar(100)
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at")
 
   user  User?       @relation(fields: [userId], references: [id])
   items OrderItem[]
@@ -263,6 +267,7 @@ model Order {
   @@index([userId], name: "orders_user_id_idx")
   @@index([email], name: "orders_email_idx")
   @@index([status], name: "orders_status_idx")
+  @@index([deliveryStatus], name: "orders_delivery_status_idx")
   @@map("orders")
 }
 
