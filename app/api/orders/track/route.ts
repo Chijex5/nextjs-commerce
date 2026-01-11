@@ -39,6 +39,9 @@ export async function GET(request: NextRequest) {
         createdAt: order.createdAt.toISOString(),
         trackingNumber: order.trackingNumber,
         items: order.items.map((item) => ({
+          id: item.id,
+          productId: item.productId,
+          productVariantId: item.productVariantId,
           productTitle: item.productTitle,
           variantTitle: item.variantTitle,
           quantity: item.quantity,
