@@ -8,11 +8,14 @@ A high-performance, server-rendered Next.js App Router ecommerce application for
 
 - 🎨 **Professional UI** - Kept the beautiful Vercel Next.js Commerce design
 - 🗄️ **PostgreSQL Backend** - Full control over your data
-- 🚀 **Modern Stack** - Next.js 15, TypeScript, Drizzle ORM
+- 🚀 **Modern Stack** - Next.js 15, TypeScript, Prisma ORM
 - 🔒 **Type Safe** - End-to-end TypeScript
 - ⚡ **Fast** - Optimized queries and caching
 - 📱 **Mobile First** - Responsive design
 - 🛒 **Full Cart** - Complete shopping cart functionality
+- 💳 **Checkout & Payments** - Integrated Paystack payment gateway
+- 👤 **User Accounts** - Authentication and order management
+- 📦 **Order Tracking** - Complete order management system
 
 ## 🚀 Quick Start
 
@@ -32,6 +35,14 @@ Choose a PostgreSQL host and create `.env.local`:
 DATABASE_URL="postgresql://user:password@host:5432/database"
 SITE_NAME="D'FOOTPRINT"
 COMPANY_NAME="D'FOOTPRINT"
+
+# For checkout functionality
+NEXTAUTH_SECRET="your-secret-key-here"
+NEXTAUTH_URL="http://localhost:3000"
+
+# Paystack (for payments)
+PAYSTACK_PUBLIC_KEY="pk_test_xxxxxxxxxxxxx"
+PAYSTACK_SECRET_KEY="sk_test_xxxxxxxxxxxxx"
 ```
 
 **Recommended Hosts:**
@@ -40,6 +51,12 @@ COMPANY_NAME="D'FOOTPRINT"
 - [Supabase](https://supabase.com) - Free tier available
 - [Neon](https://neon.tech) - Serverless Postgres
 - Local PostgreSQL
+
+**Get Paystack Keys:**
+
+- Sign up at [Paystack](https://paystack.com)
+- Get your API keys from the dashboard
+- See [CHECKOUT_SETUP.md](CHECKOUT_SETUP.md) for detailed setup
 
 ### 3. Initialize Database
 
@@ -62,6 +79,8 @@ Open [http://localhost:3000](http://localhost:3000) 🎉
 - **[DATABASE_SETUP.md](DATABASE_SETUP.md)** - Detailed setup instructions
 - **[DATABASE_MIGRATION.md](DATABASE_MIGRATION.md)** - Design decisions and architecture
 - **[PRD.md](PRD.md)** - Product requirements for D'FOOTPRINT
+- **[CHECKOUT_SETUP.md](CHECKOUT_SETUP.md)** - Checkout and payment setup guide
+- **[CHECKOUT_IMPLEMENTATION.md](CHECKOUT_IMPLEMENTATION.md)** - Checkout technical documentation
 
 ## 🛠️ NPM Scripts
 

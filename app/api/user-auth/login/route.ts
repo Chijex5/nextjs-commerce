@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     if (!user || !user.isActive) {
       return NextResponse.json(
         { error: "Invalid credentials" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     if (!isPasswordValid) {
       return NextResponse.json(
         { error: "Invalid credentials" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
       id: user.id,
       email: user.email,
       name: user.name,
+      phone: user.phone,
     });
 
     // Set session cookie
@@ -59,13 +60,14 @@ export async function POST(request: NextRequest) {
         id: user.id,
         email: user.email,
         name: user.name,
+        phone: user.phone,
       },
     });
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(
       { error: "An error occurred during login" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

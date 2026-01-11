@@ -5,7 +5,9 @@ import { UserSession } from "lib/user-session";
 
 export function useUserSession() {
   const [session, setSession] = useState<UserSession | null>(null);
-  const [status, setStatus] = useState<"loading" | "authenticated" | "unauthenticated">("loading");
+  const [status, setStatus] = useState<
+    "loading" | "authenticated" | "unauthenticated"
+  >("loading");
 
   useEffect(() => {
     fetchSession();
@@ -15,7 +17,7 @@ export function useUserSession() {
     try {
       const response = await fetch("/api/user-auth/session");
       const data = await response.json();
-      
+
       if (data.user) {
         setSession(data.user);
         setStatus("authenticated");

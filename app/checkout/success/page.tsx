@@ -1,7 +1,7 @@
 import { Suspense } from "react";
-import Login from "./Login";
+import CheckoutSuccess from "./success";
 
-function LoginSkeleton() {
+function CheckoutSuccessSkeleton() {
   return (
     <div className="mx-auto mt-20 max-w-md px-4">
       <div className="rounded-lg border p-8">
@@ -16,10 +16,10 @@ function LoginSkeleton() {
   );
 }
 
-export default function LoginPage() {
+export default function CheckoutSuccessPage(){
   return (
-    <Suspense fallback={<LoginSkeleton />}>
-      <Login />
+    <Suspense fallback={<CheckoutSuccessSkeleton/>}>
+      <CheckoutSuccess />
     </Suspense>
-  );
+  )
 }

@@ -7,10 +7,7 @@ export async function GET(request: NextRequest) {
     const session = await getUserSession();
 
     if (!session?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const orders = await prisma.order.findMany({
@@ -49,7 +46,7 @@ export async function GET(request: NextRequest) {
     console.error("Failed to fetch orders:", error);
     return NextResponse.json(
       { error: "Failed to fetch orders" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

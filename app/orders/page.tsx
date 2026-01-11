@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
 import Price from "components/price";
+import PageLoader from "components/page-loader";
 import { useUserSession } from "hooks/useUserSession";
 
 interface OrderItem {
@@ -66,7 +67,9 @@ export default function OrdersPage() {
 
     setIsTrackingLoading(true);
     try {
-      const response = await fetch(`/api/orders/track?orderNumber=${trackingId}`);
+      const response = await fetch(
+        `/api/orders/track?orderNumber=${trackingId}`,
+      );
       if (response.ok) {
         const data = await response.json();
         setTrackedOrder(data.order);
@@ -120,7 +123,9 @@ export default function OrdersPage() {
 
       <div className="mb-4 space-y-3">
         {order.items.map((item) => {
-          const itemKey = item.id || `${order.id}-${item.productVariantId || item.productTitle}-${item.variantTitle}`;
+          const itemKey =
+            item.id ||
+            `${order.id}-${item.productVariantId || item.productTitle}-${item.variantTitle}`;
           return (
             <div key={itemKey} className="flex items-center gap-3">
               {item.productImage && (
@@ -155,14 +160,7 @@ export default function OrdersPage() {
   );
 
   if (status === "loading") {
-    return (
-      <div className="mx-auto mt-20 max-w-4xl px-4">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 w-48 rounded bg-neutral-200 dark:bg-neutral-800"></div>
-          <div className="h-64 rounded-lg bg-neutral-200 dark:bg-neutral-800"></div>
-        </div>
-      </div>
-    );
+    return <PageLoader size="lg" message="Loading orders..." />;
   }
 
   return (

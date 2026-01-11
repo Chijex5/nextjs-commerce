@@ -4,7 +4,7 @@ import { getUserSession } from "lib/user-session";
 export async function GET() {
   try {
     const session = await getUserSession();
-    
+
     if (!session) {
       return NextResponse.json({ user: null });
     }

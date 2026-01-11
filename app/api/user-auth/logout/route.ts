@@ -9,7 +9,7 @@ export async function POST() {
     console.error("Logout error:", error);
     return NextResponse.json(
       { error: "An error occurred during logout" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

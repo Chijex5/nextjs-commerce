@@ -56,9 +56,7 @@ export default function UserAccountIcon() {
           {session ? (
             <>
               <div className="border-b border-neutral-200 px-4 py-3 dark:border-neutral-700">
-                <p className="text-sm font-medium">
-                  {session.name || "User"}
-                </p>
+                <p className="text-sm font-medium">{session.name || "User"}</p>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
                   {session.email}
                 </p>

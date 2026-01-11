@@ -1,12 +1,14 @@
 import { cookies } from "next/headers";
 import crypto from "crypto";
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || "your-secret-key-change-in-production";
+const JWT_SECRET =
+  process.env.NEXTAUTH_SECRET || "your-secret-key-change-in-production";
 
 export interface UserSession {
   id: string;
   email: string;
   name: string | null;
+  phone?: string | null;
 }
 
 interface TokenPayload {
@@ -23,7 +25,9 @@ export async function createUserSession(user: UserSession): Promise<string> {
     exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7 days
   };
 
-  const base64Payload = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const base64Payload = Buffer.from(JSON.stringify(payload)).toString(
+    "base64url",
+  );
   const signature = crypto
     .createHmac("sha256", JWT_SECRET)
     .update(base64Payload)
@@ -34,7 +38,7 @@ export async function createUserSession(user: UserSession): Promise<string> {
 
 // Verify session token
 export async function verifyUserSession(
-  token: string
+  token: string,
 ): Promise<UserSession | null> {
   try {
     const [base64Payload, signature] = token.split(".");
@@ -54,7 +58,7 @@ export async function verifyUserSession(
 
     // Decode payload
     const payload: TokenPayload = JSON.parse(
-      Buffer.from(base64Payload, "base64url").toString()
+      Buffer.from(base64Payload, "base64url").toString(),
     );
 
     // Check expiration

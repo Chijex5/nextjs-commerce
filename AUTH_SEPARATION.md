@@ -10,19 +10,23 @@ This application now has **TWO COMPLETELY SEPARATE** authentication systems:
 ## Admin Authentication (Using NextAuth.js)
 
 ### Endpoints
+
 - `/api/auth/[...nextauth]` - NextAuth.js endpoints
 - `/admin/login` - Admin login page
 
 ### Database
+
 - Table: `AdminUser`
 - Fields: id, email, passwordHash, role, isActive, etc.
 
 ### Technology
+
 - NextAuth.js with credentials provider
 - JWT sessions
 - Role-based access control
 
 ### Usage
+
 ```typescript
 // In admin pages
 import { useSession } from "next-auth/react";
@@ -31,27 +35,32 @@ const { data: session } = useSession();
 ```
 
 ### Sign In Page
+
 - `/admin/login` - Uses NextAuth signIn()
 - Redirects to `/admin/dashboard` after login
 
 ## User Authentication (Custom JWT System)
 
 ### Endpoints
+
 - `/api/user-auth/login` - Login endpoint
 - `/api/user-auth/logout` - Logout endpoint
 - `/api/user-auth/session` - Check session status
 - `/api/user-auth/register` - Registration endpoint
 
 ### Database
+
 - Table: `User`
 - Fields: id, email, passwordHash, name, phone, isActive, etc.
 
 ### Technology
+
 - Custom JWT tokens using Node.js crypto
 - HTTP-only cookies (`user-session`)
 - No NextAuth.js dependency
 
 ### Usage
+
 ```typescript
 // In user-facing pages
 import { useUserSession } from "hooks/useUserSession";
@@ -60,20 +69,21 @@ const { data: session, status, signOut } = useUserSession();
 ```
 
 ### Sign In Page
+
 - `/auth/login` - Uses custom fetch() to `/api/user-auth/login`
 - Redirects to `/account` after login
 
 ## Key Differences
 
-| Feature | Admin Auth | User Auth |
-|---------|-----------|-----------|
-| Library | NextAuth.js | Custom |
-| Endpoint | `/api/auth/*` | `/api/user-auth/*` |
-| Database Table | `AdminUser` | `User` |
-| Cookie Name | `next-auth.session-token` | `user-session` |
-| Hook | `useSession()` | `useUserSession()` |
-| Login Page | `/admin/login` | `/auth/login` |
-| Purpose | Dashboard access | Shopping accounts |
+| Feature        | Admin Auth                | User Auth          |
+| -------------- | ------------------------- | ------------------ |
+| Library        | NextAuth.js               | Custom             |
+| Endpoint       | `/api/auth/*`             | `/api/user-auth/*` |
+| Database Table | `AdminUser`               | `User`             |
+| Cookie Name    | `next-auth.session-token` | `user-session`     |
+| Hook           | `useSession()`            | `useUserSession()` |
+| Login Page     | `/admin/login`            | `/auth/login`      |
+| Purpose        | Dashboard access          | Shopping accounts  |
 
 ## Why Separate?
 
@@ -112,11 +122,13 @@ hooks/
 ## Session Management
 
 ### Admin Sessions
+
 - Managed by NextAuth.js
 - Stored in `next-auth.session-token` cookie
 - Checked with `getServerSession(authOptions)`
 
 ### User Sessions
+
 - Managed by custom JWT system
 - Stored in `user-session` cookie
 - Checked with `getUserSession()`
@@ -124,6 +136,7 @@ hooks/
 ## Protected Routes
 
 ### Admin Routes
+
 ```typescript
 // Uses NextAuth
 import { getServerSession } from "next-auth";
@@ -136,6 +149,7 @@ if (!session || session.user.role !== "admin") {
 ```
 
 ### User Routes
+
 ```typescript
 // Uses custom session
 import { getUserSession } from "lib/user-session";
@@ -149,6 +163,7 @@ if (!session) {
 ## No Mixing!
 
 ❌ **NEVER do this:**
+
 ```typescript
 // WRONG: Using NextAuth for user login
 import { signIn } from "next-auth/react";
@@ -156,23 +171,26 @@ import { signIn } from "next-auth/react";
 ```
 
 ✅ **Always do this:**
+
 ```typescript
 // CORRECT: Using custom auth for user login
 const response = await fetch("/api/user-auth/login", {
   method: "POST",
-  body: JSON.stringify({ email, password })
+  body: JSON.stringify({ email, password }),
 });
 ```
 
 ## Testing
 
 ### Test Admin Auth
+
 1. Go to `/admin/login`
 2. Sign in with admin credentials
 3. Should redirect to `/admin/dashboard`
 4. Session stored in `next-auth.session-token`
 
 ### Test User Auth
+
 1. Go to `/auth/login`
 2. Sign in with user credentials
 3. Should redirect to `/account`
