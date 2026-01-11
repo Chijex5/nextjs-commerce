@@ -43,7 +43,7 @@ export default async function Footer() {
         </Suspense>
         <div className="md:ml-auto">
           <p className="text-sm">
-            Handcrafted footwear made with love in Lagos, Nigeria.
+            Handcrafted footwear made with love and care.
           </p>
         </div>
       </div>

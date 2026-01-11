@@ -98,7 +98,7 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
               </div>
               <div className="border-t border-neutral-200 p-4 dark:border-neutral-700">
                 <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                  Handcrafted footwear from Lagos, Nigeria
+                  Premium handcrafted footwear
                 </p>
               </div>
             </Dialog.Panel>
