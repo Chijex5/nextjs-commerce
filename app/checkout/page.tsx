@@ -346,6 +346,7 @@ export default function CheckoutPage() {
                       First Name *
                     </label>
                     <input
+                      title="first-name"
                       type="text"
                       required
                       value={formData.shippingAddress.firstName}
@@ -364,6 +365,7 @@ export default function CheckoutPage() {
                       Last Name *
                     </label>
                     <input
+                      title="last-name"
                       type="text"
                       required
                       value={formData.shippingAddress.lastName}
@@ -464,6 +466,7 @@ export default function CheckoutPage() {
                       State *
                     </label>
                     <select
+                      title="state"
                       required
                       value={formData.shippingAddress.state}
                       onChange={(e) =>
@@ -561,6 +564,7 @@ export default function CheckoutPage() {
                         First Name *
                       </label>
                       <input
+                        title="first-name"
                         type="text"
                         required
                         value={formData.billingAddress.firstName}
@@ -579,6 +583,7 @@ export default function CheckoutPage() {
                         Last Name *
                       </label>
                       <input
+                        title="last-name"
                         type="text"
                         required
                         value={formData.billingAddress.lastName}
@@ -679,6 +684,7 @@ export default function CheckoutPage() {
                         State *
                       </label>
                       <select
+                        title="state"
                         required
                         value={formData.billingAddress.state}
                         onChange={(e) =>
