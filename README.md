@@ -53,6 +53,7 @@ PAYSTACK_SECRET_KEY="sk_test_xxxxxxxxxxxxx"
 - Local PostgreSQL
 
 **Get Paystack Keys:**
+
 - Sign up at [Paystack](https://paystack.com)
 - Get your API keys from the dashboard
 - See [CHECKOUT_SETUP.md](CHECKOUT_SETUP.md) for detailed setup

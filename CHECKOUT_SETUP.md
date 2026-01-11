@@ -34,7 +34,7 @@ psql $DATABASE_URL -f prisma/migrations/add_user_addresses/migration.sql
 Or execute this SQL directly:
 
 ```sql
-ALTER TABLE "users" 
+ALTER TABLE "users"
 ADD COLUMN IF NOT EXISTS "shipping_address" JSONB,
 ADD COLUMN IF NOT EXISTS "billing_address" JSONB;
 ```
@@ -85,24 +85,27 @@ pnpm dev
 1. **Add products to cart**
    - Browse products at http://localhost:3000
    - Click "Add to Cart" on any product
-   
 2. **Open cart and proceed to checkout**
+
    - Click the cart icon in the navigation
    - Review items in cart
    - Click "Proceed to Checkout"
 
 3. **Fill in checkout form**
+
    - Enter email and phone
    - Fill in shipping address
    - Optionally add different billing address
    - Review order summary
 
 4. **Complete payment with test card**
+
    - Click "Proceed to Payment"
    - You'll be redirected to Paystack
    - Use Paystack test cards:
 
    **Successful Payment:**
+
    - Card Number: `4084 0840 8408 4081`
    - CVV: `408`
    - Expiry: Any future date
@@ -110,6 +113,7 @@ pnpm dev
    - OTP: `123456`
 
    **Failed Payment (for testing):**
+
    - Card Number: `0000 0000 0000 0000`
 
 5. **Verify order creation**
@@ -132,6 +136,7 @@ NEXTAUTH_URL=https://yourdomain.com
 ### 4.2 Configure Production Webhook
 
 In Paystack Dashboard:
+
 1. Switch to **Live** mode
 2. Add production webhook URL
 3. Verify webhook is receiving events
@@ -152,7 +157,8 @@ Ensure your production site has a valid SSL certificate. Paystack requires HTTPS
 
 ### Issue: Cart is empty after adding items
 
-**Solution:** 
+**Solution:**
+
 1. Check cookies are enabled in browser
 2. Verify `cartId` cookie is being set
 3. Check database connection
@@ -160,6 +166,7 @@ Ensure your production site has a valid SSL certificate. Paystack requires HTTPS
 ### Issue: Order not created after successful payment
 
 **Solution:**
+
 1. Check application logs for errors
 2. Verify database connection
 3. Check Paystack dashboard for payment status

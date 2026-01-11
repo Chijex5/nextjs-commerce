@@ -62,7 +62,10 @@ export default function AddressesPage() {
   };
 
   const handleEdit = (type: "shipping" | "billing") => {
-    const address = type === "shipping" ? addresses.shippingAddress : addresses.billingAddress;
+    const address =
+      type === "shipping"
+        ? addresses.shippingAddress
+        : addresses.billingAddress;
     if (address) {
       setFormData(address);
     } else {
@@ -128,7 +131,15 @@ export default function AddressesPage() {
     return null;
   }
 
-  const AddressCard = ({ title, address, type }: { title: string; address?: Address; type: "shipping" | "billing" }) => (
+  const AddressCard = ({
+    title,
+    address,
+    type,
+  }: {
+    title: string;
+    address?: Address;
+    type: "shipping" | "billing";
+  }) => (
     <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-black">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold">{title}</h3>
@@ -170,28 +181,38 @@ export default function AddressesPage() {
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium">First Name *</label>
+                <label className="mb-1 block text-sm font-medium">
+                  First Name *
+                </label>
                 <input
                   type="text"
                   required
                   value={formData.firstName}
-                  onChange={(e) => handleInputChange("firstName", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("firstName", e.target.value)
+                  }
                   className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">Last Name *</label>
+                <label className="mb-1 block text-sm font-medium">
+                  Last Name *
+                </label>
                 <input
                   type="text"
                   required
                   value={formData.lastName}
-                  onChange={(e) => handleInputChange("lastName", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("lastName", e.target.value)
+                  }
                   className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
                 />
               </div>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Address *</label>
+              <label className="mb-1 block text-sm font-medium">
+                Address *
+              </label>
               <input
                 type="text"
                 required
@@ -213,7 +234,9 @@ export default function AddressesPage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">State *</label>
+                <label className="mb-1 block text-sm font-medium">
+                  State *
+                </label>
                 <input
                   type="text"
                   required
@@ -223,17 +246,23 @@ export default function AddressesPage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">Postal Code</label>
+                <label className="mb-1 block text-sm font-medium">
+                  Postal Code
+                </label>
                 <input
                   type="text"
                   value={formData.postalCode}
-                  onChange={(e) => handleInputChange("postalCode", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("postalCode", e.target.value)
+                  }
                   className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
                 />
               </div>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Country *</label>
+              <label className="mb-1 block text-sm font-medium">
+                Country *
+              </label>
               <input
                 type="text"
                 required

@@ -8,10 +8,7 @@ export async function GET() {
     const session = await getUserSession();
 
     if (!session?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
@@ -23,10 +20,7 @@ export async function GET() {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -39,7 +33,7 @@ export async function GET() {
     console.error("Failed to fetch addresses:", error);
     return NextResponse.json(
       { error: "Failed to fetch addresses" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -50,10 +44,7 @@ export async function PUT(request: NextRequest) {
     const session = await getUserSession();
 
     if (!session?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -62,32 +53,40 @@ export async function PUT(request: NextRequest) {
     if (!type || !address) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (type !== "shipping" && type !== "billing") {
       return NextResponse.json(
         { error: "Invalid address type" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Validate address fields
-    const requiredFields = ["firstName", "lastName", "address", "city", "state", "country"];
+    const requiredFields = [
+      "firstName",
+      "lastName",
+      "address",
+      "city",
+      "state",
+      "country",
+    ];
     for (const field of requiredFields) {
       if (!address[field]) {
         return NextResponse.json(
           { error: `Missing required field: ${field}` },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
 
     // Update user address
-    const updateData = type === "shipping"
-      ? { shippingAddress: address }
-      : { billingAddress: address };
+    const updateData =
+      type === "shipping"
+        ? { shippingAddress: address }
+        : { billingAddress: address };
 
     await prisma.user.update({
       where: { id: session.id },
@@ -102,7 +101,7 @@ export async function PUT(request: NextRequest) {
     console.error("Failed to update address:", error);
     return NextResponse.json(
       { error: "Failed to update address" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

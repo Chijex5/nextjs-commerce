@@ -117,8 +117,9 @@ export default function CheckoutPage() {
         setFormData((prev) => ({
           ...prev,
           email: session?.email || "",
-          phone: session?.phone || "",
-          shippingAddress: data.addresses.shippingAddress || prev.shippingAddress,
+          phone: session?.phone || prev.phone,
+          shippingAddress:
+            data.addresses.shippingAddress || prev.shippingAddress,
           billingAddress: data.addresses.billingAddress || prev.billingAddress,
         }));
       }
