@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
     // Verify payment with Paystack
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
-    
+
     if (!paystackSecretKey) {
       return redirect("/checkout?error=payment_verification_failed");
     }
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         headers: {
           Authorization: `Bearer ${paystackSecretKey}`,
         },
-      }
+      },
     );
 
     const verifyData = await verifyResponse.json();
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     // Get checkout session from cookie
     const cookieStore = await cookies();
     const checkoutSessionCookie = cookieStore.get("checkout-session");
-    
+
     if (!checkoutSessionCookie) {
       return redirect("/checkout?error=session_expired");
     }

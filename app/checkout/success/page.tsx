@@ -26,9 +26,10 @@ export default function CheckoutSuccessPage() {
         </div>
 
         <h1 className="mb-4 text-3xl font-bold">Order Placed Successfully!</h1>
-        
+
         <p className="mb-6 text-neutral-600 dark:text-neutral-400">
-          Thank you for your purchase. Your order has been confirmed and is being processed.
+          Thank you for your purchase. Your order has been confirmed and is
+          being processed.
         </p>
 
         {orderNumber && (
@@ -41,7 +42,8 @@ export default function CheckoutSuccessPage() {
         )}
 
         <p className="mb-8 text-sm text-neutral-600 dark:text-neutral-400">
-          A confirmation email has been sent to your email address with the order details.
+          A confirmation email has been sent to your email address with the
+          order details.
         </p>
 
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
@@ -65,7 +67,9 @@ export default function CheckoutSuccessPage() {
         <ul className="space-y-3 text-sm text-neutral-600 dark:text-neutral-400">
           <li className="flex items-start">
             <span className="mr-2">✓</span>
-            <span>You'll receive an email confirmation with your order details</span>
+            <span>
+              You'll receive an email confirmation with your order details
+            </span>
           </li>
           <li className="flex items-start">
             <span className="mr-2">✓</span>
@@ -73,7 +77,10 @@ export default function CheckoutSuccessPage() {
           </li>
           <li className="flex items-start">
             <span className="mr-2">✓</span>
-            <span>Track your order anytime from your account or using the order number</span>
+            <span>
+              Track your order anytime from your account or using the order
+              number
+            </span>
           </li>
         </ul>
       </div>

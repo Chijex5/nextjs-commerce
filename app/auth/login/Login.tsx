@@ -46,10 +46,7 @@ export default function Login() {
         <h1 className="mb-6 text-2xl font-bold">Login</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label
-              htmlFor="email"
-              className="mb-2 block text-sm font-medium"
-            >
+            <label htmlFor="email" className="mb-2 block text-sm font-medium">
               Email
             </label>
             <input

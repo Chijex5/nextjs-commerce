@@ -5,6 +5,7 @@
 ### 1. Navbar - User Account Icon
 
 **Desktop View:**
+
 ```
 ┌─────────────────────────────────────────────────┐
 │  🏷️ Logo   Home   Products   About            │
@@ -16,6 +17,7 @@
 **User Icon States:**
 
 **Not Logged In:**
+
 ```
 Click 👤 →  ┌──────────────┐
             │ Login        │
@@ -25,6 +27,7 @@ Click 👤 →  ┌──────────────┐
 ```
 
 **Logged In:**
+
 ```
 Click 👤 →  ┌──────────────────┐
             │ John Doe         │
@@ -39,6 +42,7 @@ Click 👤 →  ┌──────────────────┐
 ### 2. Mobile Menu
 
 **Mobile Hamburger Menu:**
+
 ```
 ☰ Menu
 ├─ Home
@@ -213,6 +217,7 @@ Status Colors:
 ## 🔄 User Flow Diagrams
 
 ### New User Journey
+
 ```
 Homepage
    ↓
@@ -230,6 +235,7 @@ Access Account & Orders
 ```
 
 ### Returning User Journey
+
 ```
 Homepage
    ↓
@@ -245,6 +251,7 @@ View "My Orders"
 ```
 
 ### Guest Order Tracking
+
 ```
 Homepage / Any Page
    ↓
@@ -260,6 +267,7 @@ View Order Status
 ## 📱 Mobile Responsive Views
 
 ### Mobile Navbar
+
 ```
 ┌──────────────────────┐
 │ ☰  🏷️ Logo     👤 🛒│
@@ -267,6 +275,7 @@ View Order Status
 ```
 
 ### Mobile Orders
+
 ```
 ┌─────────────────┐
 │ Orders          │
@@ -289,6 +298,7 @@ View Order Status
 ## 🎨 Color Scheme
 
 Consistent with existing D'FOOTPRINT theme:
+
 - **Primary**: Blue (#2563eb)
 - **Success**: Green (#16a34a)
 - **Warning**: Amber (#f59e0b)
@@ -299,17 +309,20 @@ Consistent with existing D'FOOTPRINT theme:
 ## ✨ Interactive Elements
 
 ### Hover States
+
 - User icon: Light background
 - Dropdown items: Highlight on hover
 - Buttons: Darker shade on hover
 - Links: Underline on hover
 
 ### Loading States
+
 - User icon: Pulsing animation
 - Orders: Skeleton loaders
 - Forms: "Loading..." text on buttons
 
 ### Toast Notifications
+
 - Success: "Logged in successfully!"
 - Error: "Invalid credentials"
 - Info: "Order found!"
@@ -317,6 +330,7 @@ Consistent with existing D'FOOTPRINT theme:
 ## 🔐 Protected vs Public Routes
 
 **Public Routes (No Login Required):**
+
 - `/` - Homepage
 - `/products` - Product listing
 - `/auth/login` - Login page
@@ -324,10 +338,12 @@ Consistent with existing D'FOOTPRINT theme:
 - `/orders` - Track order (partial access)
 
 **Protected Routes (Redirects to Login):**
+
 - `/account` - Account dashboard
 - `/orders` - My Orders section
 
 **API Routes:**
+
 - Public: `/api/orders/track`
 - Protected: `/api/orders` (user's orders)
 - Public: `/api/user-auth/register`
@@ -336,6 +352,7 @@ Consistent with existing D'FOOTPRINT theme:
 ## 📊 Data Flow
 
 ### Authentication Flow
+
 ```
 Client Form
    ↓
@@ -353,6 +370,7 @@ Client Receives Session
 ```
 
 ### Order Fetching Flow
+
 ```
 Client Request
    ↓
@@ -368,6 +386,7 @@ Display in UI
 ```
 
 ### Order Tracking Flow
+
 ```
 Client Input
    ↓

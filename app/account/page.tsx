@@ -36,7 +36,7 @@ export default function AccountPage() {
   return (
     <div className="mx-auto mt-20 max-w-4xl px-4">
       <h1 className="mb-6 text-3xl font-bold">My Account</h1>
-      
+
       <div className="space-y-6">
         {/* Account Info */}
         <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-black">
@@ -46,9 +46,7 @@ export default function AccountPage() {
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
                 Name
               </p>
-              <p className="font-medium">
-                {session.name || "Not provided"}
-              </p>
+              <p className="font-medium">{session.name || "Not provided"}</p>
             </div>
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">

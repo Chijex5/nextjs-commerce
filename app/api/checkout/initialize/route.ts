@@ -30,28 +30,25 @@ interface CheckoutData {
 export async function POST(request: NextRequest) {
   try {
     const body: CheckoutData = await request.json();
-    
+
     // Validate required fields
     if (!body.email || !body.phone || !body.shippingAddress) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Get cart
     const cart = await getCart();
     if (!cart || cart.lines.length === 0) {
-      return NextResponse.json(
-        { error: "Cart is empty" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
 
     // Calculate total amount (including shipping)
     const shippingCost = 2000; // ₦2,000 flat shipping
     const totalAmount = parseFloat(cart.cost.totalAmount.amount) + shippingCost;
-    
+
     // Convert amount to kobo (Paystack uses kobo for NGN)
     const amountInKobo = Math.round(totalAmount * 100);
 
@@ -82,11 +79,11 @@ export async function POST(request: NextRequest) {
 
     // Initialize Paystack payment
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
-    
+
     if (!paystackSecretKey) {
       return NextResponse.json(
         { error: "Payment gateway not configured" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -111,7 +108,7 @@ export async function POST(request: NextRequest) {
             cart_id: cart.id,
           },
         }),
-      }
+      },
     );
 
     const paystackData = await paystackResponse.json();
@@ -120,7 +117,7 @@ export async function POST(request: NextRequest) {
       console.error("Paystack initialization failed:", paystackData);
       return NextResponse.json(
         { error: paystackData.message || "Failed to initialize payment" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -132,7 +129,7 @@ export async function POST(request: NextRequest) {
     console.error("Checkout initialization error:", error);
     return NextResponse.json(
       { error: "An error occurred during checkout" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

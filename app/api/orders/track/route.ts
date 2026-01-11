@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     if (!orderNumber) {
       return NextResponse.json(
         { error: "Order number is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -23,10 +23,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!order) {
-      return NextResponse.json(
-        { error: "Order not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -54,7 +51,7 @@ export async function GET(request: NextRequest) {
     console.error("Failed to track order:", error);
     return NextResponse.json(
       { error: "Failed to track order" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

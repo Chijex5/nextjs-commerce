@@ -136,7 +136,7 @@ export default function CheckoutPage() {
   const handleInputChange = (
     field: string,
     value: string | boolean,
-    addressType?: "shippingAddress" | "billingAddress"
+    addressType?: "shippingAddress" | "billingAddress",
   ) => {
     if (addressType) {
       setFormData((prev) => ({
@@ -227,7 +227,9 @@ export default function CheckoutPage() {
           <div className="space-y-6 lg:col-span-2">
             {/* Contact Information */}
             <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-black">
-              <h2 className="mb-4 text-xl font-semibold">Contact Information</h2>
+              <h2 className="mb-4 text-xl font-semibold">
+                Contact Information
+              </h2>
               <div className="space-y-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium">
@@ -275,7 +277,7 @@ export default function CheckoutPage() {
                         handleInputChange(
                           "firstName",
                           e.target.value,
-                          "shippingAddress"
+                          "shippingAddress",
                         )
                       }
                       className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
@@ -293,7 +295,7 @@ export default function CheckoutPage() {
                         handleInputChange(
                           "lastName",
                           e.target.value,
-                          "shippingAddress"
+                          "shippingAddress",
                         )
                       }
                       className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
@@ -312,7 +314,7 @@ export default function CheckoutPage() {
                       handleInputChange(
                         "address",
                         e.target.value,
-                        "shippingAddress"
+                        "shippingAddress",
                       )
                     }
                     className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
@@ -329,7 +331,11 @@ export default function CheckoutPage() {
                       required
                       value={formData.shippingAddress.city}
                       onChange={(e) =>
-                        handleInputChange("city", e.target.value, "shippingAddress")
+                        handleInputChange(
+                          "city",
+                          e.target.value,
+                          "shippingAddress",
+                        )
                       }
                       className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
                     />
@@ -343,7 +349,11 @@ export default function CheckoutPage() {
                       required
                       value={formData.shippingAddress.state}
                       onChange={(e) =>
-                        handleInputChange("state", e.target.value, "shippingAddress")
+                        handleInputChange(
+                          "state",
+                          e.target.value,
+                          "shippingAddress",
+                        )
                       }
                       className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
                     />
@@ -359,7 +369,7 @@ export default function CheckoutPage() {
                         handleInputChange(
                           "postalCode",
                           e.target.value,
-                          "shippingAddress"
+                          "shippingAddress",
                         )
                       }
                       className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
@@ -378,7 +388,7 @@ export default function CheckoutPage() {
                       handleInputChange(
                         "country",
                         e.target.value,
-                        "shippingAddress"
+                        "shippingAddress",
                       )
                     }
                     className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
@@ -419,7 +429,7 @@ export default function CheckoutPage() {
                           handleInputChange(
                             "firstName",
                             e.target.value,
-                            "billingAddress"
+                            "billingAddress",
                           )
                         }
                         className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
@@ -437,7 +447,7 @@ export default function CheckoutPage() {
                           handleInputChange(
                             "lastName",
                             e.target.value,
-                            "billingAddress"
+                            "billingAddress",
                           )
                         }
                         className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
@@ -456,7 +466,7 @@ export default function CheckoutPage() {
                         handleInputChange(
                           "address",
                           e.target.value,
-                          "billingAddress"
+                          "billingAddress",
                         )
                       }
                       className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
@@ -475,7 +485,7 @@ export default function CheckoutPage() {
                           handleInputChange(
                             "city",
                             e.target.value,
-                            "billingAddress"
+                            "billingAddress",
                           )
                         }
                         className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
@@ -493,7 +503,7 @@ export default function CheckoutPage() {
                           handleInputChange(
                             "state",
                             e.target.value,
-                            "billingAddress"
+                            "billingAddress",
                           )
                         }
                         className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
@@ -510,7 +520,7 @@ export default function CheckoutPage() {
                           handleInputChange(
                             "postalCode",
                             e.target.value,
-                            "billingAddress"
+                            "billingAddress",
                           )
                         }
                         className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
@@ -529,7 +539,7 @@ export default function CheckoutPage() {
                         handleInputChange(
                           "country",
                           e.target.value,
-                          "billingAddress"
+                          "billingAddress",
                         )
                       }
                       className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
