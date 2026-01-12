@@ -74,7 +74,11 @@ const DEFAULT_COLUMNS: Column[] = [
   },
 ];
 
-export default function BulkProductEditor() {
+interface BulkProductEditorProps {
+  selectedIds?: string[];
+}
+
+export default function BulkProductEditor({ selectedIds = [] }: BulkProductEditorProps) {
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [visibleColumns, setVisibleColumns] = useState<Set<keyof ProductRow>>(
@@ -101,9 +105,51 @@ export default function BulkProductEditor() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchProducts();
+    if (selectedIds.length > 0) {
+      fetchSelectedProducts();
+    } else {
+      fetchProducts();
+    }
     fetchCollections();
   }, [currentPage, searchTerm]);
+
+  const fetchSelectedProducts = async () => {
+    try {
+      setLoading(true);
+      // Fetch each selected product by ID
+      const promises = selectedIds.map((id) =>
+        fetch(`/api/admin/products/${id}`).then((res) => res.json()),
+      );
+
+      const results = await Promise.all(promises);
+      const productsData = results.map((data) => data.product).filter(Boolean);
+
+      setProducts(
+        productsData.map((p: any) => ({
+          id: p.id,
+          title: p.title || "",
+          handle: p.handle || "",
+          description: p.description || "",
+          price: p.variants?.[0]?.price || "0",
+          availableForSale: p.availableForSale ?? true,
+          tags: p.tags?.join(", ") || "",
+          collections:
+            p.productCollections?.map((pc: any) => pc.collection.id) || [],
+          seoTitle: p.seoTitle || "",
+          seoDescription: p.seoDescription || "",
+          isNew: false,
+          isModified: false,
+          isDeleted: false,
+        })),
+      );
+      setTotalPages(1); // Only one page when showing selected products
+    } catch (error) {
+      console.error("Error fetching selected products:", error);
+      toast.error("Failed to load selected products");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
