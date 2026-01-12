@@ -16,7 +16,15 @@ type Product = {
   _count: { variants: number };
 };
 
-export default function ProductsTable({ products }: { products: Product[] }) {
+export default function ProductsTable({
+  products,
+  selectedProducts,
+  onToggleProduct,
+}: {
+  products: Product[];
+  selectedProducts?: Set<string>;
+  onToggleProduct?: (id: string) => void;
+}) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -102,6 +110,9 @@ export default function ProductsTable({ products }: { products: Product[] }) {
         <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-800">
           <thead className="bg-neutral-50 dark:bg-neutral-800">
             <tr>
+              {selectedProducts !== undefined && (
+                <th className="w-12 px-3 py-3"></th>
+              )}
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 Product
               </th>
@@ -128,6 +139,16 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                 key={product.id}
                 className="hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
+                {selectedProducts !== undefined && onToggleProduct && (
+                  <td className="w-12 px-3 py-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedProducts.has(product.id)}
+                      onChange={() => onToggleProduct(product.id)}
+                      className="h-4 w-4 rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </td>
+                )}
                 <td className="whitespace-nowrap px-6 py-4">
                   <div className="flex items-center">
                     <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded bg-neutral-100 dark:bg-neutral-800">
@@ -245,6 +266,14 @@ export default function ProductsTable({ products }: { products: Product[] }) {
           >
             <div className="p-4">
               <div className="flex items-start gap-4">
+                {selectedProducts !== undefined && onToggleProduct && (
+                  <input
+                    type="checkbox"
+                    checked={selectedProducts.has(product.id)}
+                    onChange={() => onToggleProduct(product.id)}
+                    className="mt-1 h-4 w-4 rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
+                  />
+                )}
                 <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded bg-neutral-100 dark:bg-neutral-800">
                   {product.images[0] ? (
                     <Image
