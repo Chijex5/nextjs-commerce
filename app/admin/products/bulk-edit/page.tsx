@@ -1,8 +1,8 @@
+import AdminNav from "@/components/admin/AdminNav";
+import BulkProductEditor from "@/components/admin/BulkProductEditor";
+import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../../../lib/auth";
 import { redirect } from "next/navigation";
-import AdminNav from "../../../../components/admin/AdminNav";
-import BulkProductEditor from "../../../../components/admin/BulkProductEditor";
 
 export default async function BulkEditPage({
   searchParams,

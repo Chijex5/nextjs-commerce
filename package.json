@@ -25,6 +25,7 @@
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
     "geist": "^1.5.1",
+    "lucide-react": "^0.562.0",
     "next": "15.6.0-canary.60",
     "next-cloudinary": "^6.16.0",
     "pnpm": "^10.28.0",
