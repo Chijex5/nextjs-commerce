@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 interface ProductVariant {
   id?: string;
@@ -301,8 +301,8 @@ export default function ProductsManagement() {
                 <div className="aspect-square bg-gray-100 dark:bg-gray-700 relative">
                   {product.images && product.images.length > 0 ? (
                     <img
-                      src={product.images[0].url}
-                      alt={product.images[0].altText || product.title}
+                      src={product?.images[0]?.url}
+                      alt={product?.images[0]?.altText || product.title}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -417,6 +417,7 @@ export default function ProductsManagement() {
                   {editingProduct ? 'Edit Product' : 'Create Product'}
                 </h2>
                 <button
+                  title='close-modal'
                   onClick={handleCloseModal}
                   className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                 >
@@ -437,6 +438,7 @@ export default function ProductsManagement() {
                     Title *
                   </label>
                   <input
+                    title="title"
                     type="text"
                     value={formData.title}
                     onChange={(e) =>
@@ -456,6 +458,7 @@ export default function ProductsManagement() {
                     Handle (URL) *
                   </label>
                   <input
+                    title="handle"
                     type="text"
                     value={formData.handle}
                     onChange={(e) => setFormData((prev) => ({ ...prev, handle: e.target.value }))}
@@ -469,6 +472,7 @@ export default function ProductsManagement() {
                     Description
                   </label>
                   <textarea
+                    title="description"
                     value={formData.description}
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, description: e.target.value }))
@@ -549,6 +553,7 @@ export default function ProductsManagement() {
                         SEO Title
                       </label>
                       <input
+                        title="seoTitle"
                         type="text"
                         value={formData.seoTitle}
                         onChange={(e) =>
@@ -562,6 +567,7 @@ export default function ProductsManagement() {
                         SEO Description
                       </label>
                       <textarea
+                        title="seoDescription"
                         value={formData.seoDescription}
                         onChange={(e) =>
                           setFormData((prev) => ({ ...prev, seoDescription: e.target.value }))
