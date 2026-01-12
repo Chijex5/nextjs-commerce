@@ -13,9 +13,10 @@ export default async function DashboardPage() {
   }
 
   // Get dashboard stats
-  const [productsCount, collectionsCount] = await Promise.all([
+  const [productsCount, collectionsCount, ordersCount] = await Promise.all([
     prisma.product.count(),
     prisma.collection.count(),
+    prisma.order.count(),
   ]);
 
   return (
@@ -66,6 +67,48 @@ export default async function DashboardPage() {
                     className="font-medium text-neutral-900 hover:text-neutral-700 dark:text-neutral-100 dark:hover:text-neutral-300"
                   >
                     View all<span className="sr-only"> products</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+              <div className="p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg
+                      className="h-8 w-8 text-neutral-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth="1.5"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="truncate text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                        Total Orders
+                      </dt>
+                      <dd className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">
+                        {ordersCount}
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+              <div className="border-t border-neutral-200 bg-neutral-50 px-6 py-3 dark:border-neutral-800 dark:bg-neutral-800">
+                <div className="text-sm">
+                  <Link
+                    href="/admin/orders"
+                    className="font-medium text-neutral-900 hover:text-neutral-700 dark:text-neutral-100 dark:hover:text-neutral-300"
+                  >
+                    View all<span className="sr-only"> orders</span>
                   </Link>
                 </div>
               </div>
