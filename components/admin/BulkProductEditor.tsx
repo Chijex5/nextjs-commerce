@@ -137,7 +137,8 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
       const results = await Promise.all(promises);
       console.log("Fetch results:", results);
       
-      const productsData = results.map((data) => data.product).filter(Boolean);
+      // API returns product directly, not wrapped in {product: ...}
+      const productsData = results.filter(Boolean);
       console.log("Products data after filtering:", productsData);
       console.log("Number of products loaded:", productsData.length);
 
