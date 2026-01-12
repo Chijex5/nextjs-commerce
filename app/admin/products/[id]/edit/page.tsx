@@ -29,6 +29,11 @@ export default async function EditProductPage({
         orderBy: { createdAt: "asc" },
       },
       options: true,
+      productCollections: {
+        include: {
+          collection: true,
+        },
+      },
     },
   });
 

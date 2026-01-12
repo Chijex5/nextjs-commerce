@@ -7,6 +7,13 @@ import { toast } from "sonner";
 import Price from "components/price";
 import PageLoader from "components/page-loader";
 import { useUserSession } from "hooks/useUserSession";
+import {
+  getDeliveryStatusDescription,
+  getDeliveryStatusColor,
+  formatEstimatedArrival,
+  getDeliveryProgress,
+  type DeliveryStatus,
+} from "lib/order-utils/delivery-tracking";
 
 interface OrderItem {
   id?: string;
@@ -23,9 +30,12 @@ interface Order {
   id: string;
   orderNumber: string;
   status: string;
+  deliveryStatus?: DeliveryStatus;
+  estimatedArrival?: string | null;
   totalAmount: string;
   currencyCode: string;
   createdAt: string;
+  shippingAddress?: any;
   items: OrderItem[];
 }
 
@@ -101,63 +111,169 @@ export default function OrdersPage() {
     }
   };
 
-  const OrderCard = ({ order }: { order: Order }) => (
-    <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-black">
-      <div className="mb-4 flex items-start justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Order #{order.orderNumber}</h3>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">
-            {new Date(order.createdAt).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-        </div>
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(order.status)}`}
-        >
-          {order.status}
-        </span>
-      </div>
+  const DeliveryTimeline = ({
+    deliveryStatus,
+  }: {
+    deliveryStatus: DeliveryStatus;
+  }) => {
+    const stages: { status: DeliveryStatus; label: string }[] = [
+      { status: "production", label: "Production" },
+      { status: "sorting", label: "Sorting & Packaging" },
+      { status: "dispatch", label: "Out for Delivery" },
+      { status: "completed", label: "Delivered" },
+    ];
 
-      <div className="mb-4 space-y-3">
-        {order.items.map((item) => {
-          const itemKey =
-            item.id ||
-            `${order.id}-${item.productVariantId || item.productTitle}-${item.variantTitle}`;
-          return (
-            <div key={itemKey} className="flex items-center gap-3">
-              {item.productImage && (
-                <Image
-                  src={item.productImage}
-                  alt={item.productTitle}
-                  width={64}
-                  height={64}
-                  className="rounded-md object-cover"
+    const currentIndex = stages.findIndex((s) => s.status === deliveryStatus);
+
+    return (
+      <div className="mt-4">
+        <div className="flex items-center justify-between">
+          {stages.map((stage, index) => (
+            <div key={stage.status} className="flex flex-1 items-center">
+              <div className="flex flex-col items-center">
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                    index <= currentIndex
+                      ? "bg-blue-600 text-white"
+                      : "bg-neutral-200 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-400"
+                  }`}
+                >
+                  {index < currentIndex ? (
+                    <svg
+                      className="h-5 w-5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  ) : (
+                    <span className="text-xs font-bold">{index + 1}</span>
+                  )}
+                </div>
+                <span className="mt-2 text-center text-xs font-medium">
+                  {stage.label}
+                </span>
+              </div>
+              {index < stages.length - 1 && (
+                <div
+                  className={`mx-2 h-1 flex-1 ${
+                    index < currentIndex
+                      ? "bg-blue-600"
+                      : "bg-neutral-200 dark:bg-neutral-700"
+                  }`}
                 />
               )}
-              <div className="flex-1">
-                <p className="font-medium">{item.productTitle}</p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  {item.variantTitle} × {item.quantity}
-                </p>
-              </div>
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
+    );
+  };
 
-      <div className="flex items-center justify-between border-t border-neutral-200 pt-4 dark:border-neutral-700">
-        <span className="font-medium">Total</span>
-        <Price
-          amount={order.totalAmount}
-          currencyCode={order.currencyCode}
-          className="text-lg font-bold"
-        />
+  const OrderCard = ({ order }: { order: Order }) => {
+    const deliveryStatus = (order.deliveryStatus ||
+      "production") as DeliveryStatus;
+    const estimatedArrival = order.estimatedArrival
+      ? new Date(order.estimatedArrival)
+      : null;
+
+    return (
+      <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-black">
+        <div className="mb-4 flex items-start justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">
+              Order #{order.orderNumber}
+            </h3>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+              Order Date:{" "}
+              {new Date(order.createdAt).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+          </div>
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(order.status)}`}
+          >
+            {order.status}
+          </span>
+        </div>
+
+        {/* Delivery Status Section */}
+        <div className="mb-4 rounded-md bg-neutral-50 p-4 dark:bg-neutral-900">
+          <div className="mb-3 flex items-center justify-between">
+            <h4 className="text-sm font-semibold">Delivery Status</h4>
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-medium ${getDeliveryStatusColor(deliveryStatus)}`}
+            >
+              {deliveryStatus.charAt(0).toUpperCase() + deliveryStatus.slice(1)}
+            </span>
+          </div>
+
+          <p className="mb-3 text-sm text-neutral-600 dark:text-neutral-400">
+            {getDeliveryStatusDescription(deliveryStatus)}
+          </p>
+
+          {estimatedArrival && (
+            <div className="mb-3 text-sm">
+              <span className="font-medium">Estimated Arrival: </span>
+              <span className="text-neutral-600 dark:text-neutral-400">
+                {formatEstimatedArrival(estimatedArrival)}
+              </span>
+            </div>
+          )}
+
+          {deliveryStatus !== "paused" &&
+            deliveryStatus !== "cancelled" &&
+            deliveryStatus !== "completed" && (
+              <DeliveryTimeline deliveryStatus={deliveryStatus} />
+            )}
+        </div>
+
+        {/* Order Items */}
+        <div className="mb-4 space-y-3">
+          {order.items.map((item) => {
+            const itemKey =
+              item.id ||
+              `${order.id}-${item.productVariantId || item.productTitle}-${item.variantTitle}`;
+            return (
+              <div key={itemKey} className="flex items-center gap-3">
+                {item.productImage && (
+                  <Image
+                    src={item.productImage}
+                    alt={item.productTitle}
+                    width={64}
+                    height={64}
+                    className="rounded-md object-cover"
+                  />
+                )}
+                <div className="flex-1">
+                  <p className="font-medium">{item.productTitle}</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    {item.variantTitle} × {item.quantity}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center justify-between border-t border-neutral-200 pt-4 dark:border-neutral-700">
+          <span className="font-medium">Total</span>
+          <Price
+            amount={order.totalAmount}
+            currencyCode={order.currencyCode}
+            className="text-lg font-bold"
+          />
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   if (status === "loading") {
     return <PageLoader size="lg" message="Loading orders..." />;

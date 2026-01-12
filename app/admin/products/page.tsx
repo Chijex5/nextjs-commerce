@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "../../../lib/prisma";
 import AdminNav from "../../../components/admin/AdminNav";
-import ProductsTable from "../../../components/admin/ProductsTable";
+import ProductsListWithSelection from "../../../components/admin/ProductsListWithSelection";
 
 export default async function ProductsPage({
   searchParams,
@@ -44,6 +44,16 @@ export default async function ProductsPage({
         variants: {
           take: 1,
           orderBy: { price: "asc" },
+        },
+        productCollections: {
+          include: {
+            collection: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+          },
         },
         _count: {
           select: { variants: true },
@@ -117,7 +127,7 @@ export default async function ProductsPage({
           </div>
 
           {/* Products Table/Cards */}
-          <ProductsTable products={products} />
+          <ProductsListWithSelection products={products} />
 
           {/* Pagination */}
           {totalPages > 1 && (

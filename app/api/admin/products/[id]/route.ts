@@ -233,6 +233,25 @@ export async function PUT(
       }
     }
 
+    // Handle collection assignments if provided
+    if (body.collectionIds !== undefined && Array.isArray(body.collectionIds)) {
+      // Delete existing collection assignments
+      await prisma.productCollection.deleteMany({
+        where: { productId: id },
+      });
+
+      // Create new collection assignments
+      if (body.collectionIds.length > 0) {
+        await prisma.productCollection.createMany({
+          data: body.collectionIds.map((collectionId: string, index: number) => ({
+            productId: id,
+            collectionId,
+            position: index,
+          })),
+        });
+      }
+    }
+
     return NextResponse.json(product);
   } catch (error) {
     console.error("Error updating product:", error);

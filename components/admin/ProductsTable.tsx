@@ -12,10 +12,19 @@ type Product = {
   availableForSale: boolean;
   images: { url: string; altText: string | null }[];
   variants: { price: any; currencyCode: string }[];
+  productCollections?: { collection: { id: string; title: string } }[];
   _count: { variants: number };
 };
 
-export default function ProductsTable({ products }: { products: Product[] }) {
+export default function ProductsTable({
+  products,
+  selectedProducts,
+  onToggleProduct,
+}: {
+  products: Product[];
+  selectedProducts?: Set<string>;
+  onToggleProduct?: (id: string) => void;
+}) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -101,11 +110,17 @@ export default function ProductsTable({ products }: { products: Product[] }) {
         <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-800">
           <thead className="bg-neutral-50 dark:bg-neutral-800">
             <tr>
+              {selectedProducts !== undefined && (
+                <th className="w-12 px-3 py-3"></th>
+              )}
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 Product
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                Collections
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 Price
@@ -124,6 +139,16 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                 key={product.id}
                 className="hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
+                {selectedProducts !== undefined && onToggleProduct && (
+                  <td className="w-12 px-3 py-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedProducts.has(product.id)}
+                      onChange={() => onToggleProduct(product.id)}
+                      className="h-4 w-4 rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </td>
+                )}
                 <td className="whitespace-nowrap px-6 py-4">
                   <div className="flex items-center">
                     <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded bg-neutral-100 dark:bg-neutral-800">
@@ -174,6 +199,27 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                     {product.availableForSale ? "Active" : "Inactive"}
                   </span>
                 </td>
+                <td className="px-6 py-4">
+                  {product.productCollections && product.productCollections.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {product.productCollections.slice(0, 2).map((pc) => (
+                        <span
+                          key={pc.collection.id}
+                          className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                        >
+                          {pc.collection.title}
+                        </span>
+                      ))}
+                      {product.productCollections.length > 2 && (
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                          +{product.productCollections.length - 2}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-neutral-400">—</span>
+                  )}
+                </td>
                 <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-900 dark:text-neutral-100">
                   {product.variants[0]
                     ? `${product.variants[0].currencyCode} ${Number(product.variants[0].price).toLocaleString()}`
@@ -220,6 +266,14 @@ export default function ProductsTable({ products }: { products: Product[] }) {
           >
             <div className="p-4">
               <div className="flex items-start gap-4">
+                {selectedProducts !== undefined && onToggleProduct && (
+                  <input
+                    type="checkbox"
+                    checked={selectedProducts.has(product.id)}
+                    onChange={() => onToggleProduct(product.id)}
+                    className="mt-1 h-4 w-4 rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
+                  />
+                )}
                 <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded bg-neutral-100 dark:bg-neutral-800">
                   {product.images[0] ? (
                     <Image
@@ -268,6 +322,18 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                       {product._count.variants} variants
                     </span>
                   </div>
+                  {product.productCollections && product.productCollections.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {product.productCollections.map((pc) => (
+                        <span
+                          key={pc.collection.id}
+                          className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                        >
+                          {pc.collection.title}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {product.variants[0] && (
                     <p className="mt-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
                       {product.variants[0].currencyCode}{" "}

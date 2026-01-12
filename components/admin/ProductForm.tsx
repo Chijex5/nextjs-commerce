@@ -53,6 +53,9 @@ export default function ProductForm({
   const [uploading, setUploading] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPriceVariations, setShowPriceVariations] = useState(false);
+  const [selectedCollections, setSelectedCollections] = useState<string[]>(
+    product?.productCollections?.map((pc: any) => pc.collectionId) || []
+  );
 
   const {
     register,
@@ -181,6 +184,7 @@ export default function ProductForm({
         largeSizePrice: largeSizeFrom !== null ? largeSizePrice : null,
         largeSizeFrom,
         colorPrices: Object.keys(colorPrices).length > 0 ? colorPrices : null,
+        collectionIds: selectedCollections,
       };
 
       const url = product
@@ -477,6 +481,48 @@ export default function ProductForm({
             />
             <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
               Separate tags with commas
+            </p>
+          </div>
+
+          {/* Collections */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+              Collections
+            </label>
+            <div className="border border-neutral-300 dark:border-neutral-700 rounded-md p-4 max-h-48 overflow-y-auto">
+              {collections.length === 0 ? (
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  No collections available. Create collections first to assign products to them.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {collections.map((collection) => (
+                    <label
+                      key={collection.id}
+                      className="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800 p-2 rounded"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedCollections.includes(collection.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedCollections([...selectedCollections, collection.id]);
+                          } else {
+                            setSelectedCollections(selectedCollections.filter(id => id !== collection.id));
+                          }
+                        }}
+                        className="rounded text-neutral-900 focus:ring-neutral-500"
+                      />
+                      <span className="text-sm text-neutral-700 dark:text-neutral-300">
+                        {collection.title}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              Select the collections this product belongs to
             </p>
           </div>
         </div>

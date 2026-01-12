@@ -27,9 +27,12 @@ export async function GET(request: NextRequest) {
         id: order.id,
         orderNumber: order.orderNumber,
         status: order.status,
+        deliveryStatus: order.deliveryStatus,
+        estimatedArrival: order.estimatedArrival?.toISOString() || null,
         totalAmount: order.totalAmount.toString(),
         currencyCode: order.currencyCode,
         createdAt: order.createdAt.toISOString(),
+        shippingAddress: order.shippingAddress,
         items: order.items.map((item) => ({
           id: item.id,
           productId: item.productId,

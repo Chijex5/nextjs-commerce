@@ -51,16 +51,17 @@ function MyComponent() {
 
 ## Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `size` | `"sm" \| "md" \| "lg"` | `"md"` | Size of the spinner |
-| `message` | `string` | `"Loading..."` | Message displayed below spinner |
-| `fullScreen` | `boolean` | `false` | Whether to display as fullscreen overlay |
-| `className` | `string` | `undefined` | Additional CSS classes |
+| Prop         | Type                   | Default        | Description                              |
+| ------------ | ---------------------- | -------------- | ---------------------------------------- |
+| `size`       | `"sm" \| "md" \| "lg"` | `"md"`         | Size of the spinner                      |
+| `message`    | `string`               | `"Loading..."` | Message displayed below spinner          |
+| `fullScreen` | `boolean`              | `false`        | Whether to display as fullscreen overlay |
+| `className`  | `string`               | `undefined`    | Additional CSS classes                   |
 
 ## Examples in the App
 
 The PageLoader is used in:
+
 - `/checkout` - While loading checkout data
 - `/account` - While loading account information
 - `/account/addresses` - While loading saved addresses
