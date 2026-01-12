@@ -45,6 +45,16 @@ export default async function ProductsPage({
           take: 1,
           orderBy: { price: "asc" },
         },
+        productCollections: {
+          include: {
+            collection: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+          },
+        },
         _count: {
           select: { variants: true },
         },

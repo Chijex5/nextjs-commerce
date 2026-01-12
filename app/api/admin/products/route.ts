@@ -154,6 +154,17 @@ export async function POST(request: Request) {
       });
     }
 
+    // Handle collection assignments if provided
+    if (body.collectionIds && Array.isArray(body.collectionIds) && body.collectionIds.length > 0) {
+      await prisma.productCollection.createMany({
+        data: body.collectionIds.map((collectionId: string, index: number) => ({
+          productId: product.id,
+          collectionId,
+          position: index,
+        })),
+      });
+    }
+
     return NextResponse.json(product);
   } catch (error) {
     console.error("Error creating product:", error);

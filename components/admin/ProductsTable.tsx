@@ -12,6 +12,7 @@ type Product = {
   availableForSale: boolean;
   images: { url: string; altText: string | null }[];
   variants: { price: any; currencyCode: string }[];
+  productCollections?: { collection: { id: string; title: string } }[];
   _count: { variants: number };
 };
 
@@ -108,6 +109,9 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                 Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                Collections
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 Price
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
@@ -173,6 +177,27 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                   >
                     {product.availableForSale ? "Active" : "Inactive"}
                   </span>
+                </td>
+                <td className="px-6 py-4">
+                  {product.productCollections && product.productCollections.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {product.productCollections.slice(0, 2).map((pc) => (
+                        <span
+                          key={pc.collection.id}
+                          className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                        >
+                          {pc.collection.title}
+                        </span>
+                      ))}
+                      {product.productCollections.length > 2 && (
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                          +{product.productCollections.length - 2}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-neutral-400">—</span>
+                  )}
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-900 dark:text-neutral-100">
                   {product.variants[0]
@@ -268,6 +293,18 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                       {product._count.variants} variants
                     </span>
                   </div>
+                  {product.productCollections && product.productCollections.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {product.productCollections.map((pc) => (
+                        <span
+                          key={pc.collection.id}
+                          className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                        >
+                          {pc.collection.title}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {product.variants[0] && (
                     <p className="mt-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
                       {product.variants[0].currencyCode}{" "}
