@@ -11,6 +11,7 @@ export default function AdminNav({
   const navItems = [
     { href: "/admin/dashboard", label: "Dashboard", key: "dashboard" },
     { href: "/admin/products", label: "Products", key: "products" },
+    { href: "/admin/collections", label: "Collections", key: "collections" },
     { href: "/admin/orders", label: "Orders", key: "orders" },
     { href: "/admin/users", label: "Users", key: "users" },
     { href: "/admin/admins", label: "Admins", key: "admins" },

@@ -220,9 +220,12 @@ export default async function DashboardPage() {
                 </div>
               </div>
               <div className="border-t border-neutral-200 bg-neutral-50 px-6 py-3 dark:border-neutral-800 dark:bg-neutral-800">
-                <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                  Manage collections
-                </span>
+                <Link
+                  href="/admin/collections"
+                  className="text-sm font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
+                >
+                  View all →
+                </Link>
               </div>
             </div>
           </div>
