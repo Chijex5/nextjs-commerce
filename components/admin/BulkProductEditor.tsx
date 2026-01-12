@@ -105,49 +105,69 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    console.log("BulkProductEditor useEffect triggered");
+    console.log("selectedIds:", selectedIds);
+    console.log("selectedIds.length:", selectedIds.length);
+    
     if (selectedIds.length > 0) {
+      console.log("Calling fetchSelectedProducts with IDs:", selectedIds);
       fetchSelectedProducts();
     } else {
+      console.log("Calling fetchProducts (no selected IDs)");
       fetchProducts();
     }
     fetchCollections();
-  }, [currentPage, searchTerm]);
+  }, [selectedIds, currentPage, searchTerm]);
 
   const fetchSelectedProducts = async () => {
     try {
+      console.log("fetchSelectedProducts started");
+      console.log("selectedIds in fetch function:", selectedIds);
       setLoading(true);
+      
       // Fetch each selected product by ID
-      const promises = selectedIds.map((id) =>
-        fetch(`/api/admin/products/${id}`).then((res) => res.json()),
-      );
+      const promises = selectedIds.map((id) => {
+        console.log(`Fetching product with ID: ${id}`);
+        return fetch(`/api/admin/products/${id}`).then((res) => {
+          console.log(`Response for ${id}:`, res.status);
+          return res.json();
+        });
+      });
 
       const results = await Promise.all(promises);
+      console.log("Fetch results:", results);
+      
       const productsData = results.map((data) => data.product).filter(Boolean);
+      console.log("Products data after filtering:", productsData);
+      console.log("Number of products loaded:", productsData.length);
 
-      setProducts(
-        productsData.map((p: any) => ({
-          id: p.id,
-          title: p.title || "",
-          handle: p.handle || "",
-          description: p.description || "",
-          price: p.variants?.[0]?.price || "0",
-          availableForSale: p.availableForSale ?? true,
-          tags: p.tags?.join(", ") || "",
-          collections:
-            p.productCollections?.map((pc: any) => pc.collection.id) || [],
-          seoTitle: p.seoTitle || "",
-          seoDescription: p.seoDescription || "",
-          isNew: false,
-          isModified: false,
-          isDeleted: false,
-        })),
-      );
+      const mappedProducts = productsData.map((p: any) => ({
+        id: p.id,
+        title: p.title || "",
+        handle: p.handle || "",
+        description: p.description || "",
+        price: p.variants?.[0]?.price || "0",
+        availableForSale: p.availableForSale ?? true,
+        tags: p.tags?.join(", ") || "",
+        collections:
+          p.productCollections?.map((pc: any) => pc.collection.id) || [],
+        seoTitle: p.seoTitle || "",
+        seoDescription: p.seoDescription || "",
+        isNew: false,
+        isModified: false,
+        isDeleted: false,
+      }));
+      
+      console.log("Mapped products:", mappedProducts);
+      setProducts(mappedProducts);
       setTotalPages(1); // Only one page when showing selected products
+      console.log("Products state should be updated");
     } catch (error) {
       console.error("Error fetching selected products:", error);
       toast.error("Failed to load selected products");
     } finally {
       setLoading(false);
+      console.log("Loading set to false");
     }
   };
 
