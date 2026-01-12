@@ -9,6 +9,17 @@ interface Collection {
   title: string;
 }
 
+interface ProductVariant {
+  id: string;
+  title: string;
+  price: string;
+  availableForSale: boolean;
+  selectedOptions: Array<{ name: string; value: string }>;
+  isNew?: boolean;
+  isModified?: boolean;
+  isDeleted?: boolean;
+}
+
 interface ProductRow {
   id: string;
   title: string;
@@ -20,9 +31,11 @@ interface ProductRow {
   collections: string[];
   seoTitle: string;
   seoDescription: string;
+  variants: ProductVariant[];
   isNew?: boolean;
   isModified?: boolean;
   isDeleted?: boolean;
+  isExpanded?: boolean;
 }
 
 interface Column {
@@ -99,6 +112,10 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
     rowId: string;
     selected: string[];
   } | null>(null);
+  const [showVariantsModal, setShowVariantsModal] = useState<{
+    productId: string;
+    variants: ProductVariant[];
+  } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -154,9 +171,20 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
           p.productCollections?.map((pc: any) => pc.collection.id) || [],
         seoTitle: p.seoTitle || "",
         seoDescription: p.seoDescription || "",
+        variants: p.variants?.map((v: any) => ({
+          id: v.id,
+          title: v.title,
+          price: v.price.toString(),
+          availableForSale: v.availableForSale,
+          selectedOptions: v.selectedOptions || [],
+          isNew: false,
+          isModified: false,
+          isDeleted: false,
+        })) || [],
         isNew: false,
         isModified: false,
         isDeleted: false,
+        isExpanded: false,
       }));
       
       console.log("Mapped products:", mappedProducts);
@@ -200,9 +228,20 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
             p.productCollections?.map((pc: any) => pc.collection.id) || [],
           seoTitle: p.seoTitle || "",
           seoDescription: p.seoDescription || "",
+          variants: p.variants?.map((v: any) => ({
+            id: v.id,
+            title: v.title,
+            price: v.price.toString(),
+            availableForSale: v.availableForSale,
+            selectedOptions: v.selectedOptions || [],
+            isNew: false,
+            isModified: false,
+            isDeleted: false,
+          })) || [],
           isNew: false,
           isModified: false,
           isDeleted: false,
+          isExpanded: false,
         })),
       );
       setTotalPages(Math.ceil((data.total || 0) / 50));
@@ -237,9 +276,22 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
       collections: [],
       seoTitle: "",
       seoDescription: "",
+      variants: [
+        {
+          id: `new-variant-${Date.now()}`,
+          title: "Default",
+          price: "0",
+          availableForSale: true,
+          selectedOptions: [],
+          isNew: true,
+          isModified: false,
+          isDeleted: false,
+        },
+      ],
       isNew: true,
       isModified: false,
       isDeleted: false,
+      isExpanded: false,
     };
     setProducts([newRow, ...products]);
     toast.success("New row added");
@@ -301,6 +353,90 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
         return p;
       }),
     );
+  };
+
+  const toggleExpand = (productId: string) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === productId ? { ...p, isExpanded: !p.isExpanded } : p)),
+    );
+  };
+
+  const openVariantsModal = (productId: string) => {
+    const product = products.find((p) => p.id === productId);
+    if (product) {
+      setShowVariantsModal({
+        productId,
+        variants: [...product.variants],
+      });
+    }
+  };
+
+  const updateVariant = (
+    productId: string,
+    variantId: string,
+    field: keyof ProductVariant,
+    value: any,
+  ) => {
+    setProducts((prev) =>
+      prev.map((p) => {
+        if (p.id === productId) {
+          return {
+            ...p,
+            variants: p.variants.map((v) =>
+              v.id === variantId
+                ? { ...v, [field]: value, isModified: !v.isNew }
+                : v,
+            ),
+            isModified: !p.isNew,
+          };
+        }
+        return p;
+      }),
+    );
+  };
+
+  const addVariant = (productId: string) => {
+    setProducts((prev) =>
+      prev.map((p) => {
+        if (p.id === productId) {
+          const newVariant: ProductVariant = {
+            id: `new-variant-${Date.now()}-${Math.random()}`,
+            title: "New Variant",
+            price: p.price || "0",
+            availableForSale: true,
+            selectedOptions: [],
+            isNew: true,
+            isModified: false,
+            isDeleted: false,
+          };
+          return {
+            ...p,
+            variants: [...p.variants, newVariant],
+            isModified: !p.isNew,
+          };
+        }
+        return p;
+      }),
+    );
+    toast.success("Variant added");
+  };
+
+  const deleteVariant = (productId: string, variantId: string) => {
+    setProducts((prev) =>
+      prev.map((p) => {
+        if (p.id === productId) {
+          return {
+            ...p,
+            variants: p.variants.map((v) =>
+              v.id === variantId ? { ...v, isDeleted: true } : v,
+            ),
+            isModified: !p.isNew,
+          };
+        }
+        return p;
+      }),
+    );
+    toast.success("Variant marked for deletion");
   };
 
   const saveAllChanges = async () => {
@@ -373,6 +509,18 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           });
+
+          // Update variants if they have changes
+          const variantChanges = product.variants.some(
+            (v) => v.isNew || v.isModified || v.isDeleted,
+          );
+          if (variantChanges) {
+            await fetch(`/api/admin/products/${product.id}/variants`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ variants: product.variants }),
+            });
+          }
         }
       }
 
@@ -677,6 +825,9 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
                       className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                   </th>
+                  <th className="w-10 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    
+                  </th>
                   {DEFAULT_COLUMNS.filter((col) =>
                     visibleColumns.has(col.key),
                   ).map((col) => (
@@ -694,56 +845,197 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
                   <th className="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                     Status
                   </th>
+                  <th className="w-32 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Variants
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {products
                   .filter((p) => !p.isDeleted)
                   .map((product) => (
-                    <tr
-                      key={product.id}
-                      className={`${
-                        selectedRows.has(product.id)
-                          ? "bg-blue-50 dark:bg-blue-900/20"
-                          : ""
-                      } ${product.isNew ? "bg-green-50 dark:bg-green-900/20" : ""} ${
-                        product.isModified
-                          ? "bg-amber-50 dark:bg-amber-900/20"
-                          : ""
-                      }`}
-                    >
-                      <td className="px-3 py-2">
-                        <input
-                          type="checkbox"
-                          checked={selectedRows.has(product.id)}
-                          onChange={() => toggleRowSelection(product.id)}
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                      </td>
-                      {DEFAULT_COLUMNS.filter((col) =>
-                        visibleColumns.has(col.key),
-                      ).map((col) => (
-                        <td
-                          key={col.key}
-                          style={{ minWidth: col.width, maxWidth: col.width }}
-                          className="px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
-                        >
-                          {renderCell(product, col)}
+                    <>
+                      <tr
+                        key={product.id}
+                        className={`${
+                          selectedRows.has(product.id)
+                            ? "bg-blue-50 dark:bg-blue-900/20"
+                            : ""
+                        } ${product.isNew ? "bg-green-50 dark:bg-green-900/20" : ""} ${
+                          product.isModified
+                            ? "bg-amber-50 dark:bg-amber-900/20"
+                            : ""
+                        }`}
+                      >
+                        <td className="px-3 py-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedRows.has(product.id)}
+                            onChange={() => toggleRowSelection(product.id)}
+                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
                         </td>
-                      ))}
-                      <td className="px-3 py-2 text-xs">
-                        {product.isNew && (
-                          <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded">
-                            New
-                          </span>
-                        )}
-                        {product.isModified && !product.isNew && (
-                          <span className="px-2 py-1 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 rounded">
-                            Modified
-                          </span>
-                        )}
-                      </td>
-                    </tr>
+                        <td className="px-3 py-2">
+                          <button
+                            onClick={() => toggleExpand(product.id)}
+                            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                            title="Toggle variants"
+                          >
+                            {product.isExpanded ? "▼" : "▶"}
+                          </button>
+                        </td>
+                        {DEFAULT_COLUMNS.filter((col) =>
+                          visibleColumns.has(col.key),
+                        ).map((col) => (
+                          <td
+                            key={col.key}
+                            style={{ minWidth: col.width, maxWidth: col.width }}
+                            className="px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+                          >
+                            {renderCell(product, col)}
+                          </td>
+                        ))}
+                        <td className="px-3 py-2 text-xs">
+                          {product.isNew && (
+                            <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded">
+                              New
+                            </span>
+                          )}
+                          {product.isModified && !product.isNew && (
+                            <span className="px-2 py-1 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 rounded">
+                              Modified
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-xs">
+                          <button
+                            onClick={() => openVariantsModal(product.id)}
+                            className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded hover:bg-purple-200 dark:hover:bg-purple-800"
+                          >
+                            {product.variants.filter((v) => !v.isDeleted).length} variant(s)
+                          </button>
+                        </td>
+                      </tr>
+                      {product.isExpanded &&
+                        product.variants
+                          .filter((v) => !v.isDeleted)
+                          .map((variant) => (
+                            <tr
+                              key={variant.id}
+                              className="bg-gray-50 dark:bg-gray-800/50 border-l-4 border-purple-400"
+                            >
+                              <td className="px-3 py-2"></td>
+                              <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
+                                ↳
+                              </td>
+                              <td
+                                colSpan={DEFAULT_COLUMNS.filter((col) =>
+                                  visibleColumns.has(col.key),
+                                ).length}
+                                className="px-3 py-2"
+                              >
+                                <div className="flex items-center gap-4 text-sm">
+                                  <div className="flex-1">
+                                    <label className="text-xs text-gray-500 dark:text-gray-400">
+                                      Title:
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={variant.title}
+                                      onChange={(e) =>
+                                        updateVariant(
+                                          product.id,
+                                          variant.id,
+                                          "title",
+                                          e.target.value,
+                                        )
+                                      }
+                                      className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm dark:bg-gray-700 dark:text-white"
+                                    />
+                                  </div>
+                                  <div className="w-32">
+                                    <label className="text-xs text-gray-500 dark:text-gray-400">
+                                      Price (₦):
+                                    </label>
+                                    <input
+                                      type="number"
+                                      value={variant.price}
+                                      onChange={(e) =>
+                                        updateVariant(
+                                          product.id,
+                                          variant.id,
+                                          "price",
+                                          e.target.value,
+                                        )
+                                      }
+                                      className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm dark:bg-gray-700 dark:text-white"
+                                    />
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <label className="text-xs text-gray-500 dark:text-gray-400">
+                                      Available:
+                                    </label>
+                                    <input
+                                      type="checkbox"
+                                      checked={variant.availableForSale}
+                                      onChange={(e) =>
+                                        updateVariant(
+                                          product.id,
+                                          variant.id,
+                                          "availableForSale",
+                                          e.target.checked,
+                                        )
+                                      }
+                                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                  </div>
+                                  <button
+                                    onClick={() =>
+                                      deleteVariant(product.id, variant.id)
+                                    }
+                                    className="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded hover:bg-red-200 dark:hover:bg-red-800 text-xs"
+                                    title="Delete variant"
+                                  >
+                                    Delete
+                                  </button>
+                                  {variant.isNew && (
+                                    <span className="text-xs text-green-600 dark:text-green-400">
+                                      New
+                                    </span>
+                                  )}
+                                  {variant.isModified && !variant.isNew && (
+                                    <span className="text-xs text-amber-600 dark:text-amber-400">
+                                      Modified
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-3 py-2"></td>
+                              <td className="px-3 py-2"></td>
+                            </tr>
+                          ))}
+                      {product.isExpanded && (
+                        <tr className="bg-gray-50 dark:bg-gray-800/50">
+                          <td className="px-3 py-2"></td>
+                          <td className="px-3 py-2"></td>
+                          <td
+                            colSpan={
+                              DEFAULT_COLUMNS.filter((col) =>
+                                visibleColumns.has(col.key),
+                              ).length + 3
+                            }
+                            className="px-3 py-2"
+                          >
+                            <button
+                              onClick={() => addVariant(product.id)}
+                              className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
+                            >
+                              + Add Variant
+                            </button>
+                          </td>
+                        </tr>
+                      )}
+                    </>
                   ))}
               </tbody>
             </table>
@@ -865,6 +1157,165 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
                     showCollectionsModal.selected,
                   );
                   setShowCollectionsModal(null);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Variants Modal */}
+      {showVariantsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4 dark:text-white">
+              Manage Variants
+            </h3>
+            <div className="space-y-3">
+              {showVariantsModal.variants
+                .filter((v) => !v.isDeleted)
+                .map((variant) => (
+                  <div
+                    key={variant.id}
+                    className="flex items-center gap-3 p-3 border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700"
+                  >
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
+                        Title
+                      </label>
+                      <input
+                        type="text"
+                        value={variant.title}
+                        onChange={(e) => {
+                          setShowVariantsModal({
+                            ...showVariantsModal,
+                            variants: showVariantsModal.variants.map((v) =>
+                              v.id === variant.id
+                                ? { ...v, title: e.target.value, isModified: !v.isNew }
+                                : v,
+                            ),
+                          });
+                        }}
+                        className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm dark:bg-gray-800 dark:text-white"
+                      />
+                    </div>
+                    <div className="w-32">
+                      <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
+                        Price (₦)
+                      </label>
+                      <input
+                        type="number"
+                        value={variant.price}
+                        onChange={(e) => {
+                          setShowVariantsModal({
+                            ...showVariantsModal,
+                            variants: showVariantsModal.variants.map((v) =>
+                              v.id === variant.id
+                                ? { ...v, price: e.target.value, isModified: !v.isNew }
+                                : v,
+                            ),
+                          });
+                        }}
+                        className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm dark:bg-gray-800 dark:text-white"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-gray-500 dark:text-gray-400">
+                        Available
+                      </label>
+                      <input
+                        type="checkbox"
+                        checked={variant.availableForSale}
+                        onChange={(e) => {
+                          setShowVariantsModal({
+                            ...showVariantsModal,
+                            variants: showVariantsModal.variants.map((v) =>
+                              v.id === variant.id
+                                ? {
+                                    ...v,
+                                    availableForSale: e.target.checked,
+                                    isModified: !v.isNew,
+                                  }
+                                : v,
+                            ),
+                          });
+                        }}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowVariantsModal({
+                          ...showVariantsModal,
+                          variants: showVariantsModal.variants.map((v) =>
+                            v.id === variant.id ? { ...v, isDeleted: true } : v,
+                          ),
+                        });
+                      }}
+                      className="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded hover:bg-red-200 dark:hover:bg-red-800 text-xs"
+                      title="Delete variant"
+                    >
+                      Delete
+                    </button>
+                    {variant.isNew && (
+                      <span className="text-xs text-green-600 dark:text-green-400 whitespace-nowrap">
+                        New
+                      </span>
+                    )}
+                    {variant.isModified && !variant.isNew && (
+                      <span className="text-xs text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                        Modified
+                      </span>
+                    )}
+                  </div>
+                ))}
+              <button
+                onClick={() => {
+                  const newVariant: ProductVariant = {
+                    id: `new-variant-${Date.now()}-${Math.random()}`,
+                    title: "New Variant",
+                    price: "0",
+                    availableForSale: true,
+                    selectedOptions: [],
+                    isNew: true,
+                    isModified: false,
+                    isDeleted: false,
+                  };
+                  setShowVariantsModal({
+                    ...showVariantsModal,
+                    variants: [...showVariantsModal.variants, newVariant],
+                  });
+                }}
+                className="w-full px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+              >
+                + Add Variant
+              </button>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowVariantsModal(null)}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setProducts((prev) =>
+                    prev.map((p) =>
+                      p.id === showVariantsModal.productId
+                        ? {
+                            ...p,
+                            variants: showVariantsModal.variants,
+                            isModified: !p.isNew,
+                          }
+                        : p,
+                    ),
+                  );
+                  setShowVariantsModal(null);
+                  toast.success("Variants updated");
                 }}
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
