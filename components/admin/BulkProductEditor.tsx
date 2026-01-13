@@ -91,7 +91,9 @@ interface BulkProductEditorProps {
   selectedIds?: string[];
 }
 
-export default function BulkProductEditor({ selectedIds = [] }: BulkProductEditorProps) {
+export default function BulkProductEditor({
+  selectedIds = [],
+}: BulkProductEditorProps) {
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [visibleColumns, setVisibleColumns] = useState<Set<keyof ProductRow>>(
@@ -125,7 +127,7 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
     console.log("BulkProductEditor useEffect triggered");
     console.log("selectedIds:", selectedIds);
     console.log("selectedIds.length:", selectedIds.length);
-    
+
     if (selectedIds.length > 0) {
       console.log("Calling fetchSelectedProducts with IDs:", selectedIds);
       fetchSelectedProducts();
@@ -141,7 +143,7 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
       console.log("fetchSelectedProducts started");
       console.log("selectedIds in fetch function:", selectedIds);
       setLoading(true);
-      
+
       // Fetch each selected product by ID
       const promises = selectedIds.map((id) => {
         console.log(`Fetching product with ID: ${id}`);
@@ -153,7 +155,7 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
 
       const results = await Promise.all(promises);
       console.log("Fetch results:", results);
-      
+
       // API returns product directly, not wrapped in {product: ...}
       const productsData = results.filter(Boolean);
       console.log("Products data after filtering:", productsData);
@@ -171,22 +173,23 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
           p.productCollections?.map((pc: any) => pc.collection.id) || [],
         seoTitle: p.seoTitle || "",
         seoDescription: p.seoDescription || "",
-        variants: p.variants?.map((v: any) => ({
-          id: v.id,
-          title: v.title,
-          price: v.price.toString(),
-          availableForSale: v.availableForSale,
-          selectedOptions: v.selectedOptions || [],
-          isNew: false,
-          isModified: false,
-          isDeleted: false,
-        })) || [],
+        variants:
+          p.variants?.map((v: any) => ({
+            id: v.id,
+            title: v.title,
+            price: v.price.toString(),
+            availableForSale: v.availableForSale,
+            selectedOptions: v.selectedOptions || [],
+            isNew: false,
+            isModified: false,
+            isDeleted: false,
+          })) || [],
         isNew: false,
         isModified: false,
         isDeleted: false,
         isExpanded: false,
       }));
-      
+
       console.log("Mapped products:", mappedProducts);
       setProducts(mappedProducts);
       setTotalPages(1); // Only one page when showing selected products
@@ -228,16 +231,17 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
             p.productCollections?.map((pc: any) => pc.collection.id) || [],
           seoTitle: p.seoTitle || "",
           seoDescription: p.seoDescription || "",
-          variants: p.variants?.map((v: any) => ({
-            id: v.id,
-            title: v.title,
-            price: v.price.toString(),
-            availableForSale: v.availableForSale,
-            selectedOptions: v.selectedOptions || [],
-            isNew: false,
-            isModified: false,
-            isDeleted: false,
-          })) || [],
+          variants:
+            p.variants?.map((v: any) => ({
+              id: v.id,
+              title: v.title,
+              price: v.price.toString(),
+              availableForSale: v.availableForSale,
+              selectedOptions: v.selectedOptions || [],
+              isNew: false,
+              isModified: false,
+              isDeleted: false,
+            })) || [],
           isNew: false,
           isModified: false,
           isDeleted: false,
@@ -278,7 +282,7 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
       seoDescription: "",
       variants: [
         {
-          id: `new-variant-${Date.now()}`,
+          id: `new-variant-${crypto.randomUUID()}`,
           title: "Default",
           price: "0",
           availableForSale: true,
@@ -357,7 +361,9 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
 
   const toggleExpand = (productId: string) => {
     setProducts((prev) =>
-      prev.map((p) => (p.id === productId ? { ...p, isExpanded: !p.isExpanded } : p)),
+      prev.map((p) =>
+        p.id === productId ? { ...p, isExpanded: !p.isExpanded } : p,
+      ),
     );
   };
 
@@ -400,7 +406,7 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
       prev.map((p) => {
         if (p.id === productId) {
           const newVariant: ProductVariant = {
-            id: `new-variant-${Date.now()}-${Math.random()}`,
+            id: `new-variant-${crypto.randomUUID()}`,
             title: "New Variant",
             price: p.price || "0",
             availableForSale: true,
@@ -498,11 +504,26 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
         };
 
         if (product.isNew) {
-          await fetch("/api/admin/products", {
+          const response = await fetch("/api/admin/products", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           });
+
+          if (response.ok) {
+            const createdProduct = await response.json();
+            // Create variants for new product if any exist
+            const variantChanges = product.variants.some(
+              (v) => v.isNew || v.isModified || v.isDeleted,
+            );
+            if (variantChanges && createdProduct.id) {
+              await fetch(`/api/admin/products/${createdProduct.id}/variants`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ variants: product.variants }),
+              });
+            }
+          }
         } else {
           await fetch(`/api/admin/products/${product.id}`, {
             method: "PUT",
@@ -825,9 +846,7 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
                       className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                   </th>
-                  <th className="w-10 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    
-                  </th>
+                  <th className="w-10 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase"></th>
                   {DEFAULT_COLUMNS.filter((col) =>
                     visibleColumns.has(col.key),
                   ).map((col) => (
@@ -912,7 +931,11 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
                             onClick={() => openVariantsModal(product.id)}
                             className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded hover:bg-purple-200 dark:hover:bg-purple-800"
                           >
-                            {product.variants.filter((v) => !v.isDeleted).length} variant(s)
+                            {
+                              product.variants.filter((v) => !v.isDeleted)
+                                .length
+                            }{" "}
+                            variant(s)
                           </button>
                         </td>
                       </tr>
@@ -929,9 +952,11 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
                                 ↳
                               </td>
                               <td
-                                colSpan={DEFAULT_COLUMNS.filter((col) =>
-                                  visibleColumns.has(col.key),
-                                ).length}
+                                colSpan={
+                                  DEFAULT_COLUMNS.filter((col) =>
+                                    visibleColumns.has(col.key),
+                                  ).length
+                                }
                                 className="px-3 py-2"
                               >
                                 <div className="flex items-center gap-4 text-sm">
@@ -1194,7 +1219,11 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
                             ...showVariantsModal,
                             variants: showVariantsModal.variants.map((v) =>
                               v.id === variant.id
-                                ? { ...v, title: e.target.value, isModified: !v.isNew }
+                                ? {
+                                    ...v,
+                                    title: e.target.value,
+                                    isModified: !v.isNew,
+                                  }
                                 : v,
                             ),
                           });
@@ -1214,7 +1243,11 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
                             ...showVariantsModal,
                             variants: showVariantsModal.variants.map((v) =>
                               v.id === variant.id
-                                ? { ...v, price: e.target.value, isModified: !v.isNew }
+                                ? {
+                                    ...v,
+                                    price: e.target.value,
+                                    isModified: !v.isNew,
+                                  }
                                 : v,
                             ),
                           });
@@ -1275,7 +1308,7 @@ export default function BulkProductEditor({ selectedIds = [] }: BulkProductEdito
               <button
                 onClick={() => {
                   const newVariant: ProductVariant = {
-                    id: `new-variant-${Date.now()}-${Math.random()}`,
+                    id: `new-variant-${crypto.randomUUID()}`,
                     title: "New Variant",
                     price: "0",
                     availableForSale: true,

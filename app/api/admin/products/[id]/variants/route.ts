@@ -34,11 +34,17 @@ export async function PUT(
         });
       } else if (variant.isNew && !variant.isDeleted) {
         // Create new variant
+        const price = parseFloat(variant.price);
+        if (isNaN(price) || price < 0) {
+          throw new Error(
+            `Invalid price for variant "${variant.title}": ${variant.price}`,
+          );
+        }
         await prisma.productVariant.create({
           data: {
             productId: id,
             title: variant.title,
-            price: parseFloat(variant.price) || 0,
+            price: price,
             currencyCode: "NGN",
             availableForSale: variant.availableForSale,
             selectedOptions: variant.selectedOptions || [],
@@ -46,11 +52,17 @@ export async function PUT(
         });
       } else if (variant.isModified && !variant.isDeleted && !variant.isNew) {
         // Update existing variant
+        const price = parseFloat(variant.price);
+        if (isNaN(price) || price < 0) {
+          throw new Error(
+            `Invalid price for variant "${variant.title}": ${variant.price}`,
+          );
+        }
         await prisma.productVariant.update({
           where: { id: variant.id },
           data: {
             title: variant.title,
-            price: parseFloat(variant.price) || 0,
+            price: price,
             availableForSale: variant.availableForSale,
             selectedOptions: variant.selectedOptions || [],
           },
