@@ -6,6 +6,7 @@ import {
   calculateEstimatedArrival,
   type DeliveryStatus,
 } from "lib/order-utils/delivery-tracking";
+import { sendOrderStatusUpdate, sendShippingNotification } from "@/lib/email/order-emails";
 
 // GET - Get single order
 export async function GET(
@@ -117,6 +118,11 @@ export async function PUT(
       select: {
         createdAt: true,
         shippingAddress: true,
+        status: true,
+        deliveryStatus: true,
+        customerName: true,
+        email: true,
+        orderNumber: true,
       },
     });
 
@@ -152,6 +158,53 @@ export async function PUT(
         items: true,
       },
     });
+
+    // Send email notification if status or delivery status changed
+    try {
+      const oldStatus = existingOrder.status || 'processing';
+      const oldDeliveryStatus = existingOrder.deliveryStatus;
+      
+      // Check if status changed
+      const statusChanged = status && status !== oldStatus;
+      const deliveryStatusChanged = deliveryStatus && deliveryStatus !== oldDeliveryStatus;
+      
+      if (statusChanged || deliveryStatusChanged) {
+        // Special case: if dispatch status, send shipping notification
+        if (deliveryStatus === 'dispatch') {
+          await sendShippingNotification({
+            orderNumber: updatedOrder.orderNumber,
+            customerName: updatedOrder.customerName,
+            email: updatedOrder.email,
+            totalAmount: Number(updatedOrder.totalAmount),
+            items: updatedOrder.items.map((item) => ({
+              productTitle: item.productTitle,
+              variantTitle: item.variantTitle,
+              quantity: item.quantity,
+              price: Number(item.price),
+              productImage: item.productImage,
+            })),
+            trackingNumber: updatedOrder.trackingNumber || undefined,
+            estimatedArrival: updatedOrder.estimatedArrival?.toLocaleDateString() || undefined,
+          });
+        } else {
+          // Send general status update email
+          await sendOrderStatusUpdate({
+            orderNumber: updatedOrder.orderNumber,
+            customerName: updatedOrder.customerName,
+            email: updatedOrder.email,
+            oldStatus,
+            newStatus: updatedOrder.status,
+            deliveryStatus: updatedOrder.deliveryStatus || undefined,
+            trackingNumber: updatedOrder.trackingNumber || undefined,
+            estimatedArrival: updatedOrder.estimatedArrival?.toLocaleDateString() || undefined,
+          });
+        }
+        console.log(`Status update email sent for order ${updatedOrder.orderNumber}`);
+      }
+    } catch (emailError) {
+      console.error('Failed to send status update email:', emailError);
+      // Don't fail the order update if email fails
+    }
 
     return NextResponse.json({
       success: true,

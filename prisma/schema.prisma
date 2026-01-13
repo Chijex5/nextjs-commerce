@@ -229,7 +229,8 @@ model User {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
 
-  orders Order[]
+  orders         Order[]
+  abandonedCarts AbandonedCart[]
 
   @@index([email], name: "users_email_idx")
   @@map("users")
@@ -305,4 +306,33 @@ model NewsletterSubscriber {
   @@index([status], name: "newsletter_subscribers_status_idx")
   @@map("newsletter_subscribers")
 }
+
+// Abandoned cart tracking for logged-in users
+model AbandonedCart {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  cartId          String    @map("cart_id")
+  email           String    @db.VarChar(255)
+  customerName    String    @map("customer_name") @db.VarChar(255)
+  cartTotal       Decimal   @map("cart_total") @db.Decimal(10, 2)
+  items           Json      // Store cart items as JSON
+  emailSent       Boolean   @default(false) @map("email_sent")
+  emailSentAt     DateTime? @map("email_sent_at")
+  recovered       Boolean   @default(false)
+  recoveredAt     DateTime? @map("recovered_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  expiresAt       DateTime  @map("expires_at") // When to consider it truly abandoned (e.g., 1 hour)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "abandoned_carts_user_id_idx")
+  @@index([emailSent], name: "abandoned_carts_email_sent_idx")
+  @@index([expiresAt], name: "abandoned_carts_expires_at_idx")
+  @@map("abandoned_carts")
+}
+
+// Update User model to include abandoned carts relation
+// Add this to the User model:
+// abandonedCarts AbandonedCart[]
+
 

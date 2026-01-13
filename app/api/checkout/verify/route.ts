@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import prisma from "lib/prisma";
+import { sendOrderConfirmationWithMarkup } from "@/lib/email/order-emails";
 
 export async function GET(request: NextRequest) {
   try {
@@ -118,6 +119,29 @@ export async function GET(request: NextRequest) {
           billingAddress: checkoutSession.billingAddress,
         },
       });
+    }
+
+    // Send order confirmation email with Google Email Markup
+    try {
+      await sendOrderConfirmationWithMarkup({
+        orderNumber: order.orderNumber,
+        customerName: order.customerName,
+        email: order.email,
+        totalAmount: Number(order.totalAmount),
+        items: order.items.map((item) => ({
+          productTitle: item.productTitle,
+          variantTitle: item.variantTitle,
+          quantity: item.quantity,
+          price: Number(item.price),
+          productImage: item.productImage,
+        })),
+        shippingAddress: order.shippingAddress,
+        orderDate: order.createdAt.toISOString(),
+      });
+      console.log(`Order confirmation email sent for order ${order.orderNumber}`);
+    } catch (emailError) {
+      console.error('Failed to send order confirmation email:', emailError);
+      // Don't fail the order creation if email fails
     }
 
     // Clear cart
