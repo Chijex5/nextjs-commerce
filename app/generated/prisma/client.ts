@@ -114,3 +114,13 @@ export type Order = Prisma.OrderModel
  * 
  */
 export type OrderItem = Prisma.OrderItemModel
+/**
+ * Model NewsletterSubscriber
+ * 
+ */
+export type NewsletterSubscriber = Prisma.NewsletterSubscriberModel
+/**
+ * Model AbandonedCart
+ * 
+ */
+export type AbandonedCart = Prisma.AbandonedCartModel

@@ -65,7 +65,9 @@ export const ModelName = {
   AdminUser: 'AdminUser',
   User: 'User',
   Order: 'Order',
-  OrderItem: 'OrderItem'
+  OrderItem: 'OrderItem',
+  NewsletterSubscriber: 'NewsletterSubscriber',
+  AbandonedCart: 'AbandonedCart'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -308,6 +310,37 @@ export const OrderItemScalarFieldEnum = {
 } as const
 
 export type OrderItemScalarFieldEnum = (typeof OrderItemScalarFieldEnum)[keyof typeof OrderItemScalarFieldEnum]
+
+
+export const NewsletterSubscriberScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  name: 'name',
+  status: 'status',
+  subscribedAt: 'subscribedAt',
+  unsubscribedAt: 'unsubscribedAt'
+} as const
+
+export type NewsletterSubscriberScalarFieldEnum = (typeof NewsletterSubscriberScalarFieldEnum)[keyof typeof NewsletterSubscriberScalarFieldEnum]
+
+
+export const AbandonedCartScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  cartId: 'cartId',
+  email: 'email',
+  customerName: 'customerName',
+  cartTotal: 'cartTotal',
+  items: 'items',
+  emailSent: 'emailSent',
+  emailSentAt: 'emailSentAt',
+  recovered: 'recovered',
+  recoveredAt: 'recoveredAt',
+  createdAt: 'createdAt',
+  expiresAt: 'expiresAt'
+} as const
+
+export type AbandonedCartScalarFieldEnum = (typeof AbandonedCartScalarFieldEnum)[keyof typeof AbandonedCartScalarFieldEnum]
 
 
 export const SortOrder = {

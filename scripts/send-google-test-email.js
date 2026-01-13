@@ -6,6 +6,7 @@
  */
 
 const { Resend } = require('resend');
+require('dotenv').config();
 
 async function sendGoogleTestEmail() {
   const apiKey = process.env.RESEND_API_KEY;
@@ -126,6 +127,8 @@ async function sendGoogleTestEmail() {
       subject: '[Test] Order Confirmation - Google Email Markup Whitelisting Request',
       html: emailHtml,
     });
+
+    console.log(result);
 
     console.log('✅ Test email sent successfully!');
     console.log('📧 Email ID:', result.data?.id);
