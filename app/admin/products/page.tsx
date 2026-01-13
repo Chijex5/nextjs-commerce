@@ -68,6 +68,15 @@ export default async function ProductsPage({
 
   const totalPages = Math.ceil(total / perPage);
 
+  // Helper function to build query strings for pagination
+  const buildPageUrl = (pageNum: number) => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (perPage !== 20) params.set("perPage", perPage.toString());
+    params.set("page", pageNum.toString());
+    return `/admin/products?${params.toString()}`;
+  };
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <AdminNav currentPage="products" userEmail={session.user?.email} />
@@ -135,7 +144,7 @@ export default async function ProductsPage({
               {/* Mobile View */}
               <div className="flex flex-1 justify-between sm:hidden">
                 <Link
-                  href={`/admin/products?page=${page - 1}${search ? `&search=${search}` : ""}${perPage !== 20 ? `&perPage=${perPage}` : ""}`}
+                  href={buildPageUrl(page - 1)}
                   className={`relative inline-flex items-center rounded-md px-4 py-2 text-sm font-medium ${
                     page <= 1
                       ? "pointer-events-none text-neutral-400"
@@ -145,7 +154,7 @@ export default async function ProductsPage({
                   Previous
                 </Link>
                 <Link
-                  href={`/admin/products?page=${page + 1}${search ? `&search=${search}` : ""}${perPage !== 20 ? `&perPage=${perPage}` : ""}`}
+                  href={buildPageUrl(page + 1)}
                   className={`relative ml-3 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium ${
                     page >= totalPages
                       ? "pointer-events-none text-neutral-400"
@@ -184,7 +193,11 @@ export default async function ProductsPage({
                       value={perPage}
                       onChange={(e) => {
                         const newPerPage = e.target.value;
-                        window.location.href = `/admin/products?page=1${search ? `&search=${search}` : ""}&perPage=${newPerPage}`;
+                        const params = new URLSearchParams();
+                        if (search) params.set("search", search);
+                        params.set("page", "1");
+                        params.set("perPage", newPerPage);
+                        window.location.href = `/admin/products?${params.toString()}`;
                       }}
                       className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                     >
@@ -198,7 +211,7 @@ export default async function ProductsPage({
                 <div>
                   <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm">
                     <Link
-                      href={`/admin/products?page=${page - 1}${search ? `&search=${search}` : ""}${perPage !== 20 ? `&perPage=${perPage}` : ""}`}
+                      href={buildPageUrl(page - 1)}
                       className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-neutral-400 ring-1 ring-inset ring-neutral-300 hover:bg-neutral-50 focus:z-20 focus:outline-offset-0 dark:ring-neutral-700 dark:hover:bg-neutral-700 ${
                         page <= 1 ? "pointer-events-none" : ""
                       }`}
@@ -230,7 +243,7 @@ export default async function ProductsPage({
                       return (
                         <Link
                           key={pageNum}
-                          href={`/admin/products?page=${pageNum}${search ? `&search=${search}` : ""}${perPage !== 20 ? `&perPage=${perPage}` : ""}`}
+                          href={buildPageUrl(pageNum)}
                           className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
                             page === pageNum
                               ? "z-10 bg-neutral-900 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 dark:bg-neutral-100 dark:text-neutral-900"
@@ -242,7 +255,7 @@ export default async function ProductsPage({
                       );
                     })}
                     <Link
-                      href={`/admin/products?page=${page + 1}${search ? `&search=${search}` : ""}${perPage !== 20 ? `&perPage=${perPage}` : ""}`}
+                      href={buildPageUrl(page + 1)}
                       className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-neutral-400 ring-1 ring-inset ring-neutral-300 hover:bg-neutral-50 focus:z-20 focus:outline-offset-0 dark:ring-neutral-700 dark:hover:bg-neutral-700 ${
                         page >= totalPages ? "pointer-events-none" : ""
                       }`}
