@@ -39,9 +39,14 @@ This plan outlines the step-by-step implementation of all missing features ident
    // lib/analytics/google-analytics.ts
    export const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
    
+   // Validate GA_ID is set before using
+   if (!GA_ID) {
+     console.warn('Google Analytics ID is not set. Analytics will not be tracked.');
+   }
+   
    export const pageview = (url: string) => {
-     if (typeof window !== 'undefined' && window.gtag) {
-       window.gtag('config', GA_ID!, {
+     if (typeof window !== 'undefined' && window.gtag && GA_ID) {
+       window.gtag('config', GA_ID, {
          page_path: url,
        });
      }
@@ -53,7 +58,7 @@ This plan outlines the step-by-step implementation of all missing features ident
      label?: string;
      value?: number;
    }) => {
-     if (typeof window !== 'undefined' && window.gtag) {
+     if (typeof window !== 'undefined' && window.gtag && GA_ID) {
        window.gtag('event', action, {
          event_category: category,
          event_label: label,
@@ -399,6 +404,11 @@ This plan outlines the step-by-step implementation of all missing features ident
    // lib/email/resend.ts
    import { Resend } from 'resend';
    
+   // Validate Resend API key
+   if (!process.env.RESEND_API_KEY) {
+     throw new Error('RESEND_API_KEY is not set in environment variables');
+   }
+   
    const resend = new Resend(process.env.RESEND_API_KEY);
    
    export const sendEmail = async ({
@@ -421,8 +431,12 @@ This plan outlines the step-by-step implementation of all missing features ident
        });
        return { success: true, data };
      } catch (error) {
+       // Log full error for debugging but don't expose to client
        console.error('Email sending error:', error);
-       return { success: false, error };
+       return { 
+         success: false, 
+         error: 'Failed to send email. Please try again.' 
+       };
      }
    };
    ```
@@ -692,7 +706,9 @@ This plan outlines the step-by-step implementation of all missing features ident
      try {
        const { email, name } = await request.json();
        
-       if (!email || !email.includes('@')) {
+       // Improved email validation
+       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+       if (!email || !emailRegex.test(email)) {
          return NextResponse.json(
            { error: 'Valid email is required' },
            { status: 400 }
