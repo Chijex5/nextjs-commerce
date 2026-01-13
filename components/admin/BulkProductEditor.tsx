@@ -282,7 +282,7 @@ export default function BulkProductEditor({
       seoDescription: "",
       variants: [
         {
-          id: `new-variant-${crypto.randomUUID()}`,
+          id: `temp-variant-${crypto.randomUUID()}`,
           title: "Default",
           price: "0",
           availableForSale: true,
@@ -406,7 +406,7 @@ export default function BulkProductEditor({
       prev.map((p) => {
         if (p.id === productId) {
           const newVariant: ProductVariant = {
-            id: `new-variant-${crypto.randomUUID()}`,
+            id: `temp-variant-${crypto.randomUUID()}`,
             title: "New Variant",
             price: p.price || "0",
             availableForSale: true,
@@ -522,7 +522,7 @@ export default function BulkProductEditor({
           const variantChanges = product.variants.some(
             (v) => v.isNew || v.isModified || v.isDeleted,
           );
-          if (variantChanges && createdProduct.id) {
+          if (variantChanges) {
             const variantResponse = await fetch(
               `/api/admin/products/${createdProduct.id}/variants`,
               {
@@ -1342,7 +1342,7 @@ export default function BulkProductEditor({
               <button
                 onClick={() => {
                   const newVariant: ProductVariant = {
-                    id: `new-variant-${crypto.randomUUID()}`,
+                    id: `temp-variant-${crypto.randomUUID()}`,
                     title: "New Variant",
                     price: "0",
                     availableForSale: true,

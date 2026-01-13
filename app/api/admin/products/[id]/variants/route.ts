@@ -25,49 +25,57 @@ export async function PUT(
       );
     }
 
-    // Process variants
-    for (const variant of variants) {
-      if (variant.isDeleted && !variant.isNew) {
-        // Delete existing variant
-        await prisma.productVariant.delete({
-          where: { id: variant.id },
-        });
-      } else if (variant.isNew && !variant.isDeleted) {
-        // Create new variant
-        const price = parseFloat(variant.price);
-        if (isNaN(price) || price < 0) {
-          throw new Error(
-            `Invalid price for variant "${variant.title}": ${variant.price}`,
-          );
-        }
-        await prisma.productVariant.create({
-          data: {
-            productId: id,
-            title: variant.title,
-            price: price,
-            currencyCode: "NGN",
-            availableForSale: variant.availableForSale,
-            selectedOptions: variant.selectedOptions || [],
-          },
-        });
-      } else if (variant.isModified && !variant.isDeleted && !variant.isNew) {
-        // Update existing variant
-        const price = parseFloat(variant.price);
-        if (isNaN(price) || price < 0) {
-          throw new Error(
-            `Invalid price for variant "${variant.title}": ${variant.price}`,
-          );
-        }
-        await prisma.productVariant.update({
-          where: { id: variant.id },
-          data: {
-            title: variant.title,
-            price: price,
-            availableForSale: variant.availableForSale,
-            selectedOptions: variant.selectedOptions || [],
-          },
-        });
+    // Separate variants by operation type
+    const variantsToDelete = variants.filter((v) => v.isDeleted && !v.isNew);
+    const variantsToCreate = variants.filter((v) => v.isNew && !v.isDeleted);
+    const variantsToUpdate = variants.filter(
+      (v) => v.isModified && !v.isDeleted && !v.isNew,
+    );
+
+    // Validate prices for new and updated variants
+    [...variantsToCreate, ...variantsToUpdate].forEach((variant) => {
+      const price = parseFloat(variant.price);
+      if (isNaN(price) || price < 0) {
+        throw new Error(
+          `Invalid price for variant "${variant.title}": ${variant.price}`,
+        );
       }
+    });
+
+    // Batch delete existing variants
+    if (variantsToDelete.length > 0) {
+      await prisma.productVariant.deleteMany({
+        where: {
+          id: { in: variantsToDelete.map((v) => v.id) },
+        },
+      });
+    }
+
+    // Batch create new variants
+    if (variantsToCreate.length > 0) {
+      await prisma.productVariant.createMany({
+        data: variantsToCreate.map((variant) => ({
+          productId: id,
+          title: variant.title,
+          price: parseFloat(variant.price),
+          currencyCode: "NGN",
+          availableForSale: variant.availableForSale,
+          selectedOptions: variant.selectedOptions || [],
+        })),
+      });
+    }
+
+    // Update existing variants (these must be done individually due to different data per variant)
+    for (const variant of variantsToUpdate) {
+      await prisma.productVariant.update({
+        where: { id: variant.id },
+        data: {
+          title: variant.title,
+          price: parseFloat(variant.price),
+          availableForSale: variant.availableForSale,
+          selectedOptions: variant.selectedOptions || [],
+        },
+      });
     }
 
     // Fetch updated product with variants
