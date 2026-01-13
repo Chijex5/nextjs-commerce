@@ -24,6 +24,7 @@ interface UsersTableProps {
   searchParams: {
     search?: string;
     status?: string;
+    perPage?: string;
   };
 }
 
@@ -40,6 +41,8 @@ export default function UsersTable({
     if (searchParams.search) params.set("search", searchParams.search);
     if (searchParams.status && searchParams.status !== "all")
       params.set("status", searchParams.status);
+    if (searchParams.perPage && searchParams.perPage !== "20")
+      params.set("perPage", searchParams.perPage);
     params.set("page", page.toString());
     return params.toString();
   };
@@ -235,7 +238,8 @@ export default function UsersTable({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between border-t border-neutral-200 bg-white px-4 py-3 dark:border-neutral-700 dark:bg-neutral-800 sm:px-6">
+        <div className="mt-6 flex flex-col gap-4 border-t border-neutral-200 bg-white px-4 py-3 dark:border-neutral-700 dark:bg-neutral-800 sm:px-6">
+          {/* Mobile View */}
           <div className="flex flex-1 justify-between sm:hidden">
             <Link
               href={`/admin/users?${buildQueryString(currentPage - 1)}`}
@@ -258,8 +262,10 @@ export default function UsersTable({
               Next
             </Link>
           </div>
+
+          {/* Desktop View */}
           <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-            <div>
+            <div className="flex items-center gap-4">
               <p className="text-sm text-neutral-700 dark:text-neutral-300">
                 Showing{" "}
                 <span className="font-medium">
@@ -271,6 +277,37 @@ export default function UsersTable({
                 </span>{" "}
                 of <span className="font-medium">{total}</span> results
               </p>
+
+              {/* Per Page Selector */}
+              <div className="flex items-center gap-2">
+                <label
+                  htmlFor="perPage"
+                  className="text-sm text-neutral-600 dark:text-neutral-400"
+                >
+                  Show:
+                </label>
+                <select
+                  id="perPage"
+                  value={perPage}
+                  onChange={(e) => {
+                    const newPerPage = e.target.value;
+                    const params = new URLSearchParams();
+                    if (searchParams.search)
+                      params.set("search", searchParams.search);
+                    if (searchParams.status && searchParams.status !== "all")
+                      params.set("status", searchParams.status);
+                    params.set("page", "1");
+                    params.set("perPage", newPerPage);
+                    window.location.href = `/admin/users?${params.toString()}`;
+                  }}
+                  className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                >
+                  <option value="20">20 per page</option>
+                  <option value="40">40 per page</option>
+                  <option value="60">60 per page</option>
+                  <option value="100">100 per page</option>
+                </select>
+              </div>
             </div>
             <div>
               <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm">

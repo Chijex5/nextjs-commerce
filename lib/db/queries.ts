@@ -385,6 +385,7 @@ export async function getCart(cartId: string): Promise<Cart | undefined> {
     where: { id: cartId },
   });
 
+  console.log("Retrieved cart from DB:", dbCart);
   return reshapeDbCart(dbCart);
 }
 

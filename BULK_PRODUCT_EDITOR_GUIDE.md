@@ -234,10 +234,28 @@ Use whichever method fits your workflow!
 - Undo/redo functionality
 - Copy-paste between cells
 - Excel/CSV export of current view
-- Variant editing within bulk editor
+- ~~Variant editing within bulk editor~~ ✅ **IMPLEMENTED**
 - Image URL assignment
 - Bulk price adjustments (% increase/decrease)
 - Filter by collection or availability
+
+## New: Variant Management ✨
+
+The bulk editor now supports full variant management! See [VARIANT_SUPPORT_IMPLEMENTATION.md](VARIANT_SUPPORT_IMPLEMENTATION.md) for complete details.
+
+### Quick Overview
+- **Expandable rows**: Click arrow (▶) to show/hide variants
+- **Inline editing**: Edit variant title, price, availability directly
+- **Variants modal**: Click "X variant(s)" button for detailed view
+- **Add/Delete**: Create new variants or remove existing ones
+- **Change tracking**: Visual indicators for new/modified variants
+- **Batch save**: All variant changes saved with "Save All Changes"
+
+### Use Cases
+- Products with size variations (S, M, L, XL)
+- Products with color options at different prices
+- Size + Color combinations
+- Seasonal price adjustments per variant
 
 ## Troubleshooting
 
@@ -245,6 +263,7 @@ Use whichever method fits your workflow!
 - Check for validation errors (empty title/handle)
 - Ensure you clicked "Save All Changes"
 - Look for error toasts
+- Check variant prices are valid numbers
 
 **Can't see all columns?**
 - Use column selector dropdown
@@ -260,6 +279,12 @@ Use whichever method fits your workflow!
 - Check for duplicate handle errors
 - Modify handle to be unique
 
+**Variant issues?**
+- Ensure variant prices are valid numbers (>= 0)
+- Check that variants have titles
+- Expand row to see all variants
+- Use variants modal for complex edits
+
 ## Summary
 
-The Bulk Product Editor provides a powerful, efficient way to manage large product catalogs. With its spreadsheet-style interface, inline editing, and bulk operations, it makes catalog management fast and intuitive. Perfect for desktop workflows where you need to update multiple products quickly!
+The Bulk Product Editor provides a powerful, efficient way to manage large product catalogs. With its spreadsheet-style interface, inline editing, bulk operations, and **now variant management**, it makes catalog management fast and intuitive. Perfect for desktop workflows where you need to update multiple products and their price variations quickly!
