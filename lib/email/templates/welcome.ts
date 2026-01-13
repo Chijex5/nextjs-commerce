@@ -9,6 +9,8 @@ interface WelcomeEmailData {
  * Sent when user subscribes to newsletter or creates account
  */
 export const welcomeEmailTemplate = (data: WelcomeEmailData) => {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'https://yourdomain.com';
+  
   const content = `
     <h2>Welcome to D'FOOTPRINT! 👋</h2>
     <p>Hi ${data.name},</p>
@@ -24,7 +26,7 @@ export const welcomeEmailTemplate = (data: WelcomeEmailData) => {
       <li><strong>Custom Order Tips:</strong> Learn how to get your dream footwear made</li>
     </ul>
     
-    <a href="https://yourdomain.com/products" class="button">Explore Our Collection</a>
+    <a href="${siteUrl}/products" class="button">Explore Our Collection</a>
     
     <p>Have questions? We're always here to help. Just reply to this email!</p>
     <p>Welcome aboard!</p>

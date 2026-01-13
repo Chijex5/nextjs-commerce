@@ -2,7 +2,10 @@
  * Base email template
  * Provides consistent styling for all emails
  */
-export const baseTemplate = (content: string) => `
+export const baseTemplate = (content: string) => {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'https://yourdomain.com';
+  
+  return `
   <!DOCTYPE html>
   <html>
   <head>
@@ -112,9 +115,9 @@ export const baseTemplate = (content: string) => `
         <p>Handmade Footwear with Love</p>
         <p>Lagos, Nigeria</p>
         <div class="footer-links">
-          <a href="https://yourdomain.com">Visit Store</a> |
-          <a href="https://yourdomain.com/account">My Account</a> |
-          <a href="https://yourdomain.com/contact">Contact Us</a>
+          <a href="${siteUrl}">Visit Store</a> |
+          <a href="${siteUrl}/account">My Account</a> |
+          <a href="${siteUrl}/contact">Contact Us</a>
         </div>
         <p style="font-size: 12px; margin-top: 20px;">
           © ${new Date().getFullYear()} D'FOOTPRINT. All rights reserved.
@@ -124,3 +127,4 @@ export const baseTemplate = (content: string) => `
   </body>
   </html>
 `;
+};

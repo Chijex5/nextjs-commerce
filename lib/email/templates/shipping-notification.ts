@@ -12,6 +12,8 @@ interface ShippingNotificationData {
  * Sent when order is dispatched for delivery
  */
 export const shippingNotificationTemplate = (order: ShippingNotificationData) => {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'https://yourdomain.com';
+  
   const content = `
     <h2>Your Order Has Shipped! 📦</h2>
     <p>Hi ${order.customerName},</p>
@@ -30,7 +32,7 @@ export const shippingNotificationTemplate = (order: ShippingNotificationData) =>
     
     <p>Your handcrafted footwear has been carefully packaged and is now being delivered to you.</p>
     
-    <a href="https://yourdomain.com/orders" class="button">Track Your Order</a>
+    <a href="${siteUrl}/orders" class="button">Track Your Order</a>
     
     <p>We hope you love your new D'FOOTPRINT footwear!</p>
     <p>Thank you for shopping with us!</p>

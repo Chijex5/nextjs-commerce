@@ -17,6 +17,8 @@ interface OrderConfirmationData {
  * Sent immediately after order is placed
  */
 export const orderConfirmationTemplate = (order: OrderConfirmationData) => {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'https://yourdomain.com';
+  
   const itemsHtml = order.items
     .map(
       (item) => `
@@ -59,7 +61,7 @@ export const orderConfirmationTemplate = (order: OrderConfirmationData) => {
     
     <p>You'll receive another email when your order ships.</p>
     
-    <a href="https://yourdomain.com/orders" class="button">Track Your Order</a>
+    <a href="${siteUrl}/orders" class="button">Track Your Order</a>
     
     <p>If you have any questions, feel free to contact us.</p>
     <p>Best regards,<br>The D'FOOTPRINT Team</p>
