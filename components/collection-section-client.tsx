@@ -30,7 +30,7 @@ export function CollectionSectionsClient({
           "bg-gradient-to-br from-emerald-50/40 via-white to-teal-50/40 dark:from-emerald-950/30 dark:via-black dark:to-teal-950/30",
           "bg-gradient-to-br from-pink-50/40 via-white to-rose-50/40 dark:from-pink-950/30 dark:via-black dark:to-rose-950/30",
         ];
-        const bgColor = bgColors[collectionIndex % bgColors.length];
+        const bgColor = bgColors[collectionIndex % bgColors.length] || "bg-gradient-to-br from-blue-50/40 via-white to-purple-50/40 dark:from-blue-950/30 dark:via-black dark:to-purple-950/30";
 
         return (
           <CollectionSection
