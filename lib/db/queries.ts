@@ -365,6 +365,57 @@ export async function getCollectionProducts({
   return productsWithDetails.filter((p): p is Product => p !== undefined);
 }
 
+// Get all collections with their products (excluding hidden collections)
+export async function getCollectionsWithProducts(): Promise<
+  Array<{ collection: Collection; products: Product[] }>
+> {
+  const dbCollections = await db.collection.findMany({
+    where: {
+      AND: [
+        { handle: { not: { startsWith: "hidden-" } } },
+        { handle: { not: "all" } },
+      ],
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const collectionsWithProducts = await Promise.all(
+    dbCollections.map(async (dbCollection) => {
+      const productCollections = await db.productCollection.findMany({
+        where: { collectionId: dbCollection.id },
+        include: { product: true },
+        orderBy: { position: "asc" },
+        take: 8, // Limit to 8 products per collection for homepage
+      });
+
+      const productsWithDetails = await Promise.all(
+        productCollections.map((pc) => reshapeDbProduct(pc.product)),
+      );
+
+      return {
+        collection: {
+          handle: dbCollection.handle,
+          title: dbCollection.title,
+          description: dbCollection.description || "",
+          seo: {
+            title: dbCollection.seoTitle || dbCollection.title,
+            description:
+              dbCollection.seoDescription || dbCollection.description || "",
+          },
+          updatedAt: dbCollection.updatedAt.toISOString(),
+          path: `/search/${dbCollection.handle}`,
+        },
+        products: productsWithDetails.filter(
+          (p): p is Product => p !== undefined,
+        ),
+      };
+    }),
+  );
+
+  // Filter out collections with no products
+  return collectionsWithProducts.filter((c) => c.products.length > 0);
+}
+
 // Cart queries and mutations
 export async function createCart(): Promise<Cart> {
   const dbCart = await db.cart.create({
