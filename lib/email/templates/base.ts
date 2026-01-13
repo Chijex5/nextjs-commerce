@@ -1,6 +1,6 @@
 /**
  * Base email template
- * Provides consistent styling for all emails
+ * Clean, minimal styling matching the D'FOOTPRINT website aesthetic
  */
 export const baseTemplate = (content: string) => {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'https://yourdomain.com';
@@ -16,74 +16,70 @@ export const baseTemplate = (content: string) => {
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         line-height: 1.6;
-        color: #333;
+        color: #333333;
         max-width: 600px;
         margin: 0 auto;
-        padding: 20px;
-        background-color: #f5f5f5;
+        padding: 0;
+        background-color: #ffffff;
       }
       .email-container {
         background-color: #ffffff;
-        border-radius: 8px;
-        overflow: hidden;
+        border: 1px solid #e5e5e5;
       }
       .header {
-        text-align: center;
-        padding: 30px 20px;
-        background-color: #000000;
-        color: #ffffff;
+        padding: 32px 24px;
+        border-bottom: 1px solid #e5e5e5;
       }
       .logo {
-        font-size: 28px;
-        font-weight: bold;
-        letter-spacing: 1px;
-      }
-      .tagline {
-        margin-top: 8px;
-        font-size: 14px;
-        opacity: 0.9;
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        color: #000000;
+        text-transform: uppercase;
       }
       .content {
-        padding: 40px 30px;
+        padding: 40px 24px;
       }
       .button {
         display: inline-block;
-        padding: 14px 28px;
-        background-color: #000;
-        color: #fff !important;
+        padding: 12px 24px;
+        background-color: #000000;
+        color: #ffffff !important;
         text-decoration: none;
-        border-radius: 6px;
-        margin: 20px 0;
-        font-weight: 600;
-      }
-      .button:hover {
-        background-color: #333;
+        border-radius: 4px;
+        margin: 16px 0;
+        font-weight: 500;
+        font-size: 14px;
       }
       .footer {
-        text-align: center;
-        padding: 30px 20px;
-        background-color: #f9f9f9;
-        border-top: 1px solid #eee;
+        padding: 24px;
+        border-top: 1px solid #e5e5e5;
         font-size: 13px;
-        color: #666;
+        color: #737373;
       }
       .footer-links {
-        margin: 15px 0;
+        margin: 12px 0;
       }
       .footer-links a {
-        color: #000;
+        color: #171717;
         text-decoration: none;
-        margin: 0 10px;
-      }
-      .social-links {
-        margin-top: 20px;
+        margin: 0 8px;
       }
       h2 {
-        color: #000;
-        margin-top: 0;
+        color: #000000;
+        font-size: 24px;
+        font-weight: 600;
+        margin: 0 0 16px 0;
+      }
+      h3 {
+        color: #000000;
+        font-size: 16px;
+        font-weight: 600;
+        margin: 24px 0 12px 0;
       }
       p {
-        margin: 15px 0;
+        margin: 12px 0;
+        color: #333333;
       }
       table {
         width: 100%;
@@ -91,13 +87,22 @@ export const baseTemplate = (content: string) => {
         margin: 20px 0;
       }
       th, td {
-        padding: 12px;
+        padding: 12px 8px;
         text-align: left;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid #e5e5e5;
       }
       th {
-        background-color: #f9f9f9;
         font-weight: 600;
+        font-size: 13px;
+        color: #171717;
+      }
+      .info-box {
+        border: 1px solid #e5e5e5;
+        padding: 16px;
+        margin: 20px 0;
+      }
+      .info-box p {
+        margin: 4px 0;
       }
     </style>
   </head>
@@ -105,21 +110,19 @@ export const baseTemplate = (content: string) => {
     <div class="email-container">
       <div class="header">
         <div class="logo">D'FOOTPRINT</div>
-        <div class="tagline">Handcrafted Footwear from Lagos, Nigeria</div>
       </div>
       <div class="content">
         ${content}
       </div>
       <div class="footer">
-        <p><strong>D'FOOTPRINT</strong></p>
-        <p>Handmade Footwear with Love</p>
-        <p>Lagos, Nigeria</p>
+        <p style="margin: 0 0 8px 0; color: #171717; font-weight: 500;">D'FOOTPRINT</p>
+        <p style="margin: 0 0 16px 0;">Handcrafted Footwear · Lagos, Nigeria</p>
         <div class="footer-links">
-          <a href="${siteUrl}">Visit Store</a> |
-          <a href="${siteUrl}/account">My Account</a> |
-          <a href="${siteUrl}/contact">Contact Us</a>
+          <a href="${siteUrl}">Store</a> ·
+          <a href="${siteUrl}/account">Account</a> ·
+          <a href="${siteUrl}/contact">Contact</a>
         </div>
-        <p style="font-size: 12px; margin-top: 20px;">
+        <p style="font-size: 12px; margin-top: 16px; color: #a3a3a3;">
           © ${new Date().getFullYear()} D'FOOTPRINT. All rights reserved.
         </p>
       </div>

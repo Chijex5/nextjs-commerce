@@ -24,18 +24,18 @@ export const abandonedCartTemplate = (data: AbandonedCartData) => {
     .map(
       (item) => `
       <tr>
-        <td style="padding: 15px 0; border-bottom: 1px solid #eee;">
+        <td style="padding: 16px 0; border-bottom: 1px solid #e5e5e5;">
           ${item.imageUrl ? `
-          <img src="${item.imageUrl}" alt="${item.productTitle}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; margin-right: 15px; vertical-align: middle;">
+          <img src="${item.imageUrl}" alt="${item.productTitle}" style="width: 60px; height: 60px; object-fit: cover; margin-right: 12px; vertical-align: middle; border: 1px solid #e5e5e5;">
           ` : ''}
           <div style="display: inline-block; vertical-align: middle;">
-            <strong>${item.productTitle}</strong><br>
-            <span style="color: #666; font-size: 14px;">${item.variantTitle}</span><br>
-            <span style="color: #666; font-size: 14px;">Qty: ${item.quantity}</span>
+            <div style="font-weight: 500; color: #000000;">${item.productTitle}</div>
+            <div style="color: #737373; font-size: 13px; margin-top: 2px;">${item.variantTitle}</div>
+            <div style="color: #737373; font-size: 13px; margin-top: 2px;">Qty: ${item.quantity}</div>
           </div>
         </td>
-        <td style="text-align: right; padding: 15px 0; border-bottom: 1px solid #eee; vertical-align: middle;">
-          <strong>₦${item.price.toLocaleString()}</strong>
+        <td style="text-align: right; padding: 16px 0; border-bottom: 1px solid #e5e5e5; vertical-align: middle; font-weight: 500;">
+          ₦${item.price.toLocaleString()}
         </td>
       </tr>
     `
@@ -45,53 +45,48 @@ export const abandonedCartTemplate = (data: AbandonedCartData) => {
   const moreItems = data.items.length > 3 ? data.items.length - 3 : 0;
 
   const content = `
-    <h2>You Left Something Behind! 🛍️</h2>
+    <h2>You Left Something Behind</h2>
     <p>Hi ${data.customerName},</p>
-    <p>We noticed you added some beautiful handcrafted footwear to your cart but didn't complete your order. Don't worry, we've saved your items for you!</p>
+    <p>We noticed you added some items to your cart but didn't complete your order. Your items are saved and waiting for you.</p>
     
-    <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin: 25px 0;">
-      <h3 style="margin-top: 0;">Your Cart Items:</h3>
-      <table style="width: 100%; margin: 0;">
-        <tbody>
-          ${itemsHtml}
-        </tbody>
-      </table>
-      ${moreItems > 0 ? `
-      <p style="margin-top: 15px; font-size: 14px; color: #666;">
-        + ${moreItems} more item${moreItems > 1 ? 's' : ''} in your cart
+    <h3>Your Cart Items</h3>
+    <table style="width: 100%; margin: 0;">
+      <tbody>
+        ${itemsHtml}
+      </tbody>
+    </table>
+    ${moreItems > 0 ? `
+    <p style="margin-top: 12px; font-size: 13px; color: #737373;">
+      + ${moreItems} more item${moreItems > 1 ? 's' : ''} in your cart
+    </p>
+    ` : ''}
+    
+    <div class="info-box" style="margin-top: 24px;">
+      <p style="display: flex; justify-content: space-between; align-items: center; margin: 0;">
+        <span style="font-weight: 500;">Cart Total:</span>
+        <span style="font-size: 20px; font-weight: 600;">₦${data.cartTotal.toLocaleString()}</span>
       </p>
-      ` : ''}
-      <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #000;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 18px; font-weight: bold;">Cart Total:</span>
-          <span style="font-size: 24px; font-weight: bold;">₦${data.cartTotal.toLocaleString()}</span>
-        </div>
-      </div>
     </div>
     
-    <p><strong>Why shop with D'FOOTPRINT?</strong></p>
-    <ul style="margin: 15px 0; padding-left: 20px;">
-      <li>100% Handcrafted with love in Lagos, Nigeria</li>
-      <li>Premium quality materials</li>
-      <li>Unique designs you won't find anywhere else</li>
-      <li>Nationwide delivery</li>
-    </ul>
+    <h3>Why Shop with D'FOOTPRINT</h3>
+    <p style="margin: 8px 0;">• 100% Handcrafted in Lagos, Nigeria</p>
+    <p style="margin: 8px 0;">• Premium quality materials</p>
+    <p style="margin: 8px 0;">• Unique designs</p>
+    <p style="margin: 8px 0;">• Nationwide delivery</p>
     
-    <p style="text-align: center; margin: 30px 0;">
-      <a href="${siteUrl}/checkout" class="button" style="font-size: 16px; padding: 16px 32px;">
-        Complete Your Order
-      </a>
-    </p>
+    <div style="text-align: center; margin: 32px 0;">
+      <a href="${siteUrl}/checkout" class="button">Complete Your Order</a>
+    </div>
     
-    <p style="text-align: center; font-size: 14px; color: #666;">
-      <a href="${siteUrl}/cart" style="color: #000; text-decoration: underline;">View Your Cart</a>
+    <p style="text-align: center; font-size: 13px; color: #737373;">
+      <a href="${siteUrl}/cart" style="color: #171717; text-decoration: underline;">View Your Cart</a>
     </p>
     
     <p>Need help? Just reply to this email or contact us anytime.</p>
     <p>Best regards,<br>The D'FOOTPRINT Team</p>
     
-    <p style="font-size: 12px; color: #999; margin-top: 30px;">
-      This is a one-time reminder about your cart. You can continue shopping at any time.
+    <p style="font-size: 12px; color: #a3a3a3; margin-top: 24px;">
+      This is a one-time reminder about your cart.
     </p>
   `;
 

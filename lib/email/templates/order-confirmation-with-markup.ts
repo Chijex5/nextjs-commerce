@@ -91,14 +91,14 @@ export const orderConfirmationWithMarkupTemplate = (order: OrderConfirmationWith
     ${JSON.stringify(jsonLd, null, 2)}
     </script>
     
-    <h2>Thank You for Your Order! 🎉</h2>
+    <h2>Thank You for Your Order</h2>
     <p>Hi ${order.customerName},</p>
-    <p>We've received your order and it's being processed. Here are the details:</p>
+    <p>We've received your order and it's being processed.</p>
     
-    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 6px; margin: 20px 0;">
-      <h3 style="margin-top: 0;">Order #${order.orderNumber}</h3>
-      <p style="margin: 5px 0;"><strong>Order Date:</strong> ${new Date(order.orderDate).toLocaleDateString()}</p>
-      <p style="margin: 5px 0;"><strong>Status:</strong> Processing</p>
+    <div class="info-box">
+      <p><strong>Order #${order.orderNumber}</strong></p>
+      <p>Order Date: ${new Date(order.orderDate).toLocaleDateString()}</p>
+      <p>Status: Processing</p>
     </div>
     
     <table>
@@ -113,19 +113,19 @@ export const orderConfirmationWithMarkupTemplate = (order: OrderConfirmationWith
         ${itemsHtml}
       </tbody>
       <tfoot>
-        <tr style="font-weight: bold;">
-          <td colspan="2" style="text-align: right;">Total:</td>
-          <td style="text-align: right;">₦${order.totalAmount.toLocaleString()}</td>
+        <tr style="font-weight: 600;">
+          <td colspan="2" style="text-align: right; padding-top: 16px;">Total:</td>
+          <td style="text-align: right; padding-top: 16px;">₦${order.totalAmount.toLocaleString()}</td>
         </tr>
       </tfoot>
     </table>
     
-    <div style="background-color: #fffbf0; border-left: 4px solid #ffa500; padding: 15px; margin: 20px 0;">
-      <p style="margin: 0;"><strong>Shipping Address:</strong></p>
-      <p style="margin: 5px 0;">${order.shippingAddress.firstName} ${order.shippingAddress.lastName}</p>
-      <p style="margin: 5px 0;">${order.shippingAddress.address}</p>
-      <p style="margin: 5px 0;">${order.shippingAddress.city}, ${order.shippingAddress.state}</p>
-      <p style="margin: 5px 0;">Nigeria</p>
+    <div class="info-box">
+      <p><strong>Shipping Address</strong></p>
+      <p>${order.shippingAddress.firstName} ${order.shippingAddress.lastName}</p>
+      <p>${order.shippingAddress.address}</p>
+      <p>${order.shippingAddress.city}, ${order.shippingAddress.state}</p>
+      <p>Nigeria</p>
     </div>
     
     <p>Your order will be handcrafted with care. Production typically takes 7-10 days, after which we'll ship it to you.</p>

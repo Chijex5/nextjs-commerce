@@ -15,18 +15,16 @@ export const shippingNotificationTemplate = (order: ShippingNotificationData) =>
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'https://yourdomain.com';
   
   const content = `
-    <h2>Your Order Has Shipped! 📦</h2>
+    <h2>Your Order Has Shipped</h2>
     <p>Hi ${order.customerName},</p>
-    <p>Great news! Your order #${order.orderNumber} is on its way to you.</p>
+    <p>Your order #${order.orderNumber} is on its way to you.</p>
     
     ${
-      order.trackingNumber
-        ? `<p><strong>Tracking Number:</strong> ${order.trackingNumber}</p>`
-        : ''
-    }
-    ${
-      order.estimatedArrival
-        ? `<p><strong>Estimated Arrival:</strong> ${order.estimatedArrival}</p>`
+      order.trackingNumber || order.estimatedArrival
+        ? `<div class="info-box">
+      ${order.trackingNumber ? `<p><strong>Tracking Number:</strong> ${order.trackingNumber}</p>` : ''}
+      ${order.estimatedArrival ? `<p><strong>Estimated Arrival:</strong> ${order.estimatedArrival}</p>` : ''}
+    </div>`
         : ''
     }
     
@@ -34,8 +32,7 @@ export const shippingNotificationTemplate = (order: ShippingNotificationData) =>
     
     <a href="${siteUrl}/orders" class="button">Track Your Order</a>
     
-    <p>We hope you love your new D'FOOTPRINT footwear!</p>
-    <p>Thank you for shopping with us!</p>
+    <p>We hope you love your new D'FOOTPRINT footwear.</p>
     <p>Best regards,<br>The D'FOOTPRINT Team</p>
   `;
 

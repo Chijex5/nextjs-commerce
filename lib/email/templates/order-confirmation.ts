@@ -32,11 +32,13 @@ export const orderConfirmationTemplate = (order: OrderConfirmationData) => {
     .join('');
 
   const content = `
-    <h2>Thank You for Your Order! 🎉</h2>
+    <h2>Thank You for Your Order</h2>
     <p>Hi ${order.customerName},</p>
-    <p>We've received your order and it's being processed. Here are the details:</p>
+    <p>We've received your order and it's being processed.</p>
     
-    <h3>Order #${order.orderNumber}</h3>
+    <div class="info-box">
+      <p><strong>Order #${order.orderNumber}</strong></p>
+    </div>
     
     <table>
       <thead>
@@ -50,9 +52,9 @@ export const orderConfirmationTemplate = (order: OrderConfirmationData) => {
         ${itemsHtml}
       </tbody>
       <tfoot>
-        <tr style="font-weight: bold;">
-          <td colspan="2" style="text-align: right;">Total:</td>
-          <td style="text-align: right;">₦${order.totalAmount.toLocaleString()}</td>
+        <tr style="font-weight: 600;">
+          <td colspan="2" style="text-align: right; padding-top: 16px;">Total:</td>
+          <td style="text-align: right; padding-top: 16px;">₦${order.totalAmount.toLocaleString()}</td>
         </tr>
       </tfoot>
     </table>
