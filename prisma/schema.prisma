@@ -331,8 +331,4 @@ model AbandonedCart {
   @@map("abandoned_carts")
 }
 
-// Update User model to include abandoned carts relation
-// Add this to the User model:
-// abandonedCarts AbandonedCart[]
-
 
