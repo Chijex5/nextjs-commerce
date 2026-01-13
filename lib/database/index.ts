@@ -57,8 +57,11 @@ export async function getCart(): Promise<Cart | undefined> {
   const cartId = (await cookies()).get("cartId")?.value;
 
   if (!cartId) {
+    console.log("No cart ID found in cookies.");
     return undefined;
   }
+
+  console.log("Fetching cart with ID:", cartId);
 
   return dbQueries.getCart(cartId);
 }
