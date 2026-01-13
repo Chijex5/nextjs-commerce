@@ -11,6 +11,7 @@ export default async function AdminUsersPage({
   searchParams: Promise<{
     search?: string;
     page?: string;
+    perPage?: string;
     status?: string;
   }>;
 }) {
@@ -23,8 +24,8 @@ export default async function AdminUsersPage({
   const params = await searchParams;
   const search = params.search || "";
   const page = parseInt(params.page || "1");
+  const perPage = parseInt(params.perPage || "20");
   const statusFilter = params.status || "all";
-  const perPage = 20;
 
   // Build where clause
   const where: any = {};
