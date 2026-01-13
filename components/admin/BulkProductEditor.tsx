@@ -510,37 +510,71 @@ export default function BulkProductEditor({
             body: JSON.stringify(payload),
           });
 
-          if (response.ok) {
-            const createdProduct = await response.json();
-            // Create variants for new product if any exist
-            const variantChanges = product.variants.some(
-              (v) => v.isNew || v.isModified || v.isDeleted,
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(
+              error.error || `Failed to create product: ${product.title}`,
             );
-            if (variantChanges && createdProduct.id) {
-              await fetch(`/api/admin/products/${createdProduct.id}/variants`, {
+          }
+
+          const createdProduct = await response.json();
+          // Create variants for new product if any exist
+          const variantChanges = product.variants.some(
+            (v) => v.isNew || v.isModified || v.isDeleted,
+          );
+          if (variantChanges && createdProduct.id) {
+            const variantResponse = await fetch(
+              `/api/admin/products/${createdProduct.id}/variants`,
+              {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ variants: product.variants }),
-              });
+              },
+            );
+
+            if (!variantResponse.ok) {
+              const error = await variantResponse.json();
+              throw new Error(
+                error.error ||
+                  `Failed to create variants for product: ${product.title}`,
+              );
             }
           }
         } else {
-          await fetch(`/api/admin/products/${product.id}`, {
+          const response = await fetch(`/api/admin/products/${product.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(
+              error.error || `Failed to update product: ${product.title}`,
+            );
+          }
 
           // Update variants if they have changes
           const variantChanges = product.variants.some(
             (v) => v.isNew || v.isModified || v.isDeleted,
           );
           if (variantChanges) {
-            await fetch(`/api/admin/products/${product.id}/variants`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ variants: product.variants }),
-            });
+            const variantResponse = await fetch(
+              `/api/admin/products/${product.id}/variants`,
+              {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ variants: product.variants }),
+              },
+            );
+
+            if (!variantResponse.ok) {
+              const error = await variantResponse.json();
+              throw new Error(
+                error.error ||
+                  `Failed to update variants for product: ${product.title}`,
+              );
+            }
           }
         }
       }

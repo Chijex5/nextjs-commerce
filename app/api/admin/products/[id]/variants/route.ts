@@ -83,9 +83,8 @@ export async function PUT(
     return NextResponse.json(product);
   } catch (error) {
     console.error("Error updating variants:", error);
-    return NextResponse.json(
-      { error: "Failed to update variants" },
-      { status: 500 },
-    );
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to update variants";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
