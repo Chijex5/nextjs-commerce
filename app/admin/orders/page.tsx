@@ -11,6 +11,7 @@ export default async function AdminOrdersPage({
   searchParams: Promise<{
     search?: string;
     page?: string;
+    perPage?: string;
     status?: string;
     deliveryStatus?: string;
   }>;
@@ -24,9 +25,9 @@ export default async function AdminOrdersPage({
   const params = await searchParams;
   const search = params.search || "";
   const page = parseInt(params.page || "1");
+  const perPage = parseInt(params.perPage || "20");
   const statusFilter = params.status || "all";
   const deliveryStatusFilter = params.deliveryStatus || "all";
-  const perPage = 20;
 
   // Build where clause
   const where: any = {};
