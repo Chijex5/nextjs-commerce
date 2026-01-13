@@ -101,6 +101,16 @@ export async function getCollections(): Promise<Collection[]> {
   return dbQueries.getCollections();
 }
 
+export async function getCollectionsWithProducts(): Promise<
+  Array<{ collection: Collection; products: Product[] }>
+> {
+  "use cache";
+  cacheTag(TAGS.collections, TAGS.products);
+  cacheLife("days");
+
+  return dbQueries.getCollectionsWithProducts();
+}
+
 // Product operations
 export async function getProduct(handle: string): Promise<Product | undefined> {
   "use cache";

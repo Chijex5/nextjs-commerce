@@ -1,6 +1,7 @@
 import { Carousel } from "components/carousel";
 import { ThreeItemGrid } from "components/grid/three-items";
 import { CustomShowcase } from "components/custom-showcase";
+import { CollectionSections } from "components/collection-sections";
 import Footer from "components/layout/footer";
 
 export const metadata = {
@@ -16,6 +17,7 @@ export default function HomePage() {
     <>
       <ThreeItemGrid />
       <Carousel />
+      <CollectionSections />
       <CustomShowcase />
       <Footer />
     </>

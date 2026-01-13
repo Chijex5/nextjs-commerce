@@ -25,30 +25,32 @@ function ThreeItemGridItem({
       }
     >
       <Link
-        className="relative block aspect-square h-full w-full"
+        className="group relative block aspect-square h-full w-full"
         href={`/product/${item.handle}`}
         prefetch={true}
       >
-        <GridTileImage
-          src={item.featuredImage.url}
-          fill
-          sizes={
-            size === "full"
-              ? "(min-width: 768px) 66vw, 100vw"
-              : "(min-width: 768px) 33vw, 100vw"
-          }
-          priority={priority}
-          alt={item.title}
-          label={{
-            position: size === "full" ? "center" : "bottom",
-            title: item.title as string,
-            amount: item.priceRange.maxVariantPrice.amount,
-            currencyCode: item.priceRange.maxVariantPrice.currencyCode,
-            minAmount: hasVariedPricing
-              ? item.priceRange.minVariantPrice.amount
-              : undefined,
-          }}
-        />
+        <div className="h-full overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-neutral-200/50 transition-all duration-300 group-hover:shadow-2xl group-hover:ring-neutral-300 dark:bg-neutral-900 dark:ring-neutral-800/50 dark:group-hover:ring-neutral-700">
+          <GridTileImage
+            src={item.featuredImage.url}
+            fill
+            sizes={
+              size === "full"
+                ? "(min-width: 768px) 66vw, 100vw"
+                : "(min-width: 768px) 33vw, 100vw"
+            }
+            priority={priority}
+            alt={item.title}
+            label={{
+              position: size === "full" ? "center" : "bottom",
+              title: item.title as string,
+              amount: item.priceRange.maxVariantPrice.amount,
+              currencyCode: item.priceRange.maxVariantPrice.currencyCode,
+              minAmount: hasVariedPricing
+                ? item.priceRange.minVariantPrice.amount
+                : undefined,
+            }}
+          />
+        </div>
       </Link>
     </div>
   );
