@@ -257,6 +257,8 @@ model Order {
   subtotalAmount      Decimal   @map("subtotal_amount") @db.Decimal(10, 2)
   taxAmount           Decimal   @default(0.00) @map("tax_amount") @db.Decimal(10, 2)
   shippingAmount      Decimal   @default(0.00) @map("shipping_amount") @db.Decimal(10, 2)
+  discountAmount      Decimal   @default(0.00) @map("discount_amount") @db.Decimal(10, 2)
+  couponCode          String?   @map("coupon_code") @db.VarChar(50)
   totalAmount         Decimal   @map("total_amount") @db.Decimal(10, 2)
   currencyCode        String    @default("NGN") @map("currency_code") @db.VarChar(3)
   notes               String?   @db.Text
@@ -421,15 +423,34 @@ model Coupon {
   maxUses        Int?      @map("max_uses") // Max total uses (null = unlimited)
   usedCount      Int       @default(0) @map("used_count")
   maxUsesPerUser Int?      @map("max_uses_per_user") // Max uses per customer (null = unlimited)
+  requiresLogin  Boolean   @default(false) @map("requires_login") // Require user to be logged in to use
   isActive       Boolean   @default(true) @map("is_active")
   startDate      DateTime? @map("start_date")
   expiryDate     DateTime? @map("expiry_date")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
 
+  usages CouponUsage[]
+
   @@index([code], name: "coupons_code_idx")
   @@index([isActive], name: "coupons_is_active_idx")
   @@map("coupons")
+}
+
+// Track coupon usage per user for per-customer limits
+model CouponUsage {
+  id        String   @id @default(uuid())
+  couponId  String   @map("coupon_id")
+  userId    String?  @map("user_id") // Nullable for guest users (tracked by session)
+  sessionId String?  @map("session_id") // For tracking guest user usage
+  usedAt    DateTime @default(now()) @map("used_at")
+
+  coupon Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  @@index([couponId], name: "coupon_usage_coupon_id_idx")
+  @@index([userId], name: "coupon_usage_user_id_idx")
+  @@index([sessionId], name: "coupon_usage_session_id_idx")
+  @@map("coupon_usage")
 }
 
 

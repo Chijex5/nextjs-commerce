@@ -72,7 +72,8 @@ export const ModelName = {
   ReviewVote: 'ReviewVote',
   Testimonial: 'Testimonial',
   SizeGuide: 'SizeGuide',
-  Coupon: 'Coupon'
+  Coupon: 'Coupon',
+  CouponUsage: 'CouponUsage'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -288,6 +289,8 @@ export const OrderScalarFieldEnum = {
   subtotalAmount: 'subtotalAmount',
   taxAmount: 'taxAmount',
   shippingAmount: 'shippingAmount',
+  discountAmount: 'discountAmount',
+  couponCode: 'couponCode',
   totalAmount: 'totalAmount',
   currencyCode: 'currencyCode',
   notes: 'notes',
@@ -418,6 +421,7 @@ export const CouponScalarFieldEnum = {
   maxUses: 'maxUses',
   usedCount: 'usedCount',
   maxUsesPerUser: 'maxUsesPerUser',
+  requiresLogin: 'requiresLogin',
   isActive: 'isActive',
   startDate: 'startDate',
   expiryDate: 'expiryDate',
@@ -426,6 +430,17 @@ export const CouponScalarFieldEnum = {
 } as const
 
 export type CouponScalarFieldEnum = (typeof CouponScalarFieldEnum)[keyof typeof CouponScalarFieldEnum]
+
+
+export const CouponUsageScalarFieldEnum = {
+  id: 'id',
+  couponId: 'couponId',
+  userId: 'userId',
+  sessionId: 'sessionId',
+  usedAt: 'usedAt'
+} as const
+
+export type CouponUsageScalarFieldEnum = (typeof CouponUsageScalarFieldEnum)[keyof typeof CouponUsageScalarFieldEnum]
 
 
 export const SortOrder = {

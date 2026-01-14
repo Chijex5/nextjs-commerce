@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from 'lib/prisma';
 import { verifyAuth } from 'app/api/utils/auth';
+import { generateCouponCode, formatCouponCode, isValidCouponCode } from 'lib/coupon-utils';
 
 // GET /api/admin/coupons - List all coupons
 export async function GET(request: NextRequest) {
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const {
+    let {
       code,
       description,
       discountType,
@@ -60,19 +61,46 @@ export async function POST(request: NextRequest) {
       minOrderValue,
       maxUses,
       maxUsesPerUser,
+      requiresLogin,
       startDate,
       expiryDate,
-      isActive
+      isActive,
+      autoGenerate
     } = body;
 
-    // Validation
-    if (!code || typeof code !== 'string' || code.trim() === '') {
-      return NextResponse.json(
-        { error: 'Coupon code is required' },
-        { status: 400 }
-      );
+    // Auto-generate code if requested or if code is empty
+    if (autoGenerate || !code || code.trim() === '') {
+      let attempts = 0;
+      let unique = false;
+      
+      while (!unique && attempts < 10) {
+        code = generateCouponCode();
+        const existing = await prisma.coupon.findFirst({
+          where: { code: { equals: code, mode: 'insensitive' } }
+        });
+        unique = !existing;
+        attempts++;
+      }
+      
+      if (!unique) {
+        return NextResponse.json(
+          { error: 'Failed to generate unique coupon code' },
+          { status: 500 }
+        );
+      }
+    } else {
+      // Format and validate provided code
+      code = formatCouponCode(code);
+      
+      if (!isValidCouponCode(code)) {
+        return NextResponse.json(
+          { error: 'Invalid coupon code format. Use only letters, numbers, and hyphens (3-50 characters)' },
+          { status: 400 }
+        );
+      }
     }
 
+    // Validation
     if (!discountType || !['percentage', 'fixed', 'free_shipping'].includes(discountType)) {
       return NextResponse.json(
         { error: 'Valid discount type is required' },
@@ -93,7 +121,7 @@ export async function POST(request: NextRequest) {
     const existing = await prisma.coupon.findFirst({
       where: {
         code: {
-          equals: code.toUpperCase(),
+          equals: code,
           mode: 'insensitive'
         }
       }
@@ -109,13 +137,14 @@ export async function POST(request: NextRequest) {
     // Create coupon
     const coupon = await prisma.coupon.create({
       data: {
-        code: code.toUpperCase(),
+        code,
         description,
         discountType,
         discountValue: discountType === 'free_shipping' ? 0 : discountValue,
         minOrderValue: minOrderValue || null,
         maxUses: maxUses || null,
         maxUsesPerUser: maxUsesPerUser || null,
+        requiresLogin: requiresLogin || false,
         startDate: startDate ? new Date(startDate) : null,
         expiryDate: expiryDate ? new Date(expiryDate) : null,
         isActive: isActive !== undefined ? isActive : true
