@@ -67,7 +67,11 @@ export const ModelName = {
   Order: 'Order',
   OrderItem: 'OrderItem',
   NewsletterSubscriber: 'NewsletterSubscriber',
-  AbandonedCart: 'AbandonedCart'
+  AbandonedCart: 'AbandonedCart',
+  Review: 'Review',
+  ReviewVote: 'ReviewVote',
+  Testimonial: 'Testimonial',
+  SizeGuide: 'SizeGuide'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -341,6 +345,66 @@ export const AbandonedCartScalarFieldEnum = {
 } as const
 
 export type AbandonedCartScalarFieldEnum = (typeof AbandonedCartScalarFieldEnum)[keyof typeof AbandonedCartScalarFieldEnum]
+
+
+export const ReviewScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  userId: 'userId',
+  orderId: 'orderId',
+  rating: 'rating',
+  title: 'title',
+  comment: 'comment',
+  images: 'images',
+  isVerified: 'isVerified',
+  helpfulCount: 'helpfulCount',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ReviewScalarFieldEnum = (typeof ReviewScalarFieldEnum)[keyof typeof ReviewScalarFieldEnum]
+
+
+export const ReviewVoteScalarFieldEnum = {
+  id: 'id',
+  reviewId: 'reviewId',
+  userId: 'userId',
+  isHelpful: 'isHelpful',
+  createdAt: 'createdAt'
+} as const
+
+export type ReviewVoteScalarFieldEnum = (typeof ReviewVoteScalarFieldEnum)[keyof typeof ReviewVoteScalarFieldEnum]
+
+
+export const TestimonialScalarFieldEnum = {
+  id: 'id',
+  customerName: 'customerName',
+  role: 'role',
+  content: 'content',
+  rating: 'rating',
+  image: 'image',
+  isActive: 'isActive',
+  position: 'position',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TestimonialScalarFieldEnum = (typeof TestimonialScalarFieldEnum)[keyof typeof TestimonialScalarFieldEnum]
+
+
+export const SizeGuideScalarFieldEnum = {
+  id: 'id',
+  productType: 'productType',
+  title: 'title',
+  sizesChart: 'sizesChart',
+  measurements: 'measurements',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SizeGuideScalarFieldEnum = (typeof SizeGuideScalarFieldEnum)[keyof typeof SizeGuideScalarFieldEnum]
 
 
 export const SortOrder = {

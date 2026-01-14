@@ -1,4 +1,4 @@
-import { getEmailTemplate } from './base';
+import { baseTemplate } from './base';
 
 export function getReviewApprovedEmailTemplate(params: {
   customerName: string;
@@ -43,5 +43,5 @@ export function getReviewApprovedEmailTemplate(params: {
     </div>
   `;
 
-  return getEmailTemplate(content);
+  return baseTemplate(content);
 }

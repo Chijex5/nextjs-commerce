@@ -124,3 +124,23 @@ export type NewsletterSubscriber = Prisma.NewsletterSubscriberModel
  * 
  */
 export type AbandonedCart = Prisma.AbandonedCartModel
+/**
+ * Model Review
+ * 
+ */
+export type Review = Prisma.ReviewModel
+/**
+ * Model ReviewVote
+ * 
+ */
+export type ReviewVote = Prisma.ReviewVoteModel
+/**
+ * Model Testimonial
+ * 
+ */
+export type Testimonial = Prisma.TestimonialModel
+/**
+ * Model SizeGuide
+ * 
+ */
+export type SizeGuide = Prisma.SizeGuideModel

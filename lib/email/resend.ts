@@ -21,11 +21,13 @@ export const sendEmail = async ({
   subject,
   html,
   from = process.env.SMTP_FROM_EMAIL || 'noreply@yourdomain.com',
+  replyTo = process.env.SUPPORT_EMAIL || 'support@dfootprint.me',
 }: {
   to: string | string[];
   subject: string;
   html: string;
   from?: string;
+  replyTo?: string;
 }) => {
   if (!resend) {
     console.error('Resend is not initialized. Please set RESEND_API_KEY environment variable.');
@@ -39,6 +41,7 @@ export const sendEmail = async ({
     const data = await resend.emails.send({
       from,
       to,
+      replyTo,
       subject,
       html,
     });
