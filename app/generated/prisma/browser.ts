@@ -92,3 +92,38 @@ export type Order = Prisma.OrderModel
  * 
  */
 export type OrderItem = Prisma.OrderItemModel
+/**
+ * Model NewsletterSubscriber
+ * 
+ */
+export type NewsletterSubscriber = Prisma.NewsletterSubscriberModel
+/**
+ * Model AbandonedCart
+ * 
+ */
+export type AbandonedCart = Prisma.AbandonedCartModel
+/**
+ * Model Review
+ * 
+ */
+export type Review = Prisma.ReviewModel
+/**
+ * Model ReviewVote
+ * 
+ */
+export type ReviewVote = Prisma.ReviewVoteModel
+/**
+ * Model Testimonial
+ * 
+ */
+export type Testimonial = Prisma.TestimonialModel
+/**
+ * Model SizeGuide
+ * 
+ */
+export type SizeGuide = Prisma.SizeGuideModel
+/**
+ * Model Coupon
+ * 
+ */
+export type Coupon = Prisma.CouponModel

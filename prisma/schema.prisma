@@ -28,6 +28,7 @@ model Product {
   images             ProductImage[]
   options            ProductOption[]
   productCollections ProductCollection[]
+  reviews            Review[]
 
   @@index([handle], name: "products_handle_idx")
   @@index([tags], name: "products_tags_idx")
@@ -229,7 +230,10 @@ model User {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
 
-  orders Order[]
+  orders         Order[]
+  abandonedCarts AbandonedCart[]
+  reviews        Review[]
+  reviewVotes    ReviewVote[]
 
   @@index([email], name: "users_email_idx")
   @@map("users")
@@ -291,3 +295,141 @@ model OrderItem {
   @@index([orderId], name: "order_items_order_id_idx")
   @@map("order_items")
 }
+
+// Newsletter subscribers
+model NewsletterSubscriber {
+  id             String    @id @default(uuid())
+  email          String    @unique @db.VarChar(255)
+  name           String?   @db.VarChar(255)
+  status         String    @default("active") @db.VarChar(50) // active, unsubscribed
+  subscribedAt   DateTime  @default(now()) @map("subscribed_at")
+  unsubscribedAt DateTime? @map("unsubscribed_at")
+
+  @@index([email], name: "newsletter_subscribers_email_idx")
+  @@index([status], name: "newsletter_subscribers_status_idx")
+  @@map("newsletter_subscribers")
+}
+
+// Abandoned cart tracking for logged-in users
+model AbandonedCart {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  cartId          String    @map("cart_id")
+  email           String    @db.VarChar(255)
+  customerName    String    @map("customer_name") @db.VarChar(255)
+  cartTotal       Decimal   @map("cart_total") @db.Decimal(10, 2)
+  items           Json      // Store cart items as JSON
+  emailSent       Boolean   @default(false) @map("email_sent")
+  emailSentAt     DateTime? @map("email_sent_at")
+  recovered       Boolean   @default(false)
+  recoveredAt     DateTime? @map("recovered_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  expiresAt       DateTime  @map("expires_at") // When to consider it truly abandoned (e.g., 1 hour)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "abandoned_carts_user_id_idx")
+  @@index([emailSent], name: "abandoned_carts_email_sent_idx")
+  @@index([expiresAt], name: "abandoned_carts_expires_at_idx")
+  @@map("abandoned_carts")
+}
+
+// Product reviews
+model Review {
+  id           String   @id @default(uuid())
+  productId    String   @map("product_id")
+  userId       String?  @map("user_id")
+  orderId      String?  @map("order_id") // Link to order for verified purchases
+  rating       Int      // 1-5
+  title        String?  @db.VarChar(255)
+  comment      String?  @db.Text
+  images       String[] @default([]) // Array of image URLs
+  isVerified   Boolean  @default(false) @map("is_verified") // Verified purchase badge
+  helpfulCount Int      @default(0) @map("helpful_count")
+  status       String   @default("pending") @db.VarChar(50) // pending, approved, rejected
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+  product Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User?        @relation(fields: [userId], references: [id])
+  votes   ReviewVote[]
+
+  @@index([productId], name: "reviews_product_id_idx")
+  @@index([userId], name: "reviews_user_id_idx")
+  @@index([status], name: "reviews_status_idx")
+  @@index([rating], name: "reviews_rating_idx")
+  @@map("reviews")
+}
+
+// Review helpful votes
+model ReviewVote {
+  id        String   @id @default(uuid())
+  reviewId  String   @map("review_id")
+  userId    String   @map("user_id")
+  isHelpful Boolean  @map("is_helpful")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([reviewId, userId], name: "review_vote_unique")
+  @@index([reviewId], name: "review_votes_review_id_idx")
+  @@map("review_votes")
+}
+
+// Customer testimonials for homepage
+model Testimonial {
+  id           String   @id @default(uuid())
+  customerName String   @map("customer_name") @db.VarChar(255)
+  role         String?  @db.VarChar(255) // e.g., "Fashion Enthusiast", "Regular Customer"
+  content      String   @db.Text
+  rating       Int      // 1-5
+  image        String?  @db.Text // Customer photo URL
+  isActive     Boolean  @default(true) @map("is_active")
+  position     Int      @default(0) // For ordering
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([isActive], name: "testimonials_is_active_idx")
+  @@index([position], name: "testimonials_position_idx")
+  @@map("testimonials")
+}
+
+// Size guides for different product types
+model SizeGuide {
+  id           String   @id @default(uuid())
+  productType  String   @db.VarChar(100) // e.g., "shoes", "sandals", "boots"
+  title        String   @db.VarChar(255)
+  sizesChart   Json     // Size conversion data (US, UK, EU, CM)
+  measurements Json     // Measurement instructions
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([productType], name: "size_guides_product_type_idx")
+  @@map("size_guides")
+}
+
+// Discount coupons for marketing campaigns
+model Coupon {
+  id             String    @id @default(uuid())
+  code           String    @unique @db.VarChar(50)
+  description    String?   @db.Text
+  discountType   String    @map("discount_type") @db.VarChar(20) // "percentage", "fixed", "free_shipping"
+  discountValue  Decimal   @map("discount_value") @db.Decimal(10, 2) // Percentage or fixed amount
+  minOrderValue  Decimal?  @map("min_order_value") @db.Decimal(10, 2) // Minimum cart value required
+  maxUses        Int?      @map("max_uses") // Max total uses (null = unlimited)
+  usedCount      Int       @default(0) @map("used_count")
+  maxUsesPerUser Int?      @map("max_uses_per_user") // Max uses per customer (null = unlimited)
+  isActive       Boolean   @default(true) @map("is_active")
+  startDate      DateTime? @map("start_date")
+  expiryDate     DateTime? @map("expiry_date")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@index([code], name: "coupons_code_idx")
+  @@index([isActive], name: "coupons_is_active_idx")
+  @@map("coupons")
+}
+
+

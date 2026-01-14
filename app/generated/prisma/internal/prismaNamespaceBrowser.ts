@@ -65,7 +65,14 @@ export const ModelName = {
   AdminUser: 'AdminUser',
   User: 'User',
   Order: 'Order',
-  OrderItem: 'OrderItem'
+  OrderItem: 'OrderItem',
+  NewsletterSubscriber: 'NewsletterSubscriber',
+  AbandonedCart: 'AbandonedCart',
+  Review: 'Review',
+  ReviewVote: 'ReviewVote',
+  Testimonial: 'Testimonial',
+  SizeGuide: 'SizeGuide',
+  Coupon: 'Coupon'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -308,6 +315,117 @@ export const OrderItemScalarFieldEnum = {
 } as const
 
 export type OrderItemScalarFieldEnum = (typeof OrderItemScalarFieldEnum)[keyof typeof OrderItemScalarFieldEnum]
+
+
+export const NewsletterSubscriberScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  name: 'name',
+  status: 'status',
+  subscribedAt: 'subscribedAt',
+  unsubscribedAt: 'unsubscribedAt'
+} as const
+
+export type NewsletterSubscriberScalarFieldEnum = (typeof NewsletterSubscriberScalarFieldEnum)[keyof typeof NewsletterSubscriberScalarFieldEnum]
+
+
+export const AbandonedCartScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  cartId: 'cartId',
+  email: 'email',
+  customerName: 'customerName',
+  cartTotal: 'cartTotal',
+  items: 'items',
+  emailSent: 'emailSent',
+  emailSentAt: 'emailSentAt',
+  recovered: 'recovered',
+  recoveredAt: 'recoveredAt',
+  createdAt: 'createdAt',
+  expiresAt: 'expiresAt'
+} as const
+
+export type AbandonedCartScalarFieldEnum = (typeof AbandonedCartScalarFieldEnum)[keyof typeof AbandonedCartScalarFieldEnum]
+
+
+export const ReviewScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  userId: 'userId',
+  orderId: 'orderId',
+  rating: 'rating',
+  title: 'title',
+  comment: 'comment',
+  images: 'images',
+  isVerified: 'isVerified',
+  helpfulCount: 'helpfulCount',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ReviewScalarFieldEnum = (typeof ReviewScalarFieldEnum)[keyof typeof ReviewScalarFieldEnum]
+
+
+export const ReviewVoteScalarFieldEnum = {
+  id: 'id',
+  reviewId: 'reviewId',
+  userId: 'userId',
+  isHelpful: 'isHelpful',
+  createdAt: 'createdAt'
+} as const
+
+export type ReviewVoteScalarFieldEnum = (typeof ReviewVoteScalarFieldEnum)[keyof typeof ReviewVoteScalarFieldEnum]
+
+
+export const TestimonialScalarFieldEnum = {
+  id: 'id',
+  customerName: 'customerName',
+  role: 'role',
+  content: 'content',
+  rating: 'rating',
+  image: 'image',
+  isActive: 'isActive',
+  position: 'position',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TestimonialScalarFieldEnum = (typeof TestimonialScalarFieldEnum)[keyof typeof TestimonialScalarFieldEnum]
+
+
+export const SizeGuideScalarFieldEnum = {
+  id: 'id',
+  productType: 'productType',
+  title: 'title',
+  sizesChart: 'sizesChart',
+  measurements: 'measurements',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SizeGuideScalarFieldEnum = (typeof SizeGuideScalarFieldEnum)[keyof typeof SizeGuideScalarFieldEnum]
+
+
+export const CouponScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  description: 'description',
+  discountType: 'discountType',
+  discountValue: 'discountValue',
+  minOrderValue: 'minOrderValue',
+  maxUses: 'maxUses',
+  usedCount: 'usedCount',
+  maxUsesPerUser: 'maxUsesPerUser',
+  isActive: 'isActive',
+  startDate: 'startDate',
+  expiryDate: 'expiryDate',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CouponScalarFieldEnum = (typeof CouponScalarFieldEnum)[keyof typeof CouponScalarFieldEnum]
 
 
 export const SortOrder = {

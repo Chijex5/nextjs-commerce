@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import FooterMenu from "components/layout/footer-menu";
 import LogoSquare from "components/logo-square";
+import NewsletterForm from "components/newsletter-form";
 import { getMenu } from "lib/database";
 import { Suspense } from "react";
 
@@ -47,6 +48,22 @@ export default async function Footer() {
           </p>
         </div>
       </div>
+      
+      {/* Newsletter Section */}
+      <div className="border-t border-neutral-200 py-8 dark:border-neutral-700">
+        <div className="mx-auto max-w-7xl px-6 md:px-4 min-[1320px]:px-0">
+          <div className="mx-auto max-w-md">
+            <h3 className="mb-3 text-lg font-semibold text-black dark:text-white">
+              Stay Updated
+            </h3>
+            <p className="mb-4 text-sm">
+              Subscribe to get notified about new designs and special offers.
+            </p>
+            <NewsletterForm />
+          </div>
+        </div>
+      </div>
+      
       <div className="border-t border-neutral-200 py-6 text-sm dark:border-neutral-700">
         <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-1 px-4 md:flex-row md:gap-0 md:px-4 min-[1320px]:px-0">
           <p>
