@@ -137,152 +137,236 @@ export default function CouponsPage() {
       </div>
 
       {showCreateForm && (
-        <div className="mb-8 border border-neutral-200 p-6">
-          <h2 className="mb-4 text-lg font-medium">Create New Coupon</h2>
-          <form onSubmit={handleCreateCoupon} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-neutral-900">
-                  Coupon Code *
-                </label>
-                <input
-                  type="text"
-                  value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                  required
-                  className="mt-1 w-full border border-neutral-200 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-900">
-                  Discount Type *
-                </label>
-                <select
-                  value={formData.discountType}
-                  onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}
-                  className="mt-1 w-full border border-neutral-200 px-3 py-2 text-sm"
-                >
-                  <option value="percentage">Percentage</option>
-                  <option value="fixed">Fixed Amount</option>
-                  <option value="free_shipping">Free Shipping</option>
-                </select>
-              </div>
-            </div>
+        <div className="mb-8 border border-neutral-200 bg-white">
+          <div className="border-b border-neutral-200 px-6 py-4">
+            <h2 className="text-lg font-medium">Create New Coupon</h2>
+            <p className="mt-1 text-sm text-neutral-500">Fill in the details below to create a new discount coupon</p>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-neutral-900">
-                Description
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="mt-1 w-full border border-neutral-200 px-3 py-2 text-sm"
-                rows={2}
-              />
-            </div>
+          <form onSubmit={handleCreateCoupon} className="p-6 space-y-8">
+            {/* Basic Information Section */}
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-neutral-900 mb-3">Basic Information</h3>
+                <div className="space-y-4 pl-4 border-l-2 border-neutral-200">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                      Coupon Code <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.code}
+                      onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                      placeholder="e.g., SAVE10 or WELCOME2024"
+                      required
+                      className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                    />
+                    <p className="mt-1 text-xs text-neutral-500">Unique code customers will enter at checkout</p>
+                  </div>
 
-            {formData.discountType !== 'free_shipping' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-900">
-                    Discount Value * {formData.discountType === 'percentage' ? '(%)' : '(₦)'}
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.discountValue}
-                    onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })}
-                    required
-                    min="0"
-                    step="0.01"
-                    className="mt-1 w-full border border-neutral-200 px-3 py-2 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-900">
-                    Min Order Value (₦)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.minOrderValue}
-                    onChange={(e) => setFormData({ ...formData, minOrderValue: e.target.value })}
-                    min="0"
-                    step="0.01"
-                    className="mt-1 w-full border border-neutral-200 px-3 py-2 text-sm"
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="e.g., 10% off for new customers"
+                      className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                      rows={2}
+                    />
+                    <p className="mt-1 text-xs text-neutral-500">Internal note to describe this coupon's purpose</p>
+                  </div>
                 </div>
               </div>
-            )}
+            </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Discount Settings Section */}
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-900">
-                  Max Uses (Total)
-                </label>
-                <input
-                  type="number"
-                  value={formData.maxUses}
-                  onChange={(e) => setFormData({ ...formData, maxUses: e.target.value })}
-                  min="0"
-                  className="mt-1 w-full border border-neutral-200 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-900">
-                  Max Uses Per User
-                </label>
-                <input
-                  type="number"
-                  value={formData.maxUsesPerUser}
-                  onChange={(e) => setFormData({ ...formData, maxUsesPerUser: e.target.value })}
-                  min="0"
-                  className="mt-1 w-full border border-neutral-200 px-3 py-2 text-sm"
-                />
+                <h3 className="text-sm font-medium text-neutral-900 mb-3">Discount Settings</h3>
+                <div className="space-y-4 pl-4 border-l-2 border-neutral-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        Discount Type <span className="text-red-600">*</span>
+                      </label>
+                      <select
+                        value={formData.discountType}
+                        onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}
+                        className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                      >
+                        <option value="percentage">Percentage Off</option>
+                        <option value="fixed">Fixed Amount Off</option>
+                        <option value="free_shipping">Free Shipping</option>
+                      </select>
+                      <p className="mt-1 text-xs text-neutral-500">How the discount should be calculated</p>
+                    </div>
+
+                    {formData.discountType !== 'free_shipping' && (
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-1">
+                          Discount Value <span className="text-red-600">*</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={formData.discountValue}
+                            onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })}
+                            placeholder={formData.discountType === 'percentage' ? '10' : '1000'}
+                            required
+                            min="0"
+                            step="0.01"
+                            className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                          />
+                          <span className="absolute right-3 top-2 text-sm text-neutral-500">
+                            {formData.discountType === 'percentage' ? '%' : '₦'}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-neutral-500">
+                          {formData.discountType === 'percentage' 
+                            ? 'Percentage to discount (e.g., 10 for 10% off)' 
+                            : 'Fixed amount in Naira to discount'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                      Minimum Order Value
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={formData.minOrderValue}
+                        onChange={(e) => setFormData({ ...formData, minOrderValue: e.target.value })}
+                        placeholder="e.g., 5000"
+                        min="0"
+                        step="0.01"
+                        className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                      />
+                      <span className="absolute right-3 top-2 text-sm text-neutral-500">₦</span>
+                    </div>
+                    <p className="mt-1 text-xs text-neutral-500">Cart must be at least this amount to use coupon (leave empty for no minimum)</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Usage Limits Section */}
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-900">
-                  Start Date
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                  className="mt-1 w-full border border-neutral-200 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-900">
-                  Expiry Date
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.expiryDate}
-                  onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-                  className="mt-1 w-full border border-neutral-200 px-3 py-2 text-sm"
-                />
+                <h3 className="text-sm font-medium text-neutral-900 mb-3">Usage Limits</h3>
+                <div className="space-y-4 pl-4 border-l-2 border-neutral-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        Maximum Total Uses
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.maxUses}
+                        onChange={(e) => setFormData({ ...formData, maxUses: e.target.value })}
+                        placeholder="e.g., 100"
+                        min="0"
+                        className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                      />
+                      <p className="mt-1 text-xs text-neutral-500">Total times this coupon can be used across all customers (leave empty for unlimited)</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        Maximum Uses Per Customer
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.maxUsesPerUser}
+                        onChange={(e) => setFormData({ ...formData, maxUsesPerUser: e.target.value })}
+                        placeholder="e.g., 1"
+                        min="0"
+                        className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                      />
+                      <p className="mt-1 text-xs text-neutral-500">Limit how many times one customer can use this coupon (leave empty for unlimited)</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="mr-2"
-                />
-                <span className="text-sm text-neutral-900">Active</span>
-              </label>
+            {/* Validity Period Section */}
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-neutral-900 mb-3">Validity Period</h3>
+                <div className="space-y-4 pl-4 border-l-2 border-neutral-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        Start Date
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={formData.startDate}
+                        onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                        className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                      />
+                      <p className="mt-1 text-xs text-neutral-500">When this coupon becomes active (leave empty to start immediately)</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        Expiry Date
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={formData.expiryDate}
+                        onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
+                        className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                      />
+                      <p className="mt-1 text-xs text-neutral-500">When this coupon expires (leave empty for no expiry)</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <button
-              type="submit"
-              className="bg-neutral-900 px-6 py-2 text-sm text-white hover:bg-neutral-800"
-            >
-              Create Coupon
-            </button>
+            {/* Status Section */}
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-neutral-900 mb-3">Status</h3>
+                <div className="pl-4 border-l-2 border-neutral-200">
+                  <label className="flex items-start cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.isActive}
+                      onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                      className="mt-0.5 mr-3 h-4 w-4"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-neutral-900">Active</span>
+                      <p className="text-xs text-neutral-500 mt-0.5">Uncheck to create coupon as inactive (can be activated later)</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-4 border-t border-neutral-200 flex gap-3">
+              <button
+                type="submit"
+                className="bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white rounded hover:bg-neutral-800 transition-colors"
+              >
+                Create Coupon
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCreateForm(false)}
+                className="px-6 py-2.5 text-sm font-medium text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
           </form>
         </div>
       )}
