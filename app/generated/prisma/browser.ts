@@ -122,3 +122,8 @@ export type Testimonial = Prisma.TestimonialModel
  * 
  */
 export type SizeGuide = Prisma.SizeGuideModel
+/**
+ * Model Coupon
+ * 
+ */
+export type Coupon = Prisma.CouponModel
