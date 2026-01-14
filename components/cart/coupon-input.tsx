@@ -124,7 +124,7 @@ export default function CouponInput({ onApply, cartTotal }: CouponInputProps) {
   const getSessionId = () => {
     let sessionId = localStorage.getItem('guestSessionId');
     if (!sessionId) {
-      sessionId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      sessionId = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
       localStorage.setItem('guestSessionId', sessionId);
     }
     return sessionId;
