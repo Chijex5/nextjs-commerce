@@ -21,7 +21,7 @@ export async function Navbar() {
         </Suspense>
       </div>
       <div className="flex w-full items-center">
-        <div className="flex w-full md:w-1/3">
+        <div className="flex w-full md:w-1/2">
           <Link
             href="/"
             prefetch={true}
@@ -48,12 +48,12 @@ export async function Navbar() {
             </ul>
           ) : null}
         </div>
-        <div className="hidden justify-center md:flex md:w-1/3">
-          <Suspense fallback={<SearchSkeleton />}>
-            <Search />
-          </Suspense>
-        </div>
-        <div className="flex justify-end gap-2 md:w-1/3">
+        <div className="flex justify-end gap-2 md:w-1/2">
+          <div className="hidden justify-center md:flex md:w-full md:max-w-md lg:max-w-lg">
+            <Suspense fallback={<SearchSkeleton />}>
+              <Search />
+            </Suspense>
+          </div>
           <UserAccountIcon />
           <CartModal />
         </div>

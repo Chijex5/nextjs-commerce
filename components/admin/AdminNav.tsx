@@ -12,6 +12,7 @@ export default function AdminNav({
     { href: "/admin/dashboard", label: "Dashboard", key: "dashboard" },
     { href: "/admin/products", label: "Products", key: "products" },
     { href: "/admin/collections", label: "Collections", key: "collections" },
+    { href: "/admin/content", label: "Content", key: "content" },
     { href: "/admin/orders", label: "Orders", key: "orders" },
     { href: "/admin/coupons", label: "Coupons", key: "coupons" },
     { href: "/admin/users", label: "Users", key: "users" },
@@ -28,7 +29,7 @@ export default function AdminNav({
                 href="/admin/dashboard"
                 className="text-xl font-bold text-neutral-900 dark:text-neutral-100"
               >
-                D'FOOTPRINT Admin
+                
               </Link>
             </div>
             <div className="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">
