@@ -99,7 +99,7 @@ export async function PATCH(
 // DELETE /api/admin/reviews/[id] - Delete a review
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -112,11 +112,11 @@ export async function DELETE(
       );
     }
 
-    const reviewId = params.id;
+    const { id } = await context.params;
 
     // Delete the review (votes will be cascade deleted)
     await prisma.review.delete({
-      where: { id: reviewId }
+      where: { id }
     });
 
     return NextResponse.json({

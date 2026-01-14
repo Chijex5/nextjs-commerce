@@ -6,7 +6,7 @@ import { authOptions } from '@/lib/auth';
 // POST /api/reviews/[id]/vote - Vote on a review (helpful/not helpful)
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,7 +19,7 @@ export async function POST(
     }
 
     const { isHelpful } = await request.json();
-    const reviewId = params.id;
+    const { id } = await context.params;
 
     if (typeof isHelpful !== 'boolean') {
       return NextResponse.json(
@@ -30,7 +30,7 @@ export async function POST(
 
     // Check if review exists
     const review = await prisma.review.findUnique({
-      where: { id: reviewId }
+      where: { id }
     });
 
     if (!review) {
@@ -44,7 +44,7 @@ export async function POST(
     const existingVote = await prisma.reviewVote.findUnique({
       where: {
         review_vote_unique: {
-          reviewId,
+          reviewId: id,
           userId: session.user.id
         }
       }
@@ -64,7 +64,7 @@ export async function POST(
       // Create new vote
       await prisma.reviewVote.create({
         data: {
-          reviewId,
+          reviewId: id,
           userId: session.user.id,
           isHelpful
         }
@@ -74,13 +74,13 @@ export async function POST(
     // Update helpful count on the review
     const helpfulVotes = await prisma.reviewVote.count({
       where: {
-        reviewId,
+        reviewId: id,
         isHelpful: true
       }
     });
 
     await prisma.review.update({
-      where: { id: reviewId },
+      where: { id },
       data: { helpfulCount: helpfulVotes }
     });
 
