@@ -4,6 +4,7 @@ import { orderConfirmationWithMarkupTemplate } from './templates/order-confirmat
 import { shippingNotificationTemplate } from './templates/shipping-notification';
 import { orderStatusUpdateTemplate } from './templates/order-status-update';
 import { abandonedCartTemplate } from './templates/abandoned-cart';
+import { getReviewApprovedEmailTemplate } from './templates/review-approved';
 
 interface OrderData {
   orderNumber: string;
@@ -114,5 +115,25 @@ export const sendAbandonedCartEmail = async (data: {
     to: data.email,
     subject: `You Left Something Behind - D'FOOTPRINT`,
     html: abandonedCartTemplate(data),
+  });
+};
+
+/**
+ * Send review approved email
+ * Called when admin approves a customer review
+ */
+export const sendReviewApprovedEmail = async (data: {
+  to: string;
+  customerName: string;
+  productTitle: string;
+  productHandle: string;
+  reviewTitle: string;
+  reviewComment: string;
+  rating: number;
+}) => {
+  return sendEmail({
+    to: data.to,
+    subject: `Your Review is Live! - D'FOOTPRINT`,
+    html: getReviewApprovedEmailTemplate(data),
   });
 };
