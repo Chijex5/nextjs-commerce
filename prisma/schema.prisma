@@ -410,4 +410,26 @@ model SizeGuide {
   @@map("size_guides")
 }
 
+// Discount coupons for marketing campaigns
+model Coupon {
+  id             String    @id @default(uuid())
+  code           String    @unique @db.VarChar(50)
+  description    String?   @db.Text
+  discountType   String    @map("discount_type") @db.VarChar(20) // "percentage", "fixed", "free_shipping"
+  discountValue  Decimal   @map("discount_value") @db.Decimal(10, 2) // Percentage or fixed amount
+  minOrderValue  Decimal?  @map("min_order_value") @db.Decimal(10, 2) // Minimum cart value required
+  maxUses        Int?      @map("max_uses") // Max total uses (null = unlimited)
+  usedCount      Int       @default(0) @map("used_count")
+  maxUsesPerUser Int?      @map("max_uses_per_user") // Max uses per customer (null = unlimited)
+  isActive       Boolean   @default(true) @map("is_active")
+  startDate      DateTime? @map("start_date")
+  expiryDate     DateTime? @map("expiry_date")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@index([code], name: "coupons_code_idx")
+  @@index([isActive], name: "coupons_is_active_idx")
+  @@map("coupons")
+}
+
 
