@@ -26,14 +26,19 @@ export default function CouponInput({ onApply, cartTotal }: CouponInputProps) {
           const couponData = JSON.parse(stored);
           
           // Revalidate the coupon
+          const payload: { code: string; cartTotal: number; sessionId?: string } = {
+            code: couponData.code,
+            cartTotal,
+          };
+
+          if (!session?.id) {
+            payload.sessionId = getSessionId();
+          }
+
           const response = await fetch('/api/coupons/validate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              code: couponData.code, 
-              cartTotal,
-              userId: session?.id 
-            })
+            body: JSON.stringify(payload)
           });
 
           if (response.ok) {
@@ -51,7 +56,7 @@ export default function CouponInput({ onApply, cartTotal }: CouponInputProps) {
     };
 
     loadStoredCoupon();
-  }, [cartTotal]);
+  }, [cartTotal, session?.id]);
 
   const handleApply = async () => {
     const trimmedCode = code.trim().toUpperCase();
@@ -64,15 +69,19 @@ export default function CouponInput({ onApply, cartTotal }: CouponInputProps) {
     setLoading(true);
 
     try {
+      const payload: { code: string; cartTotal: number; sessionId?: string } = {
+        code: trimmedCode,
+        cartTotal,
+      };
+
+      if (!session?.id) {
+        payload.sessionId = getSessionId();
+      }
+
       const response = await fetch('/api/coupons/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          code: trimmedCode, 
-          cartTotal,
-          userId: session?.id,
-          sessionId: getSessionId()
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await response.json();
@@ -114,7 +123,7 @@ export default function CouponInput({ onApply, cartTotal }: CouponInputProps) {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleApply();
     }
@@ -176,28 +185,47 @@ export default function CouponInput({ onApply, cartTotal }: CouponInputProps) {
 
   return (
     <div className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900">
-      <label htmlFor="coupon" className="mb-2 block text-sm font-medium text-neutral-900 dark:text-neutral-100">
+      <label
+        htmlFor="coupon"
+        className="mb-2 block text-sm font-medium text-neutral-900 dark:text-neutral-100"
+      >
         Have a discount code?
       </label>
-      <div className="flex gap-2">
+
+      {/* Make it a single control group */}
+      <div className="flex w-full overflow-hidden rounded-md border border-neutral-300 bg-white dark:border-neutral-700 dark:bg-neutral-800">
         <input
           type="text"
           id="coupon"
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyDown}
           placeholder="Enter code (e.g., SAVE20)"
-          className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm uppercase focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500"
           disabled={loading}
           maxLength={50}
+          className="
+            h-10 flex-1 bg-transparent px-3 text-sm uppercase tracking-wide
+            text-neutral-900 placeholder:text-neutral-400
+            focus:outline-none
+            dark:text-neutral-100 dark:placeholder:text-neutral-500
+          "
         />
+
         <button
           onClick={handleApply}
           disabled={loading || !code.trim()}
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+          className={`
+            h-10 min-w-[92px] shrink-0 px-4 text-sm font-medium
+            bg-neutral-900 text-white hover:bg-neutral-800 flex items-center
+            disabled:cursor-not-allowed disabled:opacity-50
+            dark:bg-neutral-700 dark:text-neutral-100 dark:hover:bg-neutral-600
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900/30
+            dark:focus-visible:ring-neutral-100/20
+            ${loading ? 'justify-center' : 'justify-start'}
+          `}
         >
           {loading ? (
-            <span className="flex items-center gap-2">
+            <span className="flex items-center justify-center gap-2">
               <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle
                   className="opacity-25"
@@ -213,13 +241,13 @@ export default function CouponInput({ onApply, cartTotal }: CouponInputProps) {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
-              Applying...
             </span>
           ) : (
-            'Apply'
+            "Apply"
           )}
         </button>
       </div>
+
       <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
         Enter your coupon code to receive a discount on your order
       </p>

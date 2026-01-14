@@ -1,6 +1,8 @@
 import { CartProvider } from "components/cart/cart-context";
 import { Navbar } from "components/layout/navbar";
 import { WelcomeToast } from "components/welcome-toast";
+import AnalyticsPageView from "components/analytics/page-view";
+import AbandonedCartTracker from "components/cart/abandoned-cart-tracker";
 import { getCart } from "lib/database";
 import { baseUrl } from "lib/utils";
 import type { Metadata } from "next";
@@ -120,6 +122,8 @@ export default async function RootLayout({
         )}
 
         <CartProvider cartPromise={cart}>
+          <AnalyticsPageView />
+          <AbandonedCartTracker />
           <Navbar />
           <main>
             {children}

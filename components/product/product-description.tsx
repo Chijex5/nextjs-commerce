@@ -3,8 +3,10 @@
 import { AddToCart } from "components/cart/add-to-cart";
 import Price from "components/price";
 import Prose from "components/prose";
+import { trackProductView } from "lib/analytics";
 import { Product, ProductVariant } from "lib/shopify/types";
 import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { VariantSelector } from "./variant-selector";
 
 export function ProductDescription({ product }: { product: Product }) {
@@ -22,6 +24,16 @@ export function ProductDescription({ product }: { product: Product }) {
   const displayPrice = displayVariant
     ? displayVariant.price
     : product.priceRange.maxVariantPrice;
+
+  useEffect(() => {
+    if (!displayPrice?.amount) return;
+
+    trackProductView({
+      id: product.id,
+      name: product.title,
+      price: parseFloat(displayPrice.amount),
+    });
+  }, [product.id, product.title, displayPrice.amount]);
 
   return (
     <>

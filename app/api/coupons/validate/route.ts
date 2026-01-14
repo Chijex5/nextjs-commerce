@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from 'lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from 'lib/auth';
+import { getUserSession } from 'lib/user-session';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { code, cartTotal, userId, sessionId } = body;
+    const { code, cartTotal, sessionId } = body;
 
     if (!code || typeof code !== 'string') {
       return NextResponse.json(
@@ -23,8 +22,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user session
-    const session = await getServerSession(authOptions);
-    const currentUserId = session?.user?.id || userId;
+    const session = await getUserSession();
+    const currentUserId = session?.id;
 
     // Find coupon (case-insensitive)
     const coupon = await prisma.coupon.findFirst({

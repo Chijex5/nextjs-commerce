@@ -4,6 +4,7 @@ import { PlusIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import { addItem } from "components/cart/actions";
 import { Product, ProductVariant } from "lib/shopify/types";
+import { trackAddToCart } from "lib/analytics";
 import { useSearchParams } from "next/navigation";
 import { useActionState } from "react";
 import { useCart } from "./cart-context";
@@ -90,6 +91,12 @@ export function AddToCart({ product }: { product: Product }) {
     <form
       action={async () => {
         addCartItem(finalVariant, product);
+        trackAddToCart({
+          id: finalVariant.id,
+          name: product.title,
+          price: parseFloat(finalVariant.price.amount),
+          quantity: 1,
+        });
         addItemAction();
       }}
     >

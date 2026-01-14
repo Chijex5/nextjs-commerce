@@ -1,18 +1,53 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
+import { trackPurchase } from "lib/analytics";
 
 export default function CheckoutSuccess() {
   const searchParams = useSearchParams();
   const orderNumber = searchParams.get("order");
   const [mounted, setMounted] = useState(false);
+  const trackedOrderRef = useRef<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!orderNumber || trackedOrderRef.current === orderNumber) return;
+
+    const trackOrder = async () => {
+      try {
+        const response = await fetch(
+          `/api/orders/track?orderNumber=${encodeURIComponent(orderNumber)}`,
+        );
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const order = data?.order;
+        if (!order) return;
+
+        trackedOrderRef.current = orderNumber;
+        trackPurchase({
+          orderId: order.orderNumber,
+          value: parseFloat(order.totalAmount),
+          items: order.items.map((item: any) => ({
+            id: item.productId,
+            name: item.productTitle,
+            quantity: item.quantity,
+          })),
+        });
+      } catch (error) {
+        console.error("Failed to track purchase:", error);
+      }
+    };
+
+    trackOrder();
+  }, [orderNumber]);
 
   if (!mounted) {
     return null;
