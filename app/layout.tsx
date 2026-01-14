@@ -8,6 +8,7 @@ import { baseUrl } from "lib/utils";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ReactNode } from "react";
+import { Suspense } from "react";
 import { Toaster } from "sonner";
 import Script from "next/script";
 import "./globals.css";
@@ -122,7 +123,9 @@ export default async function RootLayout({
         )}
 
         <CartProvider cartPromise={cart}>
-          <AnalyticsPageView />
+          <Suspense fallback={null}>
+            <AnalyticsPageView />
+          </Suspense>
           <AbandonedCartTracker />
           <Navbar />
           <main>
