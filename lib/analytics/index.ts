@@ -42,9 +42,14 @@ export const trackProductView = (product: {
 
   // TikTok Pixel
   tiktok.event('ViewContent', {
-    content_id: product.id,
-    content_name: product.name,
-    price: product.price,
+    contents: [
+      {
+        content_id: product.id,
+        content_type: 'product',
+        content_name: product.name,
+      },
+    ],
+    value: product.price,
     currency: 'NGN',
   });
 };
@@ -77,9 +82,14 @@ export const trackAddToCart = (product: {
 
   // TikTok Pixel
   tiktok.event('AddToCart', {
-    content_id: product.id,
-    quantity: product.quantity,
-    price: product.price,
+    contents: [
+      {
+        content_id: product.id,
+        content_type: 'product',
+        content_name: product.name,
+      },
+    ],
+    value: product.price * product.quantity,
     currency: 'NGN',
   });
 };
@@ -88,7 +98,10 @@ export const trackAddToCart = (product: {
  * Track checkout initiation across all analytics platforms
  * @param cartValue - Total cart value
  */
-export const trackInitiateCheckout = (cartValue: number) => {
+export const trackInitiateCheckout = (
+  cartValue: number,
+  items: Array<{ id: string; name: string; quantity: number }> = [],
+) => {
   // Google Analytics
   ga.event({
     action: 'begin_checkout',
@@ -104,6 +117,11 @@ export const trackInitiateCheckout = (cartValue: number) => {
 
   // TikTok Pixel
   tiktok.event('InitiateCheckout', {
+    contents: items.map((item) => ({
+      content_id: item.id,
+      content_type: 'product',
+      content_name: item.name,
+    })),
     value: cartValue,
     currency: 'NGN',
   });
@@ -134,10 +152,28 @@ export const trackPurchase = (order: {
   });
 
   // TikTok Pixel
-  tiktok.event('CompletePayment', {
+  const tiktokContents = order.items.map((item) => ({
+    content_id: item.id,
+    content_type: 'product',
+    content_name: item.name,
+    num_items: item.quantity,
+  }));
+
+  tiktok.event('Purchase', {
+    contents: tiktokContents,
     value: order.value,
     currency: 'NGN',
-    content_ids: order.items.map((item) => item.id),
+  });
+
+  tiktok.event('PlaceAnOrder', {
+    contents: order.items.map((item) => ({
+      content_id: item.id,
+      content_type: 'product',
+      content_name: item.name,
+      num_items: item.quantity,
+    })),
+    value: order.value,
+    currency: 'NGN',
   });
 };
 

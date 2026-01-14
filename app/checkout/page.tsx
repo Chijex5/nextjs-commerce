@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import Price from "components/price";
 import LoadingDots from "components/loading-dots";
 import PageLoader from "components/page-loader";
 import { useUserSession } from "hooks/useUserSession";
+import { identifyUser } from "lib/analytics/tiktok-pixel";
 
 // Nigerian States
 const NIGERIAN_STATES = [
@@ -123,6 +124,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [couponData, setCouponData] = useState<{ code: string; amount: number } | null>(null);
+  const tiktokIdentifyKeyRef = useRef<string | null>(null);
   const [formData, setFormData] = useState<CheckoutFormData>({
     email: "",
     phone: "",
@@ -161,6 +163,21 @@ export default function CheckoutPage() {
       fetchUserAddresses();
     }
   }, [session]);
+
+  useEffect(() => {
+    const email = formData.email?.trim();
+    const phone = formData.phone?.trim();
+    if (!email && !phone) return;
+
+    const key = `${email || ""}|${phone || ""}`;
+    if (key === tiktokIdentifyKeyRef.current) return;
+
+    tiktokIdentifyKeyRef.current = key;
+    identifyUser({
+      email: email || undefined,
+      phoneNumber: phone || undefined,
+    });
+  }, [formData.email, formData.phone]);
 
   const loadCouponData = () => {
     try {

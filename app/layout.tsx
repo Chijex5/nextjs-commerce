@@ -3,6 +3,7 @@ import { Navbar } from "components/layout/navbar";
 import { WelcomeToast } from "components/welcome-toast";
 import AnalyticsPageView from "components/analytics/page-view";
 import AbandonedCartTracker from "components/cart/abandoned-cart-tracker";
+import TikTokIdentify from "components/analytics/tiktok-identify";
 import { getCart } from "lib/database";
 import { baseUrl } from "lib/utils";
 import type { Metadata } from "next";
@@ -127,6 +128,7 @@ export default async function RootLayout({
             <AnalyticsPageView />
           </Suspense>
           <AbandonedCartTracker />
+          <TikTokIdentify />
           <Navbar />
           <main>
             {children}

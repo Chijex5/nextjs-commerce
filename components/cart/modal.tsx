@@ -255,7 +255,14 @@ export default function CartModal() {
                       const trackedTotal = Number.isFinite(total)
                         ? Math.max(total - discountAmount, 0)
                         : 0;
-                      trackInitiateCheckout(trackedTotal);
+                      trackInitiateCheckout(
+                        trackedTotal,
+                        cart.lines.map((line) => ({
+                          id: line.merchandise.product.id,
+                          name: line.merchandise.product.title,
+                          quantity: line.quantity,
+                        })),
+                      );
                     }}
                   >
                     <CheckoutButton />
