@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface CouponInputProps {
   onApply: (discountAmount: number, couponCode: string) => void;
   cartTotal: number;
 }
+
+const COUPON_STORAGE_KEY = 'appliedCoupon';
 
 export default function CouponInput({ onApply, cartTotal }: CouponInputProps) {
   const [code, setCode] = useState('');
@@ -13,6 +15,22 @@ export default function CouponInput({ onApply, cartTotal }: CouponInputProps) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+
+  // Load coupon from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(COUPON_STORAGE_KEY);
+      if (stored) {
+        const couponData = JSON.parse(stored);
+        // Validate it's still valid (not expired, etc)
+        setAppliedCoupon(couponData);
+        onApply(couponData.discountAmount, couponData.code);
+      }
+    } catch (err) {
+      // Clear invalid data
+      localStorage.removeItem(COUPON_STORAGE_KEY);
+    }
+  }, []);
 
   const handleApply = async () => {
     if (!code.trim()) {
@@ -41,6 +59,13 @@ export default function CouponInput({ onApply, cartTotal }: CouponInputProps) {
       setAppliedCoupon(data.coupon);
       setSuccess(`Coupon applied! You saved ₦${data.coupon.discountAmount.toFixed(2)}`);
       onApply(data.coupon.discountAmount, data.coupon.code);
+      
+      // Store in localStorage for persistence
+      try {
+        localStorage.setItem(COUPON_STORAGE_KEY, JSON.stringify(data.coupon));
+      } catch (err) {
+        console.error('Failed to save coupon to storage:', err);
+      }
     } catch (err) {
       setError('Failed to apply coupon');
     } finally {
@@ -54,6 +79,13 @@ export default function CouponInput({ onApply, cartTotal }: CouponInputProps) {
     setSuccess('');
     setError('');
     onApply(0, '');
+    
+    // Remove from localStorage
+    try {
+      localStorage.removeItem(COUPON_STORAGE_KEY);
+    } catch (err) {
+      console.error('Failed to remove coupon from storage:', err);
+    }
   };
 
   if (appliedCoupon) {

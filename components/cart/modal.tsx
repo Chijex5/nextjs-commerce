@@ -16,6 +16,7 @@ import { useCart } from "./cart-context";
 import { DeleteItemButton } from "./delete-item-button";
 import { EditItemQuantityButton } from "./edit-item-quantity-button";
 import OpenCart from "./open-cart";
+import CouponInput from "./coupon-input";
 
 type MerchandiseSearchParams = {
   [key: string]: string;
@@ -24,9 +25,16 @@ type MerchandiseSearchParams = {
 export default function CartModal() {
   const { cart, updateCartItem } = useCart();
   const [isOpen, setIsOpen] = useState(false);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [couponCode, setCouponCode] = useState('');
   const quantityRef = useRef(cart?.totalQuantity);
   const openCart = () => setIsOpen(true);
   const closeCart = () => setIsOpen(false);
+
+  const handleCouponApply = (amount: number, code: string) => {
+    setDiscountAmount(amount);
+    setCouponCode(code);
+  };
 
   useEffect(() => {
     if (!cart) {
@@ -195,6 +203,22 @@ export default function CartModal() {
                   </ul>
                   <div className="py-4 text-sm text-neutral-500 dark:text-neutral-400">
                     <div className="mb-3 flex items-center justify-between border-b border-neutral-200 pb-1 dark:border-neutral-700">
+                      <p>Subtotal</p>
+                      <Price
+                        className="text-right text-base text-black dark:text-white"
+                        amount={cart.cost.subtotalAmount.amount}
+                        currencyCode={cart.cost.subtotalAmount.currencyCode}
+                      />
+                    </div>
+                    {discountAmount > 0 && (
+                      <div className="mb-3 flex items-center justify-between border-b border-neutral-200 pb-1 pt-1 dark:border-neutral-700">
+                        <p>Discount ({couponCode})</p>
+                        <p className="text-right text-base text-green-600">
+                          -₦{discountAmount.toFixed(2)}
+                        </p>
+                      </div>
+                    )}
+                    <div className="mb-3 flex items-center justify-between border-b border-neutral-200 pb-1 pt-1 dark:border-neutral-700">
                       <p>Taxes</p>
                       <Price
                         className="text-right text-base text-black dark:text-white"
@@ -210,10 +234,18 @@ export default function CartModal() {
                       <p>Total</p>
                       <Price
                         className="text-right text-base text-black dark:text-white"
-                        amount={cart.cost.totalAmount.amount}
+                        amount={(parseFloat(cart.cost.totalAmount.amount) - discountAmount).toString()}
                         currencyCode={cart.cost.totalAmount.currencyCode}
                       />
                     </div>
+                  </div>
+                  
+                  {/* Coupon Input */}
+                  <div className="mb-4">
+                    <CouponInput 
+                      onApply={handleCouponApply}
+                      cartTotal={parseFloat(cart.cost.subtotalAmount.amount)}
+                    />
                   </div>
                   <form action={redirectToCheckout}>
                     <CheckoutButton />
