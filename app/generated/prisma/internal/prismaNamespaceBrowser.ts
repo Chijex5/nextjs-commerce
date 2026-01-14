@@ -62,6 +62,7 @@ export const ModelName = {
   Page: 'Page',
   Menu: 'Menu',
   MenuItem: 'MenuItem',
+  CustomOrder: 'CustomOrder',
   AdminUser: 'AdminUser',
   User: 'User',
   Order: 'Order',
@@ -240,6 +241,23 @@ export const MenuItemScalarFieldEnum = {
 } as const
 
 export type MenuItemScalarFieldEnum = (typeof MenuItemScalarFieldEnum)[keyof typeof MenuItemScalarFieldEnum]
+
+
+export const CustomOrderScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  customerStory: 'customerStory',
+  beforeImage: 'beforeImage',
+  afterImage: 'afterImage',
+  details: 'details',
+  completionTime: 'completionTime',
+  position: 'position',
+  isPublished: 'isPublished',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CustomOrderScalarFieldEnum = (typeof CustomOrderScalarFieldEnum)[keyof typeof CustomOrderScalarFieldEnum]
 
 
 export const AdminUserScalarFieldEnum = {

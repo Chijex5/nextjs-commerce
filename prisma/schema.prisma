@@ -200,6 +200,25 @@ model MenuItem {
   @@map("menu_items")
 }
 
+// Custom order showcase entries
+model CustomOrder {
+  id             String   @id @default(uuid())
+  title          String   @db.VarChar(255)
+  customerStory  String?  @map("customer_story") @db.Text
+  beforeImage    String?  @map("before_image") @db.Text
+  afterImage     String?  @map("after_image") @db.Text
+  details        Json?    @db.Json
+  completionTime String?  @map("completion_time") @db.VarChar(100)
+  position       Int      @default(0)
+  isPublished    Boolean  @default(true) @map("is_published")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([isPublished], name: "custom_orders_is_published_idx")
+  @@index([position], name: "custom_orders_position_idx")
+  @@map("custom_orders")
+}
+
 // Admin users for dashboard access
 model AdminUser {
   id           String    @id @default(uuid())
@@ -452,5 +471,4 @@ model CouponUsage {
   @@index([sessionId], name: "coupon_usage_session_id_idx")
   @@map("coupon_usage")
 }
-
 

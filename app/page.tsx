@@ -3,6 +3,7 @@ import { ThreeItemGrid } from "components/grid/three-items";
 import { CustomShowcase } from "components/custom-showcase";
 import { CollectionSections } from "components/collection-sections";
 import Footer from "components/layout/footer";
+import prisma from "lib/prisma";
 
 export const metadata = {
   description:
@@ -12,13 +13,28 @@ export const metadata = {
   },
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const customOrders = await prisma.customOrder.findMany({
+    where: { isPublished: true },
+    orderBy: [{ position: "asc" }, { updatedAt: "desc" }],
+    take: 3,
+  });
+
+  
+
   return (
     <>
       <ThreeItemGrid />
       <Carousel />
       <CollectionSections />
-      <CustomShowcase />
+      <CustomShowcase
+        orders={customOrders.map((order) => ({
+          id: order.id,
+          title: order.title,
+          beforeImage: order.beforeImage,
+          afterImage: order.afterImage,
+        }))}
+      />
       <Footer />
     </>
   );

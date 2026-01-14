@@ -4,45 +4,26 @@ import Link from "next/link";
 import Image from "next/image";
 
 interface CustomOrder {
-  id: number;
-  customerRequest: string;
-  beforeImage: string;
-  afterImage: string;
+  id: string;
+  beforeImage: string | null;
+  afterImage: string | null;
   title: string;
 }
 
-// Sample data - in production this would come from a database
-const showcaseOrders: CustomOrder[] = [
-  {
-    id: 1,
-    title: "Custom Velvet Slides",
-    customerRequest: "Customer's inspiration photo",
-    beforeImage:
-      "https://images.unsplash.com/photo-1603808033192-082d6919d3e1?w=400&h=400&fit=crop",
-    afterImage:
-      "https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=400&h=400&fit=crop",
-  },
-  {
-    id: 2,
-    title: "Embellished Slippers",
-    customerRequest: "Customer's design request",
-    beforeImage:
-      "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=400&h=400&fit=crop",
-    afterImage:
-      "https://images.unsplash.com/photo-1582897085656-c84d8f5cd7fc?w=400&h=400&fit=crop",
-  },
-  {
-    id: 3,
-    title: "Leather Sandals",
-    customerRequest: "Reference image shared",
-    beforeImage:
-      "https://images.unsplash.com/photo-1631545805976-146c7bdacbe7?w=400&h=400&fit=crop",
-    afterImage:
-      "https://images.unsplash.com/photo-1603808033192-082d6919d3e1?w=400&h=400&fit=crop",
-  },
-];
+export function CustomShowcase({ orders }: { orders: CustomOrder[] }) {
+  if (orders.length === 0) {
+    return (
+      <section className="relative overflow-hidden border-t border-neutral-200 bg-gradient-to-b from-white via-neutral-50/50 to-white py-16 dark:border-neutral-700 dark:from-black dark:via-neutral-900/50 dark:to-black">
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-dashed border-neutral-300 bg-white/70 p-10 text-center text-sm text-neutral-600 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/80 dark:text-neutral-400">
+            Custom order stories are coming soon. Check back for fresh before-and-after
+            transformations.
+          </div>
+        </div>
+      </section>
+    );
+  }
 
-export function CustomShowcase() {
   return (
     <section className="relative overflow-hidden border-t border-neutral-200 bg-gradient-to-b from-white via-neutral-50/50 to-white py-16 dark:border-neutral-700 dark:from-black dark:via-neutral-900/50 dark:to-black">
       {/* Decorative background elements */}
@@ -70,7 +51,15 @@ export function CustomShowcase() {
 
         {/* Showcase Grid */}
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {showcaseOrders.map((order, index) => (
+          {orders.map((order, index) => {
+            const beforeImage =
+              order.beforeImage ||
+              "https://via.placeholder.com/400?text=Customer+Request";
+            const afterImage =
+              order.afterImage ||
+              "https://via.placeholder.com/400?text=Final+Product";
+
+            return (
             <Link
               key={order.id}
               href={`/custom-orders#order-${order.id}`}
@@ -105,7 +94,7 @@ export function CustomShowcase() {
                     </div>
                     <div className="relative aspect-square overflow-hidden rounded-xl ring-1 ring-neutral-200 dark:ring-neutral-800">
                       <Image
-                        src={order.beforeImage}
+                        src={beforeImage}
                         alt="Customer inspiration"
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-110"
@@ -136,7 +125,7 @@ export function CustomShowcase() {
                     </div>
                     <div className="relative aspect-square overflow-hidden rounded-xl ring-2 ring-green-500/50 dark:ring-green-500/30">
                       <Image
-                        src={order.afterImage}
+                        src={afterImage}
                         alt="Final product"
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-110"
@@ -170,7 +159,8 @@ export function CustomShowcase() {
                 </div>
               </div>
             </Link>
-          ))}
+          );
+          })}
         </div>
 
         {/* Call to Action */}

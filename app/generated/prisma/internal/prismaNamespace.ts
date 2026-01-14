@@ -395,6 +395,7 @@ export const ModelName = {
   Page: 'Page',
   Menu: 'Menu',
   MenuItem: 'MenuItem',
+  CustomOrder: 'CustomOrder',
   AdminUser: 'AdminUser',
   User: 'User',
   Order: 'Order',
@@ -422,7 +423,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "product" | "productVariant" | "productOption" | "productImage" | "collection" | "productCollection" | "cart" | "cartLine" | "page" | "menu" | "menuItem" | "adminUser" | "user" | "order" | "orderItem" | "newsletterSubscriber" | "abandonedCart" | "review" | "reviewVote" | "testimonial" | "sizeGuide" | "coupon" | "couponUsage"
+    modelProps: "product" | "productVariant" | "productOption" | "productImage" | "collection" | "productCollection" | "cart" | "cartLine" | "page" | "menu" | "menuItem" | "customOrder" | "adminUser" | "user" | "order" | "orderItem" | "newsletterSubscriber" | "abandonedCart" | "review" | "reviewVote" | "testimonial" | "sizeGuide" | "coupon" | "couponUsage"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1237,6 +1238,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.MenuItemCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.MenuItemCountAggregateOutputType> | number
+        }
+      }
+    }
+    CustomOrder: {
+      payload: Prisma.$CustomOrderPayload<ExtArgs>
+      fields: Prisma.CustomOrderFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CustomOrderFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomOrderPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CustomOrderFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomOrderPayload>
+        }
+        findFirst: {
+          args: Prisma.CustomOrderFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomOrderPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CustomOrderFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomOrderPayload>
+        }
+        findMany: {
+          args: Prisma.CustomOrderFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomOrderPayload>[]
+        }
+        create: {
+          args: Prisma.CustomOrderCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomOrderPayload>
+        }
+        createMany: {
+          args: Prisma.CustomOrderCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CustomOrderCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomOrderPayload>[]
+        }
+        delete: {
+          args: Prisma.CustomOrderDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomOrderPayload>
+        }
+        update: {
+          args: Prisma.CustomOrderUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomOrderPayload>
+        }
+        deleteMany: {
+          args: Prisma.CustomOrderDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CustomOrderUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CustomOrderUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomOrderPayload>[]
+        }
+        upsert: {
+          args: Prisma.CustomOrderUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomOrderPayload>
+        }
+        aggregate: {
+          args: Prisma.CustomOrderAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCustomOrder>
+        }
+        groupBy: {
+          args: Prisma.CustomOrderGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CustomOrderGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CustomOrderCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CustomOrderCountAggregateOutputType> | number
         }
       }
     }
@@ -2317,6 +2392,23 @@ export const MenuItemScalarFieldEnum = {
 export type MenuItemScalarFieldEnum = (typeof MenuItemScalarFieldEnum)[keyof typeof MenuItemScalarFieldEnum]
 
 
+export const CustomOrderScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  customerStory: 'customerStory',
+  beforeImage: 'beforeImage',
+  afterImage: 'afterImage',
+  details: 'details',
+  completionTime: 'completionTime',
+  position: 'position',
+  isPublished: 'isPublished',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CustomOrderScalarFieldEnum = (typeof CustomOrderScalarFieldEnum)[keyof typeof CustomOrderScalarFieldEnum]
+
+
 export const AdminUserScalarFieldEnum = {
   id: 'id',
   email: 'email',
@@ -2768,6 +2860,7 @@ export type GlobalOmitConfig = {
   page?: Prisma.PageOmit
   menu?: Prisma.MenuOmit
   menuItem?: Prisma.MenuItemOmit
+  customOrder?: Prisma.CustomOrderOmit
   adminUser?: Prisma.AdminUserOmit
   user?: Prisma.UserOmit
   order?: Prisma.OrderOmit
