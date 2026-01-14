@@ -13,6 +13,7 @@ export default function AdminNav({
     { href: "/admin/products", label: "Products", key: "products" },
     { href: "/admin/collections", label: "Collections", key: "collections" },
     { href: "/admin/orders", label: "Orders", key: "orders" },
+    { href: "/admin/coupons", label: "Coupons", key: "coupons" },
     { href: "/admin/users", label: "Users", key: "users" },
     { href: "/admin/admins", label: "Admins", key: "admins" },
   ];

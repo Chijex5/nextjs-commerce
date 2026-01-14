@@ -89,6 +89,8 @@ export async function GET(request: NextRequest) {
         status: "processing",
         subtotalAmount: checkoutSession.subtotalAmount,
         shippingAmount: checkoutSession.shippingAmount,
+        discountAmount: checkoutSession.discountAmount || 0,
+        couponCode: checkoutSession.couponCode || null,
         totalAmount: checkoutSession.totalAmount,
         currencyCode: "NGN",
         items: {
@@ -109,6 +111,41 @@ export async function GET(request: NextRequest) {
         items: true,
       },
     });
+
+    // Track coupon usage if coupon was applied
+    if (checkoutSession.couponCode) {
+      try {
+        // Find the coupon
+        const coupon = await prisma.coupon.findFirst({
+          where: {
+            code: {
+              equals: checkoutSession.couponCode,
+              mode: 'insensitive'
+            }
+          }
+        });
+
+        if (coupon) {
+          // Create usage record
+          await prisma.couponUsage.create({
+            data: {
+              couponId: coupon.id,
+              userId: checkoutSession.userId || null,
+              sessionId: null, // Could get from cookies if tracking guest sessions
+            }
+          });
+
+          // Increment usage count
+          await prisma.coupon.update({
+            where: { id: coupon.id },
+            data: { usedCount: { increment: 1 } }
+          });
+        }
+      } catch (couponError) {
+        console.error('Failed to track coupon usage:', couponError);
+        // Don't fail the order if coupon tracking fails
+      }
+    }
 
     // Update user addresses if requested and user is logged in
     if (checkoutSession.saveAddress && checkoutSession.userId) {

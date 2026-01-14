@@ -127,3 +127,8 @@ export type SizeGuide = Prisma.SizeGuideModel
  * 
  */
 export type Coupon = Prisma.CouponModel
+/**
+ * Model CouponUsage
+ * 
+ */
+export type CouponUsage = Prisma.CouponUsageModel

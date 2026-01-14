@@ -7,6 +7,7 @@ import LoadingDots from "components/loading-dots";
 import Price from "components/price";
 import { DEFAULT_OPTION } from "lib/constants";
 import { createUrl } from "lib/utils";
+import { trackInitiateCheckout } from "lib/analytics";
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment, useEffect, useRef, useState } from "react";
@@ -247,7 +248,16 @@ export default function CartModal() {
                       cartTotal={parseFloat(cart.cost.subtotalAmount.amount)}
                     />
                   </div>
-                  <form action={redirectToCheckout}>
+                  <form
+                    action={redirectToCheckout}
+                    onSubmit={() => {
+                      const total = parseFloat(cart.cost.totalAmount.amount);
+                      const trackedTotal = Number.isFinite(total)
+                        ? Math.max(total - discountAmount, 0)
+                        : 0;
+                      trackInitiateCheckout(trackedTotal);
+                    }}
+                  >
                     <CheckoutButton />
                   </form>
                 </div>

@@ -122,6 +122,7 @@ export default function CheckoutPage() {
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [couponData, setCouponData] = useState<{ code: string; amount: number } | null>(null);
   const [formData, setFormData] = useState<CheckoutFormData>({
     email: "",
     phone: "",
@@ -155,10 +156,23 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     fetchCart();
+    loadCouponData();
     if (session) {
       fetchUserAddresses();
     }
   }, [session]);
+
+  const loadCouponData = () => {
+    try {
+      const stored = localStorage.getItem('appliedCoupon');
+      if (stored) {
+        const coupon = JSON.parse(stored);
+        setCouponData({ code: coupon.code, amount: coupon.discountAmount });
+      }
+    } catch (err) {
+      console.error('Failed to load coupon data:', err);
+    }
+  };
 
   const fetchUserAddresses = async () => {
     try {
@@ -234,6 +248,8 @@ export default function CheckoutPage() {
           ? formData.shippingAddress
           : formData.billingAddress,
         saveAddress: formData.saveAddress,
+        couponCode: couponData?.code,
+        discountAmount: couponData?.amount,
       };
 
       // Initialize payment with Paystack
@@ -268,8 +284,9 @@ export default function CheckoutPage() {
   }
 
   const shippingCost = 2000; // ₦2,000 flat shipping
-  const totalWithShipping =
-    parseFloat(cart.cost.totalAmount.amount) + shippingCost;
+  const subtotal = parseFloat(cart.cost.totalAmount.amount);
+  const discountAmount = couponData?.amount || 0;
+  const totalWithShipping = subtotal - discountAmount + shippingCost;
 
   return (
     <div className="mx-auto mt-20 max-w-7xl px-4 pb-20">
@@ -819,6 +836,12 @@ export default function CheckoutPage() {
                     currencyCode={cart.cost.subtotalAmount.currencyCode}
                   />
                 </div>
+                {couponData && (
+                  <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+                    <span>Discount ({couponData.code})</span>
+                    <span>-₦{discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span>Shipping</span>
                   <Price

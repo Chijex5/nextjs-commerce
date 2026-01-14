@@ -25,6 +25,8 @@ interface CheckoutData {
     country: string;
   };
   saveAddress: boolean;
+  couponCode?: string;
+  discountAmount?: number;
 }
 
 export async function POST(request: NextRequest) {
@@ -45,9 +47,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
 
-    // Calculate total amount (including shipping)
+    // Calculate total amount (including shipping and discount)
     const shippingCost = 2000; // ₦2,000 flat shipping
-    const totalAmount = parseFloat(cart.cost.totalAmount.amount) + shippingCost;
+    const subtotal = parseFloat(cart.cost.totalAmount.amount);
+    const discountAmount = body.discountAmount || 0;
+    const totalAmount = subtotal - discountAmount + shippingCost;
 
     // Convert amount to kobo (Paystack uses kobo for NGN)
     const amountInKobo = Math.round(totalAmount * 100);
@@ -66,6 +70,8 @@ export async function POST(request: NextRequest) {
       cartId: cart.id,
       subtotalAmount: cart.cost.subtotalAmount.amount,
       shippingAmount: shippingCost,
+      discountAmount: discountAmount,
+      couponCode: body.couponCode || null,
       totalAmount: totalAmount,
     };
 

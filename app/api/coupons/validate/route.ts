@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from 'lib/prisma';
+import { getUserSession } from 'lib/user-session';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { code, cartTotal, userId } = body;
+    const { code, cartTotal, sessionId } = body;
 
     if (!code || typeof code !== 'string') {
       return NextResponse.json(
@@ -20,6 +21,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get user session
+    const session = await getUserSession();
+    const currentUserId = session?.id;
+
     // Find coupon (case-insensitive)
     const coupon = await prisma.coupon.findFirst({
       where: {
@@ -27,6 +32,9 @@ export async function POST(request: NextRequest) {
           equals: code.toUpperCase(),
           mode: 'insensitive'
         }
+      },
+      include: {
+        usages: true
       }
     });
 
@@ -42,6 +50,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'This coupon is no longer active' },
         { status: 400 }
+      );
+    }
+
+    // Check if requires login
+    if (coupon.requiresLogin && !currentUserId) {
+      return NextResponse.json(
+        { error: 'Please sign in to use this coupon' },
+        { status: 401 }
       );
     }
 
@@ -69,11 +85,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check per-user usage limit
+    if (coupon.maxUsesPerUser) {
+      let userUsageCount = 0;
+      
+      if (currentUserId) {
+        // Count usage by user ID
+        userUsageCount = coupon.usages.filter(u => u.userId === currentUserId).length;
+      } else if (sessionId) {
+        // Count usage by session ID for guest users
+        userUsageCount = coupon.usages.filter(u => u.sessionId === sessionId).length;
+      }
+      
+      if (userUsageCount >= coupon.maxUsesPerUser) {
+        return NextResponse.json(
+          { error: 'You have already used this coupon the maximum number of times' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Check minimum order value
     if (coupon.minOrderValue && cartTotal < Number(coupon.minOrderValue)) {
       return NextResponse.json(
         {
-          error: `Minimum order value of ₦${coupon.minOrderValue} required`
+          error: `Minimum order value of ₦${Number(coupon.minOrderValue).toLocaleString()} required`
         },
         { status: 400 }
       );
@@ -84,14 +120,11 @@ export async function POST(request: NextRequest) {
     if (coupon.discountType === 'percentage') {
       discountAmount = (cartTotal * Number(coupon.discountValue)) / 100;
     } else if (coupon.discountType === 'fixed') {
-      discountAmount = Number(coupon.discountValue);
+      discountAmount = Math.min(Number(coupon.discountValue), cartTotal);
     }
 
-    // Increment usage count
-    await prisma.coupon.update({
-      where: { id: coupon.id },
-      data: { usedCount: { increment: 1 } }
-    });
+    // Note: Usage is tracked when order is created, not during validation
+    // This prevents premature usage counting
 
     return NextResponse.json({
       success: true,
@@ -101,7 +134,8 @@ export async function POST(request: NextRequest) {
         discountType: coupon.discountType,
         discountValue: coupon.discountValue,
         discountAmount,
-        description: coupon.description
+        description: coupon.description,
+        requiresLogin: coupon.requiresLogin
       }
     });
   } catch (error) {
