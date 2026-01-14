@@ -7,7 +7,7 @@ import { sendReviewApprovedEmail } from '@/lib/email/order-emails';
 // PATCH /api/admin/reviews/[id] - Update review status (approve/reject)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -21,7 +21,7 @@ export async function PATCH(
     }
 
     const { status } = await request.json();
-    const reviewId = params.id;
+    const { id } = await context.params;
 
     if (!['approved', 'rejected', 'pending'].includes(status)) {
       return NextResponse.json(
@@ -32,7 +32,7 @@ export async function PATCH(
 
     // Get review details before updating
     const review = await prisma.review.findUnique({
-      where: { id: reviewId },
+      where: { id },
       include: {
         user: {
           select: {
@@ -60,7 +60,7 @@ export async function PATCH(
 
     // Update review status
     const updatedReview = await prisma.review.update({
-      where: { id: reviewId },
+      where: { id },
       data: { status }
     });
 
