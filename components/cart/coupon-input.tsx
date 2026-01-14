@@ -32,7 +32,7 @@ export default function CouponInput({ onApply, cartTotal }: CouponInputProps) {
             body: JSON.stringify({ 
               code: couponData.code, 
               cartTotal,
-              userId: session?.user?.id 
+              userId: session?.id 
             })
           });
 
@@ -70,7 +70,7 @@ export default function CouponInput({ onApply, cartTotal }: CouponInputProps) {
         body: JSON.stringify({ 
           code: trimmedCode, 
           cartTotal,
-          userId: session?.user?.id,
+          userId: session?.id,
           sessionId: getSessionId()
         })
       });
