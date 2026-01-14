@@ -66,7 +66,6 @@ export async function PUT(
         title: menuItem.title,
         url: menuItem.url,
         position: menuItem.position,
-        updatedAt: menuItem.updatedAt.toISOString(),
       },
     });
   } catch (error) {
