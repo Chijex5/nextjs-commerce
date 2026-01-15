@@ -3,6 +3,10 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import prisma from "lib/prisma";
 import { sendOrderConfirmationWithMarkup } from "@/lib/email/order-emails";
+import {
+  CouponValidationError,
+  validateCouponForCheckout,
+} from "lib/coupon-validation";
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,6 +40,22 @@ export async function GET(request: NextRequest) {
       return redirect("/checkout?error=payment_failed");
     }
 
+    const paystackData = verifyData.data;
+    const paystackAmount = Number(paystackData.amount);
+    const paystackCurrency = paystackData.currency;
+    const metadata = paystackData.metadata || {};
+    const cartIdFromMetadata = metadata.cart_id as string | undefined;
+
+    if (!cartIdFromMetadata) {
+      console.error("No cart_id in Paystack metadata");
+      return redirect("/checkout?error=cart_not_found");
+    }
+
+    if (paystackCurrency && paystackCurrency !== "NGN") {
+      console.error("Unexpected Paystack currency:", paystackCurrency);
+      return redirect("/checkout?error=payment_currency_mismatch");
+    }
+
     // Get checkout session from cookie
     const cookieStore = await cookies();
     const checkoutSessionCookie = cookieStore.get("checkout-session");
@@ -46,9 +66,17 @@ export async function GET(request: NextRequest) {
 
     const checkoutSession = JSON.parse(checkoutSessionCookie.value);
 
+    if (
+      checkoutSession.cartId &&
+      checkoutSession.cartId !== cartIdFromMetadata
+    ) {
+      console.error("Cart ID mismatch between session and Paystack metadata");
+      return redirect("/checkout?error=cart_mismatch");
+    }
+
     // Get cart to create order items
     const cart = await prisma.cart.findUnique({
-      where: { id: checkoutSession.cartId },
+      where: { id: cartIdFromMetadata },
       include: {
         lines: {
           include: {
@@ -73,6 +101,57 @@ export async function GET(request: NextRequest) {
       return redirect("/checkout?error=cart_not_found");
     }
 
+    const shippingCost = 2000; // ₦2,000 flat shipping
+    const subtotalAmount = Number(cart.subtotalAmount);
+    const rawMetadataDiscount = metadata.discount_amount;
+    const metadataDiscountAmount = Number(rawMetadataDiscount);
+    const metadataCouponCode =
+      typeof metadata.coupon_code === "string" ? metadata.coupon_code : null;
+    let appliedCouponCode: string | null = null;
+    let discountAmount = Number.isFinite(metadataDiscountAmount)
+      ? metadataDiscountAmount
+      : 0;
+
+    if (!discountAmount && (metadataCouponCode || checkoutSession.couponCode)) {
+      try {
+        const { coupon, discountAmount: computedDiscount } =
+          await validateCouponForCheckout({
+            code: metadataCouponCode || checkoutSession.couponCode,
+            cartTotal: subtotalAmount,
+            userId: checkoutSession.userId || null,
+            sessionId: checkoutSession.userId ? undefined : cartIdFromMetadata,
+          });
+
+        appliedCouponCode = coupon.code;
+        discountAmount = computedDiscount;
+      } catch (error) {
+        if (error instanceof CouponValidationError) {
+          console.error("Coupon validation failed:", error.message);
+          return redirect("/checkout?error=invalid_coupon");
+        }
+        throw error;
+      }
+    } else if (metadataCouponCode) {
+      appliedCouponCode = metadataCouponCode;
+    }
+
+    discountAmount = Math.min(discountAmount, subtotalAmount);
+    const totalAmount = subtotalAmount - discountAmount + shippingCost;
+    const expectedAmountInKobo = Math.round(totalAmount * 100);
+
+    if (!Number.isFinite(paystackAmount) || paystackAmount <= 0) {
+      console.error("Invalid Paystack amount:", paystackData.amount);
+      return redirect("/checkout?error=payment_verification_failed");
+    }
+
+    if (paystackAmount !== expectedAmountInKobo) {
+      console.error("Paystack amount mismatch:", {
+        expectedAmountInKobo,
+        paystackAmount,
+      });
+      return redirect("/checkout?error=payment_amount_mismatch");
+    }
+
     // Generate order number
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
@@ -87,11 +166,11 @@ export async function GET(request: NextRequest) {
         shippingAddress: checkoutSession.shippingAddress,
         billingAddress: checkoutSession.billingAddress,
         status: "processing",
-        subtotalAmount: checkoutSession.subtotalAmount,
-        shippingAmount: checkoutSession.shippingAmount,
-        discountAmount: checkoutSession.discountAmount || 0,
-        couponCode: checkoutSession.couponCode || null,
-        totalAmount: checkoutSession.totalAmount,
+        subtotalAmount,
+        shippingAmount: shippingCost,
+        discountAmount,
+        couponCode: appliedCouponCode,
+        totalAmount,
         currencyCode: "NGN",
         items: {
           create: cart.lines.map((line) => ({
@@ -113,16 +192,16 @@ export async function GET(request: NextRequest) {
     });
 
     // Track coupon usage if coupon was applied
-    if (checkoutSession.couponCode) {
+    if (appliedCouponCode) {
       try {
         // Find the coupon
         const coupon = await prisma.coupon.findFirst({
           where: {
             code: {
-              equals: checkoutSession.couponCode,
-              mode: 'insensitive'
-            }
-          }
+              equals: appliedCouponCode,
+              mode: "insensitive",
+            },
+          },
         });
 
         if (coupon) {
@@ -132,17 +211,17 @@ export async function GET(request: NextRequest) {
               couponId: coupon.id,
               userId: checkoutSession.userId || null,
               sessionId: null, // Could get from cookies if tracking guest sessions
-            }
+            },
           });
 
           // Increment usage count
           await prisma.coupon.update({
             where: { id: coupon.id },
-            data: { usedCount: { increment: 1 } }
+            data: { usedCount: { increment: 1 } },
           });
         }
       } catch (couponError) {
-        console.error('Failed to track coupon usage:', couponError);
+        console.error("Failed to track coupon usage:", couponError);
         // Don't fail the order if coupon tracking fails
       }
     }
@@ -175,9 +254,8 @@ export async function GET(request: NextRequest) {
         shippingAddress: order.shippingAddress,
         orderDate: order.createdAt.toISOString(),
       });
-      console.log(`Order confirmation email sent for order ${order.orderNumber}`);
     } catch (emailError) {
-      console.error('Failed to send order confirmation email:', emailError);
+      console.error("Failed to send order confirmation email:", emailError);
       // Don't fail the order creation if email fails
     }
 

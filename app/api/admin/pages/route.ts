@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "lib/auth";
+import { requireAdminSession } from "lib/admin-auth";
 import prisma from "lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await requireAdminSession();
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -43,21 +42,30 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Failed to fetch pages:", error);
-    return NextResponse.json({ error: "Failed to fetch pages" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch pages" },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await requireAdminSession();
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
-    const { handle, title, body: pageBody, bodySummary, seoTitle, seoDescription } =
-      body;
+    const {
+      handle,
+      title,
+      body: pageBody,
+      bodySummary,
+      seoTitle,
+      seoDescription,
+    } = body;
 
     if (!handle || !title) {
       return NextResponse.json(
@@ -103,6 +111,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Failed to create page:", error);
-    return NextResponse.json({ error: "Failed to create page" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create page" },
+      { status: 500 },
+    );
   }
 }

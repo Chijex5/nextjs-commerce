@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "lib/auth";
+import { requireAdminSession } from "lib/admin-auth";
 import prisma from "lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await requireAdminSession();
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -50,13 +49,16 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Failed to fetch menus:", error);
-    return NextResponse.json({ error: "Failed to fetch menus" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch menus" },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await requireAdminSession();
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -101,6 +103,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Failed to create menu:", error);
-    return NextResponse.json({ error: "Failed to create menu" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create menu" },
+      { status: 500 },
+    );
   }
 }

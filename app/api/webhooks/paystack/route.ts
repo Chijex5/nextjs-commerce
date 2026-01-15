@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
         break;
 
       default:
-        console.log(`Unhandled webhook event: ${event.event}`);
     }
 
     return NextResponse.json({ status: "success" });
@@ -81,15 +80,11 @@ async function handleChargeSuccess(data: any) {
     });
 
     if (existingOrder) {
-      console.log(`Order already exists for reference: ${reference}`);
       return;
     }
 
     // The order should have been created by the verify endpoint
     // This webhook is mainly for logging and backup
-    console.log(
-      `Payment successful for cart ${cartId}, reference: ${reference}`,
-    );
   } catch (error) {
     console.error("Error handling charge success:", error);
   }
@@ -100,7 +95,6 @@ async function handleChargeFailed(data: any) {
     const reference = data.reference;
     const cartId = data.metadata?.cart_id;
 
-    console.log(`Payment failed for cart ${cartId}, reference: ${reference}`);
     // You could send an email notification here or log to a monitoring service
   } catch (error) {
     console.error("Error handling charge failed:", error);

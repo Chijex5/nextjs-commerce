@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import prisma from 'lib/prisma';
-import { sendAbandonedCartEmail } from '@/lib/email/order-emails';
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import prisma from "lib/prisma";
+import { sendAbandonedCartEmail } from "@/lib/email/order-emails";
 
 /**
  * Track abandoned cart for logged-in user
@@ -14,8 +14,8 @@ export async function POST(request: NextRequest) {
 
     if (!session || !session.user?.email) {
       return NextResponse.json(
-        { error: 'User must be logged in to track abandoned cart' },
-        { status: 401 }
+        { error: "User must be logged in to track abandoned cart" },
+        { status: 401 },
       );
     }
 
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const { cartId, items, cartTotal } = body;
 
     if (!cartId || !items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: 'Invalid cart data' }, { status: 400 });
+      return NextResponse.json({ error: "Invalid cart data" }, { status: 400 });
     }
 
     // Get user details
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Check if there's already an abandoned cart entry for this user/cart
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
           userId: user.id,
           cartId: cartId,
           email: user.email,
-          customerName: user.name || 'Valued Customer',
+          customerName: user.name || "Valued Customer",
           items: items,
           cartTotal: cartTotal,
           expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
@@ -74,12 +74,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ success: true, message: 'Cart tracked' });
+    return NextResponse.json({ success: true, message: "Cart tracked" });
   } catch (error) {
-    console.error('Failed to track abandoned cart:', error);
+    console.error("Failed to track abandoned cart:", error);
     return NextResponse.json(
-      { error: 'Failed to track abandoned cart' },
-      { status: 500 }
+      { error: "Failed to track abandoned cart" },
+      { status: 500 },
     );
   }
 }
@@ -91,6 +91,13 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    const cronSecret = process.env.CRON_SECRET;
+    const requestSecret = request.headers.get("x-cron-secret");
+
+    if (!cronSecret || requestSecret !== cronSecret) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     // Get abandoned carts that are expired and haven't been emailed yet
     const abandonedCarts = await prisma.abandonedCart.findMany({
       where: {
@@ -106,7 +113,7 @@ export async function GET(request: NextRequest) {
     if (abandonedCarts.length === 0) {
       return NextResponse.json({
         success: true,
-        message: 'No abandoned carts to process',
+        message: "No abandoned carts to process",
         sent: 0,
       });
     }
@@ -141,9 +148,11 @@ export async function GET(request: NextRequest) {
         });
 
         emailsSent++;
-        console.log(`Abandoned cart email sent to ${cart.email}`);
       } catch (emailError) {
-        console.error(`Failed to send abandoned cart email to ${cart.email}:`, emailError);
+        console.error(
+          `Failed to send abandoned cart email to ${cart.email}:`,
+          emailError,
+        );
         errors.push(`${cart.email}: ${(emailError as Error).message}`);
       }
     }
@@ -155,10 +164,10 @@ export async function GET(request: NextRequest) {
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error) {
-    console.error('Failed to process abandoned carts:', error);
+    console.error("Failed to process abandoned carts:", error);
     return NextResponse.json(
-      { error: 'Failed to process abandoned carts' },
-      { status: 500 }
+      { error: "Failed to process abandoned carts" },
+      { status: 500 },
     );
   }
 }

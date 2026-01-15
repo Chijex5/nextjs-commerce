@@ -1,8 +1,13 @@
 import { cookies } from "next/headers";
 import crypto from "crypto";
 
-const JWT_SECRET =
-  process.env.NEXTAUTH_SECRET || "your-secret-key-change-in-production";
+const JWT_SECRET = process.env.NEXTAUTH_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error("NEXTAUTH_SECRET is required");
+}
+
+const JWT_SECRET_KEY = JWT_SECRET as string;
 
 export interface UserSession {
   id: string;
@@ -29,7 +34,7 @@ export async function createUserSession(user: UserSession): Promise<string> {
     "base64url",
   );
   const signature = crypto
-    .createHmac("sha256", JWT_SECRET)
+    .createHmac("sha256", JWT_SECRET_KEY)
     .update(base64Payload)
     .digest("base64url");
 
@@ -48,7 +53,7 @@ export async function verifyUserSession(
 
     // Verify signature
     const expectedSignature = crypto
-      .createHmac("sha256", JWT_SECRET)
+      .createHmac("sha256", JWT_SECRET_KEY)
       .update(base64Payload)
       .digest("base64url");
 

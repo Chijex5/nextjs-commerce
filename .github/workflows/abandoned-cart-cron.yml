@@ -1,0 +1,15 @@
+name: Abandoned cart cron
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call abandoned cart endpoint
+        run: |
+          curl -sS -X GET "${{ secrets.APP_BASE_URL }}/api/abandoned-cart" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"

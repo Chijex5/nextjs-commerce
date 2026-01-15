@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "lib/auth";
+import { requireAdminSession } from "lib/admin-auth";
 import prisma from "lib/prisma";
 import {
   calculateEstimatedArrival,
   type DeliveryStatus,
 } from "lib/order-utils/delivery-tracking";
-import { sendOrderStatusUpdate, sendShippingNotification } from "@/lib/email/order-emails";
+import {
+  sendOrderStatusUpdate,
+  sendShippingNotification,
+} from "@/lib/email/order-emails";
 
 // GET - Get single order
 export async function GET(
@@ -14,7 +16,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await requireAdminSession();
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -92,7 +94,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await requireAdminSession();
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -161,16 +163,17 @@ export async function PUT(
 
     // Send email notification if status or delivery status changed
     try {
-      const oldStatus = existingOrder.status || 'processing';
+      const oldStatus = existingOrder.status || "processing";
       const oldDeliveryStatus = existingOrder.deliveryStatus;
-      
+
       // Check if status changed
       const statusChanged = status && status !== oldStatus;
-      const deliveryStatusChanged = deliveryStatus && deliveryStatus !== oldDeliveryStatus;
-      
+      const deliveryStatusChanged =
+        deliveryStatus && deliveryStatus !== oldDeliveryStatus;
+
       if (statusChanged || deliveryStatusChanged) {
         // Special case: if dispatch status, send shipping notification
-        if (deliveryStatus === 'dispatch') {
+        if (deliveryStatus === "dispatch") {
           await sendShippingNotification({
             orderNumber: updatedOrder.orderNumber,
             customerName: updatedOrder.customerName,
@@ -184,7 +187,8 @@ export async function PUT(
               productImage: item.productImage,
             })),
             trackingNumber: updatedOrder.trackingNumber || undefined,
-            estimatedArrival: updatedOrder.estimatedArrival?.toLocaleDateString() || undefined,
+            estimatedArrival:
+              updatedOrder.estimatedArrival?.toLocaleDateString() || undefined,
           });
         } else {
           // Send general status update email
@@ -196,13 +200,13 @@ export async function PUT(
             newStatus: updatedOrder.status,
             deliveryStatus: updatedOrder.deliveryStatus || undefined,
             trackingNumber: updatedOrder.trackingNumber || undefined,
-            estimatedArrival: updatedOrder.estimatedArrival?.toLocaleDateString() || undefined,
+            estimatedArrival:
+              updatedOrder.estimatedArrival?.toLocaleDateString() || undefined,
           });
         }
-        console.log(`Status update email sent for order ${updatedOrder.orderNumber}`);
       }
     } catch (emailError) {
-      console.error('Failed to send status update email:', emailError);
+      console.error("Failed to send status update email:", emailError);
       // Don't fail the order update if email fails
     }
 

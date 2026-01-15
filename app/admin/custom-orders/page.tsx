@@ -5,6 +5,11 @@ import prisma from "lib/prisma";
 import AdminNav from "components/admin/AdminNav";
 import CustomOrdersManagement from "components/admin/CustomOrdersManagement";
 
+const toDetailsArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string");
+};
+
 export default async function AdminCustomOrdersPage() {
   const session = await getServerSession(authOptions);
 
@@ -15,6 +20,11 @@ export default async function AdminCustomOrdersPage() {
   const customOrders = await prisma.customOrder.findMany({
     orderBy: [{ position: "asc" }, { updatedAt: "desc" }],
   });
+
+  const mappedOrders = customOrders.map((order) => ({
+    ...order,
+    details: toDetailsArray(order.details),
+  }));
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
@@ -31,7 +41,7 @@ export default async function AdminCustomOrdersPage() {
             </p>
           </div>
 
-          <CustomOrdersManagement customOrders={customOrders} />
+          <CustomOrdersManagement customOrders={mappedOrders} />
         </div>
       </div>
     </div>

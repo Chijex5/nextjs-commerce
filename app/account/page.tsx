@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import PageLoader from "components/page-loader";
@@ -9,7 +9,7 @@ import LoadingDots from "components/loading-dots";
 import { useUserSession } from "hooks/useUserSession";
 import { deriveNameFromEmail } from "lib/user-utils";
 
-export default function AccountPage() {
+function AccountPageContent() {
   const { data: session, status, refetch } = useUserSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -38,7 +38,6 @@ export default function AccountPage() {
     if (status === "unauthenticated") {
       router.push("/auth/login?callbackUrl=/account");
     } else if (status === "authenticated" && session) {
-      console.log("Session data:", session);
       setProfile({
         name: session.name || "",
         email: session.email || "",
@@ -390,5 +389,13 @@ export default function AccountPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AccountPage() {
+  return (
+    <Suspense fallback={<PageLoader size="lg" message="Loading account..." />}>
+      <AccountPageContent />
+    </Suspense>
   );
 }

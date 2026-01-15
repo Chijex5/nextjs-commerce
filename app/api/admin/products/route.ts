@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAdminSession } from "lib/admin-auth";
 import prisma from "@/lib/prisma";
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await requireAdminSession();
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -180,7 +179,11 @@ export async function POST(request: Request) {
     }
 
     // Handle collection assignments if provided
-    if (body.collectionIds && Array.isArray(body.collectionIds) && body.collectionIds.length > 0) {
+    if (
+      body.collectionIds &&
+      Array.isArray(body.collectionIds) &&
+      body.collectionIds.length > 0
+    ) {
       await prisma.productCollection.createMany({
         data: body.collectionIds.map((collectionId: string, index: number) => ({
           productId: product.id,

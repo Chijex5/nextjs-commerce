@@ -19,13 +19,20 @@ function SubmitButton({
   selectedVariantId: string | undefined;
   pending: boolean;
 }) {
-  const buttonClasses =
-    "relative flex w-full items-center justify-center rounded-full bg-blue-600 p-4 tracking-wide text-white";
-  const disabledClasses = "cursor-not-allowed opacity-60 hover:opacity-60";
+  const baseClasses =
+    "relative flex w-full items-center justify-center gap-2 rounded-full px-6 py-4 text-sm font-semibold tracking-wide transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-neutral-900";
+  const activeClasses =
+    "bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30 ring-1 ring-blue-400/30";
+  const inactiveClasses =
+    "bg-neutral-200 text-neutral-500 ring-1 ring-neutral-300 dark:bg-neutral-800 dark:text-neutral-400 dark:ring-neutral-700";
+  const disabledClasses = "cursor-not-allowed";
 
   if (!availableForSale) {
     return (
-      <button disabled className={clsx(buttonClasses, disabledClasses)}>
+      <button
+        disabled
+        className={clsx(baseClasses, inactiveClasses, disabledClasses)}
+      >
         Out Of Stock
       </button>
     );
@@ -36,11 +43,9 @@ function SubmitButton({
       <button
         aria-label="Please select an option"
         disabled
-        className={clsx(buttonClasses, disabledClasses)}
+        className={clsx(baseClasses, inactiveClasses, disabledClasses)}
       >
-        <div className="absolute left-0 ml-4">
-          <PlusIcon className="h-5" />
-        </div>
+        <PlusIcon className="h-5" />
         Add To Cart
       </button>
     );
@@ -50,18 +55,19 @@ function SubmitButton({
     <button
       aria-label="Add to cart"
       disabled={pending}
-      className={clsx(buttonClasses, {
-        "hover:opacity-90": !pending,
-        "cursor-not-allowed opacity-60": pending,
+      className={clsx(baseClasses, activeClasses, {
+        "hover:brightness-110 active:translate-y-px": !pending,
+        "cursor-not-allowed opacity-70": pending,
       })}
     >
       {pending ? (
-        <LoadingDots className="bg-white" />
+        <>
+          <LoadingDots className="bg-white/90" />
+          <span className="text-sm font-medium">Adding</span>
+        </>
       ) : (
         <>
-          <div className="absolute left-0 ml-4">
-            <PlusIcon className="h-5" />
-          </div>
+          <PlusIcon className="h-5" />
           Add To Cart
         </>
       )}

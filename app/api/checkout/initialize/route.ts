@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCart } from "lib/database";
 import { getUserSession } from "lib/user-session";
 import { cookies } from "next/headers";
+import {
+  CouponValidationError,
+  validateCouponForCheckout,
+} from "lib/coupon-validation";
 
 interface CheckoutData {
   email: string;
@@ -26,7 +30,6 @@ interface CheckoutData {
   };
   saveAddress: boolean;
   couponCode?: string;
-  discountAmount?: number;
 }
 
 export async function POST(request: NextRequest) {
@@ -47,17 +50,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
 
+    // Get user session if available
+    const session = await getUserSession();
+
     // Calculate total amount (including shipping and discount)
     const shippingCost = 2000; // ₦2,000 flat shipping
-    const subtotal = parseFloat(cart.cost.totalAmount.amount);
-    const discountAmount = body.discountAmount || 0;
+    const subtotal = parseFloat(cart.cost.subtotalAmount.amount);
+    let discountAmount = 0;
+    let appliedCouponCode: string | null = null;
+
+    if (body.couponCode) {
+      try {
+        const { coupon, discountAmount: computedDiscount } =
+          await validateCouponForCheckout({
+            code: body.couponCode,
+            cartTotal: subtotal,
+            userId: session?.id,
+            sessionId: session?.id ? undefined : cart.id,
+          });
+
+        discountAmount = computedDiscount;
+        appliedCouponCode = coupon.code;
+      } catch (error) {
+        if (error instanceof CouponValidationError) {
+          return NextResponse.json(
+            { error: error.message },
+            { status: error.status },
+          );
+        }
+        throw error;
+      }
+    }
+
     const totalAmount = subtotal - discountAmount + shippingCost;
 
     // Convert amount to kobo (Paystack uses kobo for NGN)
     const amountInKobo = Math.round(totalAmount * 100);
-
-    // Get user session if available
-    const session = await getUserSession();
 
     // Store checkout data in a cookie temporarily (will be retrieved after payment)
     const checkoutSession = {
@@ -68,11 +96,11 @@ export async function POST(request: NextRequest) {
       saveAddress: body.saveAddress,
       userId: session?.id,
       cartId: cart.id,
-      subtotalAmount: cart.cost.subtotalAmount.amount,
+      subtotalAmount: subtotal,
       shippingAmount: shippingCost,
-      discountAmount: discountAmount,
-      couponCode: body.couponCode || null,
-      totalAmount: totalAmount,
+      discountAmount,
+      couponCode: appliedCouponCode,
+      totalAmount,
     };
 
     (await cookies()).set("checkout-session", JSON.stringify(checkoutSession), {
@@ -112,6 +140,12 @@ export async function POST(request: NextRequest) {
             customer_name: `${body.shippingAddress.firstName} ${body.shippingAddress.lastName}`,
             phone: body.phone,
             cart_id: cart.id,
+            ...(appliedCouponCode
+              ? {
+                  coupon_code: appliedCouponCode,
+                  discount_amount: discountAmount,
+                }
+              : {}),
           },
         }),
       },

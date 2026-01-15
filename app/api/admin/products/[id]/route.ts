@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAdminSession } from "lib/admin-auth";
 import prisma from "@/lib/prisma";
 
 export async function DELETE(
@@ -8,7 +7,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await requireAdminSession();
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -36,7 +35,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await requireAdminSession();
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -81,7 +80,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await requireAdminSession();
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -271,11 +270,13 @@ export async function PUT(
       // Create new collection assignments
       if (body.collectionIds.length > 0) {
         await prisma.productCollection.createMany({
-          data: body.collectionIds.map((collectionId: string, index: number) => ({
-            productId: id,
-            collectionId,
-            position: index,
-          })),
+          data: body.collectionIds.map(
+            (collectionId: string, index: number) => ({
+              productId: id,
+              collectionId,
+              position: index,
+            }),
+          ),
         });
       }
     }

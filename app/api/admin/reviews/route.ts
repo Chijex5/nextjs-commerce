@@ -1,27 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireAdminSession } from "lib/admin-auth";
 
 // GET /api/admin/reviews - Get all reviews with filtering
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
+    const session = await requireAdminSession();
+
     // Check if user is admin
-    if (!session || !session.user || session.user.role !== 'admin') {
+    if (!session) {
       return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
+        { error: "Admin access required" },
+        { status: 403 },
       );
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const status = searchParams.get('status') || undefined;
-    const productId = searchParams.get('productId') || undefined;
-    const rating = searchParams.get('rating') ? parseInt(searchParams.get('rating')!) : undefined;
-    const page = parseInt(searchParams.get('page') || '1');
-    const perPage = parseInt(searchParams.get('perPage') || '20');
+    const status = searchParams.get("status") || undefined;
+    const productId = searchParams.get("productId") || undefined;
+    const rating = searchParams.get("rating")
+      ? parseInt(searchParams.get("rating")!)
+      : undefined;
+    const page = parseInt(searchParams.get("page") || "1");
+    const perPage = parseInt(searchParams.get("perPage") || "20");
     const skip = (page - 1) * perPage;
 
     // Build where clause
@@ -39,8 +40,8 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               name: true,
-              email: true
-            }
+              email: true,
+            },
           },
           product: {
             select: {
@@ -50,30 +51,33 @@ export async function GET(request: NextRequest) {
               images: {
                 where: { isFeatured: true },
                 take: 1,
-                select: { url: true, altText: true }
-              }
-            }
-          }
+                select: { url: true, altText: true },
+              },
+            },
+          },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
-        take: perPage
+        take: perPage,
       }),
-      prisma.review.count({ where })
+      prisma.review.count({ where }),
     ]);
 
     // Get statistics
     const stats = await prisma.review.groupBy({
-      by: ['status'],
+      by: ["status"],
       _count: {
-        id: true
-      }
+        id: true,
+      },
     });
 
-    const statusCounts = stats.reduce((acc, stat) => {
-      acc[stat.status] = stat._count.id;
-      return acc;
-    }, {} as Record<string, number>);
+    const statusCounts = stats.reduce(
+      (acc, stat) => {
+        acc[stat.status] = stat._count.id;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     return NextResponse.json({
       reviews,
@@ -81,21 +85,20 @@ export async function GET(request: NextRequest) {
         page,
         perPage,
         total,
-        totalPages: Math.ceil(total / perPage)
+        totalPages: Math.ceil(total / perPage),
       },
       stats: {
         pending: statusCounts.pending || 0,
         approved: statusCounts.approved || 0,
         rejected: statusCounts.rejected || 0,
-        total
-      }
+        total,
+      },
     });
-
   } catch (error) {
-    console.error('Error fetching admin reviews:', error);
+    console.error("Error fetching admin reviews:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch reviews' },
-      { status: 500 }
+      { error: "Failed to fetch reviews" },
+      { status: 500 },
     );
   }
 }
