@@ -2537,6 +2537,8 @@ export const OrderScalarFieldEnum = {
   currencyCode: 'currencyCode',
   notes: 'notes',
   trackingNumber: 'trackingNumber',
+  acknowledgedAt: 'acknowledgedAt',
+  acknowledgedBy: 'acknowledgedBy',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

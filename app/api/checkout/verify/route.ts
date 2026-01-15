@@ -1,12 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import prisma from "lib/prisma";
-import { sendOrderConfirmationWithMarkup } from "@/lib/email/order-emails";
+import {
+  sendAdminNewOrderNotification,
+  sendOrderConfirmationWithMarkup,
+} from "@/lib/email/order-emails";
 import {
   CouponValidationError,
   validateCouponForCheckout,
 } from "lib/coupon-validation";
+import prisma from "lib/prisma";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -257,6 +260,52 @@ export async function GET(request: NextRequest) {
     } catch (emailError) {
       console.error("Failed to send order confirmation email:", emailError);
       // Don't fail the order creation if email fails
+    }
+
+    // Send admin notification for new order
+    try {
+      const adminUsers = await prisma.adminUser.findMany({
+        where: { isActive: true },
+        select: { email: true },
+      });
+      const envAdmins = process.env.ADMIN_NOTIFICATION_EMAILS;
+      const envEmail = process.env.ADMIN_EMAIL;
+      const envEmails = [
+        envEmail,
+        ...(envAdmins
+          ? envAdmins
+              .split(",")
+              .map((email) => email.trim())
+              .filter(Boolean)
+          : []),
+      ].filter(Boolean);
+      const adminEmails = Array.from(
+        new Set([
+          ...adminUsers.map((admin) => admin.email),
+          ...envEmails,
+        ]),
+      ).filter((email): email is string => Boolean(email));
+
+      if (adminEmails && adminEmails.length > 0) {
+        await sendAdminNewOrderNotification({
+          to: adminEmails,
+          orderNumber: order.orderNumber,
+          orderId: order.id,
+          customerName: order.customerName,
+          email: order.email,
+          phone: order.phone,
+          totalAmount: Number(order.totalAmount),
+          currencyCode: order.currencyCode,
+          orderDate: order.createdAt.toISOString(),
+          items: order.items.map((item) => ({
+            productTitle: item.productTitle,
+            variantTitle: item.variantTitle,
+            quantity: item.quantity,
+          })),
+        });
+      }
+    } catch (emailError) {
+      console.error("Failed to send admin new order email:", emailError);
     }
 
     // Clear cart

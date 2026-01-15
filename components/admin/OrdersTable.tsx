@@ -25,6 +25,8 @@ interface Order {
   currencyCode: string;
   shippingAddress: any;
   createdAt: Date;
+  acknowledgedAt: Date | null;
+  acknowledgedBy: string | null;
   items: OrderItem[];
 }
 
@@ -150,16 +152,29 @@ export default function OrdersTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-200 bg-white dark:divide-neutral-800 dark:bg-neutral-900">
-            {orders.map((order) => (
-              <tr
-                key={order.id}
-                className="hover:bg-neutral-50 dark:hover:bg-neutral-800"
-              >
-                <td className="whitespace-nowrap px-6 py-4">
-                  <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                    {order.orderNumber}
-                  </div>
-                </td>
+            {orders.map((order) => {
+              const isAcknowledged = Boolean(order.acknowledgedAt);
+              return (
+                <tr
+                  key={order.id}
+                  className={`hover:bg-neutral-50 dark:hover:bg-neutral-800 ${
+                    isAcknowledged
+                      ? ""
+                      : "bg-amber-50/60 dark:bg-amber-950/20"
+                  }`}
+                >
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                        {order.orderNumber}
+                      </div>
+                      {!isAcknowledged && (
+                        <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                          New
+                        </span>
+                      )}
+                    </div>
+                  </td>
                 <td className="px-6 py-4">
                   <div className="text-sm text-neutral-900 dark:text-neutral-100">
                     {order.customerName}
@@ -202,8 +217,9 @@ export default function OrdersTable({
                     View
                   </Link>
                 </td>
-              </tr>
-            ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -212,15 +228,27 @@ export default function OrdersTable({
       <div className="space-y-4 lg:hidden">
         {orders.map((order) => {
           const isExpanded = expandedOrders.has(order.id);
+          const isAcknowledged = Boolean(order.acknowledgedAt);
           return (
             <div
               key={order.id}
-              className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+              className={`rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900 ${
+                isAcknowledged
+                  ? ""
+                  : "bg-amber-50/60 dark:bg-amber-950/20"
+              }`}
             >
               <div className="mb-3 flex items-start justify-between">
                 <div>
-                  <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                    {order.orderNumber}
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                      {order.orderNumber}
+                    </div>
+                    {!isAcknowledged && (
+                      <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                        New
+                      </span>
+                    )}
                   </div>
                   <div className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
                     {new Date(order.createdAt).toLocaleDateString()}

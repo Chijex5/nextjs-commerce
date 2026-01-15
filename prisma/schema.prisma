@@ -282,6 +282,8 @@ model Order {
   currencyCode        String    @default("NGN") @map("currency_code") @db.VarChar(3)
   notes               String?   @db.Text
   trackingNumber      String?   @map("tracking_number") @db.VarChar(100)
+  acknowledgedAt      DateTime? @map("acknowledged_at")
+  acknowledgedBy      String?   @map("acknowledged_by") @db.VarChar(255)
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at")
 

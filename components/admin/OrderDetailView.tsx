@@ -45,6 +45,8 @@ interface Order {
   currencyCode: string;
   notes: string | null;
   trackingNumber: string | null;
+  acknowledgedAt: Date | null;
+  acknowledgedBy: string | null;
   createdAt: Date;
   updatedAt: Date;
   user: {
@@ -65,6 +67,13 @@ export default function OrderDetailView({ order }: { order: Order }) {
     order.trackingNumber || "",
   );
   const [notes, setNotes] = useState(order.notes || "");
+  const [acknowledgedAt, setAcknowledgedAt] = useState<Date | null>(
+    order.acknowledgedAt ? new Date(order.acknowledgedAt) : null,
+  );
+  const [acknowledgedBy, setAcknowledgedBy] = useState<string | null>(
+    order.acknowledgedBy || null,
+  );
+  const [isAcknowledging, setIsAcknowledging] = useState(false);
 
   const handleUpdate = async () => {
     setIsUpdating(true);
@@ -91,6 +100,38 @@ export default function OrderDetailView({ order }: { order: Order }) {
       toast.error("Failed to update order");
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleAcknowledge = async () => {
+    if (acknowledgedAt) return;
+    setIsAcknowledging(true);
+    try {
+      const response = await fetch(`/api/admin/orders/${order.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          acknowledge: true,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const acknowledgedAtValue = data?.order?.acknowledgedAt
+          ? new Date(data.order.acknowledgedAt)
+          : new Date();
+        setAcknowledgedAt(acknowledgedAtValue);
+        setAcknowledgedBy(data?.order?.acknowledgedBy || null);
+        toast.success("Order acknowledged");
+        router.refresh();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || "Failed to acknowledge order");
+      }
+    } catch (error) {
+      toast.error("Failed to acknowledge order");
+    } finally {
+      setIsAcknowledging(false);
     }
   };
 
@@ -328,6 +369,53 @@ export default function OrderDetailView({ order }: { order: Order }) {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Acknowledgement */}
+          <div
+            className={`rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900 ${
+              acknowledgedAt
+                ? ""
+                : "bg-amber-50/60 dark:bg-amber-950/20"
+            }`}
+          >
+            <h2 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              Acknowledgement
+            </h2>
+            {acknowledgedAt ? (
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                    Acknowledged
+                  </span>
+                </div>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                  {acknowledgedBy
+                    ? `Acknowledged by ${acknowledgedBy}`
+                    : "Acknowledged by admin"}
+                </p>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                  {acknowledgedAt.toLocaleString()}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  This order has not been acknowledged yet.
+                </p>
+                <button
+                  onClick={handleAcknowledge}
+                  disabled={isAcknowledging}
+                  className="w-full rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500 disabled:opacity-50"
+                >
+                  {isAcknowledging ? (
+                    <LoadingDots className="bg-white" />
+                  ) : (
+                    "Acknowledge Order"
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Status Management */}
           <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
             <h2 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">

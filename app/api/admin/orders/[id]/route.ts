@@ -62,6 +62,8 @@ export async function GET(
         currencyCode: order.currencyCode,
         notes: order.notes,
         trackingNumber: order.trackingNumber,
+        acknowledgedAt: order.acknowledgedAt?.toISOString() || null,
+        acknowledgedBy: order.acknowledgedBy,
         createdAt: order.createdAt.toISOString(),
         updatedAt: order.updatedAt.toISOString(),
         user: order.user,
@@ -107,11 +109,13 @@ export async function PUT(
       deliveryStatus,
       trackingNumber,
       notes,
+      acknowledge,
     }: {
       status?: string;
       deliveryStatus?: DeliveryStatus;
       trackingNumber?: string;
       notes?: string;
+      acknowledge?: boolean;
     } = body;
 
     // Get the order to access shipping address for ETA calculation
@@ -125,6 +129,7 @@ export async function PUT(
         customerName: true,
         email: true,
         orderNumber: true,
+        acknowledgedAt: true,
       },
     });
 
@@ -152,6 +157,10 @@ export async function PUT(
     if (trackingNumber !== undefined)
       updateData.trackingNumber = trackingNumber;
     if (notes !== undefined) updateData.notes = notes;
+    if (acknowledge && !existingOrder.acknowledgedAt) {
+      updateData.acknowledgedAt = new Date();
+      updateData.acknowledgedBy = session.user?.email || null;
+    }
 
     const updatedOrder = await prisma.order.update({
       where: { id },
@@ -220,6 +229,8 @@ export async function PUT(
         deliveryStatus: updatedOrder.deliveryStatus,
         estimatedArrival: updatedOrder.estimatedArrival?.toISOString() || null,
         trackingNumber: updatedOrder.trackingNumber,
+        acknowledgedAt: updatedOrder.acknowledgedAt?.toISOString() || null,
+        acknowledgedBy: updatedOrder.acknowledgedBy,
         updatedAt: updatedOrder.updatedAt.toISOString(),
       },
     });

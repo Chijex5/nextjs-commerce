@@ -5,9 +5,11 @@ import { shippingNotificationTemplate } from './templates/shipping-notification'
 import { orderStatusUpdateTemplate } from './templates/order-status-update';
 import { abandonedCartTemplate } from './templates/abandoned-cart';
 import { getReviewApprovedEmailTemplate } from './templates/review-approved';
+import { adminNewOrderTemplate } from './templates/admin-new-order';
 
 interface OrderData {
   orderNumber: string;
+  orderId?: string;
   customerName: string;
   email: string;
   totalAmount: number;
@@ -135,5 +137,47 @@ export const sendReviewApprovedEmail = async (data: {
     to: data.to,
     subject: `Your Review is Live! - D'FOOTPRINT`,
     html: getReviewApprovedEmailTemplate(data),
+  });
+};
+
+/**
+ * Send new order notification email to admins
+ * Called immediately after order is created
+ */
+export const sendAdminNewOrderNotification = async (data: {
+  to: string | string[];
+  orderNumber: string;
+  orderId: string;
+  customerName: string;
+  email: string;
+  phone?: string | null;
+  totalAmount: number;
+  currencyCode: string;
+  orderDate: string;
+  items: Array<{
+    productTitle: string;
+    variantTitle: string;
+    quantity: number;
+  }>;
+}) => {
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXTAUTH_URL ||
+    'https://yourdomain.com';
+
+  return sendEmail({
+    to: data.to,
+    subject: `New Order: ${data.orderNumber} - D'FOOTPRINT`,
+    html: adminNewOrderTemplate({
+      orderNumber: data.orderNumber,
+      orderUrl: `${siteUrl}/admin/orders/${data.orderId}`,
+      customerName: data.customerName,
+      email: data.email,
+      phone: data.phone,
+      totalAmount: data.totalAmount,
+      currencyCode: data.currencyCode,
+      orderDate: data.orderDate,
+      items: data.items,
+    }),
   });
 };

@@ -74,6 +74,8 @@ export async function GET(request: NextRequest) {
         totalAmount: order.totalAmount.toString(),
         currencyCode: order.currencyCode,
         shippingAddress: order.shippingAddress,
+        acknowledgedAt: order.acknowledgedAt?.toISOString() || null,
+        acknowledgedBy: order.acknowledgedBy,
         createdAt: order.createdAt.toISOString(),
         updatedAt: order.updatedAt.toISOString(),
         itemCount: order.items.length,
