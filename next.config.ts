@@ -26,4 +26,12 @@ export default {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/media/:path*",
+        destination: "/_next/static/media/:path*",
+      },
+    ];
+  },
 };
