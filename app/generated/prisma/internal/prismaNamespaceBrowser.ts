@@ -68,6 +68,7 @@ export const ModelName = {
   Order: 'Order',
   OrderItem: 'OrderItem',
   NewsletterSubscriber: 'NewsletterSubscriber',
+  MagicLinkToken: 'MagicLinkToken',
   AbandonedCart: 'AbandonedCart',
   Review: 'Review',
   ReviewVote: 'ReviewVote',
@@ -348,6 +349,18 @@ export const NewsletterSubscriberScalarFieldEnum = {
 } as const
 
 export type NewsletterSubscriberScalarFieldEnum = (typeof NewsletterSubscriberScalarFieldEnum)[keyof typeof NewsletterSubscriberScalarFieldEnum]
+
+
+export const MagicLinkTokenScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  tokenHash: 'tokenHash',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt',
+  usedAt: 'usedAt'
+} as const
+
+export type MagicLinkTokenScalarFieldEnum = (typeof MagicLinkTokenScalarFieldEnum)[keyof typeof MagicLinkTokenScalarFieldEnum]
 
 
 export const AbandonedCartScalarFieldEnum = {

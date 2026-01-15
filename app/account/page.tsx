@@ -1,19 +1,23 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import PageLoader from "components/page-loader";
 import LoadingDots from "components/loading-dots";
 import { useUserSession } from "hooks/useUserSession";
+import { deriveNameFromEmail } from "lib/user-utils";
 
 export default function AccountPage() {
-  const { data: session, status } = useUserSession();
+  const { data: session, status, refetch } = useUserSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const showWelcome = searchParams.get("welcome") === "1";
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showProfilePrompt, setShowProfilePrompt] = useState(false);
   const [profile, setProfile] = useState({
     name: "",
     email: "",
@@ -25,17 +29,31 @@ export default function AccountPage() {
     confirmPassword: "",
   });
 
+  const derivedName = useMemo(() => {
+    if (!session?.email) return "";
+    return deriveNameFromEmail(session.email);
+  }, [session?.email]);
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/auth/login?callbackUrl=/account");
     } else if (status === "authenticated" && session) {
+      console.log("Session data:", session);
       setProfile({
         name: session.name || "",
         email: session.email || "",
         phone: session.phone || "",
       });
+      const needsNameReview =
+        showWelcome &&
+        derivedName &&
+        session.name?.trim().toLowerCase() === derivedName.toLowerCase();
+      setShowProfilePrompt(!!needsNameReview);
+      if (needsNameReview) {
+        setIsEditing(true);
+      }
     }
-  }, [status, router, session]);
+  }, [status, router, session, showWelcome, derivedName]);
 
   const handleEditProfile = async () => {
     if (!profile.name.trim()) {
@@ -57,7 +75,9 @@ export default function AccountPage() {
       if (response.ok) {
         toast.success("Profile updated successfully");
         setIsEditing(false);
-        // Refresh the page data using Next.js router
+        setShowProfilePrompt(false);
+        await refetch();
+        router.replace("/account");
         router.refresh();
       } else {
         const data = await response.json();
@@ -143,6 +163,20 @@ export default function AccountPage() {
               </button>
             )}
           </div>
+          {showProfilePrompt && !isEditing && (
+            <div className="mb-4 rounded-md border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-100">
+              <p className="font-medium">Welcome! We prefilled your name.</p>
+              <p className="mt-1 text-xs text-blue-700 dark:text-blue-200">
+                Feel free to edit it so we address you properly.
+              </p>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="mt-2 text-xs font-medium text-blue-700 hover:underline dark:text-blue-200"
+              >
+                Edit name
+              </button>
+            </div>
+          )}
 
           {isEditing ? (
             <div className="space-y-4">

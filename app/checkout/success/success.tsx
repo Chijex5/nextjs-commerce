@@ -5,10 +5,12 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { trackPurchase } from "lib/analytics";
+import { useUserSession } from "hooks/useUserSession";
 
 export default function CheckoutSuccess() {
   const searchParams = useSearchParams();
   const orderNumber = searchParams.get("order");
+  const { status } = useUserSession();
   const [mounted, setMounted] = useState(false);
   const trackedOrderRef = useRef<string | null>(null);
 
@@ -80,6 +82,21 @@ export default function CheckoutSuccess() {
           A confirmation email has been sent to your email address with the
           order details.
         </p>
+
+        {status === "unauthenticated" && (
+          <div className="mb-8 rounded-lg border border-blue-100 bg-blue-50 p-4 text-left text-sm text-blue-900 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-100">
+            <p className="font-medium">Create an account to track this order</p>
+            <p className="mt-1 text-xs text-blue-700 dark:text-blue-200">
+              Save your details for faster checkout and see updates in one place.
+            </p>
+            <Link
+              href={`/auth/register?callbackUrl=${encodeURIComponent(`/orders?order=${orderNumber || ""}`)}`}
+              className="mt-2 inline-flex text-xs font-medium text-blue-700 hover:underline dark:text-blue-200"
+            >
+              Create account
+            </Link>
+          </div>
+        )}
 
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
           <Link

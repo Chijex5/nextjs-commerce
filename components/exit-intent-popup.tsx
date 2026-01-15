@@ -7,7 +7,7 @@ export default function ExitIntentPopup() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [discountCode, setDiscountCode] = useState('WELCOME10');
+  const [discountCode] = useState('WELCOME10');
 
   useEffect(() => {
     // Check if user has already seen the popup
@@ -21,16 +21,16 @@ export default function ExitIntentPopup() {
         clearTimeout(timeoutId);
         timeoutId = setTimeout(() => {
           setIsVisible(true);
-          // Set cookie to show popup only once per 7 days
-          document.cookie = 'exit_intent_shown=true; max-age=' + (7 * 24 * 60 * 60) + '; path=/';
+          // Set cookie to show popup only once per 14 days
+          document.cookie = 'exit_intent_shown=true; max-age=' + (14 * 24 * 60 * 60) + '; path=/';
         }, 500);
       }
     };
 
-    // Add delay before enabling exit intent detection (3 seconds)
+    // Add delay before enabling exit intent detection (10 seconds)
     const enableTimeout = setTimeout(() => {
       document.addEventListener('mouseleave', handleMouseLeave);
-    }, 3000);
+    }, 10000);
 
     return () => {
       clearTimeout(enableTimeout);
@@ -90,10 +90,10 @@ export default function ExitIntentPopup() {
         {!submitted ? (
           <>
             <h2 className="text-2xl font-medium text-neutral-900">
-              Wait! Don't Leave Empty-Handed
+              Before you go
             </h2>
             <p className="mt-4 text-sm text-neutral-700">
-              Get 10% OFF your first order when you join our newsletter.
+              Get gentle updates, restock alerts, and a small welcome gift.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-6">
@@ -110,7 +110,7 @@ export default function ExitIntentPopup() {
                 disabled={loading}
                 className="mt-4 w-full bg-neutral-900 py-3 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50"
               >
-                {loading ? 'Subscribing...' : 'Get My 10% OFF'}
+                {loading ? 'Subscribing...' : 'Join the list'}
               </button>
             </form>
 
@@ -122,13 +122,13 @@ export default function ExitIntentPopup() {
           <div className="text-center">
             <h2 className="text-2xl font-medium text-neutral-900">Thank You!</h2>
             <p className="mt-4 text-sm text-neutral-700">
-              Your discount code is:
+              Here is your welcome code:
             </p>
             <div className="mt-4 border-2 border-neutral-900 bg-neutral-50 p-4">
               <p className="text-2xl font-bold text-neutral-900">{discountCode}</p>
             </div>
             <p className="mt-4 text-sm text-neutral-700">
-              Use this code at checkout to get 10% off your order.
+              Use this at checkout for a little thank you.
             </p>
             <button
               onClick={handleClose}

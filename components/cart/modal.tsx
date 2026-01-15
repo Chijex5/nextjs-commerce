@@ -18,6 +18,7 @@ import { DeleteItemButton } from "./delete-item-button";
 import { EditItemQuantityButton } from "./edit-item-quantity-button";
 import OpenCart from "./open-cart";
 import CouponInput from "./coupon-input";
+import { useUserSession } from "hooks/useUserSession";
 
 type MerchandiseSearchParams = {
   [key: string]: string;
@@ -25,6 +26,7 @@ type MerchandiseSearchParams = {
 
 export default function CartModal() {
   const { cart, updateCartItem } = useCart();
+  const { status } = useUserSession();
   const [isOpen, setIsOpen] = useState(false);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [couponCode, setCouponCode] = useState('');
@@ -248,6 +250,21 @@ export default function CartModal() {
                       cartTotal={parseFloat(cart.cost.subtotalAmount.amount)}
                     />
                   </div>
+                  {status === "unauthenticated" && (
+                    <div className="mb-4 rounded-md border border-neutral-200 bg-white p-3 text-sm text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200">
+                      <p className="font-medium">Save your cart and track orders</p>
+                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                        Create an account for faster checkout next time.
+                      </p>
+                      <Link
+                        href="/auth/register?callbackUrl=/checkout"
+                        className="mt-2 inline-flex text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+                        onClick={closeCart}
+                      >
+                        Create account
+                      </Link>
+                    </div>
+                  )}
                   <form
                     action={redirectToCheckout}
                     onSubmit={() => {

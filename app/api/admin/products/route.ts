@@ -72,6 +72,20 @@ export async function POST(request: Request) {
       const colorPrices = body.colorPrices || {};
       const largeSizePrice = body.largeSizePrice;
       const largeSizeFrom = body.largeSizeFrom;
+      const sizePriceRules = Array.isArray(body.sizePriceRules)
+        ? body.sizePriceRules
+            .map((rule: any) => ({
+              from: parseInt(rule.from, 10),
+              price: parseFloat(rule.price),
+            }))
+            .filter(
+              (rule: any) =>
+                !Number.isNaN(rule.from) &&
+                !Number.isNaN(rule.price) &&
+                rule.from > 0,
+            )
+            .sort((a: any, b: any) => b.from - a.from)
+        : [];
 
       // Check color-specific price first (highest priority)
       const colorKey = color.trim().toLowerCase();
@@ -79,11 +93,22 @@ export async function POST(request: Request) {
         return colorPrices[colorKey];
       }
 
-      // Check size-based price
+      // Check size-based tier rules
+      if (sizePriceRules.length > 0) {
+        const sizeValue = parseInt(size, 10);
+        if (!Number.isNaN(sizeValue)) {
+          const matched = sizePriceRules.find(
+            (rule: any) => sizeValue >= rule.from,
+          );
+          if (matched) return matched.price;
+        }
+      }
+
+      // Check legacy single-tier size price
       if (
         largeSizeFrom !== null &&
         largeSizePrice !== null &&
-        parseInt(size) >= largeSizeFrom
+        parseInt(size, 10) >= largeSizeFrom
       ) {
         return largeSizePrice;
       }

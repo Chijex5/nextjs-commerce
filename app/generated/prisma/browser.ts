@@ -103,6 +103,11 @@ export type OrderItem = Prisma.OrderItemModel
  */
 export type NewsletterSubscriber = Prisma.NewsletterSubscriberModel
 /**
+ * Model MagicLinkToken
+ * 
+ */
+export type MagicLinkToken = Prisma.MagicLinkTokenModel
+/**
  * Model AbandonedCart
  * 
  */

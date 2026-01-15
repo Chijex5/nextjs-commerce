@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserSession } from "lib/user-session";
+import { createUserSession, getUserSession, setUserSessionCookie } from "lib/user-session";
 import prisma from "lib/prisma";
 
 // GET - Fetch user profile
@@ -69,6 +69,14 @@ export async function PUT(request: NextRequest) {
         phone: true,
       },
     });
+
+    const token = await createUserSession({
+      id: updatedUser.id,
+      email: updatedUser.email,
+      name: updatedUser.name,
+      phone: updatedUser.phone,
+    });
+    await setUserSessionCookie(token);
 
     return NextResponse.json({
       success: true,

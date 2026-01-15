@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 import prisma from "lib/prisma";
+import { deriveNameFromEmail } from "lib/user-utils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,9 +38,14 @@ export async function POST(request: NextRequest) {
     const passwordHash = await hash(password, 10);
 
     // Create user
+    const userName =
+      typeof name === "string" && name.trim()
+        ? name.trim()
+        : deriveNameFromEmail(email);
+
     const user = await prisma.user.create({
       data: {
-        name,
+        name: userName,
         email,
         passwordHash,
       },

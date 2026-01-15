@@ -4,6 +4,7 @@ import { WelcomeToast } from "components/welcome-toast";
 import AnalyticsPageView from "components/analytics/page-view";
 import AbandonedCartTracker from "components/cart/abandoned-cart-tracker";
 import TikTokIdentify from "components/analytics/tiktok-identify";
+import ExitIntentPopup from "components/exit-intent-popup";
 import { getCart } from "lib/database";
 import { baseUrl } from "lib/utils";
 import type { Metadata } from "next";
@@ -130,6 +131,7 @@ export default async function RootLayout({
           <AbandonedCartTracker />
           <TikTokIdentify />
           <Navbar />
+          <ExitIntentPopup />
           <main>
             {children}
             <Toaster closeButton />
