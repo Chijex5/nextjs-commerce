@@ -3,7 +3,12 @@ import Footer from "components/layout/footer";
 import { Gallery } from "components/product/gallery";
 import { ProductDescription } from "components/product/product-description";
 import { HIDDEN_PRODUCT_TAG } from "lib/constants";
-import { getProduct, getProductRecommendations } from "lib/database";
+import {
+  getProduct,
+  getProductRecommendations,
+  getProductReviewAggregate,
+} from "lib/database";
+import { canonicalUrl, siteName } from "lib/seo";
 import type { Image } from "lib/database";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -12,18 +17,29 @@ import { Suspense } from "react";
 
 export async function generateMetadata(props: {
   params: Promise<{ handle: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }): Promise<Metadata> {
   const params = await props.params;
+  const searchParams = await props.searchParams;
   const product = await getProduct(params.handle);
 
   if (!product) return notFound();
 
   const { url, width, height, altText: alt } = product.featuredImage || {};
-  const indexable = !product.tags.includes(HIDDEN_PRODUCT_TAG);
+  const hasSearchParams =
+    searchParams && Object.keys(searchParams).length > 0;
+  const indexable =
+    !product.tags.includes(HIDDEN_PRODUCT_TAG) && !hasSearchParams;
+  const title = product.seo.title || product.title;
+  const description = product.seo.description || product.description;
+  const canonicalPath = `/product/${product.handle}`;
 
   return {
-    title: product.seo.title || product.title,
-    description: product.seo.description || product.description,
+    title,
+    description,
+    alternates: {
+      canonical: canonicalUrl(canonicalPath),
+    },
     robots: {
       index: indexable,
       follow: indexable,
@@ -32,18 +48,28 @@ export async function generateMetadata(props: {
         follow: indexable,
       },
     },
-    openGraph: url
-      ? {
-          images: [
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl(canonicalPath),
+      type: "product",
+      images: url
+        ? [
             {
               url,
               width,
               height,
               alt,
             },
-          ],
-        }
-      : null,
+          ]
+        : ["/opengraph-image"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} | ${siteName}`,
+      description,
+      images: url ? [url] : ["/opengraph-image"],
+    },
   };
 }
 
@@ -55,12 +81,18 @@ export default async function ProductPage(props: {
 
   if (!product) return notFound();
 
-  const productJsonLd = {
+  const reviewAggregate = await getProductReviewAggregate(product.id);
+  const productJsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.title,
-    description: product.description,
-    image: product.featuredImage.url,
+    description: product.seo.description || product.description,
+    image: product.images.map((image) => image.url).filter(Boolean),
+    url: canonicalUrl(`/product/${product.handle}`),
+    brand: {
+      "@type": "Brand",
+      name: siteName,
+    },
     offers: {
       "@type": "AggregateOffer",
       availability: product.availableForSale
@@ -69,8 +101,17 @@ export default async function ProductPage(props: {
       priceCurrency: product.priceRange.minVariantPrice.currencyCode,
       highPrice: product.priceRange.maxVariantPrice.amount,
       lowPrice: product.priceRange.minVariantPrice.amount,
+      offerCount: product.variants.length,
     },
   };
+
+  if (reviewAggregate.reviewCount > 0 && reviewAggregate.averageRating) {
+    productJsonLd.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue: Number(reviewAggregate.averageRating.toFixed(1)),
+      reviewCount: reviewAggregate.reviewCount,
+    };
+  }
 
   return (
     <>

@@ -2,10 +2,34 @@ import Grid from "components/grid";
 import ProductGridItems from "components/layout/product-grid-items";
 import { defaultSort, sorting } from "lib/constants";
 import { getProducts } from "lib/database";
+import { canonicalUrl, siteName } from "lib/seo";
+import type { Metadata } from "next";
 
-export const metadata = {
+const description = "Search for products in the store.";
+
+export const metadata: Metadata = {
   title: "Search",
-  description: "Search for products in the store.",
+  description,
+  alternates: {
+    canonical: canonicalUrl("/search"),
+  },
+  robots: {
+    index: false,
+    follow: true,
+  },
+  openGraph: {
+    title: `Search | ${siteName}`,
+    description,
+    url: canonicalUrl("/search"),
+    type: "website",
+    images: ["/opengraph-image"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `Search | ${siteName}`,
+    description,
+    images: ["/opengraph-image"],
+  },
 };
 
 export default async function SearchPage(props: {

@@ -1,8 +1,22 @@
 import { ReadonlyURLSearchParams } from "next/navigation";
 
-export const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
-  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-  : "http://localhost:3000";
+const normalizeBaseUrl = (value: string) => {
+  const withProtocol =
+    value.startsWith("http://") || value.startsWith("https://")
+      ? value
+      : `https://${value}`;
+  const url = new URL(withProtocol);
+  return `${url.protocol}//${url.host}`;
+};
+
+const rawBaseUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  process.env.VERCEL_PROJECT_PRODUCTION_URL ||
+  process.env.VERCEL_URL ||
+  process.env.NEXTAUTH_URL ||
+  "http://localhost:3000";
+
+export const baseUrl = normalizeBaseUrl(rawBaseUrl);
 
 export const createUrl = (
   pathname: string,

@@ -275,6 +275,22 @@ export async function getProductRecommendations(
   return productsWithDetails.filter((p): p is Product => p !== undefined);
 }
 
+export async function getProductReviewAggregate(productId: string): Promise<{
+  averageRating: number | null;
+  reviewCount: number;
+}> {
+  const stats = await db.review.aggregate({
+    where: { productId, status: "approved" },
+    _avg: { rating: true },
+    _count: { rating: true },
+  });
+
+  return {
+    averageRating: stats._avg.rating ?? null,
+    reviewCount: stats._count.rating ?? 0,
+  };
+}
+
 // Collection queries
 export async function getCollection(
   handle: string,

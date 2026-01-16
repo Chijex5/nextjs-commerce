@@ -6,6 +6,12 @@ import AbandonedCartTracker from "components/cart/abandoned-cart-tracker";
 import TikTokIdentify from "components/analytics/tiktok-identify";
 import ExitIntentPopup from "components/exit-intent-popup";
 import { getCart } from "lib/database";
+import {
+  canonicalUrl,
+  organizationJsonLd,
+  siteName,
+  siteTagline,
+} from "lib/seo";
 import { baseUrl } from "lib/utils";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
@@ -15,7 +21,6 @@ import { Toaster } from "sonner";
 import Script from "next/script";
 import "./globals.css";
 
-const { SITE_NAME } = process.env;
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 const FB_PIXEL_ID = process.env.NEXT_PUBLIC_FB_PIXEL_ID;
 const TIKTOK_PIXEL_ID = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID;
@@ -24,12 +29,27 @@ const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: SITE_NAME!,
-    template: `%s | ${SITE_NAME}`,
+    default: siteName,
+    template: `%s | ${siteName}`,
   },
+  description: siteTagline,
   robots: {
     follow: true,
     index: true,
+  },
+  openGraph: {
+    title: siteName,
+    description: siteTagline,
+    url: canonicalUrl("/"),
+    siteName,
+    type: "website",
+    images: ["/opengraph-image"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteName,
+    description: siteTagline,
+    images: ["/opengraph-image"],
   },
 };
 
@@ -50,6 +70,12 @@ export default async function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className="bg-neutral-50 font-sans text-black selection:bg-teal-300 dark:bg-neutral-900 dark:text-white dark:selection:bg-pink-500 dark:selection:text-white">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd()),
+          }}
+        />
         {/* Google Analytics */}
         {GA_ID && (
           <>

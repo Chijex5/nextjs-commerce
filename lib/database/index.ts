@@ -87,7 +87,15 @@ export async function getCollectionProducts({
   cacheTag(TAGS.collections, TAGS.products);
   cacheLife("days");
 
-  return dbQueries.getCollectionProducts({ collection, reverse, sortKey });
+  const products = await dbQueries.getCollectionProducts({
+    collection,
+    reverse,
+    sortKey,
+  });
+
+  return products.filter(
+    (product) => !product.tags.includes(HIDDEN_PRODUCT_TAG),
+  );
 }
 
 export async function getCollections(): Promise<Collection[]> {
@@ -131,7 +139,21 @@ export async function getProductRecommendations(
   cacheTag(TAGS.products);
   cacheLife("days");
 
-  return dbQueries.getProductRecommendations(productId);
+  const products = await dbQueries.getProductRecommendations(productId);
+
+  return products.filter(
+    (product) => !product.tags.includes(HIDDEN_PRODUCT_TAG),
+  );
+}
+
+export async function getProductReviewAggregate(
+  productId: string,
+): Promise<{ averageRating: number | null; reviewCount: number }> {
+  "use cache";
+  cacheTag(TAGS.products);
+  cacheLife("hours");
+
+  return dbQueries.getProductReviewAggregate(productId);
 }
 
 export async function getProducts({

@@ -4,12 +4,30 @@ import { CustomShowcase } from "components/custom-showcase";
 import { CollectionSections } from "components/collection-sections";
 import Footer from "components/layout/footer";
 import prisma from "lib/prisma";
+import { canonicalUrl, siteName } from "lib/seo";
+import type { Metadata } from "next";
 
-export const metadata = {
-  description:
-    "D'FOOTPRINT - Handcrafted footwear including slippers and slides. Premium handmade designs with custom order options. Nationwide delivery across Nigeria.",
+const description =
+  "D'FOOTPRINT - Handcrafted footwear including slippers and slides. Premium handmade designs with custom order options. Nationwide delivery across Nigeria.";
+
+export const metadata: Metadata = {
+  title: siteName,
+  description,
+  alternates: {
+    canonical: canonicalUrl("/"),
+  },
   openGraph: {
+    title: siteName,
+    description,
+    url: canonicalUrl("/"),
     type: "website",
+    images: ["/opengraph-image"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteName,
+    description,
+    images: ["/opengraph-image"],
   },
 };
 

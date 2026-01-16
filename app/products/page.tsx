@@ -2,11 +2,43 @@ import Grid from "components/grid";
 import ProductGridItems from "components/layout/product-grid-items";
 import { defaultSort, sorting } from "lib/constants";
 import { getProducts } from "lib/database";
+import { canonicalUrl, siteName } from "lib/seo";
+import type { Metadata } from "next";
 
-export const metadata = {
-  title: "All Products",
-  description: "Browse all products in our store.",
-};
+const description = "Browse all products in our store.";
+
+export async function generateMetadata(props: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}): Promise<Metadata> {
+  const searchParams = await props.searchParams;
+  const hasSearchParams =
+    searchParams && Object.keys(searchParams).length > 0;
+
+  return {
+    title: "All Products",
+    description,
+    alternates: {
+      canonical: canonicalUrl("/products"),
+    },
+    robots: {
+      index: !hasSearchParams,
+      follow: true,
+    },
+    openGraph: {
+      title: `All Products | ${siteName}`,
+      description,
+      url: canonicalUrl("/products"),
+      type: "website",
+      images: ["/opengraph-image"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `All Products | ${siteName}`,
+      description,
+      images: ["/opengraph-image"],
+    },
+  };
+}
 
 export default async function AllProductsPage(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;

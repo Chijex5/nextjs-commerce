@@ -1,16 +1,29 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import prisma from "lib/prisma";
+import { canonicalUrl, siteName } from "lib/seo";
 
 export const metadata: Metadata = {
   title: "Custom Orders Gallery - D'FOOTPRINT",
   description:
     "See how we transform customer ideas into beautiful handmade footwear. Browse our gallery of custom orders and get inspired for your own design.",
+  alternates: {
+    canonical: canonicalUrl("/custom-orders"),
+  },
   openGraph: {
     title: "Custom Orders Gallery - D'FOOTPRINT",
     description:
       "See how we transform customer ideas into beautiful handmade footwear.",
+    url: canonicalUrl("/custom-orders"),
     type: "website",
+    images: ["/opengraph-image"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `Custom Orders Gallery | ${siteName}`,
+    description:
+      "See how we transform customer ideas into beautiful handmade footwear.",
+    images: ["/opengraph-image"],
   },
 };
 

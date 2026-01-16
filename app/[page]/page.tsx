@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import Prose from "components/prose";
 import { getPage } from "lib/database";
+import { canonicalUrl, siteName } from "lib/seo";
 import { notFound } from "next/navigation";
 
 export async function generateMetadata(props: {
@@ -12,13 +13,28 @@ export async function generateMetadata(props: {
 
   if (!page) return notFound();
 
+  const title = page.seo?.title || page.title;
+  const description = page.seo?.description || page.bodySummary;
+  const canonicalPath = `/${page.handle}`;
+
   return {
-    title: page.seo?.title || page.title,
-    description: page.seo?.description || page.bodySummary,
+    title,
+    description,
+    alternates: {
+      canonical: canonicalUrl(canonicalPath),
+    },
     openGraph: {
-      publishedTime: page.createdAt,
-      modifiedTime: page.updatedAt,
-      type: "article",
+      title,
+      description,
+      url: canonicalUrl(canonicalPath),
+      type: "website",
+      images: [`${canonicalPath}/opengraph-image`],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} | ${siteName}`,
+      description,
+      images: [`${canonicalPath}/opengraph-image`],
     },
   };
 }

@@ -1,8 +1,29 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { canonicalHost } from "lib/seo";
+
+const CANONICAL_HOST = canonicalHost();
 
 export default withAuth(
   function proxy(req) {
+    if (process.env.NODE_ENV !== "development" && CANONICAL_HOST) {
+      const host = req.headers.get("host") || "";
+      const forwardedProto =
+        req.headers.get("x-forwarded-proto") ||
+        req.nextUrl.protocol.replace(":", "");
+
+      const shouldRedirectHost =
+        !host.includes("localhost") && host !== CANONICAL_HOST;
+      const shouldRedirectProtocol = forwardedProto !== "https";
+
+      if (shouldRedirectHost || shouldRedirectProtocol) {
+        const url = req.nextUrl.clone();
+        url.protocol = "https";
+        url.host = CANONICAL_HOST;
+        return NextResponse.redirect(url, 308);
+      }
+    }
+
     const token = req.nextauth.token;
     const isAdminPath = req.nextUrl.pathname.startsWith("/admin");
     const isLoginPage = req.nextUrl.pathname === "/admin/login";
@@ -34,5 +55,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

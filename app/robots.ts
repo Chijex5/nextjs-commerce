@@ -5,6 +5,23 @@ export default function robots() {
     rules: [
       {
         userAgent: "*",
+        allow: "/",
+        disallow: [
+          "/admin",
+          "/admin/*",
+          "/auth",
+          "/auth/*",
+          "/account",
+          "/account/*",
+          "/checkout",
+          "/checkout/*",
+          "/orders",
+          "/cart",
+          "/search$",
+          "/search?",
+          "/api",
+          "/api/*",
+        ],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
