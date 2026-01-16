@@ -5,6 +5,7 @@ import AnalyticsPageView from "components/analytics/page-view";
 import AbandonedCartTracker from "components/cart/abandoned-cart-tracker";
 import TikTokIdentify from "components/analytics/tiktok-identify";
 import ExitIntentPopup from "components/exit-intent-popup";
+import FirstVisitSignupPopup from "components/onboarding/first-visit-signup";
 import { getCart } from "lib/database";
 import {
   canonicalUrl,
@@ -157,6 +158,7 @@ export default async function RootLayout({
           <AbandonedCartTracker />
           <TikTokIdentify />
           <Navbar />
+          <FirstVisitSignupPopup />
           <ExitIntentPopup />
           <main>
             {children}

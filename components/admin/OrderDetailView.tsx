@@ -518,12 +518,12 @@ export default function OrderDetailView({ order }: { order: Order }) {
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                  Admin Notes
+                  Order Notes
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Add internal notes about this order..."
+                  placeholder="Customer note or internal notes..."
                   rows={4}
                   className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                 />

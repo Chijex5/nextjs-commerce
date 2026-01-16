@@ -10,6 +10,8 @@ import PageLoader from "components/page-loader";
 import { useUserSession } from "hooks/useUserSession";
 import { identifyUser } from "lib/analytics/tiktok-pixel";
 
+const ORDER_NOTE_STORAGE_KEY = "orderNote";
+
 // Nigerian States
 const NIGERIAN_STATES = [
   "Abia",
@@ -124,6 +126,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [couponData, setCouponData] = useState<{ code: string; amount: number } | null>(null);
+  const [orderNote, setOrderNote] = useState("");
   const tiktokIdentifyKeyRef = useRef<string | null>(null);
   const [formData, setFormData] = useState<CheckoutFormData>({
     email: "",
@@ -163,6 +166,17 @@ export default function CheckoutPage() {
       fetchUserAddresses();
     }
   }, [session]);
+
+  useEffect(() => {
+    try {
+      const storedNote = localStorage.getItem(ORDER_NOTE_STORAGE_KEY);
+      if (storedNote) {
+        setOrderNote(storedNote);
+      }
+    } catch {
+      // Ignore storage errors.
+    }
+  }, []);
 
   useEffect(() => {
     const email = formData.email?.trim();
@@ -267,6 +281,7 @@ export default function CheckoutPage() {
         saveAddress: formData.saveAddress,
         couponCode: couponData?.code,
         discountAmount: couponData?.amount,
+        notes: orderNote.trim() || undefined,
       };
 
       // Initialize payment with Paystack
@@ -300,10 +315,10 @@ export default function CheckoutPage() {
     return null;
   }
 
-  const shippingCost = 2000; // ₦2,000 flat shipping
+  const shippingCost = 0; // Shipping quoted after order is ready
   const subtotal = parseFloat(cart.cost.totalAmount.amount);
   const discountAmount = couponData?.amount || 0;
-  const totalWithShipping = subtotal - discountAmount + shippingCost;
+  const totalDue = subtotal - discountAmount + shippingCost;
 
   return (
     <div className="mx-auto mt-20 max-w-7xl px-4 pb-20">
@@ -861,19 +876,23 @@ export default function CheckoutPage() {
                 )}
                 <div className="flex justify-between text-sm">
                   <span>Shipping</span>
-                  <Price
-                    amount={shippingCost.toString()}
-                    currencyCode={cart.cost.totalAmount.currencyCode}
-                  />
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                    Quoted after your order is ready
+                  </span>
                 </div>
                 <div className="flex justify-between border-t border-neutral-200 pt-2 text-lg font-bold dark:border-neutral-700">
                   <span>Total</span>
                   <Price
-                    amount={totalWithShipping.toString()}
+                    amount={totalDue.toString()}
                     currencyCode={cart.cost.totalAmount.currencyCode}
                   />
                 </div>
               </div>
+              <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
+                Shipping fees and delivery method are confirmed after your order
+                is ready. You can request a preferred courier; we&apos;ll confirm
+                availability and pricing.
+              </p>
 
               <button
                 type="submit"

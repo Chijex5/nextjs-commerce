@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
       return redirect("/checkout?error=cart_not_found");
     }
 
-    const shippingCost = 2000; // ₦2,000 flat shipping
+    const shippingCost = 0; // Shipping quoted after order is ready
     const subtotalAmount = Number(cart.subtotalAmount);
     const rawMetadataDiscount = metadata.discount_amount;
     const metadataDiscountAmount = Number(rawMetadataDiscount);
@@ -175,6 +175,11 @@ export async function GET(request: NextRequest) {
         couponCode: appliedCouponCode,
         totalAmount,
         currencyCode: "NGN",
+        notes:
+          typeof checkoutSession.notes === "string" &&
+          checkoutSession.notes.trim().length > 0
+            ? checkoutSession.notes.trim()
+            : null,
         items: {
           create: cart.lines.map((line) => ({
             productId: line.variant.productId,

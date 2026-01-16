@@ -30,6 +30,7 @@ interface CheckoutData {
   };
   saveAddress: boolean;
   couponCode?: string;
+  notes?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -53,8 +54,8 @@ export async function POST(request: NextRequest) {
     // Get user session if available
     const session = await getUserSession();
 
-    // Calculate total amount (including shipping and discount)
-    const shippingCost = 2000; // ₦2,000 flat shipping
+    // Calculate total amount (shipping quoted after order is ready)
+    const shippingCost = 0;
     const subtotal = parseFloat(cart.cost.subtotalAmount.amount);
     let discountAmount = 0;
     let appliedCouponCode: string | null = null;
@@ -100,6 +101,7 @@ export async function POST(request: NextRequest) {
       shippingAmount: shippingCost,
       discountAmount,
       couponCode: appliedCouponCode,
+      notes: body.notes?.trim() || null,
       totalAmount,
     };
 
