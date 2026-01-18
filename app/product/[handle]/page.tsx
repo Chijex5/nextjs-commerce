@@ -134,6 +134,8 @@ export default async function ProductPage(props: {
                 images={product.images.slice(0, 5).map((image: Image) => ({
                   src: image.url,
                   altText: image.altText,
+                  width: image.width,
+                  height: image.height,
                 }))}
               />
             </Suspense>
@@ -182,6 +184,7 @@ async function RelatedProducts({ id }: { id: string }) {
               >
                 <GridTileImage
                   alt={product.title}
+                  fit="cover"
                   label={{
                     title: product.title,
                     amount: product.priceRange.maxVariantPrice.amount,

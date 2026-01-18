@@ -6,10 +6,14 @@ export function GridTileImage({
   isInteractive = true,
   active,
   label,
+  fit = "contain",
+  imageClassName,
   ...props
 }: {
   isInteractive?: boolean;
   active?: boolean;
+  fit?: "cover" | "contain";
+  imageClassName?: string;
   label?: {
     title: string;
     amount: string;
@@ -31,10 +35,15 @@ export function GridTileImage({
     >
       {props.src ? (
         <Image
-          className={clsx("relative h-full w-full object-contain", {
-            "transition duration-300 ease-in-out group-hover:scale-105":
-              isInteractive,
-          })}
+          className={clsx(
+            "relative h-full w-full",
+            fit === "cover" ? "object-cover" : "object-contain",
+            {
+              "transition duration-300 ease-in-out group-hover:scale-105":
+                isInteractive,
+            },
+            imageClassName,
+          )}
           {...props}
         />
       ) : null}

@@ -934,8 +934,8 @@ export default function ProductForm({
                     </div>
                   )}
 
-                  {/* Overlay with actions */}
-                  <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                  {/* Overlay with actions (desktop) */}
+                  <div className="absolute inset-0 hidden items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100 sm:flex">
                     {!image.isFeatured && (
                       <button
                         type="button"
@@ -976,8 +976,47 @@ export default function ProductForm({
                     </button>
                   </div>
 
+                  {/* Mobile actions */}
+                  <div className="flex items-center justify-between gap-2 border-t border-neutral-200 bg-white px-2 py-2 text-xs dark:border-neutral-700 dark:bg-neutral-900 sm:hidden">
+                    <button
+                      type="button"
+                      onClick={() => setFeaturedImage(index)}
+                      className="rounded border border-neutral-300 px-2 py-1 font-medium text-neutral-700 dark:border-neutral-700 dark:text-neutral-200"
+                    >
+                      {image.isFeatured ? "Featured" : "Set Featured"}
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => moveImage(index, index - 1)}
+                        disabled={index === 0}
+                        className="rounded border border-neutral-300 px-2 py-1 font-medium text-neutral-700 disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-200"
+                        title="Move left"
+                      >
+                        ←
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveImage(index, index + 1)}
+                        disabled={index === images.length - 1}
+                        className="rounded border border-neutral-300 px-2 py-1 font-medium text-neutral-700 disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-200"
+                        title="Move right"
+                      >
+                        →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="rounded bg-red-600 px-2 py-1 font-medium text-white"
+                        title="Remove"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Position indicator */}
-                  <div className="absolute bottom-2 right-2 rounded bg-neutral-900/75 px-1.5 py-0.5 text-xs text-white">
+                  <div className="absolute right-2 top-2 rounded bg-neutral-900/75 px-1.5 py-0.5 text-xs text-white sm:top-auto sm:bottom-2">
                     {index + 1}
                   </div>
                 </div>
