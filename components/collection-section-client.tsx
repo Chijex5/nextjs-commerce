@@ -245,7 +245,7 @@ function CollectionSection({
                 <Link href={`/product/${product.handle}`} className="block">
                   {/* Product card with shadow and hover effects */}
                   <div className="relative overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-neutral-200/50 transition-all duration-500 ease-out group-hover:-translate-y-1 group-hover:shadow-2xl group-hover:ring-neutral-300 dark:bg-neutral-900 dark:ring-neutral-800/50 dark:group-hover:ring-neutral-700">
-                    <div className="relative aspect-square overflow-hidden">
+                    <div className="relative aspect-[3/4] overflow-hidden">
                       <GridTileImage
                         alt={product.title}
                         label={{

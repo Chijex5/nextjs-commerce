@@ -25,7 +25,7 @@ function ThreeItemGridItem({
       }
     >
       <Link
-        className="group relative block aspect-square h-full w-full"
+        className="group relative block aspect-[3/4] h-full w-full"
         href={`/product/${item.handle}`}
         prefetch={true}
       >

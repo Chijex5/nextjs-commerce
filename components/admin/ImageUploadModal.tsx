@@ -3,12 +3,18 @@
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { X, Upload, Star, Trash2, Loader2 } from "lucide-react";
+import {
+  PRODUCT_IMAGE_HEIGHT,
+  PRODUCT_IMAGE_WIDTH,
+} from "@/lib/image-constants";
 
 interface ImageData {
   url: string;
   position: number;
   isFeatured: boolean;
   publicId?: string;
+  width: number;
+  height: number;
 }
 
 interface ImageUploadModalProps {
@@ -79,6 +85,8 @@ export default function ImageUploadModal({
           publicId: data.publicId,
           position: images.length + uploadedImages.length,
           isFeatured: images.length === 0 && uploadedImages.length === 0,
+          width: data.width ?? PRODUCT_IMAGE_WIDTH,
+          height: data.height ?? PRODUCT_IMAGE_HEIGHT,
         });
 
         setUploadProgress(prev => ({ ...prev, [fileKey]: 100 }));

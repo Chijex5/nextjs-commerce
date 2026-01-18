@@ -12,6 +12,10 @@ import type {
 } from "../shopify/types";
 import prisma from "lib/prisma";
 import { Prisma } from "@/app/generated/prisma/client";
+import {
+  PRODUCT_IMAGE_HEIGHT,
+  PRODUCT_IMAGE_WIDTH,
+} from "../image-constants";
 
 const db = prisma;
 // Helper function to reshape database product to match Shopify Product type
@@ -52,8 +56,8 @@ export async function reshapeDbProduct(
     images = dbImages.map((img) => ({
       url: img.url,
       altText: img.altText || "",
-      width: img.width || 800,
-      height: img.height || 800,
+      width: img.width || PRODUCT_IMAGE_WIDTH,
+      height: img.height || PRODUCT_IMAGE_HEIGHT,
     }));
 
     featuredImage =
@@ -98,8 +102,8 @@ export async function reshapeDbProduct(
     featuredImage: featuredImage || {
       url: "",
       altText: "",
-      width: 800,
-      height: 800,
+      width: PRODUCT_IMAGE_WIDTH,
+      height: PRODUCT_IMAGE_HEIGHT,
     },
     images,
     seo: {
@@ -139,8 +143,8 @@ async function reshapeDbCart(dbCart: any): Promise<Cart | undefined> {
     const featuredImage = product.images[0] || {
       url: "",
       altText: "",
-      width: 800,
-      height: 800,
+      width: PRODUCT_IMAGE_WIDTH,
+      height: PRODUCT_IMAGE_HEIGHT,
     };
 
     return {
@@ -166,8 +170,8 @@ async function reshapeDbCart(dbCart: any): Promise<Cart | undefined> {
           featuredImage: {
             url: featuredImage.url,
             altText: featuredImage.altText || "",
-            width: featuredImage.width || 800,
-            height: featuredImage.height || 800,
+            width: featuredImage.width || PRODUCT_IMAGE_WIDTH,
+            height: featuredImage.height || PRODUCT_IMAGE_HEIGHT,
           },
         },
       },

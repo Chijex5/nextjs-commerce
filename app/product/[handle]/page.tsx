@@ -24,6 +24,7 @@ export async function generateMetadata(props: {
   const product = await getProduct(params.handle);
 
   if (!product) return notFound();
+  console.log(product);
 
   const { url, width, height, altText: alt } = product.featuredImage || {};
   const hasSearchParams =
@@ -126,7 +127,7 @@ export default async function ProductPage(props: {
           <div className="h-full w-full basis-full lg:basis-4/6">
             <Suspense
               fallback={
-                <div className="relative aspect-square h-full max-h-[550px] w-full overflow-hidden" />
+                <div className="relative aspect-[3/4] h-full max-h-[700px] w-full overflow-hidden" />
               }
             >
               <Gallery
@@ -160,7 +161,7 @@ async function RelatedProducts({ id }: { id: string }) {
     <div className="py-8">
       <h2 className="mb-4 text-2xl font-bold">Related Products</h2>
       <ul className="flex w-full gap-4 overflow-x-auto pt-1">
-        {relatedProducts.map((product) => {
+        {relatedProducts.map((product, index) => {
           const minPrice = parseFloat(
             product.priceRange.minVariantPrice.amount,
           );
@@ -171,8 +172,8 @@ async function RelatedProducts({ id }: { id: string }) {
 
           return (
             <li
-              key={product.handle}
-              className="aspect-square w-full flex-none min-[475px]:w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5"
+              key={`${product.handle}-${index}`}
+              className="aspect-[3/4] w-full flex-none min-[475px]:w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5"
             >
               <Link
                 className="relative h-full w-full"

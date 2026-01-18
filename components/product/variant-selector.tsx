@@ -50,7 +50,7 @@ export function VariantSelector({
       <dl className="mb-8">
         <dt className="mb-4 text-sm uppercase tracking-wide">{option.name}</dt>
         <dd className="flex flex-wrap gap-3">
-          {option.values.map((value) => {
+          {option.values.map((value, index) => {
             const optionNameLowerCase = option.name.toLowerCase();
 
             // Base option params on current searchParams so we can preserve any other param state.
@@ -80,7 +80,7 @@ export function VariantSelector({
             return (
               <button
                 formAction={() => updateOption(optionNameLowerCase, value)}
-                key={value}
+                key={`${option.id}-${value}-${index}`}
                 aria-disabled={!isAvailableForSale}
                 disabled={!isAvailableForSale}
                 title={`${option.name} ${value}${!isAvailableForSale ? " (Out of Stock)" : ""}`}

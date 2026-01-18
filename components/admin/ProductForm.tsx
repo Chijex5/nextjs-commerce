@@ -1,19 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import ImageCropModal from "@/components/admin/ImageCropModal";
 import {
-  generateSlug,
-  generateSeoTitle,
-  generateSeoDescription,
-} from "../../lib/admin-utils";
+  PRODUCT_IMAGE_ASPECT,
+  PRODUCT_IMAGE_HEIGHT,
+  PRODUCT_IMAGE_WIDTH,
+} from "@/lib/image-constants";
+import heic2any from "heic2any";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import {
+  generateSeoDescription,
+  generateSeoTitle,
+  generateSlug,
+} from "../../lib/admin-utils";
 
 type ImageUpload = {
   url: string;
   position: number;
   isFeatured: boolean;
+  width: number;
+  height: number;
 };
 
 type FormData = {
@@ -48,13 +57,20 @@ export default function ProductForm({
       url: img.url,
       position: img.position || idx,
       isFeatured: img.isFeatured || idx === 0,
+      width: img.width ?? PRODUCT_IMAGE_WIDTH,
+      height: img.height ?? PRODUCT_IMAGE_HEIGHT,
     })) || [],
   );
+  const [preparingImages, setPreparingImages] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [cropQueue, setCropQueue] = useState<File[]>([]);
+  const [cropIndex, setCropIndex] = useState<number | null>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [croppedFiles, setCroppedFiles] = useState<File[]>([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPriceVariations, setShowPriceVariations] = useState(false);
   const [selectedCollections, setSelectedCollections] = useState<string[]>(
-    product?.productCollections?.map((pc: any) => pc.collectionId) || []
+    product?.productCollections?.map((pc: any) => pc.collectionId) || [],
   );
 
   const {
@@ -105,6 +121,41 @@ export default function ProductForm({
       setValue("seoDescription", generateSeoDescription(description));
     }
   }, [description, setValue, product]);
+
+  const isHeicFile = (file: File) => {
+    const name = file.name.toLowerCase();
+    return (
+      file.type === "image/heic" ||
+      file.type === "image/heif" ||
+      name.endsWith(".heic") ||
+      name.endsWith(".heif")
+    );
+  };
+
+  const convertHeicToJpeg = async (file: File) => {
+    const result = await heic2any({
+      blob: file,
+      toType: "image/jpeg",
+      quality: 0.9,
+    });
+    const blob = Array.isArray(result) ? result[0] : result;
+    if (!blob) {
+      throw new Error("HEIC conversion failed");
+    }
+
+    const nextName = file.name.replace(/\.(heic|heif)$/i, "") || "image";
+    return new File([blob], `${nextName}.jpg`, {
+      type: blob.type || "image/jpeg",
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (cropImageSrc) {
+        URL.revokeObjectURL(cropImageSrc);
+      }
+    };
+  }, [cropImageSrc]);
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -219,30 +270,27 @@ export default function ProductForm({
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const setNextCropImage = (src: string | null) => {
+    setCropImageSrc((prev) => {
+      if (prev) {
+        URL.revokeObjectURL(prev);
+      }
+      return src;
+    });
+  };
 
-    // Check max 5 images
-    if (images.length + files.length > 5) {
-      toast.error("Maximum 5 images allowed");
-      return;
-    }
+  const uploadCroppedFiles = async (filesToUpload: File[]) => {
+    if (filesToUpload.length === 0) return;
 
     setUploading(true);
 
     try {
       const uploadedImages: ImageUpload[] = [];
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const file = filesToUpload[i];
 
         if (!file) return;
-
-        if (file.size > 5 * 1024 * 1024) {
-          toast.error(`Image ${file.name} is too large (max 5MB)`);
-          continue;
-        }
 
         const formData = new FormData();
         formData.append("file", file);
@@ -261,6 +309,8 @@ export default function ProductForm({
           url: data.url,
           position: images.length + uploadedImages.length,
           isFeatured: images.length === 0 && uploadedImages.length === 0,
+          width: data.width ?? PRODUCT_IMAGE_WIDTH,
+          height: data.height ?? PRODUCT_IMAGE_HEIGHT,
         });
       }
 
@@ -272,6 +322,110 @@ export default function ProductForm({
     } finally {
       setUploading(false);
     }
+  };
+
+  const resetCropQueue = () => {
+    setCropQueue([]);
+    setCropIndex(null);
+    setCroppedFiles([]);
+    setNextCropImage(null);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const availableSlots = 5 - images.length;
+    if (availableSlots <= 0) {
+      toast.error("Maximum 5 images allowed");
+      return;
+    }
+
+    const selectedFiles = Array.from(files);
+    if (selectedFiles.length > availableSlots) {
+      toast.error(`Only ${availableSlots} more image(s) allowed`);
+    }
+
+    const filesToCrop = selectedFiles
+      .slice(0, availableSlots)
+      .filter((file) => {
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`Image ${file.name} is too large (max 5MB)`);
+          return false;
+        }
+        return true;
+      });
+
+    if (filesToCrop.length === 0) {
+      e.target.value = "";
+      return;
+    }
+
+    setPreparingImages(true);
+    try {
+      const preparedFiles: File[] = [];
+
+      for (const file of filesToCrop) {
+        if (isHeicFile(file)) {
+          try {
+            const converted = await convertHeicToJpeg(file);
+            preparedFiles.push(converted);
+          } catch (error) {
+            console.error("HEIC conversion failed:", error);
+            toast.error(`Could not read ${file.name}. Try JPG or PNG.`);
+          }
+          continue;
+        }
+        preparedFiles.push(file);
+      }
+
+      if (preparedFiles.length === 0) return;
+
+      const firstPreparedFile = preparedFiles[0];
+      if (!firstPreparedFile) return;
+
+      setCropQueue(preparedFiles);
+      setCropIndex(0);
+      setCroppedFiles([]);
+      setNextCropImage(URL.createObjectURL(firstPreparedFile));
+    } finally {
+      setPreparingImages(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleCropCancel = () => {
+    resetCropQueue();
+  };
+
+  const handleCropConfirm = async (blob: Blob) => {
+    if (cropIndex === null) return;
+    const originalFile = cropQueue[cropIndex];
+    if (!originalFile) return;
+
+    const baseName =
+      originalFile.name.replace(/\.[^/.]+$/, "") || "product-image";
+    const croppedFile = new File([blob], `${baseName}-cropped.webp`, {
+      type: blob.type || "image/webp",
+    });
+
+    const nextCroppedFiles = [...croppedFiles, croppedFile];
+    const nextIndex = cropIndex + 1;
+
+    if (nextIndex < cropQueue.length) {
+      const nextFile = cropQueue[nextIndex];
+      if (!nextFile) {
+        resetCropQueue();
+        return;
+      }
+      setCroppedFiles(nextCroppedFiles);
+      setCropIndex(nextIndex);
+      setNextCropImage(URL.createObjectURL(nextFile));
+      return;
+    }
+
+    resetCropQueue();
+    await uploadCroppedFiles(nextCroppedFiles);
   };
 
   const removeImage = (index: number) => {
@@ -492,7 +646,8 @@ export default function ProductForm({
             <div className="border border-neutral-300 dark:border-neutral-700 rounded-md p-4 max-h-48 overflow-y-auto">
               {collections.length === 0 ? (
                 <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                  No collections available. Create collections first to assign products to them.
+                  No collections available. Create collections first to assign
+                  products to them.
                 </p>
               ) : (
                 <div className="space-y-2">
@@ -506,9 +661,16 @@ export default function ProductForm({
                         checked={selectedCollections.includes(collection.id)}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedCollections([...selectedCollections, collection.id]);
+                            setSelectedCollections([
+                              ...selectedCollections,
+                              collection.id,
+                            ]);
                           } else {
-                            setSelectedCollections(selectedCollections.filter(id => id !== collection.id));
+                            setSelectedCollections(
+                              selectedCollections.filter(
+                                (id) => id !== collection.id,
+                              ),
+                            );
                           }
                         }}
                         className="rounded text-neutral-900 focus:ring-neutral-500"
@@ -838,17 +1000,28 @@ export default function ProductForm({
                 accept="image/*"
                 multiple
                 onChange={handleImageUpload}
-                disabled={uploading}
+                disabled={uploading || preparingImages || cropIndex !== null}
                 className="mt-1 block w-full text-sm text-neutral-500 file:mr-4 file:rounded-md file:border-0 file:bg-neutral-900 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-neutral-800 dark:file:bg-neutral-100 dark:file:text-neutral-900 dark:hover:file:bg-neutral-200"
               />
+              {preparingImages && (
+                <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                  Preparing images...
+                </p>
+              )}
               {uploading && (
                 <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
                   Uploading...
                 </p>
               )}
+              {cropIndex !== null && (
+                <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                  Cropping image {cropIndex + 1} of {cropQueue.length}...
+                </p>
+              )}
               <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                Select multiple images (max 5 total). First image or starred
-                image will be featured. Drag to reorder.
+                Images are cropped to the site’s 3:4 frame before upload. HEIC
+                is converted automatically. First image or starred image will be
+                featured. Drag to reorder.
               </p>
             </div>
           )}
@@ -884,6 +1057,21 @@ export default function ProductForm({
               : "Create Product"}
         </button>
       </div>
+
+      <ImageCropModal
+        isOpen={cropIndex !== null}
+        imageSrc={cropImageSrc}
+        aspect={PRODUCT_IMAGE_ASPECT}
+        outputWidth={PRODUCT_IMAGE_WIDTH}
+        outputHeight={PRODUCT_IMAGE_HEIGHT}
+        title={
+          cropIndex !== null
+            ? `Crop image ${cropIndex + 1} of ${cropQueue.length}`
+            : "Crop Image"
+        }
+        onCancel={handleCropCancel}
+        onConfirm={handleCropConfirm}
+      />
     </form>
   );
 }

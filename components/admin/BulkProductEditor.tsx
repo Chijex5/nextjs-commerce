@@ -10,6 +10,10 @@ import {
   generateSeoTitle,
   generateSlug,
 } from "@/lib/admin-utils";
+import {
+  PRODUCT_IMAGE_HEIGHT,
+  PRODUCT_IMAGE_WIDTH,
+} from "@/lib/image-constants";
 
 interface Collection {
   id: string;
@@ -20,6 +24,8 @@ interface ImageUpload {
   url: string;
   position: number;
   isFeatured: boolean;
+  width: number;
+  height: number;
 }
 
 interface ProductVariant {
@@ -377,6 +383,8 @@ export default function BulkProductEditor({
           url: img.url,
           position: img.position ?? index,
           isFeatured: img.isFeatured ?? index === 0,
+          width: img.width ?? PRODUCT_IMAGE_WIDTH,
+          height: img.height ?? PRODUCT_IMAGE_HEIGHT,
         })) || [],
       sizeFrom,
       sizeTo,
@@ -686,6 +694,8 @@ export default function BulkProductEditor({
           url: data.url,
           position: product.images.length + uploadedImages.length,
           isFeatured: product.images.length === 0 && uploadedImages.length === 0,
+          width: data.width ?? PRODUCT_IMAGE_WIDTH,
+          height: data.height ?? PRODUCT_IMAGE_HEIGHT,
         });
       }
 

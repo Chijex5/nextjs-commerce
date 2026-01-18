@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
+import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "lib/image-constants";
 import { v2 as cloudinary } from "cloudinary";
+import sharp from "sharp";
+
+const OUTPUT_QUALITY = 82;
 
 // Configure Cloudinary
 cloudinary.config({
@@ -28,30 +32,38 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
+    const processedBuffer = await sharp(buffer)
+      .rotate()
+      .resize({
+        width: PRODUCT_IMAGE_WIDTH,
+        height: PRODUCT_IMAGE_HEIGHT,
+        fit: "cover",
+        position: "attention",
+      })
+      .webp({ quality: OUTPUT_QUALITY })
+      .toBuffer();
+
     // Upload to Cloudinary
     const result = await new Promise<any>((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
           {
             folder: "dfootprint/products",
-            transformation: [
-              { width: 1200, height: 1200, crop: "limit" },
-              { quality: "auto" },
-              { fetch_format: "auto" },
-            ],
           },
           (error, result) => {
             if (error) reject(error);
             else resolve(result);
           },
         )
-        .end(buffer);
+        .end(processedBuffer);
     });
 
     return NextResponse.json({
       success: true,
       url: result.secure_url,
       publicId: result.public_id,
+      width: result.width || PRODUCT_IMAGE_WIDTH,
+      height: result.height || PRODUCT_IMAGE_HEIGHT,
     });
   } catch (error) {
     console.error("Upload error:", error);

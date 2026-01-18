@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
+import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "lib/image-constants";
 import prisma from "@/lib/prisma";
 
 export async function DELETE(
@@ -118,8 +119,8 @@ export async function PUT(
             productId: id,
             url: img.url,
             altText: product.title,
-            width: 800,
-            height: 800,
+            width: img.width ?? PRODUCT_IMAGE_WIDTH,
+            height: img.height ?? PRODUCT_IMAGE_HEIGHT,
             position: img.position || 0,
             isFeatured: img.isFeatured || false,
           })),
