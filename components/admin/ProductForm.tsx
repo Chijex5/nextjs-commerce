@@ -7,6 +7,7 @@ import {
   PRODUCT_IMAGE_WIDTH,
 } from "@/lib/image-constants";
 import heic2any from "heic2any";
+import { ArrowLeft, ArrowRight, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -940,39 +941,43 @@ export default function ProductForm({
                       <button
                         type="button"
                         onClick={() => setFeaturedImage(index)}
-                        className="rounded bg-white px-2 py-1 text-xs font-medium text-neutral-900 hover:bg-neutral-100"
+                        className="rounded bg-white px-2 py-1 text-neutral-900 hover:bg-neutral-100"
                         title="Set as featured"
                       >
-                        Star
+                        <Star className="h-4 w-4" />
+                        <span className="sr-only">Set as featured</span>
                       </button>
                     )}
                     {index > 0 && (
                       <button
                         type="button"
                         onClick={() => moveImage(index, index - 1)}
-                        className="rounded bg-white px-2 py-1 text-xs font-medium text-neutral-900 hover:bg-neutral-100"
+                        className="rounded bg-white px-2 py-1 text-neutral-900 hover:bg-neutral-100"
                         title="Move left"
                       >
-                        ←
+                        <ArrowLeft className="h-4 w-4" />
+                        <span className="sr-only">Move left</span>
                       </button>
                     )}
                     {index < images.length - 1 && (
                       <button
                         type="button"
                         onClick={() => moveImage(index, index + 1)}
-                        className="rounded bg-white px-2 py-1 text-xs font-medium text-neutral-900 hover:bg-neutral-100"
+                        className="rounded bg-white px-2 py-1 text-neutral-900 hover:bg-neutral-100"
                         title="Move right"
                       >
-                        →
+                        <ArrowRight className="h-4 w-4" />
+                        <span className="sr-only">Move right</span>
                       </button>
                     )}
                     <button
                       type="button"
                       onClick={() => removeImage(index)}
-                      className="rounded bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700"
+                      className="rounded bg-red-600 px-2 py-1 text-white hover:bg-red-700"
                       title="Remove"
                     >
-                      ✕
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Remove</span>
                     </button>
                   </div>
 
@@ -981,36 +986,59 @@ export default function ProductForm({
                     <button
                       type="button"
                       onClick={() => setFeaturedImage(index)}
-                      className="rounded border border-neutral-300 px-2 py-1 font-medium text-neutral-700 dark:border-neutral-700 dark:text-neutral-200"
+                      className={`rounded border px-2 py-1 ${
+                        image.isFeatured
+                          ? "border-yellow-300 bg-yellow-50 text-yellow-700"
+                          : "border-neutral-300 text-neutral-700 dark:border-neutral-700 dark:text-neutral-200"
+                      }`}
+                      aria-label={
+                        image.isFeatured
+                          ? "Featured image"
+                          : "Set featured image"
+                      }
+                      title={
+                        image.isFeatured
+                          ? "Featured image"
+                          : "Set featured image"
+                      }
                     >
-                      {image.isFeatured ? "Featured" : "Set Featured"}
+                      <Star
+                        className="h-4 w-4"
+                        fill={image.isFeatured ? "currentColor" : "none"}
+                      />
+                      <span className="sr-only">
+                        {image.isFeatured ? "Featured" : "Set featured"}
+                      </span>
                     </button>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => moveImage(index, index - 1)}
                         disabled={index === 0}
-                        className="rounded border border-neutral-300 px-2 py-1 font-medium text-neutral-700 disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-200"
+                        className="rounded border border-neutral-300 px-2 py-1 text-neutral-700 disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-200"
                         title="Move left"
                       >
-                        ←
+                        <ArrowLeft className="h-4 w-4" />
+                        <span className="sr-only">Move left</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => moveImage(index, index + 1)}
                         disabled={index === images.length - 1}
-                        className="rounded border border-neutral-300 px-2 py-1 font-medium text-neutral-700 disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-200"
+                        className="rounded border border-neutral-300 px-2 py-1 text-neutral-700 disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-200"
                         title="Move right"
                       >
-                        →
+                        <ArrowRight className="h-4 w-4" />
+                        <span className="sr-only">Move right</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => removeImage(index)}
-                        className="rounded bg-red-600 px-2 py-1 font-medium text-white"
+                        className="rounded bg-red-600 px-2 py-1 text-white"
                         title="Remove"
                       >
-                        Remove
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Remove</span>
                       </button>
                     </div>
                   </div>
