@@ -7,6 +7,9 @@ import { abandonedCartTemplate } from './templates/abandoned-cart';
 import { getReviewApprovedEmailTemplate } from './templates/review-approved';
 import { adminNewOrderTemplate } from './templates/admin-new-order';
 
+const ORDER_FROM_EMAIL = 'order@dfootprint.me';
+const ORDER_REPLY_TO = 'support@dfootprint.me';
+
 interface OrderData {
   orderNumber: string;
   orderId?: string;
@@ -39,6 +42,8 @@ export const sendOrderConfirmationWithMarkup = async (order: OrderData) => {
 
   return sendEmail({
     to: order.email,
+    from: ORDER_FROM_EMAIL,
+    replyTo: ORDER_REPLY_TO,
     subject: `Order Confirmation #${order.orderNumber} - D'FOOTPRINT`,
     html: orderConfirmationWithMarkupTemplate({
       orderNumber: order.orderNumber,
@@ -59,6 +64,8 @@ export const sendOrderConfirmationWithMarkup = async (order: OrderData) => {
 export const sendOrderConfirmation = async (order: OrderData) => {
   return sendEmail({
     to: order.email,
+    from: ORDER_FROM_EMAIL,
+    replyTo: ORDER_REPLY_TO,
     subject: `Order Confirmation #${order.orderNumber} - D'FOOTPRINT`,
     html: orderConfirmationTemplate(order),
   });
@@ -71,6 +78,8 @@ export const sendOrderConfirmation = async (order: OrderData) => {
 export const sendShippingNotification = async (order: OrderData) => {
   return sendEmail({
     to: order.email,
+    from: ORDER_FROM_EMAIL,
+    replyTo: ORDER_REPLY_TO,
     subject: `Your Order Has Shipped! #${order.orderNumber} - D'FOOTPRINT`,
     html: shippingNotificationTemplate(order),
   });
@@ -92,6 +101,8 @@ export const sendOrderStatusUpdate = async (data: {
 }) => {
   return sendEmail({
     to: data.email,
+    from: ORDER_FROM_EMAIL,
+    replyTo: ORDER_REPLY_TO,
     subject: `Order Update: ${data.orderNumber} - D'FOOTPRINT`,
     html: orderStatusUpdateTemplate(data),
   });
@@ -167,6 +178,8 @@ export const sendAdminNewOrderNotification = async (data: {
 
   return sendEmail({
     to: data.to,
+    from: data.email,
+    replyTo: ORDER_REPLY_TO,
     subject: `New Order: ${data.orderNumber} - D'FOOTPRINT`,
     html: adminNewOrderTemplate({
       orderNumber: data.orderNumber,

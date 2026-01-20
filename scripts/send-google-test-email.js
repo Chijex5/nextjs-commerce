@@ -10,7 +10,8 @@ require('dotenv').config();
 
 async function sendGoogleTestEmail() {
   const apiKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.SMTP_FROM_EMAIL || 'noreply@yourdomain.com';
+  const fromEmail = 'order@dfootprint.me';
+  const replyToEmail = 'support@dfootprint.me';
 
   if (!apiKey) {
     console.error('❌ Error: RESEND_API_KEY not set in environment variables');
@@ -22,6 +23,7 @@ async function sendGoogleTestEmail() {
   console.log('🚀 Sending test email to Google for Email Markup whitelisting...');
   console.log(`From: ${fromEmail}`);
   console.log(`To: schema.whitelisting+sample@gmail.com`);
+  console.log(`Reply-To: ${replyToEmail}`);
 
   const resend = new Resend(apiKey);
 
@@ -43,10 +45,18 @@ async function sendGoogleTestEmail() {
         "@type": "Offer",
         "itemOffered": {
           "@type": "Product",
-          "name": "Handcrafted Leather Sandals - Size 42"
+          "name": "Handcrafted Leather Sandals - Size 42",
+          "image": "https://dfootprint.me/images/products/handcrafted-leather-sandals-42.jpg",
+          "sku": "SANDAL-42",
+          "url": "https://dfootprint.me/products/handcrafted-leather-sandals"
         },
         "price": 25000,
         "priceCurrency": "NGN",
+        "priceSpecification": {
+          "@type": "PriceSpecification",
+          "price": 25000,
+          "priceCurrency": "NGN"
+        },
         "eligibleQuantity": {
           "@type": "QuantitativeValue",
           "value": 1
@@ -70,10 +80,10 @@ async function sendGoogleTestEmail() {
       "expectedArrivalFrom": new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       "expectedArrivalUntil": new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
     },
-    "url": "https://yourdomain.com/orders",
+    "url": "https://dfootprint.me/orders",
     "potentialAction": {
       "@type": "ViewAction",
-      "url": "https://yourdomain.com/orders",
+      "url": "https://dfootprint.me/orders",
       "name": "View Order"
     }
   };
@@ -124,6 +134,7 @@ async function sendGoogleTestEmail() {
     const result = await resend.emails.send({
       from: fromEmail,
       to: 'schema.whitelisting+sample@gmail.com',
+      replyTo: replyToEmail,
       subject: '[Test] Order Confirmation - Google Email Markup Whitelisting Request',
       html: emailHtml,
     });
