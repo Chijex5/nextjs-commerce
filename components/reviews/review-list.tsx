@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { StarRating } from './star-rating';
-import { ReviewItem } from './review-item';
-import { ReviewForm } from './review-form';
+import { useState, useEffect } from "react";
+import { StarRating } from "./star-rating";
+import { ReviewItem } from "./review-item";
+import { ReviewForm } from "./review-form";
 
 interface ReviewListProps {
   productId: string;
@@ -12,17 +12,26 @@ interface ReviewListProps {
   orderId?: string;
 }
 
-export function ReviewList({ productId, showForm = false, canReview = false, orderId }: ReviewListProps) {
+export function ReviewList({
+  productId,
+  showForm = false,
+  canReview = false,
+  orderId,
+}: ReviewListProps) {
   const [reviews, setReviews] = useState<any[]>([]);
   const [averageRating, setAverageRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [sort, setSort] = useState<'newest' | 'highest' | 'lowest' | 'helpful'>('newest');
+  const [sort, setSort] = useState<"newest" | "highest" | "lowest" | "helpful">(
+    "newest",
+  );
   const [showReviewForm, setShowReviewForm] = useState(false);
 
   const fetchReviews = async () => {
     try {
-      const response = await fetch(`/api/reviews?productId=${productId}&sort=${sort}`);
+      const response = await fetch(
+        `/api/reviews?productId=${productId}&sort=${sort}`,
+      );
       if (response.ok) {
         const data = await response.json();
         setReviews(data.reviews);
@@ -30,7 +39,7 @@ export function ReviewList({ productId, showForm = false, canReview = false, ord
         setTotalReviews(data.totalReviews);
       }
     } catch (error) {
-      console.error('Failed to fetch reviews:', error);
+      console.error("Failed to fetch reviews:", error);
     } finally {
       setLoading(false);
     }
@@ -43,9 +52,9 @@ export function ReviewList({ productId, showForm = false, canReview = false, ord
   const handleVote = async (reviewId: string, isHelpful: boolean) => {
     try {
       const response = await fetch(`/api/reviews/${reviewId}/vote`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ isHelpful }),
       });
@@ -54,7 +63,7 @@ export function ReviewList({ productId, showForm = false, canReview = false, ord
         fetchReviews(); // Refresh to show updated vote count
       }
     } catch (error) {
-      console.error('Failed to vote:', error);
+      console.error("Failed to vote:", error);
     }
   };
 
@@ -71,10 +80,14 @@ export function ReviewList({ productId, showForm = false, canReview = false, ord
       {/* Summary */}
       <div className="border-b border-neutral-200 pb-6">
         <div className="mb-4 flex items-center gap-4">
-          <div className="text-4xl font-semibold text-black">{averageRating.toFixed(1)}</div>
+          <div className="text-4xl font-semibold text-black">
+            {averageRating.toFixed(1)}
+          </div>
           <div>
             <StarRating rating={averageRating} size="lg" />
-            <p className="text-sm text-neutral-600">Based on {totalReviews} reviews</p>
+            <p className="text-sm text-neutral-600">
+              Based on {totalReviews} reviews
+            </p>
           </div>
         </div>
 
@@ -83,7 +96,7 @@ export function ReviewList({ productId, showForm = false, canReview = false, ord
             onClick={() => setShowReviewForm(!showReviewForm)}
             className="rounded bg-black px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
           >
-            {showReviewForm ? 'Cancel' : 'Write a Review'}
+            {showReviewForm ? "Cancel" : "Write a Review"}
           </button>
         )}
       </div>
@@ -91,7 +104,9 @@ export function ReviewList({ productId, showForm = false, canReview = false, ord
       {/* Review Form */}
       {showReviewForm && (
         <div className="border-b border-neutral-200 pb-6">
-          <h3 className="mb-4 text-lg font-semibold text-black">Write Your Review</h3>
+          <h3 className="mb-4 text-lg font-semibold text-black">
+            Write Your Review
+          </h3>
           <ReviewForm
             productId={productId}
             orderId={orderId}
@@ -126,7 +141,9 @@ export function ReviewList({ productId, showForm = false, canReview = false, ord
       {/* Reviews List */}
       {reviews.length === 0 ? (
         <div className="py-12 text-center">
-          <p className="text-neutral-600">No reviews yet. Be the first to review this product!</p>
+          <p className="text-neutral-600">
+            No reviews yet. Be the first to review this product!
+          </p>
         </div>
       ) : (
         <div>

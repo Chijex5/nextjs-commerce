@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { StarSelector } from './star-selector';
+import { useState } from "react";
+import { StarSelector } from "./star-selector";
 
 interface ReviewFormProps {
   productId: string;
@@ -11,28 +11,28 @@ interface ReviewFormProps {
 
 export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
   const [rating, setRating] = useState(0);
-  const [title, setTitle] = useState('');
-  const [comment, setComment] = useState('');
+  const [title, setTitle] = useState("");
+  const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (rating === 0) {
-      setError('Please select a rating');
+      setError("Please select a rating");
       return;
     }
 
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const response = await fetch('/api/reviews', {
-        method: 'POST',
+      const response = await fetch("/api/reviews", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           productId,
@@ -40,21 +40,21 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
           rating,
           title: title.trim() || null,
           comment: comment.trim() || null,
-          images: [] // TODO: Add image upload functionality
+          images: [], // TODO: Add image upload functionality
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit review');
+        throw new Error(data.error || "Failed to submit review");
       }
 
       setSuccess(true);
       setRating(0);
-      setTitle('');
-      setComment('');
-      
+      setTitle("");
+      setComment("");
+
       if (onSuccess) {
         onSuccess();
       }
@@ -70,7 +70,8 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
       <div className="rounded border border-neutral-200 bg-neutral-50 p-6 text-center">
         <h3 className="mb-2 text-lg font-semibold text-black">Thank You!</h3>
         <p className="text-sm text-neutral-600">
-          Your review has been submitted and will be visible once approved by our team.
+          Your review has been submitted and will be visible once approved by
+          our team.
         </p>
       </div>
     );
@@ -86,7 +87,10 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
       </div>
 
       <div>
-        <label htmlFor="review-title" className="mb-2 block text-sm font-medium text-black">
+        <label
+          htmlFor="review-title"
+          className="mb-2 block text-sm font-medium text-black"
+        >
           Review Title (Optional)
         </label>
         <input
@@ -101,7 +105,10 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
       </div>
 
       <div>
-        <label htmlFor="review-comment" className="mb-2 block text-sm font-medium text-black">
+        <label
+          htmlFor="review-comment"
+          className="mb-2 block text-sm font-medium text-black"
+        >
           Your Review (Optional)
         </label>
         <textarea
@@ -113,7 +120,9 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
           maxLength={1000}
           className="w-full rounded border border-neutral-200 px-4 py-2 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
         />
-        <p className="mt-1 text-xs text-neutral-500">{comment.length}/1000 characters</p>
+        <p className="mt-1 text-xs text-neutral-500">
+          {comment.length}/1000 characters
+        </p>
       </div>
 
       {error && (
@@ -127,7 +136,7 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
         disabled={loading || rating === 0}
         className="w-full rounded bg-black px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800 disabled:bg-neutral-300 disabled:cursor-not-allowed"
       >
-        {loading ? 'Submitting...' : 'Submit Review'}
+        {loading ? "Submitting..." : "Submit Review"}
       </button>
     </form>
   );

@@ -7,6 +7,7 @@ I've built a complete admin orders management system with clean, responsive UI. 
 ### 1. **Orders List Page** (`/admin/orders`)
 
 **Features:**
+
 - Statistics dashboard showing order counts by delivery status
 - Advanced filtering:
   - Search by order number, customer name, or email
@@ -29,22 +30,26 @@ I've built a complete admin orders management system with clean, responsive UI. 
 **Main Sections:**
 
 **Order Items Section:**
+
 - Product images
 - Product title and variant
 - Quantity and pricing
 - Order summary with subtotal, shipping, tax, and total
 
 **Customer Information:**
+
 - Customer name, email, and phone
 - Indication if linked to registered user account
 
 **Shipping Address:**
+
 - Complete address details
 - Nearest bus stop and landmark
 - State (used for delivery time calculation)
 - Contact phone numbers
 
 **Status Management Panel:**
+
 - Order Status dropdown (Pending, Processing, Completed, Cancelled)
 - Delivery Status dropdown (Production, Sorting, Dispatch, Paused, Completed, Cancelled)
 - Real-time status badge previews
@@ -53,6 +58,7 @@ I've built a complete admin orders management system with clean, responsive UI. 
 - One-click update button
 
 **Additional Information:**
+
 - Tracking number input
 - Admin notes textarea
 - Order metadata (ID, created date, last updated)
@@ -75,6 +81,7 @@ Created 3 new admin API endpoints:
 ## 🎨 UI/UX Features
 
 ### Design
+
 - Clean, modern interface
 - Consistent with existing admin design
 - Color-coded status badges
@@ -82,6 +89,7 @@ Created 3 new admin API endpoints:
 - Dark mode support
 
 ### Interactions
+
 - Loading states with spinners
 - Toast notifications for success/error
 - Expand/collapse on mobile
@@ -89,6 +97,7 @@ Created 3 new admin API endpoints:
 - Back navigation breadcrumbs
 
 ### Mobile Optimization
+
 - Statistics cards in 2-column grid
 - Collapsible order cards
 - Touch-friendly buttons
@@ -100,6 +109,7 @@ Created 3 new admin API endpoints:
 ### Delivery Status Management
 
 When an admin updates the delivery status:
+
 1. Select new delivery status from dropdown
 2. Click "Update Order"
 3. System automatically:
@@ -115,6 +125,7 @@ When an admin updates the delivery status:
 ### State-Based ETA Calculation
 
 The system uses the utility functions created earlier:
+
 - **Lagos**: Production (7d), Sorting (3d), Dispatch (1d)
 - **Other States**: Production (7d), Sorting (5d), Dispatch (2d)
 
@@ -123,41 +134,49 @@ This happens automatically when delivery status changes.
 ## 📁 Files Created
 
 ### Pages
+
 - `app/admin/orders/page.tsx` - Orders list page
 - `app/admin/orders/[id]/page.tsx` - Order detail page
 
 ### Components
+
 - `components/admin/OrdersTable.tsx` - Orders table/cards component
 - `components/admin/OrderDetailView.tsx` - Order detail view component
 
 ### API Routes
+
 - `app/api/admin/orders/route.ts` - List orders endpoint
 - `app/api/admin/orders/[id]/route.ts` - Single order CRUD endpoint
 - `app/api/admin/orders/stats/route.ts` - Statistics endpoint
 
 ### Updated Files
+
 - `components/admin/AdminNav.tsx` - Added Orders nav item
 - `app/admin/dashboard/page.tsx` - Added orders count
 
 ## ✨ Key Features Highlights
 
 ### 1. Smart Filtering
+
 - Combine search with status filters
 - URL-based filters (can be bookmarked)
 - Clear filter indication
 - Fast, server-side filtering
 
 ### 2. Automatic ETA
+
 - Recalculates on status change
 - Considers customer location
 - Shows human-readable format ("Tomorrow", "in 3 days", etc.)
 
 ### 3. Responsive Design
+
 - Desktop: Full table with all data
 - Mobile: Cards with essential info + expand for details
 - Tablet: Optimized layouts
 
 ### 4. Data Completeness
+
 - All order information visible
 - Customer details with contact info
 - Complete address with landmarks
@@ -165,6 +184,7 @@ This happens automatically when delivery status changes.
 - Financial summary
 
 ### 5. Admin Controls
+
 - Quick status updates
 - Tracking number management
 - Internal notes
@@ -185,15 +205,18 @@ This happens automatically when delivery status changes.
 ### For Admins:
 
 1. **Navigate to Orders**:
+
    - Login to admin panel
    - Click "Orders" in navigation
 
 2. **View All Orders**:
+
    - See statistics at the top
    - Browse paginated list
    - Use filters to find specific orders
 
 3. **Update Order Status**:
+
    - Click "View" on any order
    - Change order status or delivery status
    - Add tracking number if needed

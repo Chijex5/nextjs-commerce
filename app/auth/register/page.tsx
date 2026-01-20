@@ -98,7 +98,10 @@ export default function RegisterPage() {
     <div className="mx-auto mt-20 max-w-md px-4">
       <div className="rounded-lg border border-neutral-200 bg-white p-8 dark:border-neutral-800 dark:bg-black">
         <h1 className="mb-6 text-2xl font-bold">Create Account</h1>
-        <form onSubmit={usePassword ? handleSubmit : handleMagicLink} className="space-y-4">
+        <form
+          onSubmit={usePassword ? handleSubmit : handleMagicLink}
+          className="space-y-4"
+        >
           {!usePassword && (
             <>
               <label htmlFor="magicEmail" className="block text-sm font-medium">
@@ -123,7 +126,10 @@ export default function RegisterPage() {
           {usePassword && (
             <>
               <div>
-                <label htmlFor="name" className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="name"
+                  className="mb-2 block text-sm font-medium"
+                >
                   Full name (optional)
                 </label>
                 <input
@@ -137,7 +143,10 @@ export default function RegisterPage() {
                 />
               </div>
               <div>
-                <label htmlFor="email" className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="email"
+                  className="mb-2 block text-sm font-medium"
+                >
                   Email
                 </label>
                 <input

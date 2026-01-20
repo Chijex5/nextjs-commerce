@@ -56,7 +56,9 @@ export default function ContentManagement({
 
   const [selectedPage, setSelectedPage] = useState<PageItem | null>(null);
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
-  const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
+  const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(
+    null,
+  );
 
   const [pageForm, setPageForm] = useState({
     handle: "",
@@ -211,7 +213,9 @@ export default function ContentManagement({
 
       if (response.ok) {
         toast.success(
-          isEditingPage ? "Page updated successfully" : "Page created successfully",
+          isEditingPage
+            ? "Page updated successfully"
+            : "Page created successfully",
         );
         setIsPageModalOpen(false);
         setSelectedPage(null);
@@ -268,7 +272,9 @@ export default function ContentManagement({
 
       if (response.ok) {
         toast.success(
-          isEditingMenu ? "Menu updated successfully" : "Menu created successfully",
+          isEditingMenu
+            ? "Menu updated successfully"
+            : "Menu created successfully",
         );
         setIsMenuModalOpen(false);
         setSelectedMenu(null);

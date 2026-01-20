@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { sendEmail } from '@/lib/email/resend';
-import { welcomeEmailTemplate } from '@/lib/email/templates/welcome';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { sendEmail } from "@/lib/email/resend";
+import { welcomeEmailTemplate } from "@/lib/email/templates/welcome";
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,7 +10,10 @@ export async function POST(request: NextRequest) {
     // Improved email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email)) {
-      return NextResponse.json({ error: 'Valid email is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Valid email is required" },
+        { status: 400 },
+      );
     }
 
     // Check if already subscribed
@@ -19,15 +22,18 @@ export async function POST(request: NextRequest) {
     });
 
     if (existing) {
-      if (existing.status === 'active') {
-        return NextResponse.json({ message: 'Already subscribed to our newsletter!' }, { status: 200 });
+      if (existing.status === "active") {
+        return NextResponse.json(
+          { message: "Already subscribed to our newsletter!" },
+          { status: 200 },
+        );
       }
 
       // Resubscribe
       await prisma.newsletterSubscriber.update({
         where: { email },
         data: {
-          status: 'active',
+          status: "active",
           subscribedAt: new Date(),
           unsubscribedAt: null,
           name: name || existing.name,
@@ -44,15 +50,21 @@ export async function POST(request: NextRequest) {
     await sendEmail({
       to: email,
       subject: "Welcome to D'FOOTPRINT! 👋",
-      html: welcomeEmailTemplate({ name: name || 'Friend' }),
+      html: welcomeEmailTemplate({ name: name || "Friend" }),
     });
 
     return NextResponse.json(
-      { message: 'Successfully subscribed! Check your email for a welcome message.' },
-      { status: 200 }
+      {
+        message:
+          "Successfully subscribed! Check your email for a welcome message.",
+      },
+      { status: 200 },
     );
   } catch (error) {
-    console.error('Newsletter subscription error:', error);
-    return NextResponse.json({ error: 'Failed to subscribe. Please try again.' }, { status: 500 });
+    console.error("Newsletter subscription error:", error);
+    return NextResponse.json(
+      { error: "Failed to subscribe. Please try again." },
+      { status: 500 },
+    );
   }
 }

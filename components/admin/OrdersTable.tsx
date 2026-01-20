@@ -158,9 +158,7 @@ export default function OrdersTable({
                 <tr
                   key={order.id}
                   className={`hover:bg-neutral-50 dark:hover:bg-neutral-800 ${
-                    isAcknowledged
-                      ? ""
-                      : "bg-amber-50/60 dark:bg-amber-950/20"
+                    isAcknowledged ? "" : "bg-amber-50/60 dark:bg-amber-950/20"
                   }`}
                 >
                   <td className="whitespace-nowrap px-6 py-4">
@@ -175,48 +173,48 @@ export default function OrdersTable({
                       )}
                     </div>
                   </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-neutral-900 dark:text-neutral-100">
-                    {order.customerName}
-                  </div>
-                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                    {order.email}
-                  </div>
-                </td>
-                <td className="whitespace-nowrap px-6 py-4">
-                  <span
-                    className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getStatusColor(order.status)}`}
-                  >
-                    {order.status}
-                  </span>
-                </td>
-                <td className="whitespace-nowrap px-6 py-4">
-                  <span
-                    className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getDeliveryStatusColor(order.deliveryStatus as DeliveryStatus)}`}
-                  >
-                    {order.deliveryStatus}
-                  </span>
-                </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
-                  {order.items.reduce((sum, item) => sum + item.quantity, 0)}
-                </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                  <Price
-                    amount={order.totalAmount.toString()}
-                    currencyCode={order.currencyCode}
-                  />
-                </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
-                  {new Date(order.createdAt).toLocaleDateString()}
-                </td>
-                <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                  <Link
-                    href={`/admin/orders/${order.id}`}
-                    className="text-neutral-900 hover:text-neutral-700 dark:text-neutral-100 dark:hover:text-neutral-300"
-                  >
-                    View
-                  </Link>
-                </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-neutral-900 dark:text-neutral-100">
+                      {order.customerName}
+                    </div>
+                    <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                      {order.email}
+                    </div>
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <span
+                      className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getStatusColor(order.status)}`}
+                    >
+                      {order.status}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <span
+                      className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getDeliveryStatusColor(order.deliveryStatus as DeliveryStatus)}`}
+                    >
+                      {order.deliveryStatus}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
+                    {order.items.reduce((sum, item) => sum + item.quantity, 0)}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                    <Price
+                      amount={order.totalAmount.toString()}
+                      currencyCode={order.currencyCode}
+                    />
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                    <Link
+                      href={`/admin/orders/${order.id}`}
+                      className="text-neutral-900 hover:text-neutral-700 dark:text-neutral-100 dark:hover:text-neutral-300"
+                    >
+                      View
+                    </Link>
+                  </td>
                 </tr>
               );
             })}
@@ -233,9 +231,7 @@ export default function OrdersTable({
             <div
               key={order.id}
               className={`rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900 ${
-                isAcknowledged
-                  ? ""
-                  : "bg-amber-50/60 dark:bg-amber-950/20"
+                isAcknowledged ? "" : "bg-amber-50/60 dark:bg-amber-950/20"
               }`}
             >
               <div className="mb-3 flex items-start justify-between">

@@ -163,11 +163,16 @@ const createEmptyRow = (): ProductRow => ({
 });
 
 const stripHtml = (value: string) =>
-  value.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+  value
+    .replace(/<[^>]*>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 const getSizesFromOptions = (options: any[]) => {
   const sizeOption = options?.find((option) =>
-    String(option.name || "").toLowerCase().includes("size"),
+    String(option.name || "")
+      .toLowerCase()
+      .includes("size"),
   );
   const values = Array.isArray(sizeOption?.values) ? sizeOption.values : [];
   return values.map((v: string) => v.toString());
@@ -175,7 +180,9 @@ const getSizesFromOptions = (options: any[]) => {
 
 const getColorsFromOptions = (options: any[]) => {
   const colorOption = options?.find((option) =>
-    String(option.name || "").toLowerCase().includes("color"),
+    String(option.name || "")
+      .toLowerCase()
+      .includes("color"),
   );
   const values = Array.isArray(colorOption?.values) ? colorOption.values : [];
   return values.map((v: string) => v.toString());
@@ -192,7 +199,8 @@ const colorPricesToRules = (prices?: Record<string, number>) => {
 const buildSizesFromRange = (sizeFrom: string, sizeTo: string) => {
   const from = parseInt(sizeFrom, 10);
   const to = parseInt(sizeTo, 10);
-  if (Number.isNaN(from) || Number.isNaN(to) || from > to) return [] as string[];
+  if (Number.isNaN(from) || Number.isNaN(to) || from > to)
+    return [] as string[];
   const sizes: string[] = [];
   for (let i = from; i <= to; i += 1) {
     sizes.push(i.toString());
@@ -352,7 +360,9 @@ export default function BulkProductEditor({
     const sizeFrom = sizeNumbers.length
       ? Math.min(...sizeNumbers).toString()
       : "";
-    const sizeTo = sizeNumbers.length ? Math.max(...sizeNumbers).toString() : "";
+    const sizeTo = sizeNumbers.length
+      ? Math.max(...sizeNumbers).toString()
+      : "";
 
     return {
       id: product.id,
@@ -511,7 +521,9 @@ export default function BulkProductEditor({
 
     setProducts((prev) =>
       prev.map((product) =>
-        selectedRows.has(product.id) ? { ...product, isDeleted: true } : product,
+        selectedRows.has(product.id)
+          ? { ...product, isDeleted: true }
+          : product,
       ),
     );
     setSelectedRows(new Set());
@@ -537,7 +549,10 @@ export default function BulkProductEditor({
           }
 
           const previousSeoTitle = generateSeoTitle(product.title);
-          if (product.seoTitle === "" || product.seoTitle === previousSeoTitle) {
+          if (
+            product.seoTitle === "" ||
+            product.seoTitle === previousSeoTitle
+          ) {
             updated.seoTitle = generateSeoTitle(value);
           }
         }
@@ -693,7 +708,8 @@ export default function BulkProductEditor({
         uploadedImages.push({
           url: data.url,
           position: product.images.length + uploadedImages.length,
-          isFeatured: product.images.length === 0 && uploadedImages.length === 0,
+          isFeatured:
+            product.images.length === 0 && uploadedImages.length === 0,
           width: data.width ?? PRODUCT_IMAGE_WIDTH,
           height: data.height ?? PRODUCT_IMAGE_HEIGHT,
         });
@@ -899,7 +915,8 @@ export default function BulkProductEditor({
             ? parseFloat(product.largeSizePrice)
             : null;
           payload.colorPrices = colorPrices;
-          payload.sizePriceRules = sizePriceRules.length > 0 ? sizePriceRules : null;
+          payload.sizePriceRules =
+            sizePriceRules.length > 0 ? sizePriceRules : null;
         }
 
         const url = product.isNew
@@ -920,7 +937,8 @@ export default function BulkProductEditor({
 
         if (!product.isNew && !product.generateVariants) {
           const variantChanges = product.variants.some(
-            (variant) => variant.isNew || variant.isModified || variant.isDeleted,
+            (variant) =>
+              variant.isNew || variant.isModified || variant.isDeleted,
           );
 
           if (variantChanges) {
@@ -1060,9 +1078,7 @@ export default function BulkProductEditor({
         }
         className="truncate rounded-md px-2 py-1 text-sm text-neutral-800 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
       >
-        {(value as string) || (
-          <span className="text-neutral-400">Empty</span>
-        )}
+        {(value as string) || <span className="text-neutral-400">Empty</span>}
       </div>
     );
   };
@@ -1262,9 +1278,7 @@ export default function BulkProductEditor({
                             ? "bg-neutral-100 dark:bg-neutral-800"
                             : ""
                         } ${
-                          product.isNew
-                            ? "border-l-4 border-green-500"
-                            : ""
+                          product.isNew ? "border-l-4 border-green-500" : ""
                         } ${
                           product.isModified && !product.isNew
                             ? "border-l-4 border-amber-500"
@@ -1426,8 +1440,7 @@ export default function BulkProductEditor({
               descriptionHtml: html,
               description: text,
               seoDescription:
-                currentProduct?.seoDescription ||
-                generateSeoDescription(html),
+                currentProduct?.seoDescription || generateSeoDescription(html),
             });
             setShowDescriptionModal(null);
           }}
@@ -1448,7 +1461,9 @@ export default function BulkProductEditor({
                 >
                   <input
                     type="checkbox"
-                    checked={showCollectionsModal.selected.includes(collection.id)}
+                    checked={showCollectionsModal.selected.includes(
+                      collection.id,
+                    )}
                     onChange={(event) => {
                       const next = event.target.checked
                         ? [...showCollectionsModal.selected, collection.id]
@@ -1665,7 +1680,9 @@ export default function BulkProductEditor({
                   type="text"
                   value={activeProduct.colors}
                   onChange={(event) =>
-                    updateProduct(activeProduct.id, { colors: event.target.value })
+                    updateProduct(activeProduct.id, {
+                      colors: event.target.value,
+                    })
                   }
                   className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-200 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
                 />
@@ -2084,7 +2101,9 @@ export default function BulkProductEditor({
                       >
                         <input
                           type="checkbox"
-                          checked={activeProduct.collections.includes(collection.id)}
+                          checked={activeProduct.collections.includes(
+                            collection.id,
+                          )}
                           onChange={(event) => {
                             const next = event.target.checked
                               ? [...activeProduct.collections, collection.id]

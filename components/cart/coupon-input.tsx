@@ -1,24 +1,24 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
-import { useUserSession } from 'hooks/useUserSession';
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { useUserSession } from "hooks/useUserSession";
 
 interface CouponInputProps {
   onApply: (discountAmount: number, couponCode: string) => void;
   cartTotal: number;
-  variant?: 'card' | 'compact';
+  variant?: "card" | "compact";
 }
 
-const COUPON_STORAGE_KEY = 'appliedCoupon';
+const COUPON_STORAGE_KEY = "appliedCoupon";
 
 export default function CouponInput({
   onApply,
   cartTotal,
-  variant = 'card',
+  variant = "card",
 }: CouponInputProps) {
-  const isCompact = variant === 'compact';
-  const [code, setCode] = useState('');
+  const isCompact = variant === "compact";
+  const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const { data: session } = useUserSession();
@@ -30,9 +30,13 @@ export default function CouponInput({
         const stored = localStorage.getItem(COUPON_STORAGE_KEY);
         if (stored) {
           const couponData = JSON.parse(stored);
-          
+
           // Revalidate the coupon
-          const payload: { code: string; cartTotal: number; sessionId?: string } = {
+          const payload: {
+            code: string;
+            cartTotal: number;
+            sessionId?: string;
+          } = {
             code: couponData.code,
             cartTotal,
           };
@@ -41,10 +45,10 @@ export default function CouponInput({
             payload.sessionId = getSessionId();
           }
 
-          const response = await fetch('/api/coupons/validate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+          const response = await fetch("/api/coupons/validate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
           });
 
           if (response.ok) {
@@ -66,9 +70,9 @@ export default function CouponInput({
 
   const handleApply = async () => {
     const trimmedCode = code.trim().toUpperCase();
-    
+
     if (!trimmedCode) {
-      toast.error('Please enter a coupon code');
+      toast.error("Please enter a coupon code");
       return;
     }
 
@@ -84,32 +88,34 @@ export default function CouponInput({
         payload.sessionId = getSessionId();
       }
 
-      const response = await fetch('/api/coupons/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      const response = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.error || 'Invalid coupon code');
+        toast.error(data.error || "Invalid coupon code");
         return;
       }
 
       setAppliedCoupon(data.coupon);
-      setCode('');
-      toast.success(`Coupon applied! You saved ₦${data.coupon.discountAmount.toFixed(2)}`);
+      setCode("");
+      toast.success(
+        `Coupon applied! You saved ₦${data.coupon.discountAmount.toFixed(2)}`,
+      );
       onApply(data.coupon.discountAmount, data.coupon.code);
-      
+
       // Store in localStorage for persistence
       try {
         localStorage.setItem(COUPON_STORAGE_KEY, JSON.stringify(data.coupon));
       } catch (err) {
-        console.error('Failed to save coupon to storage:', err);
+        console.error("Failed to save coupon to storage:", err);
       }
     } catch (err) {
-      toast.error('Failed to apply coupon. Please try again.');
+      toast.error("Failed to apply coupon. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -117,30 +123,30 @@ export default function CouponInput({
 
   const handleRemove = () => {
     setAppliedCoupon(null);
-    setCode('');
-    onApply(0, '');
-    toast.success('Coupon removed');
-    
+    setCode("");
+    onApply(0, "");
+    toast.success("Coupon removed");
+
     // Remove from localStorage
     try {
       localStorage.removeItem(COUPON_STORAGE_KEY);
     } catch (err) {
-      console.error('Failed to remove coupon from storage:', err);
+      console.error("Failed to remove coupon from storage:", err);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleApply();
     }
   };
 
   // Get or create a session ID for guest users
   const getSessionId = () => {
-    let sessionId = localStorage.getItem('guestSessionId');
+    let sessionId = localStorage.getItem("guestSessionId");
     if (!sessionId) {
       sessionId = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-      localStorage.setItem('guestSessionId', sessionId);
+      localStorage.setItem("guestSessionId", sessionId);
     }
     return sessionId;
   };
@@ -213,7 +219,8 @@ export default function CouponInput({
                 />
               </svg>
               <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                Coupon Applied: <span className="font-bold">{appliedCoupon.code}</span>
+                Coupon Applied:{" "}
+                <span className="font-bold">{appliedCoupon.code}</span>
               </p>
             </div>
             <p className="mt-1 text-sm text-green-700 dark:text-green-300">
@@ -280,7 +287,11 @@ export default function CouponInput({
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <svg
+                  className="h-4 w-4 animate-spin"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
                   <circle
                     className="opacity-25"
                     cx="12"
@@ -297,7 +308,7 @@ export default function CouponInput({
                 </svg>
               </span>
             ) : (
-              'Apply'
+              "Apply"
             )}
           </button>
         </div>
@@ -343,12 +354,16 @@ export default function CouponInput({
             dark:bg-neutral-700 dark:text-neutral-100 dark:hover:bg-neutral-600
             focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900/30
             dark:focus-visible:ring-neutral-100/20
-            ${loading ? 'justify-center' : 'justify-start'}
+            ${loading ? "justify-center" : "justify-start"}
           `}
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">
-              <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <svg
+                className="h-4 w-4 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
                 <circle
                   className="opacity-25"
                   cx="12"

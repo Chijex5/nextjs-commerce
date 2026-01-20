@@ -48,7 +48,8 @@ export default function Login() {
     setMagicLoading(true);
 
     try {
-      const callbackUrl = searchParams.get("callbackUrl") || "/account?welcome=1";
+      const callbackUrl =
+        searchParams.get("callbackUrl") || "/account?welcome=1";
       const response = await fetch("/api/user-auth/magic-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,7 +74,10 @@ export default function Login() {
     <div className="mx-auto mt-20 max-w-md px-4">
       <div className="rounded-lg border border-neutral-200 bg-white p-8 dark:border-neutral-800 dark:bg-black">
         <h1 className="mb-6 text-2xl font-bold">Login</h1>
-        <form onSubmit={usePassword ? handleSubmit : handleMagicLink} className="space-y-4">
+        <form
+          onSubmit={usePassword ? handleSubmit : handleMagicLink}
+          className="space-y-4"
+        >
           <div>
             <label htmlFor="email" className="mb-2 block text-sm font-medium">
               Email

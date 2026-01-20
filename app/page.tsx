@@ -38,8 +38,6 @@ export default async function HomePage() {
     take: 3,
   });
 
-  
-
   return (
     <>
       <ThreeItemGrid />

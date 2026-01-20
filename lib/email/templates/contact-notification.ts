@@ -17,9 +17,7 @@ const escapeHtml = (value: string) =>
 const formatMessage = (message: string) =>
   escapeHtml(message).replace(/\n/g, "<br />");
 
-export const contactNotificationTemplate = (
-  data: ContactNotificationData,
-) => {
+export const contactNotificationTemplate = (data: ContactNotificationData) => {
   const nameLine = data.name
     ? `<p><strong>Name:</strong> ${escapeHtml(data.name)}</p>`
     : "";

@@ -17,8 +17,7 @@ export async function generateMetadata(props: {
 
   if (!collection) return notFound();
 
-  const hasSearchParams =
-    searchParams && Object.keys(searchParams).length > 0;
+  const hasSearchParams = searchParams && Object.keys(searchParams).length > 0;
   const title = collection.seo?.title || collection.title;
   const description =
     collection.seo?.description ||

@@ -2,8 +2,10 @@
 export const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 // Validate GA_ID is set
-if (!GA_ID && typeof window !== 'undefined') {
-  console.warn('Google Analytics ID is not set. Analytics will not be tracked.');
+if (!GA_ID && typeof window !== "undefined") {
+  console.warn(
+    "Google Analytics ID is not set. Analytics will not be tracked.",
+  );
 }
 
 // Extend Window interface for gtag
@@ -19,8 +21,8 @@ declare global {
  * @param url - The URL of the page being viewed
  */
 export const pageview = (url: string) => {
-  if (typeof window !== 'undefined' && window.gtag && GA_ID) {
-    window.gtag('config', GA_ID, {
+  if (typeof window !== "undefined" && window.gtag && GA_ID) {
+    window.gtag("config", GA_ID, {
       page_path: url,
     });
   }
@@ -44,8 +46,8 @@ export const event = ({
   label?: string;
   value?: number;
 }) => {
-  if (typeof window !== 'undefined' && window.gtag && GA_ID) {
-    window.gtag('event', action, {
+  if (typeof window !== "undefined" && window.gtag && GA_ID) {
+    window.gtag("event", action, {
       event_category: category,
       event_label: label,
       value: value,

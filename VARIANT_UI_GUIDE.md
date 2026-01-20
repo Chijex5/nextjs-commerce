@@ -3,6 +3,7 @@
 ## Interface Overview
 
 ### Main View (Product Collapsed)
+
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │  Bulk Product Editor                                                         │
@@ -25,6 +26,7 @@
 ```
 
 ### Expanded View (Showing Variants)
+
 ```
 ┌──┬──┬─────────────────┬─────────────┬────────┬───────────┬──────────────┬────────────┐
 │☐ │▼ │ Classic T-Shirt │classic-tee  │ 5000   │    ☑      │              │[3 variants]│
@@ -46,6 +48,7 @@
 ```
 
 ### Variants Modal (Detailed View)
+
 ```
 ┌────────────────────────────────────────────────────────────────┐
 │  Manage Variants                                         [X]   │
@@ -81,12 +84,14 @@
 ## Key UI Elements
 
 ### 1. Expand/Collapse Arrow
+
 - **Location**: Second column, next to checkbox
 - **Symbol**: ▶ (collapsed) or ▼ (expanded)
 - **Purpose**: Toggle visibility of variants
 - **Behavior**: Click to expand/collapse variant list
 
 ### 2. Variant Count Button
+
 - **Location**: Last column ("Variants")
 - **Style**: Purple background, rounded
 - **Format**: "X variant(s)"
@@ -94,6 +99,7 @@
 - **Behavior**: Click to open variants modal
 
 ### 3. Variant Rows (Inline)
+
 - **Style**: Light gray background, left purple border
 - **Indentation**: Arrow symbol (↳) to show hierarchy
 - **Layout**: Horizontal form with inline inputs
@@ -105,6 +111,7 @@
   - Status label (green/amber)
 
 ### 4. Add Variant Button (Inline)
+
 - **Location**: Below last variant in expanded view
 - **Style**: Green background
 - **Text**: "+ Add Variant"
@@ -113,15 +120,18 @@
 ### 5. Status Indicators
 
 #### Product Level
+
 - **Green badge**: "New" - newly created product
 - **Amber badge**: "Modified" - edited product
 
 #### Variant Level
+
 - **Green text**: "New" - newly created variant
 - **Amber text**: "Modified" - edited variant
 - No label for unchanged variants
 
 ### 6. Color Coding
+
 - **Purple**: Variant-related elements (button, border)
 - **Green**: New items, add buttons, save button
 - **Amber**: Modified items, warning states
@@ -132,6 +142,7 @@
 ## User Flows
 
 ### Flow 1: Edit Variant Price
+
 1. Click ▶ arrow next to product
 2. Product expands showing variants
 3. Click in price field of target variant
@@ -143,6 +154,7 @@
 9. Variants saved via API
 
 ### Flow 2: Add New Variant
+
 1. Click ▶ to expand product
 2. Scroll to bottom of variants
 3. Click "+ Add Variant"
@@ -152,6 +164,7 @@
 7. Save changes when ready
 
 ### Flow 3: Delete Variant
+
 1. Expand product or open modal
 2. Click "Delete" on variant
 3. Variant marked with strikethrough (in some views)
@@ -159,6 +172,7 @@
 5. On save, variant permanently deleted
 
 ### Flow 4: Manage Multiple Products
+
 1. Expand first product
 2. Edit variants
 3. Collapse first product
@@ -168,6 +182,7 @@
 7. One "Save All" applies everything
 
 ### Flow 5: Use Modal for Complex Edits
+
 1. Click purple "X variant(s)" button
 2. Modal opens with all variants
 3. Edit multiple variants in comfortable view
@@ -179,6 +194,7 @@
 ## Responsive Behavior
 
 **Desktop Optimized** (Current Implementation)
+
 - Full table layout with all columns visible
 - Inline editing in table cells
 - Modal for comfortable detailed editing

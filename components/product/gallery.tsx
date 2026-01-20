@@ -21,8 +21,7 @@ export function Gallery({
     activeImage && activeImage.width && activeImage.height
       ? activeImage.width / activeImage.height
       : PRODUCT_IMAGE_ASPECT;
-  const useCover =
-    Math.abs(activeAspect - PRODUCT_IMAGE_ASPECT) <= 0.05;
+  const useCover = Math.abs(activeAspect - PRODUCT_IMAGE_ASPECT) <= 0.05;
 
   const updateImage = (index: string) => {
     const params = new URLSearchParams(searchParams.toString());

@@ -1,4 +1,4 @@
-import { baseTemplate } from './base';
+import { baseTemplate } from "./base";
 
 interface OrderConfirmationData {
   orderNumber: string;
@@ -17,8 +17,11 @@ interface OrderConfirmationData {
  * Sent immediately after order is placed
  */
 export const orderConfirmationTemplate = (order: OrderConfirmationData) => {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'https://yourdomain.com';
-  
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXTAUTH_URL ||
+    "https://yourdomain.com";
+
   const itemsHtml = order.items
     .map(
       (item) => `
@@ -27,9 +30,9 @@ export const orderConfirmationTemplate = (order: OrderConfirmationData) => {
         <td style="text-align: center;">${item.quantity}</td>
         <td style="text-align: right;">₦${item.price.toLocaleString()}</td>
       </tr>
-    `
+    `,
     )
-    .join('');
+    .join("");
 
   const content = `
     <h2>Thank You for Your Order</h2>

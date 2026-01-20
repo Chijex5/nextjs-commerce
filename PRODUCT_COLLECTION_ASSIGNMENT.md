@@ -3,6 +3,7 @@
 ## Overview
 
 The product-to-collection assignment functionality allows you to organize products into collections (categories). This is a many-to-many relationship, meaning:
+
 - One product can belong to multiple collections
 - One collection can contain multiple products
 
@@ -86,10 +87,12 @@ PUT /api/admin/products/[id]
 ### Backend (API Routes)
 
 **POST /api/admin/products/route.ts**
+
 - Creates ProductCollection entries after product creation
 - Links product to selected collections
 
 **PUT /api/admin/products/[id]/route.ts**
+
 - Deletes existing ProductCollection entries
 - Creates new entries based on updated selection
 - Handles empty selection (removes all associations)

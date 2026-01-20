@@ -1,4 +1,4 @@
-import { baseTemplate } from './base';
+import { baseTemplate } from "./base";
 
 export function getReviewApprovedEmailTemplate(params: {
   customerName: string;
@@ -8,11 +8,21 @@ export function getReviewApprovedEmailTemplate(params: {
   reviewComment: string;
   rating: number;
 }): string {
-  const { customerName, productTitle, productHandle, reviewTitle, reviewComment, rating} = params;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'https://yourdomain.com';
+  const {
+    customerName,
+    productTitle,
+    productHandle,
+    reviewTitle,
+    reviewComment,
+    rating,
+  } = params;
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXTAUTH_URL ||
+    "https://yourdomain.com";
   const productUrl = `${siteUrl}/product/${productHandle}`;
 
-  const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+  const stars = "★".repeat(rating) + "☆".repeat(5 - rating);
 
   const content = `
     <div style="margin-bottom: 24px;">
@@ -28,8 +38,8 @@ export function getReviewApprovedEmailTemplate(params: {
     <div style="border: 1px solid #e5e5e5; padding: 24px; margin-bottom: 24px;">
       <h3 style="color: #000; font-size: 16px; font-weight: 600; margin: 0 0 8px 0;">Your Review</h3>
       <div style="color: #000; font-size: 18px; margin-bottom: 8px;">${stars}</div>
-      ${reviewTitle ? `<p style="color: #000; font-size: 14px; font-weight: 600; margin: 0 0 8px 0;">${reviewTitle}</p>` : ''}
-      ${reviewComment ? `<p style="color: #737373; font-size: 14px; line-height: 1.5; margin: 0;">${reviewComment}</p>` : ''}
+      ${reviewTitle ? `<p style="color: #000; font-size: 14px; font-weight: 600; margin: 0 0 8px 0;">${reviewTitle}</p>` : ""}
+      ${reviewComment ? `<p style="color: #737373; font-size: 14px; line-height: 1.5; margin: 0;">${reviewComment}</p>` : ""}
     </div>
 
     <p style="color: #737373; font-size: 14px; line-height: 1.5; margin: 0 0 24px 0;">

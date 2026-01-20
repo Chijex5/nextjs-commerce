@@ -27,39 +27,49 @@ This plan outlines the step-by-step implementation of all missing features ident
 ### Day 1: Google Analytics 4 Setup
 
 #### Tasks:
+
 1. Create GA4 property at [analytics.google.com](https://analytics.google.com)
 2. Get Measurement ID (G-XXXXXXXXXX)
 3. Install dependencies:
+
    ```bash
    npm install react-gtm-module
    ```
 
 4. Create analytics utility file:
+
    ```typescript
    // lib/analytics/google-analytics.ts
    export const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
-   
+
    // Validate GA_ID is set before using
    if (!GA_ID) {
-     console.warn('Google Analytics ID is not set. Analytics will not be tracked.');
+     console.warn(
+       "Google Analytics ID is not set. Analytics will not be tracked.",
+     );
    }
-   
+
    export const pageview = (url: string) => {
-     if (typeof window !== 'undefined' && window.gtag && GA_ID) {
-       window.gtag('config', GA_ID, {
+     if (typeof window !== "undefined" && window.gtag && GA_ID) {
+       window.gtag("config", GA_ID, {
          page_path: url,
        });
      }
    };
-   
-   export const event = ({ action, category, label, value }: {
+
+   export const event = ({
+     action,
+     category,
+     label,
+     value,
+   }: {
      action: string;
      category: string;
      label?: string;
      value?: number;
    }) => {
-     if (typeof window !== 'undefined' && window.gtag && GA_ID) {
-       window.gtag('event', action, {
+     if (typeof window !== "undefined" && window.gtag && GA_ID) {
+       window.gtag("event", action, {
          event_category: category,
          event_label: label,
          value: value,
@@ -69,9 +79,10 @@ This plan outlines the step-by-step implementation of all missing features ident
    ```
 
 5. Add to `app/layout.tsx`:
+
    ```typescript
    import Script from 'next/script';
-   
+
    // In return statement, before </body>
    {process.env.NEXT_PUBLIC_GA_ID && (
      <>
@@ -92,6 +103,7 @@ This plan outlines the step-by-step implementation of all missing features ident
    ```
 
 6. Add to `.env.local`:
+
    ```env
    NEXT_PUBLIC_GA_ID="G-XXXXXXXXXX"
    ```
@@ -99,6 +111,7 @@ This plan outlines the step-by-step implementation of all missing features ident
 7. Test with GA Debugger Chrome extension
 
 #### Deliverables:
+
 - ✅ GA4 property created
 - ✅ Tracking code installed
 - ✅ Page views tracking
@@ -114,19 +127,20 @@ This plan outlines the step-by-step implementation of all missing features ident
 2. Get Pixel ID
 
 3. Create Facebook Pixel utility:
+
    ```typescript
    // lib/analytics/facebook-pixel.ts
    export const FB_PIXEL_ID = process.env.NEXT_PUBLIC_FB_PIXEL_ID;
-   
+
    export const pageview = () => {
-     if (typeof window !== 'undefined' && window.fbq) {
-       window.fbq('track', 'PageView');
+     if (typeof window !== "undefined" && window.fbq) {
+       window.fbq("track", "PageView");
      }
    };
-   
+
    export const event = (name: string, options = {}) => {
-     if (typeof window !== 'undefined' && window.fbq) {
-       window.fbq('track', name, options);
+     if (typeof window !== "undefined" && window.fbq) {
+       window.fbq("track", name, options);
      }
    };
    ```
@@ -157,24 +171,26 @@ This plan outlines the step-by-step implementation of all missing features ident
 2. Get Pixel ID
 
 3. Create TikTok Pixel utility:
+
    ```typescript
    // lib/analytics/tiktok-pixel.ts
    export const TIKTOK_PIXEL_ID = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID;
-   
+
    export const pageview = () => {
-     if (typeof window !== 'undefined' && window.ttq) {
+     if (typeof window !== "undefined" && window.ttq) {
        window.ttq.page();
      }
    };
-   
+
    export const event = (name: string, options = {}) => {
-     if (typeof window !== 'undefined' && window.ttq) {
+     if (typeof window !== "undefined" && window.ttq) {
        window.ttq.track(name, options);
      }
    };
    ```
 
 4. Add to `app/layout.tsx`:
+
    ```typescript
    {process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID && (
      <Script id="tiktok-pixel" strategy="afterInteractive">
@@ -196,6 +212,7 @@ This plan outlines the step-by-step implementation of all missing features ident
    ```
 
 #### Deliverables:
+
 - ✅ Facebook Pixel installed
 - ✅ TikTok Pixel installed
 - ✅ Both pixels tracking page views
@@ -208,18 +225,19 @@ This plan outlines the step-by-step implementation of all missing features ident
 #### Tasks:
 
 1. Create unified tracking service:
+
    ```typescript
    // lib/analytics/index.ts
-   import * as ga from './google-analytics';
-   import * as fbPixel from './facebook-pixel';
-   import * as tiktok from './tiktok-pixel';
-   
+   import * as ga from "./google-analytics";
+   import * as fbPixel from "./facebook-pixel";
+   import * as tiktok from "./tiktok-pixel";
+
    export const trackPageView = (url: string) => {
      ga.pageview(url);
      fbPixel.pageview();
      tiktok.pageview();
    };
-   
+
    export const trackProductView = (product: {
      id: string;
      name: string;
@@ -227,28 +245,28 @@ This plan outlines the step-by-step implementation of all missing features ident
      category?: string;
    }) => {
      ga.event({
-       action: 'view_item',
-       category: 'ecommerce',
+       action: "view_item",
+       category: "ecommerce",
        label: product.name,
        value: product.price,
      });
-     
-     fbPixel.event('ViewContent', {
+
+     fbPixel.event("ViewContent", {
        content_ids: [product.id],
        content_name: product.name,
-       content_type: 'product',
+       content_type: "product",
        value: product.price,
-       currency: 'NGN',
+       currency: "NGN",
      });
-     
-     tiktok.event('ViewContent', {
+
+     tiktok.event("ViewContent", {
        content_id: product.id,
        content_name: product.name,
        price: product.price,
-       currency: 'NGN',
+       currency: "NGN",
      });
    };
-   
+
    export const trackAddToCart = (product: {
      id: string;
      name: string;
@@ -256,72 +274,73 @@ This plan outlines the step-by-step implementation of all missing features ident
      quantity: number;
    }) => {
      ga.event({
-       action: 'add_to_cart',
-       category: 'ecommerce',
+       action: "add_to_cart",
+       category: "ecommerce",
        label: product.name,
        value: product.price * product.quantity,
      });
-     
-     fbPixel.event('AddToCart', {
+
+     fbPixel.event("AddToCart", {
        content_ids: [product.id],
        content_name: product.name,
        value: product.price * product.quantity,
-       currency: 'NGN',
+       currency: "NGN",
      });
-     
-     tiktok.event('AddToCart', {
+
+     tiktok.event("AddToCart", {
        content_id: product.id,
        quantity: product.quantity,
        price: product.price,
-       currency: 'NGN',
+       currency: "NGN",
      });
    };
-   
+
    export const trackInitiateCheckout = (cartValue: number) => {
      ga.event({
-       action: 'begin_checkout',
-       category: 'ecommerce',
+       action: "begin_checkout",
+       category: "ecommerce",
        value: cartValue,
      });
-     
-     fbPixel.event('InitiateCheckout', {
+
+     fbPixel.event("InitiateCheckout", {
        value: cartValue,
-       currency: 'NGN',
+       currency: "NGN",
      });
-     
-     tiktok.event('InitiateCheckout', {
+
+     tiktok.event("InitiateCheckout", {
        value: cartValue,
-       currency: 'NGN',
+       currency: "NGN",
      });
    };
-   
+
    export const trackPurchase = (order: {
      orderId: string;
      value: number;
      items: Array<{ id: string; name: string; quantity: number }>;
    }) => {
      ga.event({
-       action: 'purchase',
-       category: 'ecommerce',
+       action: "purchase",
+       category: "ecommerce",
        label: order.orderId,
        value: order.value,
      });
-     
-     fbPixel.event('Purchase', {
+
+     fbPixel.event("Purchase", {
        value: order.value,
-       currency: 'NGN',
-       content_ids: order.items.map(item => item.id),
+       currency: "NGN",
+       content_ids: order.items.map((item) => item.id),
      });
-     
-     tiktok.event('CompletePayment', {
+
+     tiktok.event("CompletePayment", {
        value: order.value,
-       currency: 'NGN',
-       content_ids: order.items.map(item => item.id),
+       currency: "NGN",
+       content_ids: order.items.map((item) => item.id),
      });
    };
    ```
 
 2. Integrate tracking in components:
+
    - Add `trackProductView` to product page
    - Add `trackAddToCart` to add to cart action
    - Add `trackInitiateCheckout` to checkout page
@@ -330,6 +349,7 @@ This plan outlines the step-by-step implementation of all missing features ident
 3. Test all events with browser dev tools and pixel helpers
 
 #### Deliverables:
+
 - ✅ Unified tracking service
 - ✅ Product view tracking
 - ✅ Add to cart tracking
@@ -347,6 +367,7 @@ This plan outlines the step-by-step implementation of all missing features ident
 2. Get GTM ID (GTM-XXXXXXX)
 
 3. Add to `app/layout.tsx`:
+
    ```typescript
    {process.env.NEXT_PUBLIC_GTM_ID && (
      <>
@@ -374,6 +395,7 @@ This plan outlines the step-by-step implementation of all missing features ident
 4. Configure GA4, Facebook Pixel, and TikTok Pixel in GTM (future migration)
 
 #### Deliverables:
+
 - ✅ GTM installed
 - ✅ Ready for future tag management
 
@@ -395,27 +417,29 @@ This plan outlines the step-by-step implementation of all missing features ident
 3. Get API key from dashboard
 
 4. Install Resend:
+
    ```bash
    npm install resend
    ```
 
 5. Create Resend utility:
+
    ```typescript
    // lib/email/resend.ts
-   import { Resend } from 'resend';
-   
+   import { Resend } from "resend";
+
    // Validate Resend API key
    if (!process.env.RESEND_API_KEY) {
-     throw new Error('RESEND_API_KEY is not set in environment variables');
+     throw new Error("RESEND_API_KEY is not set in environment variables");
    }
-   
+
    const resend = new Resend(process.env.RESEND_API_KEY);
-   
+
    export const sendEmail = async ({
      to,
      subject,
      html,
-     from = process.env.SMTP_FROM_EMAIL || 'noreply@yourdomain.com',
+     from = process.env.SMTP_FROM_EMAIL || "noreply@yourdomain.com",
    }: {
      to: string | string[];
      subject: string;
@@ -432,16 +456,17 @@ This plan outlines the step-by-step implementation of all missing features ident
        return { success: true, data };
      } catch (error) {
        // Log full error for debugging but don't expose to client
-       console.error('Email sending error:', error);
-       return { 
-         success: false, 
-         error: 'Failed to send email. Please try again.' 
+       console.error("Email sending error:", error);
+       return {
+         success: false,
+         error: "Failed to send email. Please try again.",
        };
      }
    };
    ```
 
 6. Add to `.env.local`:
+
    ```env
    RESEND_API_KEY="re_xxxxxxxxxxxxx"
    SMTP_FROM_EMAIL="noreply@yourdomain.com"
@@ -453,13 +478,14 @@ This plan outlines the step-by-step implementation of all missing features ident
    ```typescript
    // Test in development
    const result = await sendEmail({
-     to: 'test@example.com',
-     subject: 'Test Email',
-     html: '<h1>Test</h1><p>If you receive this, Resend is working!</p>',
+     to: "test@example.com",
+     subject: "Test Email",
+     html: "<h1>Test</h1><p>If you receive this, Resend is working!</p>",
    });
    ```
 
 #### Deliverables:
+
 - ✅ Resend account created
 - ✅ API key configured
 - ✅ Email utility function created
@@ -472,6 +498,7 @@ This plan outlines the step-by-step implementation of all missing features ident
 #### Tasks:
 
 1. Create email template structure:
+
    ```typescript
    // lib/email/templates/base.ts
    export const baseTemplate = (content: string) => `
@@ -543,10 +570,11 @@ This plan outlines the step-by-step implementation of all missing features ident
    ```
 
 2. Create order confirmation template:
+
    ```typescript
    // lib/email/templates/order-confirmation.ts
-   import { baseTemplate } from './base';
-   
+   import { baseTemplate } from "./base";
+
    export const orderConfirmationTemplate = (order: {
      orderNumber: string;
      customerName: string;
@@ -572,10 +600,10 @@ This plan outlines the step-by-step implementation of all missing features ident
              ₦${item.price.toLocaleString()}
            </td>
          </tr>
-       `
+       `,
        )
-       .join('');
-   
+       .join("");
+
      const content = `
        <h2>Thank You for Your Order!</h2>
        <p>Hi ${order.customerName},</p>
@@ -611,16 +639,17 @@ This plan outlines the step-by-step implementation of all missing features ident
        <p>If you have any questions, feel free to contact us.</p>
        <p>Best regards,<br>The D'FOOTPRINT Team</p>
      `;
-   
+
      return baseTemplate(content);
    };
    ```
 
 3. Create shipping notification template:
+
    ```typescript
    // lib/email/templates/shipping-notification.ts
-   import { baseTemplate } from './base';
-   
+   import { baseTemplate } from "./base";
+
    export const shippingNotificationTemplate = (order: {
      orderNumber: string;
      customerName: string;
@@ -635,12 +664,12 @@ This plan outlines the step-by-step implementation of all missing features ident
        ${
          order.trackingNumber
            ? `<p><strong>Tracking Number:</strong> ${order.trackingNumber}</p>`
-           : ''
+           : ""
        }
        ${
          order.estimatedArrival
            ? `<p><strong>Estimated Arrival:</strong> ${order.estimatedArrival}</p>`
-           : ''
+           : ""
        }
        
        <a href="https://yourdomain.com/orders" class="button">Track Your Order</a>
@@ -648,7 +677,7 @@ This plan outlines the step-by-step implementation of all missing features ident
        <p>Thank you for shopping with us!</p>
        <p>Best regards,<br>The D'FOOTPRINT Team</p>
      `;
-   
+
      return baseTemplate(content);
    };
    ```
@@ -660,6 +689,7 @@ This plan outlines the step-by-step implementation of all missing features ident
    - Abandoned cart email
 
 #### Deliverables:
+
 - ✅ Base email template
 - ✅ Order confirmation template
 - ✅ Shipping notification template
@@ -673,6 +703,7 @@ This plan outlines the step-by-step implementation of all missing features ident
 #### Tasks:
 
 1. Create newsletter schema in database:
+
    ```prisma
    // Add to prisma/schema.prisma
    model NewsletterSubscriber {
@@ -682,57 +713,59 @@ This plan outlines the step-by-step implementation of all missing features ident
      status        String   @default("active") @db.VarChar(50) // active, unsubscribed
      subscribedAt  DateTime @default(now()) @map("subscribed_at")
      unsubscribedAt DateTime? @map("unsubscribed_at")
-     
+
      @@index([email], name: "newsletter_subscribers_email_idx")
      @@map("newsletter_subscribers")
    }
    ```
 
 2. Run migration:
+
    ```bash
    npx prisma db push
    npx prisma generate
    ```
 
 3. Create newsletter API route:
+
    ```typescript
    // app/api/newsletter/subscribe/route.ts
-   import { NextRequest, NextResponse } from 'next/server';
-   import { prisma } from '@/lib/prisma';
-   import { sendEmail } from '@/lib/email/resend';
-   import { welcomeEmailTemplate } from '@/lib/email/templates/welcome';
-   
+   import { NextRequest, NextResponse } from "next/server";
+   import { prisma } from "@/lib/prisma";
+   import { sendEmail } from "@/lib/email/resend";
+   import { welcomeEmailTemplate } from "@/lib/email/templates/welcome";
+
    export async function POST(request: NextRequest) {
      try {
        const { email, name } = await request.json();
-       
+
        // Improved email validation
        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
        if (!email || !emailRegex.test(email)) {
          return NextResponse.json(
-           { error: 'Valid email is required' },
-           { status: 400 }
+           { error: "Valid email is required" },
+           { status: 400 },
          );
        }
-       
+
        // Check if already subscribed
        const existing = await prisma.newsletterSubscriber.findUnique({
          where: { email },
        });
-       
+
        if (existing) {
-         if (existing.status === 'active') {
+         if (existing.status === "active") {
            return NextResponse.json(
-             { message: 'Already subscribed' },
-             { status: 200 }
+             { message: "Already subscribed" },
+             { status: 200 },
            );
          }
-         
+
          // Resubscribe
          await prisma.newsletterSubscriber.update({
            where: { email },
            data: {
-             status: 'active',
+             status: "active",
              subscribedAt: new Date(),
              unsubscribedAt: null,
            },
@@ -743,55 +776,56 @@ This plan outlines the step-by-step implementation of all missing features ident
            data: { email, name },
          });
        }
-       
+
        // Send welcome email
        await sendEmail({
          to: email,
-         subject: 'Welcome to D\'FOOTPRINT!',
-         html: welcomeEmailTemplate({ name: name || 'Friend' }),
+         subject: "Welcome to D'FOOTPRINT!",
+         html: welcomeEmailTemplate({ name: name || "Friend" }),
        });
-       
+
        return NextResponse.json(
-         { message: 'Successfully subscribed!' },
-         { status: 200 }
+         { message: "Successfully subscribed!" },
+         { status: 200 },
        );
      } catch (error) {
-       console.error('Newsletter subscription error:', error);
+       console.error("Newsletter subscription error:", error);
        return NextResponse.json(
-         { error: 'Failed to subscribe' },
-         { status: 500 }
+         { error: "Failed to subscribe" },
+         { status: 500 },
        );
      }
    }
    ```
 
 4. Create newsletter form component:
+
    ```typescript
    // components/newsletter-form.tsx
    'use client';
-   
+
    import { useState } from 'react';
    import { toast } from 'sonner';
    import LoadingDots from './loading-dots';
-   
+
    export default function NewsletterForm() {
      const [email, setEmail] = useState('');
      const [name, setName] = useState('');
      const [loading, setLoading] = useState(false);
-   
+
      const handleSubmit = async (e: React.FormEvent) => {
        e.preventDefault();
        setLoading(true);
-   
+
        try {
          const response = await fetch('/api/newsletter/subscribe', {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify({ email, name }),
          });
-   
+
          const data = await response.json();
-   
+
          if (response.ok) {
            toast.success(data.message || 'Successfully subscribed!');
            setEmail('');
@@ -805,7 +839,7 @@ This plan outlines the step-by-step implementation of all missing features ident
          setLoading(false);
        }
      };
-   
+
      return (
        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
          <input
@@ -841,10 +875,11 @@ This plan outlines the step-by-step implementation of all missing features ident
    ```
 
 5. Add to footer:
+
    ```typescript
    // components/layout/footer.tsx
    import NewsletterForm from '../newsletter-form';
-   
+
    // Add before closing footer tag
    <div className="border-t border-neutral-200 py-6 dark:border-neutral-700">
      <div className="mx-auto max-w-7xl px-4">
@@ -855,6 +890,7 @@ This plan outlines the step-by-step implementation of all missing features ident
    ```
 
 #### Deliverables:
+
 - ✅ Newsletter database schema
 - ✅ Subscribe API endpoint
 - ✅ Newsletter form component
@@ -868,12 +904,13 @@ This plan outlines the step-by-step implementation of all missing features ident
 #### Tasks:
 
 1. Create email service wrapper:
+
    ```typescript
    // lib/email/order-emails.ts
-   import { sendEmail } from './resend';
-   import { orderConfirmationTemplate } from './templates/order-confirmation';
-   import { shippingNotificationTemplate } from './templates/shipping-notification';
-   
+   import { sendEmail } from "./resend";
+   import { orderConfirmationTemplate } from "./templates/order-confirmation";
+   import { shippingNotificationTemplate } from "./templates/shipping-notification";
+
    export const sendOrderConfirmation = async (order: any) => {
      return sendEmail({
        to: order.email,
@@ -881,7 +918,7 @@ This plan outlines the step-by-step implementation of all missing features ident
        html: orderConfirmationTemplate(order),
      });
    };
-   
+
    export const sendShippingNotification = async (order: any) => {
      return sendEmail({
        to: order.email,
@@ -892,10 +929,11 @@ This plan outlines the step-by-step implementation of all missing features ident
    ```
 
 2. Integrate with checkout success:
+
    ```typescript
    // app/checkout/success/page.tsx or wherever order is created
-   import { sendOrderConfirmation } from '@/lib/email/order-emails';
-   
+   import { sendOrderConfirmation } from "@/lib/email/order-emails";
+
    // After order is created
    await sendOrderConfirmation({
      orderNumber: order.orderNumber,
@@ -907,18 +945,19 @@ This plan outlines the step-by-step implementation of all missing features ident
    ```
 
 3. Create admin endpoint for shipping notifications:
+
    ```typescript
    // app/api/admin/orders/[id]/ship/route.ts
-   import { sendShippingNotification } from '@/lib/email/order-emails';
-   
+   import { sendShippingNotification } from "@/lib/email/order-emails";
+
    export async function POST(
      request: NextRequest,
-     { params }: { params: { id: string } }
+     { params }: { params: { id: string } },
    ) {
      // Update order status to 'dispatch'
      // Then send email
      await sendShippingNotification(order);
-     
+
      return NextResponse.json({ success: true });
    }
    ```
@@ -928,6 +967,7 @@ This plan outlines the step-by-step implementation of all missing features ident
    - Update order to dispatch → receive shipping email
 
 #### Deliverables:
+
 - ✅ Order confirmation automation
 - ✅ Shipping notification automation
 - ✅ Email integration with checkout
@@ -946,6 +986,7 @@ This plan outlines the step-by-step implementation of all missing features ident
 #### Day 1-2: Database & Backend
 
 1. Create reviews schema:
+
    ```prisma
    model Review {
      id          String   @id @default(uuid())
@@ -961,10 +1002,10 @@ This plan outlines the step-by-step implementation of all missing features ident
      status      String   @default("pending") @db.VarChar(50)
      createdAt   DateTime @default(now()) @map("created_at")
      updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
-     
+
      product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
      user    User?   @relation(fields: [userId], references: [id])
-     
+
      @@index([productId], name: "reviews_product_id_idx")
      @@index([userId], name: "reviews_user_id_idx")
      @@index([status], name: "reviews_status_idx")
@@ -993,14 +1034,17 @@ This plan outlines the step-by-step implementation of all missing features ident
 ### Week 4: Additional Engagement Features
 
 1. **Testimonials Section** (2 days)
+
    - Homepage testimonial carousel
    - Admin testimonial management
 
 2. **Size Guide** (1 day)
+
    - Size chart modal component
    - Add to product pages
 
 3. **Trust Badges** (1 day)
+
    - Create badge components
    - Add to checkout and footer
 
@@ -1134,22 +1178,26 @@ This plan outlines the step-by-step implementation of all missing features ident
 Track these metrics to measure implementation success:
 
 ### Analytics Metrics
+
 - ✅ GA4 tracking active
 - ✅ Conversion rate baseline established
 - ✅ Cart abandonment rate tracked
 
 ### Email Metrics
+
 - ✅ Newsletter subscribers growth
 - ✅ Email open rates (target: >20%)
 - ✅ Email click-through rates (target: >3%)
 - ✅ Cart recovery rate (target: 10-15%)
 
 ### Engagement Metrics
+
 - ✅ Number of reviews collected
 - ✅ Average rating
 - ✅ Review conversion impact
 
 ### Sales Metrics
+
 - ✅ Coupon usage rate
 - ✅ Average order value
 - ✅ Revenue growth week-over-week
@@ -1159,16 +1207,18 @@ Track these metrics to measure implementation success:
 ## 🚨 Quick Implementation Checklist
 
 ### Week 1: Analytics
+
 - [ ] Create GA4 property
 - [ ] Install GA4 tracking code
 - [ ] Create Facebook Pixel
 - [ ] Install Facebook Pixel
-- [ ] Create TikTok Pixel  
+- [ ] Create TikTok Pixel
 - [ ] Install TikTok Pixel
 - [ ] Implement e-commerce event tracking
 - [ ] Test all pixels with browser tools
 
 ### Week 2: Email (Resend)
+
 - [ ] Sign up for Resend account
 - [ ] Get and configure API key
 - [ ] Create email templates
@@ -1179,6 +1229,7 @@ Track these metrics to measure implementation success:
 - [ ] Test all email flows
 
 ### Week 3-4: Engagement
+
 - [ ] Create reviews database schema
 - [ ] Build review submission form
 - [ ] Create review display component
@@ -1189,6 +1240,7 @@ Track these metrics to measure implementation success:
 - [ ] Integrate live chat widget
 
 ### Week 5: Marketing
+
 - [ ] Create coupon database schema
 - [ ] Build coupon validation API
 - [ ] Integrate coupons in checkout
@@ -1197,12 +1249,14 @@ Track these metrics to measure implementation success:
 - [ ] Create abandoned cart email series
 
 ### Week 6: Admin
+
 - [ ] Build dashboard analytics
 - [ ] Implement inventory management
 - [ ] Create reports generator
 - [ ] Add export functionality
 
 ### Week 7: SEO & Performance
+
 - [ ] Add enhanced schema markup
 - [ ] Audit and fix meta descriptions
 - [ ] Optimize alt texts
@@ -1210,6 +1264,7 @@ Track these metrics to measure implementation success:
 - [ ] Optimize images and assets
 
 ### Week 8: Accessibility & UX
+
 - [ ] Conduct accessibility audit
 - [ ] Fix ARIA labels
 - [ ] Test keyboard navigation
@@ -1217,6 +1272,7 @@ Track these metrics to measure implementation success:
 - [ ] Add breadcrumbs
 
 ### Week 9: Security
+
 - [ ] Configure security headers
 - [ ] Implement rate limiting
 - [ ] Add CAPTCHA to forms
@@ -1270,16 +1326,19 @@ If you can only implement some features, prioritize in this order:
 ## 📚 Resources
 
 ### Resend Documentation
+
 - [Resend Docs](https://resend.com/docs)
 - [Resend Next.js Guide](https://resend.com/docs/send-with-nextjs)
 - [Resend Email Templates](https://resend.com/docs/api-reference/emails/send-email)
 
 ### Analytics
+
 - [GA4 Implementation Guide](https://developers.google.com/analytics/devguides/collection/ga4)
 - [Facebook Pixel Documentation](https://developers.facebook.com/docs/meta-pixel)
 - [TikTok Pixel Guide](https://ads.tiktok.com/help/article?aid=10000357)
 
 ### Testing Tools
+
 - [GA Debugger Chrome Extension](https://chrome.google.com/webstore/detail/google-analytics-debugger/)
 - [Facebook Pixel Helper](https://chrome.google.com/webstore/detail/facebook-pixel-helper/)
 - [TikTok Pixel Helper](https://chrome.google.com/webstore/detail/tiktok-pixel-helper/)

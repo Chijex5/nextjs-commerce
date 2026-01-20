@@ -125,7 +125,10 @@ export default function CheckoutPage() {
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [couponData, setCouponData] = useState<{ code: string; amount: number } | null>(null);
+  const [couponData, setCouponData] = useState<{
+    code: string;
+    amount: number;
+  } | null>(null);
   const [orderNote, setOrderNote] = useState("");
   const tiktokIdentifyKeyRef = useRef<string | null>(null);
   const [formData, setFormData] = useState<CheckoutFormData>({
@@ -195,13 +198,13 @@ export default function CheckoutPage() {
 
   const loadCouponData = () => {
     try {
-      const stored = localStorage.getItem('appliedCoupon');
+      const stored = localStorage.getItem("appliedCoupon");
       if (stored) {
         const coupon = JSON.parse(stored);
         setCouponData({ code: coupon.code, amount: coupon.discountAmount });
       }
     } catch (err) {
-      console.error('Failed to load coupon data:', err);
+      console.error("Failed to load coupon data:", err);
     }
   };
 
@@ -890,8 +893,8 @@ export default function CheckoutPage() {
               </div>
               <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
                 Shipping fees and delivery method are confirmed after your order
-                is ready. You can request a preferred courier; we&apos;ll confirm
-                availability and pricing.
+                is ready. You can request a preferred courier; we&apos;ll
+                confirm availability and pricing.
               </p>
 
               <button

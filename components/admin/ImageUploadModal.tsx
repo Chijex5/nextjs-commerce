@@ -34,7 +34,9 @@ export default function ImageUploadModal({
 }: ImageUploadModalProps) {
   const [images, setImages] = useState<ImageData[]>(initialImages);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
+  const [uploadProgress, setUploadProgress] = useState<{
+    [key: string]: number;
+  }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
@@ -64,7 +66,7 @@ export default function ImageUploadModal({
 
         // Show progress for this file
         const fileKey = `file-${i}`;
-        setUploadProgress(prev => ({ ...prev, [fileKey]: 0 }));
+        setUploadProgress((prev) => ({ ...prev, [fileKey]: 0 }));
 
         const formData = new FormData();
         formData.append("file", file);
@@ -79,7 +81,7 @@ export default function ImageUploadModal({
         }
 
         const data = await response.json();
-        
+
         uploadedImages.push({
           url: data.url,
           publicId: data.publicId,
@@ -89,12 +91,12 @@ export default function ImageUploadModal({
           height: data.height ?? PRODUCT_IMAGE_HEIGHT,
         });
 
-        setUploadProgress(prev => ({ ...prev, [fileKey]: 100 }));
+        setUploadProgress((prev) => ({ ...prev, [fileKey]: 100 }));
       }
 
       setImages([...images, ...uploadedImages]);
       toast.success(`${uploadedImages.length} image(s) uploaded successfully`);
-      
+
       // Clear progress after a delay
       setTimeout(() => setUploadProgress({}), 1000);
     } catch (error) {
@@ -166,12 +168,14 @@ export default function ImageUploadModal({
             />
             <label
               htmlFor="image-upload"
-              className={`cursor-pointer ${uploading || images.length >= 5 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`cursor-pointer ${uploading || images.length >= 5 ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               {uploading ? (
                 <div className="flex flex-col items-center">
                   <Loader2 className="h-12 w-12 text-blue-500 animate-spin mb-4" />
-                  <p className="text-gray-600 dark:text-gray-400">Uploading images...</p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Uploading images...
+                  </p>
                   {Object.values(uploadProgress).length > 0 && (
                     <div className="mt-2 w-full max-w-xs">
                       {Object.entries(uploadProgress).map(([key, progress]) => (
@@ -191,7 +195,9 @@ export default function ImageUploadModal({
                 <div className="flex flex-col items-center">
                   <Upload className="h-12 w-12 text-gray-400 mb-4" />
                   <p className="text-lg font-medium text-gray-900 dark:text-white mb-1">
-                    {images.length >= 5 ? 'Maximum images reached' : 'Click to upload images'}
+                    {images.length >= 5
+                      ? "Maximum images reached"
+                      : "Click to upload images"}
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     PNG, JPG, WEBP up to 5MB • Max 5 images
@@ -209,8 +215,8 @@ export default function ImageUploadModal({
                   key={index}
                   className={`relative group rounded-lg overflow-hidden border-2 ${
                     image.isFeatured
-                      ? 'border-yellow-500 shadow-lg'
-                      : 'border-gray-200 dark:border-gray-700'
+                      ? "border-yellow-500 shadow-lg"
+                      : "border-gray-200 dark:border-gray-700"
                   }`}
                 >
                   <img
@@ -218,7 +224,7 @@ export default function ImageUploadModal({
                     alt={`Product image ${index + 1}`}
                     className="w-full h-48 object-cover"
                   />
-                  
+
                   {/* Featured Badge */}
                   {image.isFeatured && (
                     <div className="absolute top-2 left-2 bg-yellow-500 text-white px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1">

@@ -24,8 +24,10 @@ export const buildSitemapXml = (entries: SitemapEntry[]) => {
     )
     .join("");
 
-  return `<?xml version="1.0" encoding="UTF-8"?>` +
-    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`;
+  return (
+    `<?xml version="1.0" encoding="UTF-8"?>` +
+    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`
+  );
 };
 
 export const buildSitemapIndexXml = (entries: SitemapEntry[]) => {
@@ -38,7 +40,8 @@ export const buildSitemapIndexXml = (entries: SitemapEntry[]) => {
     )
     .join("");
 
-  return `<?xml version="1.0" encoding="UTF-8"?>` +
-    `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${sitemaps}</sitemapindex>`;
+  return (
+    `<?xml version="1.0" encoding="UTF-8"?>` +
+    `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${sitemaps}</sitemapindex>`
+  );
 };
-

@@ -9,17 +9,11 @@ export async function POST(request: NextRequest) {
     const { email, callbackUrl } = await request.json();
 
     if (!email) {
-      return NextResponse.json(
-        { error: "Email is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
     const token = crypto.randomBytes(32).toString("hex");
-    const tokenHash = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
     const safeCallback =

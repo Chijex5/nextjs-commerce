@@ -4,20 +4,20 @@
  * Uses uppercase letters and numbers for readability
  */
 export function generateCouponCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude similar looking chars (I, O, 0, 1)
-  
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Exclude similar looking chars (I, O, 0, 1)
+
   // Generate first part (3 letters)
-  let part1 = '';
+  let part1 = "";
   for (let i = 0; i < 3; i++) {
     part1 += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  
+
   // Generate second part (4 alphanumeric)
-  let part2 = '';
+  let part2 = "";
   for (let i = 0; i < 4; i++) {
     part2 += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  
+
   return `${part1}-${part2}`;
 }
 

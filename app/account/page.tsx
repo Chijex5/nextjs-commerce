@@ -173,8 +173,7 @@ function AccountPageContent() {
             <button
               onClick={() => {
                 setShowWelcomeGift(false);
-                document.cookie =
-                  "welcome_gift_signup=; Max-Age=0; path=/";
+                document.cookie = "welcome_gift_signup=; Max-Age=0; path=/";
                 router.replace("/account");
               }}
               className="absolute right-4 top-4 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"

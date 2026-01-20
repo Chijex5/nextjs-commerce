@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
-import { generateCouponCode } from 'lib/coupon-utils';
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { generateCouponCode } from "lib/coupon-utils";
 
 interface Coupon {
   id: string;
@@ -25,21 +25,21 @@ export default function CouponsPageClient() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [createCouponLoading, setCreateCouponLoading] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [useAutoGenerate, setUseAutoGenerate] = useState(true);
   const [formData, setFormData] = useState({
-    code: '',
-    description: '',
-    discountType: 'percentage',
-    discountValue: '',
-    minOrderValue: '',
-    maxUses: '',
-    maxUsesPerUser: '',
+    code: "",
+    description: "",
+    discountType: "percentage",
+    discountValue: "",
+    minOrderValue: "",
+    maxUses: "",
+    maxUsesPerUser: "",
     requiresLogin: false,
-    startDate: '',
-    expiryDate: '',
-    isActive: true
+    startDate: "",
+    expiryDate: "",
+    isActive: true,
   });
 
   useEffect(() => {
@@ -52,8 +52,8 @@ export default function CouponsPageClient() {
       const data = await response.json();
       setCoupons(data.coupons);
     } catch (error) {
-      console.error('Error fetching coupons:', error);
-      toast.error('Failed to load coupons');
+      console.error("Error fetching coupons:", error);
+      toast.error("Failed to load coupons");
     } finally {
       setLoading(false);
     }
@@ -69,29 +69,36 @@ export default function CouponsPageClient() {
     e.preventDefault();
     setCreateCouponLoading(true);
     // Validate discount value
-    if (formData.discountType !== 'free_shipping' && (!formData.discountValue || parseFloat(formData.discountValue) <= 0)) {
-      toast.error('Please enter a valid discount value');
+    if (
+      formData.discountType !== "free_shipping" &&
+      (!formData.discountValue || parseFloat(formData.discountValue) <= 0)
+    ) {
+      toast.error("Please enter a valid discount value");
       return;
     }
 
     try {
-      const response = await fetch('/api/admin/coupons', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/admin/coupons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code: formData.code,
           description: formData.description || null,
           discountType: formData.discountType,
           discountValue: parseFloat(formData.discountValue) || 0,
-          minOrderValue: formData.minOrderValue ? parseFloat(formData.minOrderValue) : null,
+          minOrderValue: formData.minOrderValue
+            ? parseFloat(formData.minOrderValue)
+            : null,
           maxUses: formData.maxUses ? parseInt(formData.maxUses) : null,
-          maxUsesPerUser: formData.maxUsesPerUser ? parseInt(formData.maxUsesPerUser) : null,
+          maxUsesPerUser: formData.maxUsesPerUser
+            ? parseInt(formData.maxUsesPerUser)
+            : null,
           requiresLogin: formData.requiresLogin,
           startDate: formData.startDate || null,
           expiryDate: formData.expiryDate || null,
           isActive: formData.isActive,
-          autoGenerate: useAutoGenerate && !formData.code
-        })
+          autoGenerate: useAutoGenerate && !formData.code,
+        }),
       });
 
       const data = await response.json();
@@ -100,26 +107,26 @@ export default function CouponsPageClient() {
         toast.success(`Coupon "${data.coupon.code}" created successfully`);
         setShowCreateForm(false);
         setFormData({
-          code: '',
-          description: '',
-          discountType: 'percentage',
-          discountValue: '',
-          minOrderValue: '',
-          maxUses: '',
-          maxUsesPerUser: '',
+          code: "",
+          description: "",
+          discountType: "percentage",
+          discountValue: "",
+          minOrderValue: "",
+          maxUses: "",
+          maxUsesPerUser: "",
           requiresLogin: false,
-          startDate: '',
-          expiryDate: '',
-          isActive: true
+          startDate: "",
+          expiryDate: "",
+          isActive: true,
         });
         setUseAutoGenerate(true);
         fetchCoupons();
       } else {
-        toast.error(data.error || 'Failed to create coupon');
+        toast.error(data.error || "Failed to create coupon");
       }
     } catch (error) {
-      console.error('Error creating coupon:', error);
-      toast.error('Failed to create coupon');
+      console.error("Error creating coupon:", error);
+      toast.error("Failed to create coupon");
     } finally {
       setCreateCouponLoading(false);
     }
@@ -128,38 +135,40 @@ export default function CouponsPageClient() {
   const handleToggleActive = async (id: string, currentStatus: boolean) => {
     try {
       const response = await fetch(`/api/admin/coupons/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isActive: !currentStatus })
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !currentStatus }),
       });
 
       if (response.ok) {
-        toast.success(`Coupon ${!currentStatus ? 'activated' : 'deactivated'}`);
+        toast.success(`Coupon ${!currentStatus ? "activated" : "deactivated"}`);
         fetchCoupons();
       } else {
-        toast.error('Failed to update coupon');
+        toast.error("Failed to update coupon");
       }
     } catch (error) {
-      console.error('Error toggling coupon:', error);
-      toast.error('Failed to update coupon');
+      console.error("Error toggling coupon:", error);
+      toast.error("Failed to update coupon");
     }
   };
 
   const handleDeleteCoupon = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this coupon?')) return;
-    
+    if (!confirm("Are you sure you want to delete this coupon?")) return;
+
     try {
-      const response = await fetch(`/api/admin/coupons/${id}`, { method: 'DELETE' });
-      
+      const response = await fetch(`/api/admin/coupons/${id}`, {
+        method: "DELETE",
+      });
+
       if (response.ok) {
-        toast.success('Coupon deleted successfully');
+        toast.success("Coupon deleted successfully");
         fetchCoupons();
       } else {
-        toast.error('Failed to delete coupon');
+        toast.error("Failed to delete coupon");
       }
     } catch (error) {
-      console.error('Error deleting coupon:', error);
-      toast.error('Failed to delete coupon');
+      console.error("Error deleting coupon:", error);
+      toast.error("Failed to delete coupon");
     }
   };
 
@@ -168,7 +177,9 @@ export default function CouponsPageClient() {
       <div className="flex min-h-screen items-center justify-center bg-neutral-50 dark:bg-neutral-900">
         <div className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-neutral-200 border-t-neutral-900 dark:border-neutral-700 dark:border-t-neutral-100"></div>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">Loading coupons...</p>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+            Loading coupons...
+          </p>
         </div>
       </div>
     );
@@ -185,14 +196,15 @@ export default function CouponsPageClient() {
                 Discount Coupons
               </h1>
               <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-                Create and manage promotional discount codes ({coupons.length} total)
+                Create and manage promotional discount codes ({coupons.length}{" "}
+                total)
               </p>
             </div>
             <button
               onClick={() => setShowCreateForm(!showCreateForm)}
               className="inline-flex items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
             >
-              {showCreateForm ? 'Cancel' : '+ Create Coupon'}
+              {showCreateForm ? "Cancel" : "+ Create Coupon"}
             </button>
           </div>
 
@@ -224,23 +236,31 @@ export default function CouponsPageClient() {
                           onChange={(e) => {
                             setUseAutoGenerate(e.target.checked);
                             if (e.target.checked) {
-                              setFormData({ ...formData, code: '' });
+                              setFormData({ ...formData, code: "" });
                             }
                           }}
                           className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-500"
                         />
-                        <label htmlFor="autoGenerate" className="text-sm text-neutral-700 dark:text-neutral-300">
+                        <label
+                          htmlFor="autoGenerate"
+                          className="text-sm text-neutral-700 dark:text-neutral-300"
+                        >
                           Auto-generate code
                         </label>
                       </div>
-                      
+
                       {!useAutoGenerate && (
                         <div>
                           <div className="flex gap-2">
                             <input
                               type="text"
                               value={formData.code}
-                              onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  code: e.target.value.toUpperCase(),
+                                })
+                              }
                               placeholder="e.g., SAVE20 or WELCOME"
                               className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                             />
@@ -253,14 +273,16 @@ export default function CouponsPageClient() {
                             </button>
                           </div>
                           <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                            Use uppercase letters, numbers, and hyphens (3-50 characters)
+                            Use uppercase letters, numbers, and hyphens (3-50
+                            characters)
                           </p>
                         </div>
                       )}
-                      
+
                       {useAutoGenerate && (
                         <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                          A unique code will be automatically generated when you create the coupon
+                          A unique code will be automatically generated when you
+                          create the coupon
                         </p>
                       )}
                     </div>
@@ -273,7 +295,12 @@ export default function CouponsPageClient() {
                     </label>
                     <textarea
                       value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          description: e.target.value,
+                        })
+                      }
                       placeholder="e.g., 20% off for new customers"
                       className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                       rows={2}
@@ -288,7 +315,12 @@ export default function CouponsPageClient() {
                       </label>
                       <select
                         value={formData.discountType}
-                        onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            discountType: e.target.value,
+                          })
+                        }
                         className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                         required
                       >
@@ -298,7 +330,7 @@ export default function CouponsPageClient() {
                       </select>
                     </div>
 
-                    {formData.discountType !== 'free_shipping' && (
+                    {formData.discountType !== "free_shipping" && (
                       <div>
                         <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
                           Discount Value <span className="text-red-600">*</span>
@@ -307,15 +339,24 @@ export default function CouponsPageClient() {
                           <input
                             type="number"
                             value={formData.discountValue}
-                            onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })}
-                            placeholder={formData.discountType === 'percentage' ? '20' : '1000'}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                discountValue: e.target.value,
+                              })
+                            }
+                            placeholder={
+                              formData.discountType === "percentage"
+                                ? "20"
+                                : "1000"
+                            }
                             required
                             min="0"
                             step="0.01"
                             className="w-full rounded-md border border-neutral-300 px-3 py-2 pr-10 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                           />
                           <span className="absolute right-3 top-2 text-sm text-neutral-500">
-                            {formData.discountType === 'percentage' ? '%' : '₦'}
+                            {formData.discountType === "percentage" ? "%" : "₦"}
                           </span>
                         </div>
                       </div>
@@ -330,13 +371,20 @@ export default function CouponsPageClient() {
                       <input
                         type="number"
                         value={formData.minOrderValue}
-                        onChange={(e) => setFormData({ ...formData, minOrderValue: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            minOrderValue: e.target.value,
+                          })
+                        }
                         placeholder="e.g., 5000"
                         min="0"
                         step="0.01"
                         className="w-full rounded-md border border-neutral-300 px-3 py-2 pr-10 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                       />
-                      <span className="absolute right-3 top-2 text-sm text-neutral-500">₦</span>
+                      <span className="absolute right-3 top-2 text-sm text-neutral-500">
+                        ₦
+                      </span>
                     </div>
                   </div>
 
@@ -349,7 +397,9 @@ export default function CouponsPageClient() {
                       <input
                         type="number"
                         value={formData.maxUses}
-                        onChange={(e) => setFormData({ ...formData, maxUses: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, maxUses: e.target.value })
+                        }
                         placeholder="Unlimited"
                         min="0"
                         className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
@@ -363,7 +413,12 @@ export default function CouponsPageClient() {
                       <input
                         type="number"
                         value={formData.maxUsesPerUser}
-                        onChange={(e) => setFormData({ ...formData, maxUsesPerUser: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            maxUsesPerUser: e.target.value,
+                          })
+                        }
                         placeholder="Unlimited"
                         min="0"
                         className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
@@ -380,7 +435,12 @@ export default function CouponsPageClient() {
                       <input
                         type="datetime-local"
                         value={formData.startDate}
-                        onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            startDate: e.target.value,
+                          })
+                        }
                         className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                       />
                     </div>
@@ -392,7 +452,12 @@ export default function CouponsPageClient() {
                       <input
                         type="datetime-local"
                         value={formData.expiryDate}
-                        onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            expiryDate: e.target.value,
+                          })
+                        }
                         className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                       />
                     </div>
@@ -404,7 +469,12 @@ export default function CouponsPageClient() {
                       <input
                         type="checkbox"
                         checked={formData.requiresLogin}
-                        onChange={(e) => setFormData({ ...formData, requiresLogin: e.target.checked })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            requiresLogin: e.target.checked,
+                          })
+                        }
                         className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-500"
                       />
                       <span className="text-sm text-neutral-700 dark:text-neutral-300">
@@ -416,7 +486,12 @@ export default function CouponsPageClient() {
                       <input
                         type="checkbox"
                         checked={formData.isActive}
-                        onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            isActive: e.target.checked,
+                          })
+                        }
                         className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-500"
                       />
                       <span className="text-sm text-neutral-700 dark:text-neutral-300">
@@ -433,7 +508,7 @@ export default function CouponsPageClient() {
                     className="rounded-md bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={createCouponLoading}
                   >
-                    {createCouponLoading ? 'Creating...' : 'Create Coupon'}
+                    {createCouponLoading ? "Creating..." : "Create Coupon"}
                   </button>
                   <button
                     type="button"
@@ -450,31 +525,31 @@ export default function CouponsPageClient() {
           {/* Filter Tabs */}
           <div className="mb-4 flex gap-2">
             <button
-              onClick={() => setFilter('all')}
+              onClick={() => setFilter("all")}
               className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                filter === 'all'
-                  ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
-                  : 'border border-neutral-300 text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800'
+                filter === "all"
+                  ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
+                  : "border border-neutral-300 text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
               }`}
             >
               All
             </button>
             <button
-              onClick={() => setFilter('active')}
+              onClick={() => setFilter("active")}
               className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                filter === 'active'
-                  ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
-                  : 'border border-neutral-300 text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800'
+                filter === "active"
+                  ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
+                  : "border border-neutral-300 text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
               }`}
             >
               Active
             </button>
             <button
-              onClick={() => setFilter('inactive')}
+              onClick={() => setFilter("inactive")}
               className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                filter === 'inactive'
-                  ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
-                  : 'border border-neutral-300 text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800'
+                filter === "inactive"
+                  ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
+                  : "border border-neutral-300 text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
               }`}
             >
               Inactive
@@ -539,7 +614,10 @@ export default function CouponsPageClient() {
                     </tr>
                   ) : (
                     coupons.map((coupon) => (
-                      <tr key={coupon.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800">
+                      <tr
+                        key={coupon.id}
+                        className="hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                      >
                         <td className="whitespace-nowrap px-6 py-4">
                           <div className="flex items-center">
                             <div>
@@ -560,42 +638,44 @@ export default function CouponsPageClient() {
                           </div>
                         </td>
                         <td className="whitespace-nowrap px-6 py-4 text-sm capitalize text-neutral-900 dark:text-neutral-100">
-                          {coupon.discountType.replace('_', ' ')}
+                          {coupon.discountType.replace("_", " ")}
                         </td>
                         <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-900 dark:text-neutral-100">
-                          {coupon.discountType === 'percentage'
+                          {coupon.discountType === "percentage"
                             ? `${coupon.discountValue}%`
-                            : coupon.discountType === 'fixed'
-                            ? `₦${Number(coupon.discountValue).toLocaleString()}`
-                            : 'Free Shipping'}
+                            : coupon.discountType === "fixed"
+                              ? `₦${Number(coupon.discountValue).toLocaleString()}`
+                              : "Free Shipping"}
                         </td>
                         <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-900 dark:text-neutral-100">
                           {coupon.usedCount}
-                          {coupon.maxUses ? ` / ${coupon.maxUses}` : ''}
+                          {coupon.maxUses ? ` / ${coupon.maxUses}` : ""}
                         </td>
                         <td className="whitespace-nowrap px-6 py-4">
                           <span
                             className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                               coupon.isActive
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                : 'bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200'
+                                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                : "bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200"
                             }`}
                           >
-                            {coupon.isActive ? 'Active' : 'Inactive'}
+                            {coupon.isActive ? "Active" : "Inactive"}
                           </span>
                         </td>
                         <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
                           {coupon.expiryDate
                             ? new Date(coupon.expiryDate).toLocaleDateString()
-                            : 'No expiry'}
+                            : "No expiry"}
                         </td>
                         <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                           <div className="flex justify-end gap-2">
                             <button
-                              onClick={() => handleToggleActive(coupon.id, coupon.isActive)}
+                              onClick={() =>
+                                handleToggleActive(coupon.id, coupon.isActive)
+                              }
                               className="text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
                             >
-                              {coupon.isActive ? 'Deactivate' : 'Activate'}
+                              {coupon.isActive ? "Deactivate" : "Activate"}
                             </button>
                             <button
                               onClick={() => handleDeleteCoupon(coupon.id)}

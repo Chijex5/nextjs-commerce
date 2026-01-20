@@ -7,6 +7,8 @@ export async function CollectionSections() {
   if (!collectionsWithProducts.length) return null;
 
   return (
-    <CollectionSectionsClient collectionsWithProducts={collectionsWithProducts} />
+    <CollectionSectionsClient
+      collectionsWithProducts={collectionsWithProducts}
+    />
   );
 }

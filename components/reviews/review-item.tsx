@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { StarRating } from './star-rating';
-import { format } from 'date-fns';
-import { useState } from 'react';
+import { StarRating } from "./star-rating";
+import { format } from "date-fns";
+import { useState } from "react";
 
 interface ReviewItemProps {
   review: {
@@ -22,12 +22,16 @@ interface ReviewItemProps {
   canVote?: boolean;
 }
 
-export function ReviewItem({ review, onVote, canVote = false }: ReviewItemProps) {
+export function ReviewItem({
+  review,
+  onVote,
+  canVote = false,
+}: ReviewItemProps) {
   const [voting, setVoting] = useState(false);
 
   const handleVote = async (isHelpful: boolean) => {
     if (!onVote || voting) return;
-    
+
     setVoting(true);
     try {
       await onVote(review.id, isHelpful);
@@ -49,8 +53,8 @@ export function ReviewItem({ review, onVote, canVote = false }: ReviewItemProps)
             )}
           </div>
           <p className="text-sm text-neutral-600">
-            {review.user?.name || 'Anonymous'} •{' '}
-            {format(new Date(review.createdAt), 'MMM d, yyyy')}
+            {review.user?.name || "Anonymous"} •{" "}
+            {format(new Date(review.createdAt), "MMM d, yyyy")}
           </p>
         </div>
       </div>
@@ -60,7 +64,9 @@ export function ReviewItem({ review, onVote, canVote = false }: ReviewItemProps)
       )}
 
       {review.comment && (
-        <p className="text-sm leading-relaxed text-neutral-700">{review.comment}</p>
+        <p className="text-sm leading-relaxed text-neutral-700">
+          {review.comment}
+        </p>
       )}
 
       {review.images && review.images.length > 0 && (

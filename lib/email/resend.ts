@@ -1,12 +1,16 @@
 // Resend email utility
-import { Resend } from 'resend';
+import { Resend } from "resend";
 
 // Validate Resend API key
 if (!process.env.RESEND_API_KEY) {
-  console.warn('RESEND_API_KEY is not set in environment variables. Emails will not be sent.');
+  console.warn(
+    "RESEND_API_KEY is not set in environment variables. Emails will not be sent.",
+  );
 }
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 /**
  * Send an email using Resend
@@ -20,8 +24,8 @@ export const sendEmail = async ({
   to,
   subject,
   html,
-  from = process.env.SMTP_FROM_EMAIL || 'noreply@yourdomain.com',
-  replyTo = process.env.SUPPORT_EMAIL || 'support@dfootprint.me',
+  from = process.env.SMTP_FROM_EMAIL || "noreply@yourdomain.com",
+  replyTo = process.env.SUPPORT_EMAIL || "support@dfootprint.me",
 }: {
   to: string | string[];
   subject: string;
@@ -30,10 +34,12 @@ export const sendEmail = async ({
   replyTo?: string;
 }) => {
   if (!resend) {
-    console.error('Resend is not initialized. Please set RESEND_API_KEY environment variable.');
+    console.error(
+      "Resend is not initialized. Please set RESEND_API_KEY environment variable.",
+    );
     return {
       success: false,
-      error: 'Email service not configured',
+      error: "Email service not configured",
     };
   }
 
@@ -48,10 +54,10 @@ export const sendEmail = async ({
     return { success: true, data };
   } catch (error) {
     // Log full error for debugging but don't expose to client
-    console.error('Email sending error:', error);
+    console.error("Email sending error:", error);
     return {
       success: false,
-      error: 'Failed to send email. Please try again.',
+      error: "Failed to send email. Please try again.",
     };
   }
 };

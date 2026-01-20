@@ -85,27 +85,21 @@ export default function ContactPage() {
       description: "Support, orders, and sizing help.",
       value: supportEmail,
       href: `mailto:${supportEmail}`,
-      icon: (
-        <MdEmail className="h-5 w-5" />
-      ),
+      icon: <MdEmail className="h-5 w-5" />,
     },
     {
       label: "Phone",
       description: "Weekdays, 9am to 6pm WAT.",
       value: supportPhone,
       href: supportPhone ? `tel:${sanitizePhone(supportPhone)}` : "",
-      icon: (
-        <FaPhone className="h-5 w-5" />
-      ),
+      icon: <FaPhone className="h-5 w-5" />,
     },
     {
       label: "WhatsApp",
       description: "Quick questions and order updates.",
       value: whatsappNumber || "Chat with us",
       href: whatsappHref,
-      icon: (
-        <FaWhatsapp className="h-5 w-5" />
-      ),
+      icon: <FaWhatsapp className="h-5 w-5" />,
     },
   ].filter((method) => method.value && method.href);
 
@@ -115,9 +109,7 @@ export default function ContactPage() {
       description: "Behind the scenes and new drops.",
       value: instagramUrl ? getSocialHandle(instagramUrl) : "",
       href: instagramUrl,
-      icon: (
-        <FaInstagram className="h-5 w-5" />
-      ),
+      icon: <FaInstagram className="h-5 w-5" />,
       isExternal: true,
     },
     {
@@ -125,9 +117,7 @@ export default function ContactPage() {
       description: "Process videos and styling tips.",
       value: tiktokUrl ? getSocialHandle(tiktokUrl) : "",
       href: tiktokUrl,
-      icon: (
-        <SiTiktok className="h-5 w-5" />
-      ),
+      icon: <SiTiktok className="h-5 w-5" />,
       isExternal: true,
     },
     {
@@ -135,9 +125,7 @@ export default function ContactPage() {
       description: "Quick updates from the studio.",
       value: snapchatUrl ? getSocialHandle(snapchatUrl) : "",
       href: snapchatUrl,
-      icon: (
-        <RiSnapchatLine className="h-5 w-5" />
-      ),
+      icon: <RiSnapchatLine className="h-5 w-5" />,
       isExternal: true,
     },
   ].filter((method) => method.value && method.href);

@@ -1,4 +1,4 @@
-import { baseTemplate } from './base';
+import { baseTemplate } from "./base";
 
 interface AbandonedCartData {
   customerName: string;
@@ -17,17 +17,24 @@ interface AbandonedCartData {
  * Sent to logged-in users who added items to cart but didn't complete checkout
  */
 export const abandonedCartTemplate = (data: AbandonedCartData) => {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'https://yourdomain.com';
-  
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXTAUTH_URL ||
+    "https://yourdomain.com";
+
   const itemsHtml = data.items
     .slice(0, 3) // Show max 3 items
     .map(
       (item) => `
       <tr>
         <td style="padding: 16px 0; border-bottom: 1px solid #e5e5e5;">
-          ${item.imageUrl ? `
+          ${
+            item.imageUrl
+              ? `
           <img src="${item.imageUrl}" alt="${item.productTitle}" style="width: 60px; height: 60px; object-fit: cover; margin-right: 12px; vertical-align: middle; border: 1px solid #e5e5e5;">
-          ` : ''}
+          `
+              : ""
+          }
           <div style="display: inline-block; vertical-align: middle;">
             <div style="font-weight: 500; color: #000000;">${item.productTitle}</div>
             <div style="color: #737373; font-size: 13px; margin-top: 2px;">${item.variantTitle}</div>
@@ -38,9 +45,9 @@ export const abandonedCartTemplate = (data: AbandonedCartData) => {
           ₦${item.price.toLocaleString()}
         </td>
       </tr>
-    `
+    `,
     )
-    .join('');
+    .join("");
 
   const moreItems = data.items.length > 3 ? data.items.length - 3 : 0;
 
@@ -55,11 +62,15 @@ export const abandonedCartTemplate = (data: AbandonedCartData) => {
         ${itemsHtml}
       </tbody>
     </table>
-    ${moreItems > 0 ? `
+    ${
+      moreItems > 0
+        ? `
     <p style="margin-top: 12px; font-size: 13px; color: #737373;">
-      + ${moreItems} more item${moreItems > 1 ? 's' : ''} in your cart
+      + ${moreItems} more item${moreItems > 1 ? "s" : ""} in your cart
     </p>
-    ` : ''}
+    `
+        : ""
+    }
     
     <div class="info-box" style="margin-top: 24px;">
       <p style="display: flex; justify-content: space-between; align-items: center; margin: 0;">

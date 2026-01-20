@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createUserSession, getUserSession, setUserSessionCookie } from "lib/user-session";
+import {
+  createUserSession,
+  getUserSession,
+  setUserSessionCookie,
+} from "lib/user-session";
 import prisma from "lib/prisma";
 
 // GET - Fetch user profile

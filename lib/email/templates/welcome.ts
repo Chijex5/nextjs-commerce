@@ -1,4 +1,4 @@
-import { baseTemplate } from './base';
+import { baseTemplate } from "./base";
 
 interface WelcomeEmailData {
   name: string;
@@ -9,8 +9,11 @@ interface WelcomeEmailData {
  * Sent when user subscribes to newsletter or creates account
  */
 export const welcomeEmailTemplate = (data: WelcomeEmailData) => {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'https://yourdomain.com';
-  
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXTAUTH_URL ||
+    "https://yourdomain.com";
+
   const content = `
     <h2>Welcome to D'FOOTPRINT</h2>
     <p>Hi ${data.name},</p>

@@ -1,25 +1,29 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 
 interface StarSelectorProps {
   value: number;
   onChange: (value: number) => void;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 }
 
-export function StarSelector({ value, onChange, size = 'lg' }: StarSelectorProps) {
+export function StarSelector({
+  value,
+  onChange,
+  size = "lg",
+}: StarSelectorProps) {
   const [hoverValue, setHoverValue] = useState<number | null>(null);
 
   const sizeClasses = {
-    sm: 'text-xl',
-    md: 'text-2xl',
-    lg: 'text-3xl'
+    sm: "text-xl",
+    md: "text-2xl",
+    lg: "text-3xl",
   };
 
   const getRatingText = (rating: number) => {
-    const texts = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
-    return texts[rating] || '';
+    const texts = ["", "Poor", "Fair", "Good", "Very Good", "Excellent"];
+    return texts[rating] || "";
   };
 
   const displayValue = hoverValue !== null ? hoverValue : value;
@@ -37,14 +41,20 @@ export function StarSelector({ value, onChange, size = 'lg' }: StarSelectorProps
             onMouseLeave={() => setHoverValue(null)}
             aria-label={`Rate ${star} stars`}
           >
-            <span className={star <= displayValue ? 'text-black' : 'text-neutral-300'}>
+            <span
+              className={
+                star <= displayValue ? "text-black" : "text-neutral-300"
+              }
+            >
               ★
             </span>
           </button>
         ))}
       </div>
       {displayValue > 0 && (
-        <p className="text-sm text-neutral-600">{getRatingText(displayValue)}</p>
+        <p className="text-sm text-neutral-600">
+          {getRatingText(displayValue)}
+        </p>
       )}
     </div>
   );

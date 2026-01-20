@@ -19,6 +19,7 @@ Complete email automation system with Google Email Markup, order notifications, 
 **File:** `lib/email/templates/order-confirmation-with-markup.ts`
 
 **Features:**
+
 - Full Schema.org Order markup for Gmail
 - Structured data includes:
   - Merchant information (D'FOOTPRINT)
@@ -36,6 +37,7 @@ Complete email automation system with Google Email Markup, order notifications, 
 **Integration:** Automatically sent after successful payment verification in `app/api/checkout/verify/route.ts`
 
 **Google Email Markup Benefits:**
+
 - Rich order cards in Gmail inbox
 - Quick access to order tracking
 - Professional appearance
@@ -51,6 +53,7 @@ Complete email automation system with Google Email Markup, order notifications, 
 **Purpose:** Send test email to Google for Email Markup whitelisting approval
 
 **Usage:**
+
 ```bash
 # Set environment variables
 export RESEND_API_KEY="re_xxxxxxxxxxxxx"
@@ -61,6 +64,7 @@ node scripts/send-google-test-email.js
 ```
 
 **Output:**
+
 ```
 🚀 Sending test email to Google for Email Markup whitelisting...
 From: noreply@yourdomain.com
@@ -75,6 +79,7 @@ To: schema.whitelisting+sample@gmail.com
 ```
 
 **Process:**
+
 1. Run the script once
 2. Wait 5-7 business days
 3. Google approves and emails confirmation
@@ -87,6 +92,7 @@ To: schema.whitelisting+sample@gmail.com
 **File:** `lib/email/templates/order-status-update.ts`
 
 **Features:**
+
 - Automatically sent when order status or delivery status changes
 - Different templates for each status:
   - 📦 **Dispatch** - "Your Order Has Been Dispatched!"
@@ -103,13 +109,14 @@ To: schema.whitelisting+sample@gmail.com
 **Integration:** Automatically triggered in `app/api/admin/orders/[id]/route.ts` when admin updates order
 
 **Example Flow:**
+
 ```
 1. Admin changes order status from "processing" → "production"
    → Email sent: "Your Order is in Production"
-   
+
 2. Admin changes delivery status to "dispatch" + adds tracking
    → Email sent: "Your Order Has Been Dispatched!" with tracking number
-   
+
 3. Admin changes delivery status to "delivered"
    → Email sent: "Order Delivered Successfully!" with feedback request
 ```
@@ -119,11 +126,13 @@ To: schema.whitelisting+sample@gmail.com
 ### 4. Abandoned Cart Recovery System
 
 #### Files:
+
 - `lib/email/templates/abandoned-cart.ts` - Beautiful recovery email
 - `app/api/abandoned-cart/route.ts` - API for tracking and sending
 - `prisma/schema.prisma` - AbandonedCart database model
 
 #### Database Schema:
+
 ```prisma
 model AbandonedCart {
   id              String    @id @default(uuid())
@@ -139,7 +148,7 @@ model AbandonedCart {
   recoveredAt     DateTime?
   createdAt       DateTime  @default(now())
   expiresAt       DateTime  // 1 hour threshold
-  
+
   user User @relation(...)
 }
 ```
@@ -147,22 +156,23 @@ model AbandonedCart {
 #### How It Works:
 
 **Step 1: Track Cart (POST /api/abandoned-cart)**
+
 ```typescript
 // Frontend: Track when logged-in user adds to cart
-await fetch('/api/abandoned-cart', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+await fetch("/api/abandoned-cart", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
     cartId: cart.id,
-    items: cart.items.map(item => ({
+    items: cart.items.map((item) => ({
       productTitle: item.product.title,
       variantTitle: item.variant.title,
       quantity: item.quantity,
       price: item.variant.price,
-      imageUrl: item.product.image
+      imageUrl: item.product.image,
     })),
-    cartTotal: cart.total
-  })
+    cartTotal: cart.total,
+  }),
 });
 ```
 
@@ -171,6 +181,7 @@ await fetch('/api/abandoned-cart', {
 - Only tracks logged-in users
 
 **Step 2: Send Emails (GET /api/abandoned-cart)**
+
 ```bash
 # Cron job calls this endpoint hourly
 curl https://yourdomain.com/api/abandoned-cart
@@ -182,10 +193,12 @@ curl https://yourdomain.com/api/abandoned-cart
 - Processes in batches (50 at a time)
 
 **Step 3: Recovery Tracking**
+
 - When user completes checkout, mark cart as recovered
 - Track recovery metrics for ROI
 
 #### Email Template Features:
+
 - Shows up to 3 cart items with product images
 - Displays total cart value (₦XX,XXX)
 - "Why shop with D'FOOTPRINT" benefits
@@ -195,6 +208,7 @@ curl https://yourdomain.com/api/abandoned-cart
 - Professional, non-pushy tone
 
 #### Expected Results:
+
 - **Industry Average Recovery:** 10-15%
 - **Additional Revenue:** Recover abandoned carts worth ₦X per month
 - **Customer Experience:** Helpful reminder, not annoying
@@ -205,6 +219,7 @@ curl https://yourdomain.com/api/abandoned-cart
 ## 🚀 Setup Instructions
 
 ### Prerequisites
+
 1. Resend account with verified domain
 2. Environment variables set
 3. Database migrated
@@ -212,6 +227,7 @@ curl https://yourdomain.com/api/abandoned-cart
 ### Step 1: Environment Variables
 
 Add to `.env.local`:
+
 ```env
 # Email (Resend)
 RESEND_API_KEY="re_xxxxxxxxxxxxx"
@@ -247,6 +263,7 @@ Wait 5-7 business days for Google approval.
 **Option A: Vercel Cron (Recommended)**
 
 Create `vercel.json` in project root:
+
 ```json
 {
   "crons": [
@@ -263,6 +280,7 @@ This runs hourly at the top of each hour.
 **Option B: External Cron Service**
 
 Use [cron-job.org](https://cron-job.org) or similar:
+
 - URL: `https://yourdomain.com/api/abandoned-cart`
 - Schedule: Every hour
 - Method: GET
@@ -285,16 +303,16 @@ import { useSession } from 'next-auth/react';
 
 export function AddToCartButton({ product, variant }) {
   const { data: session } = useSession();
-  
+
   const handleAddToCart = async () => {
     // ... existing add to cart logic ...
-    
+
     // Track abandoned cart for logged-in users
     if (session?.user) {
       try {
         // Get updated cart data after adding
         const cart = await getCart();
-        
+
         await fetch('/api/abandoned-cart', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -316,7 +334,7 @@ export function AddToCartButton({ product, variant }) {
       }
     }
   };
-  
+
   return (
     <button onClick={handleAddToCart}>
       Add to Cart
@@ -357,6 +375,7 @@ export function AddToCartButton({ product, variant }) {
 ## 📧 Email Examples
 
 ### Order Confirmation (with JSON-LD)
+
 ```
 Subject: Order Confirmation #ORD-123456 - D'FOOTPRINT
 
@@ -385,7 +404,7 @@ Nigeria
 
 [Track Your Order]
 
-Your order will be handcrafted with care. Production typically 
+Your order will be handcrafted with care. Production typically
 takes 7-10 days, after which we'll ship it to you.
 
 Best regards,
@@ -393,6 +412,7 @@ The D'FOOTPRINT Team
 ```
 
 ### Status Update (Dispatch)
+
 ```
 Subject: Your Order Has Shipped! #ORD-123456 - D'FOOTPRINT
 
@@ -411,7 +431,7 @@ Estimated Arrival: January 20, 2026
 
 [View Order Details]
 
-Your handcrafted footwear has been carefully packaged and is 
+Your handcrafted footwear has been carefully packaged and is
 now being delivered to you.
 
 Best regards,
@@ -419,6 +439,7 @@ The D'FOOTPRINT Team
 ```
 
 ### Abandoned Cart
+
 ```
 Subject: You Left Something Behind - D'FOOTPRINT
 
@@ -426,8 +447,8 @@ Subject: You Left Something Behind - D'FOOTPRINT
 
 Hi John Doe,
 
-We noticed you added some beautiful handcrafted footwear to 
-your cart but didn't complete your order. Don't worry, we've 
+We noticed you added some beautiful handcrafted footwear to
+your cart but didn't complete your order. Don't worry, we've
 saved your items for you!
 
 Your Cart Items:
@@ -456,16 +477,19 @@ The D'FOOTPRINT Team
 ## 📈 Monitoring & Metrics
 
 ### Order Confirmation Emails
+
 - Track send success rate
 - Monitor delivery rates (via Resend dashboard)
 - Check for errors in logs
 
 ### Status Update Emails
+
 - Count emails sent per status type
 - Monitor customer engagement
 - Track support inquiry reduction
 
 ### Abandoned Cart Recovery
+
 - **Abandonment Rate:** Carts created / Orders completed
 - **Email Send Rate:** Emails sent / Carts abandoned
 - **Recovery Rate:** Orders recovered / Emails sent
@@ -473,6 +497,7 @@ The D'FOOTPRINT Team
 - **ROI:** Revenue recovered / Email cost
 
 Expected metrics:
+
 - Abandonment rate: 60-80% (industry standard)
 - Recovery rate: 10-15% (with good email)
 - Revenue impact: +₦XX,XXX per month
@@ -526,11 +551,13 @@ Expected metrics:
 ## 💰 Cost Considerations
 
 ### Resend Pricing
+
 - Free tier: 100 emails/day
 - Pro: $20/month for 50,000 emails
 - Scale: Custom pricing
 
 ### Estimated Email Volume
+
 - Order confirmations: ~X per day
 - Status updates: ~2X per day (2 emails per order average)
 - Abandoned carts: ~0.5X per day (assuming 70% abandonment, 1-hour delay)
@@ -553,6 +580,7 @@ Example: 10 orders/day = 35 emails/day = well within free tier
 ## ✅ Checklist
 
 **Setup:**
+
 - [ ] Environment variables configured
 - [ ] Database migrated (`npx prisma db push`)
 - [ ] Google whitelisting script run
@@ -560,6 +588,7 @@ Example: 10 orders/day = 35 emails/day = well within free tier
 - [ ] Cart tracking integrated in frontend
 
 **Testing:**
+
 - [ ] Order confirmation email received
 - [ ] Status update email received
 - [ ] Abandoned cart email received
@@ -567,6 +596,7 @@ Example: 10 orders/day = 35 emails/day = well within free tier
 - [ ] Google markup works (after approval)
 
 **Monitoring:**
+
 - [ ] Email send rates tracked
 - [ ] Recovery rates monitored
 - [ ] Error logs reviewed

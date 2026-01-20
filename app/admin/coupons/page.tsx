@@ -16,5 +16,5 @@ export default async function AdminCouponsPage({}) {
       <AdminNav currentPage="coupons" userEmail={session.user?.email} />
       <CouponsPageClient />
     </div>
-  )
+  );
 }

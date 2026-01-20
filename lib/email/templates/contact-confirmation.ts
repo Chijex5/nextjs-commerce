@@ -11,9 +11,7 @@ const firstName = (value?: string) => {
   return trimmed.split(/\s+/)[0];
 };
 
-export const contactConfirmationTemplate = (
-  data: ContactConfirmationData,
-) => {
+export const contactConfirmationTemplate = (data: ContactConfirmationData) => {
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXTAUTH_URL ||

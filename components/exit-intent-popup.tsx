@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 export default function ExitIntentPopup() {
   const [isVisible, setIsVisible] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [discountCode] = useState('WELCOME10');
+  const [discountCode] = useState("WELCOME10");
 
   useEffect(() => {
     // Check if user has already seen the popup
-    const hasSeenPopup = document.cookie.includes('exit_intent_shown=true');
+    const hasSeenPopup = document.cookie.includes("exit_intent_shown=true");
     if (hasSeenPopup) return;
 
     let timeoutId: NodeJS.Timeout;
@@ -22,20 +22,21 @@ export default function ExitIntentPopup() {
         timeoutId = setTimeout(() => {
           setIsVisible(true);
           // Set cookie to show popup only once per 14 days
-          document.cookie = 'exit_intent_shown=true; max-age=' + (14 * 24 * 60 * 60) + '; path=/';
+          document.cookie =
+            "exit_intent_shown=true; max-age=" + 14 * 24 * 60 * 60 + "; path=/";
         }, 500);
       }
     };
 
     // Add delay before enabling exit intent detection (10 seconds)
     const enableTimeout = setTimeout(() => {
-      document.addEventListener('mouseleave', handleMouseLeave);
+      document.addEventListener("mouseleave", handleMouseLeave);
     }, 10000);
 
     return () => {
       clearTimeout(enableTimeout);
       clearTimeout(timeoutId);
-      document.removeEventListener('mouseleave', handleMouseLeave);
+      document.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, [isVisible]);
 
@@ -45,14 +46,14 @@ export default function ExitIntentPopup() {
 
     setLoading(true);
     try {
-      await fetch('/api/newsletter/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+      await fetch("/api/newsletter/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
       });
       setSubmitted(true);
     } catch (error) {
-      console.error('Newsletter signup error:', error);
+      console.error("Newsletter signup error:", error);
     } finally {
       setLoading(false);
     }
@@ -110,7 +111,7 @@ export default function ExitIntentPopup() {
                 disabled={loading}
                 className="mt-4 w-full bg-neutral-900 py-3 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50"
               >
-                {loading ? 'Subscribing...' : 'Join the list'}
+                {loading ? "Subscribing..." : "Join the list"}
               </button>
             </form>
 
@@ -120,12 +121,16 @@ export default function ExitIntentPopup() {
           </>
         ) : (
           <div className="text-center">
-            <h2 className="text-2xl font-medium text-neutral-900">Thank You!</h2>
+            <h2 className="text-2xl font-medium text-neutral-900">
+              Thank You!
+            </h2>
             <p className="mt-4 text-sm text-neutral-700">
               Here is your welcome code:
             </p>
             <div className="mt-4 border-2 border-neutral-900 bg-neutral-50 p-4">
-              <p className="text-2xl font-bold text-neutral-900">{discountCode}</p>
+              <p className="text-2xl font-bold text-neutral-900">
+                {discountCode}
+              </p>
             </div>
             <p className="mt-4 text-sm text-neutral-700">
               Use this at checkout for a little thank you.

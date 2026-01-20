@@ -13,13 +13,12 @@ export async function GET(request: NextRequest) {
     const callbackUrl = searchParams.get("callbackUrl") || "/account?welcome=1";
 
     if (!email || !token) {
-      return NextResponse.redirect(new URL("/auth/login?error=invalid", request.url));
+      return NextResponse.redirect(
+        new URL("/auth/login?error=invalid", request.url),
+      );
     }
 
-    const tokenHash = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
     const magicToken = await prisma.magicLinkToken.findFirst({
       where: {
@@ -31,7 +30,9 @@ export async function GET(request: NextRequest) {
     });
 
     if (!magicToken) {
-      return NextResponse.redirect(new URL("/auth/login?error=expired", request.url));
+      return NextResponse.redirect(
+        new URL("/auth/login?error=expired", request.url),
+      );
     }
 
     await prisma.magicLinkToken.update({
@@ -72,6 +73,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(callbackUrl, request.url));
   } catch (error) {
     console.error("Magic link verify error:", error);
-    return NextResponse.redirect(new URL("/auth/login?error=failed", request.url));
+    return NextResponse.redirect(
+      new URL("/auth/login?error=failed", request.url),
+    );
   }
 }

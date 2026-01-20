@@ -16,8 +16,7 @@ export async function GET() {
   const entries = collections
     .filter(
       (collection) =>
-        !collection.handle.startsWith("hidden-") &&
-        collection.handle !== "all",
+        !collection.handle.startsWith("hidden-") && collection.handle !== "all",
     )
     .map((collection) => ({
       loc: canonicalUrl(`/search/${collection.handle}`),

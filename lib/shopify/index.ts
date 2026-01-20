@@ -352,7 +352,6 @@ export async function getCollections(): Promise<Collection[]> {
   cacheLife("days");
 
   if (!endpoint) {
-    
     return [
       {
         handle: "",
@@ -400,7 +399,6 @@ export async function getMenu(handle: string): Promise<Menu[]> {
   cacheLife("days");
 
   if (!endpoint) {
-    
     return [];
   }
 
@@ -445,7 +443,6 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
   cacheLife("days");
 
   if (!endpoint) {
-    
     return undefined;
   }
 

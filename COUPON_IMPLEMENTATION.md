@@ -1,7 +1,9 @@
 # Coupon System Implementation Summary
 
 ## Overview
+
 Complete overhaul of the coupon system addressing all issues mentioned in the requirements:
+
 1. ✅ Fixed admin UI to match theme consistency
 2. ✅ Implemented auto-generation of coupon codes with override capability
 3. ✅ Enforced uppercase, case-insensitive coupon codes with numbers support
@@ -12,6 +14,7 @@ Complete overhaul of the coupon system addressing all issues mentioned in the re
 ## Database Schema Changes
 
 ### New Model: `CouponUsage`
+
 ```prisma
 model CouponUsage {
   id        String   @id @default(uuid())
@@ -19,33 +22,41 @@ model CouponUsage {
   userId    String?  @map("user_id")
   sessionId String?  @map("session_id")
   usedAt    DateTime @default(now()) @map("used_at")
-  
+
   coupon Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
 }
 ```
+
 - Tracks each coupon usage with user ID or session ID
 - Enables per-customer usage limits
 - Cascade deletion when coupon is removed
 
 ### Updated Model: `Coupon`
+
 Added field:
+
 - `requiresLogin Boolean @default(false)` - Forces users to be logged in to use coupon
 
 ### Updated Model: `Order`
+
 Added fields:
+
 - `discountAmount Decimal @default(0.00)` - Stores the discount applied
 - `couponCode String?` - Records which coupon was used
 
 ## Admin Dashboard (`/admin/coupons`)
 
 ### UI Improvements
+
 - **Consistent Theme**: Matches orders and products pages perfectly
 - **Responsive Design**: Works on all screen sizes
 - **Dark Mode**: Full dark mode support
 - **Modern Layout**: Clean, professional appearance with proper spacing
 
 ### Features
+
 1. **Auto-Generate Codes**
+
    - Checkbox to enable/disable auto-generation
    - Format: `ABC-1234` (3 letters + 4 alphanumeric)
    - Excludes confusing characters (I, O, 0, 1)
@@ -53,12 +64,14 @@ Added fields:
    - Validates uniqueness automatically
 
 2. **Form Validation**
+
    - Real-time validation
    - Clear error messages via toast
    - Required field indicators
    - Prevents duplicate codes
 
 3. **Coupon Settings**
+
    - Discount type: Percentage, Fixed Amount, Free Shipping
    - Minimum order value
    - Total usage limits
@@ -73,6 +86,7 @@ Added fields:
    - Auto-dismiss with close button
 
 ### Table Display
+
 - Filterable by status (All, Active, Inactive)
 - Shows code, type, value, usage stats
 - "Requires Login" badge for customer-specific coupons
@@ -83,7 +97,9 @@ Added fields:
 ## Backend APIs
 
 ### `/api/admin/coupons` (POST)
+
 **Enhanced Features:**
+
 - Auto-generates unique codes if `autoGenerate: true` or code is empty
 - Validates code format (3-50 characters, alphanumeric + hyphens)
 - Checks for duplicate codes (case-insensitive)
@@ -91,6 +107,7 @@ Added fields:
 - Returns generated code in response
 
 **Code Generation Logic:**
+
 ```typescript
 // Attempts up to 10 times to generate a unique code
 // Format: XXX-XXXX (e.g., ABC-1234)
@@ -98,7 +115,9 @@ Added fields:
 ```
 
 ### `/api/coupons/validate` (POST)
+
 **Enhanced Validation:**
+
 1. Checks if coupon exists (case-insensitive)
 2. Verifies active status
 3. Validates date range (start/expiry)
@@ -111,13 +130,17 @@ Added fields:
 **Important:** Usage is NOT incremented during validation - only when order is completed
 
 ### `/api/checkout/initialize` (POST)
+
 **Coupon Support:**
+
 - Accepts `couponCode` and `discountAmount` in request
 - Calculates final total: `subtotal - discount + shipping`
 - Stores coupon data in checkout session cookie
 
 ### `/api/checkout/verify` (GET)
+
 **Coupon Tracking:**
+
 - Saves coupon code and discount amount to order
 - Creates `CouponUsage` record with userId/sessionId
 - Increments coupon `usedCount`
@@ -128,18 +151,22 @@ Added fields:
 ### Coupon Input Component (`components/cart/coupon-input.tsx`)
 
 **UX Improvements:**
+
 1. **Visual Design**
+
    - Applied state: Green success box with checkmark icon
    - Input state: Clean form with uppercase transformation
    - Loading state: Spinner animation
    - Disabled state: Clear visual feedback
 
 2. **Toast Notifications**
+
    - Success: "Coupon applied! You saved ₦X.XX"
    - Errors: Specific messages (expired, invalid, login required, etc.)
    - Remove: Confirmation message
 
 3. **Smart Features**
+
    - Auto-uppercase input
    - Enter key to apply
    - Persistence via localStorage
@@ -155,6 +182,7 @@ Added fields:
    - "This coupon has expired"
 
 ### Cart Modal Display
+
 - Shows discount line item in green
 - Displays coupon code
 - Subtracts from total
@@ -165,6 +193,7 @@ Added fields:
 ### Checkout Page (`/app/checkout/page.tsx`)
 
 **Features:**
+
 1. Loads coupon from localStorage
 2. Passes coupon data to payment initialization
 3. Displays discount in order summary:
@@ -178,15 +207,18 @@ Added fields:
 ## Code Utilities
 
 ### `lib/coupon-utils.ts`
+
 Three utility functions:
 
 1. **`generateCouponCode()`**
+
    - Returns format: `ABC-1234`
    - Uses safe characters only
    - Highly readable
    - Low collision probability
 
 2. **`formatCouponCode(code: string)`**
+
    - Converts to uppercase
    - Trims whitespace
    - Returns formatted code
@@ -198,6 +230,7 @@ Three utility functions:
    - Returns boolean
 
 **Tested and Verified:**
+
 - All functions pass unit tests
 - Generate unique codes reliably
 - Validate correctly
@@ -272,9 +305,11 @@ npx prisma migrate deploy
 ## Files Changed
 
 ### Created:
+
 - `lib/coupon-utils.ts` - Utility functions
 
 ### Modified:
+
 - `prisma/schema.prisma` - Database schema
 - `app/admin/coupons/page.tsx` - Complete redesign
 - `app/api/admin/coupons/route.ts` - Auto-generation support
@@ -306,6 +341,7 @@ npx prisma migrate deploy
 ## Conclusion
 
 The coupon system is now:
+
 - ✅ **Professional**: Matches site theme and standards
 - ✅ **User-Friendly**: Clear UX with helpful feedback
 - ✅ **Powerful**: Comprehensive feature set

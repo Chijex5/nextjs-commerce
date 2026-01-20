@@ -30,7 +30,9 @@ export function CollectionSectionsClient({
           "bg-gradient-to-br from-emerald-50/40 via-white to-teal-50/40 dark:from-emerald-950/30 dark:via-black dark:to-teal-950/30",
           "bg-gradient-to-br from-pink-50/40 via-white to-rose-50/40 dark:from-pink-950/30 dark:via-black dark:to-rose-950/30",
         ];
-        const bgColor = bgColors[collectionIndex % bgColors.length] || "bg-gradient-to-br from-blue-50/40 via-white to-purple-50/40 dark:from-blue-950/30 dark:via-black dark:to-purple-950/30";
+        const bgColor =
+          bgColors[collectionIndex % bgColors.length] ||
+          "bg-gradient-to-br from-blue-50/40 via-white to-purple-50/40 dark:from-blue-950/30 dark:via-black dark:to-purple-950/30";
 
         return (
           <CollectionSection
@@ -129,7 +131,7 @@ function CollectionSection({
 
   useEffect(() => {
     const currentSection = sectionRef.current;
-    
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -168,9 +170,7 @@ function CollectionSection({
         <div
           className="absolute -right-4 bottom-10 h-72 w-72 rounded-full bg-gradient-to-br from-orange-400/20 to-pink-400/20 blur-3xl transition-transform duration-[3000ms] ease-in-out"
           style={{
-            animation: isVisible
-              ? "float 6s ease-in-out infinite 3s"
-              : "none",
+            animation: isVisible ? "float 6s ease-in-out infinite 3s" : "none",
           }}
         />
       </div>
@@ -192,7 +192,9 @@ function CollectionSection({
           </div>
           <h2
             className={`mb-4 bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 bg-clip-text text-4xl font-bold tracking-tight text-transparent transition-all duration-700 dark:from-neutral-100 dark:via-neutral-200 dark:to-neutral-100 sm:text-5xl ${
-              isVisible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+              isVisible
+                ? "translate-y-0 opacity-100"
+                : "translate-y-6 opacity-0"
             }`}
             style={{ transitionDelay: "200ms" }}
           >

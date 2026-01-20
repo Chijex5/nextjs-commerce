@@ -183,7 +183,10 @@ export default function FirstVisitSignupPopup() {
           >
             {!usePassword && (
               <>
-                <label htmlFor="popup-email" className="block text-sm font-medium">
+                <label
+                  htmlFor="popup-email"
+                  className="block text-sm font-medium"
+                >
                   Email
                 </label>
                 <input
@@ -203,7 +206,10 @@ export default function FirstVisitSignupPopup() {
             {usePassword && (
               <>
                 <div>
-                  <label htmlFor="popup-name" className="mb-2 block text-sm font-medium">
+                  <label
+                    htmlFor="popup-name"
+                    className="mb-2 block text-sm font-medium"
+                  >
                     Full name (optional)
                   </label>
                   <input
@@ -218,7 +224,10 @@ export default function FirstVisitSignupPopup() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="popup-email-password" className="mb-2 block text-sm font-medium">
+                  <label
+                    htmlFor="popup-email-password"
+                    className="mb-2 block text-sm font-medium"
+                  >
                     Email
                   </label>
                   <input
@@ -234,7 +243,10 @@ export default function FirstVisitSignupPopup() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="popup-password" className="mb-2 block text-sm font-medium">
+                  <label
+                    htmlFor="popup-password"
+                    className="mb-2 block text-sm font-medium"
+                  >
                     Password
                   </label>
                   <input
@@ -250,7 +262,10 @@ export default function FirstVisitSignupPopup() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="popup-confirm" className="mb-2 block text-sm font-medium">
+                  <label
+                    htmlFor="popup-confirm"
+                    className="mb-2 block text-sm font-medium"
+                  >
                     Confirm password
                   </label>
                   <input

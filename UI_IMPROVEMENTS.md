@@ -3,6 +3,7 @@
 ## Admin Coupons Page - Before vs After
 
 ### BEFORE (Issues identified):
+
 ```
 ❌ Generic white background, no theme consistency
 ❌ Plain borders without proper styling
@@ -15,6 +16,7 @@
 ```
 
 ### AFTER (Improvements made):
+
 ```
 ✅ Matches theme: neutral-50 background, proper shadows
 ✅ Rounded borders with proper hover states
@@ -29,6 +31,7 @@
 ## Cart Coupon Input - Before vs After
 
 ### BEFORE:
+
 ```
 ❌ Basic border box, no visual appeal
 ❌ Text-based error/success messages below input
@@ -38,11 +41,12 @@
 ```
 
 ### AFTER:
+
 ```
 ✅ Rounded, elevated design with shadow
 ✅ Toast notifications (better UX)
 ✅ Success state with green box, checkmark icon
-✅ Professional, modern appearance  
+✅ Professional, modern appearance
 ✅ Loading spinner animation
 ✅ Color-coded states (green for success)
 ```
@@ -50,12 +54,15 @@
 ## Key Visual Features
 
 ### Admin Page:
+
 1. **Header Section**
+
    - Large, bold title: "Discount Coupons"
    - Subtitle with count
    - Primary action button (rounded, dark)
 
 2. **Create Form**
+
    - Card with shadow and rounded corners
    - Section headers with bottom border
    - Highlighted code generation box
@@ -64,6 +71,7 @@
    - Primary and secondary buttons
 
 3. **Filter Tabs**
+
    - Rounded buttons
    - Active state: dark background
    - Inactive state: bordered
@@ -77,13 +85,16 @@
    - Empty state with icon and message
 
 ### Cart/Checkout:
+
 1. **Coupon Input (Not Applied)**
+
    - White card with border
    - Label and description text
    - Input with uppercase transform
    - Apply button with loading state
 
 2. **Coupon Applied**
+
    - Green background box
    - Checkmark icon
    - Bold code display
@@ -99,6 +110,7 @@
 ## Color Palette Used
 
 ### Light Mode:
+
 - Background: `neutral-50` (#fafafa)
 - Cards: `white` (#ffffff)
 - Borders: `neutral-200` (#e5e5e5)
@@ -108,6 +120,7 @@
 - Error: `red-600` (#dc2626)
 
 ### Dark Mode:
+
 - Background: `neutral-900` (#171717)
 - Cards: `neutral-900` (#171717)
 - Borders: `neutral-800` (#262626)
@@ -118,26 +131,30 @@
 
 ## Typography
 
-- **Headings**: 
+- **Headings**:
+
   - H1: `text-3xl font-bold` (30px)
   - H2: `text-lg font-semibold` (18px)
   - H3: `text-sm font-medium` (14px)
 
-- **Body**: 
+- **Body**:
+
   - Regular: `text-sm` (14px)
   - Small: `text-xs` (12px)
 
-- **Labels**: 
+- **Labels**:
   - Medium weight for prominence
   - Secondary color for descriptions
 
 ## Spacing & Layout
 
-- **Padding**: 
+- **Padding**:
+
   - Cards: `p-6` (24px)
   - Sections: `p-4` (16px)
 
 - **Margins**:
+
   - Between sections: `mb-6` (24px)
   - Between elements: `mb-4` (16px)
 
@@ -169,7 +186,7 @@
 
 ## Form UX Best Practices
 
-1. Clear required field indicators (*)
+1. Clear required field indicators (\*)
 2. Helpful placeholder text
 3. Real-time validation
 4. Descriptive helper text

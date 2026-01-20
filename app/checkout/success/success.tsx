@@ -87,7 +87,8 @@ export default function CheckoutSuccess() {
           <div className="mb-8 rounded-lg border border-blue-100 bg-blue-50 p-4 text-left text-sm text-blue-900 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-100">
             <p className="font-medium">Create an account to track this order</p>
             <p className="mt-1 text-xs text-blue-700 dark:text-blue-200">
-              Save your details for faster checkout and see updates in one place.
+              Save your details for faster checkout and see updates in one
+              place.
             </p>
             <Link
               href={`/auth/register?callbackUrl=${encodeURIComponent(`/orders?order=${orderNumber || ""}`)}`}

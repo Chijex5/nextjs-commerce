@@ -252,12 +252,14 @@ export async function GET(request: NextRequest) {
         customerName: order.customerName,
         email: order.email,
         totalAmount: Number(order.totalAmount),
-        items: order.items.map((item) => ({
-          productTitle: item.productTitle,
-          variantTitle: item.variantTitle,
-          quantity: item.quantity,
-          price: Number(item.price),
-          productImage: item.productImage,
+        items: cart.lines.map((line) => ({
+          productTitle: line.variant.product.title,
+          variantTitle: line.variant.title,
+          quantity: line.quantity,
+          price: Number(line.variant.price),
+          productImage: line.variant.product.images[0]?.url || null,
+          productHandle: line.variant.product.handle,
+          sku: line.productVariantId,
         })),
         shippingAddress: order.shippingAddress,
         orderDate: order.createdAt.toISOString(),
@@ -285,10 +287,7 @@ export async function GET(request: NextRequest) {
           : []),
       ].filter(Boolean);
       const adminEmails = Array.from(
-        new Set([
-          ...adminUsers.map((admin) => admin.email),
-          ...envEmails,
-        ]),
+        new Set([...adminUsers.map((admin) => admin.email), ...envEmails]),
       ).filter((email): email is string => Boolean(email));
 
       if (adminEmails && adminEmails.length > 0) {

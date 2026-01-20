@@ -1,22 +1,22 @@
-'use client';
+"use client";
 
 interface StarRatingProps {
   rating: number; // 0-5, can be decimal
   totalReviews?: number;
   showCount?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 }
 
 export function StarRating({
   rating,
   totalReviews,
   showCount = false,
-  size = 'md'
+  size = "md",
 }: StarRatingProps) {
   const sizeClasses = {
-    sm: 'text-sm',
-    md: 'text-base',
-    lg: 'text-lg'
+    sm: "text-sm",
+    md: "text-base",
+    lg: "text-lg",
   };
 
   const fullStars = Math.floor(rating);
@@ -34,7 +34,10 @@ export function StarRating({
         {hasHalfStar && (
           <span className="relative">
             <span className="text-neutral-300">★</span>
-            <span className="absolute left-0 top-0 overflow-hidden text-black" style={{ width: '50%' }}>
+            <span
+              className="absolute left-0 top-0 overflow-hidden text-black"
+              style={{ width: "50%" }}
+            >
               ★
             </span>
           </span>
@@ -46,9 +49,7 @@ export function StarRating({
         ))}
       </div>
       {showCount && totalReviews !== undefined && (
-        <span className="text-sm text-neutral-500">
-          ({totalReviews})
-        </span>
+        <span className="text-sm text-neutral-500">({totalReviews})</span>
       )}
     </div>
   );

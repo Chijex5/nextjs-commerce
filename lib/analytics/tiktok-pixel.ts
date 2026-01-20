@@ -2,8 +2,10 @@
 export const TIKTOK_PIXEL_ID = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID;
 
 // Validate TikTok Pixel ID is set
-if (!TIKTOK_PIXEL_ID && typeof window !== 'undefined') {
-  console.warn('TikTok Pixel ID is not set. TikTok tracking will not be active.');
+if (!TIKTOK_PIXEL_ID && typeof window !== "undefined") {
+  console.warn(
+    "TikTok Pixel ID is not set. TikTok tracking will not be active.",
+  );
 }
 
 // Extend Window interface for ttq
@@ -40,7 +42,7 @@ const hashPii = async (value: string) => {
  * Track page views
  */
 export const pageview = () => {
-  if (typeof window !== 'undefined' && window.ttq && TIKTOK_PIXEL_ID) {
+  if (typeof window !== "undefined" && window.ttq && TIKTOK_PIXEL_ID) {
     window.ttq.page();
   }
 };
@@ -51,7 +53,7 @@ export const pageview = () => {
  * @param options - Optional parameters for the event
  */
 export const event = (name: string, options: Record<string, any> = {}) => {
-  if (typeof window !== 'undefined' && window.ttq && TIKTOK_PIXEL_ID) {
+  if (typeof window !== "undefined" && window.ttq && TIKTOK_PIXEL_ID) {
     window.ttq.track(name, options);
   }
 };

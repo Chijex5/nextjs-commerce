@@ -372,9 +372,7 @@ export default function OrderDetailView({ order }: { order: Order }) {
           {/* Acknowledgement */}
           <div
             className={`rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900 ${
-              acknowledgedAt
-                ? ""
-                : "bg-amber-50/60 dark:bg-amber-950/20"
+              acknowledgedAt ? "" : "bg-amber-50/60 dark:bg-amber-950/20"
             }`}
           >
             <h2 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
@@ -492,7 +490,11 @@ export default function OrderDetailView({ order }: { order: Order }) {
               disabled={isUpdating}
               className="w-full rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
             >
-              {isUpdating ? <LoadingDots className="bg-white" /> : "Update Order"}
+              {isUpdating ? (
+                <LoadingDots className="bg-white" />
+              ) : (
+                "Update Order"
+              )}
             </button>
           </div>
 

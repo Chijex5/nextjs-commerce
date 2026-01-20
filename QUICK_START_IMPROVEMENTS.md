@@ -7,6 +7,7 @@
 ## 🚨 CRITICAL - Implement First (Week 1-2)
 
 ### 1. Google Analytics 4 ⏱️ 1 day
+
 **Why:** Cannot measure anything without analytics - flying blind  
 **Impact:** Track conversions, user behavior, marketing ROI
 
@@ -16,10 +17,12 @@ NEXT_PUBLIC_GA_ID="G-XXXXXXXXXX"
 ```
 
 **Files to modify:**
+
 - `app/layout.tsx` - Add GA4 script
 - `lib/analytics.ts` - Create tracking functions
 
 ### 2. Facebook Pixel ⏱️ 1 day
+
 **Why:** Cannot track social media ads or retarget visitors  
 **Impact:** Essential for Facebook/Instagram advertising
 
@@ -29,6 +32,7 @@ NEXT_PUBLIC_FB_PIXEL_ID="XXXXXXXXXXXXX"
 ```
 
 ### 3. Email Service Integration ⏱️ 2-3 days
+
 **Why:** No automated emails for orders, cart abandonment, or marketing  
 **Impact:** 30% revenue increase from abandoned cart recovery alone  
 **Recommended:** Resend (easiest) or SendGrid
@@ -39,31 +43,37 @@ RESEND_API_KEY="re_xxxxxxxxxxxxx"
 ```
 
 **Emails to implement:**
+
 1. Order confirmation
 2. Shipping notification
 3. Delivery confirmation
 4. Abandoned cart (3-email series)
 
 ### 4. Newsletter Subscription ⏱️ 1 day
+
 **Why:** Cannot build email list for marketing  
 **Impact:** Owned audience for promotions and new product launches
 
 **Files to create:**
+
 - `components/newsletter-form.tsx`
 - `app/api/newsletter/route.ts`
 - Add to `components/layout/footer.tsx`
 
 ### 5. Product Reviews System ⏱️ 3-4 days
+
 **Why:** Missing critical social proof - hurts conversion rate  
 **Impact:** 15-30% increase in conversion rate
 
 **Database migration needed:**
+
 ```sql
 -- See REMAINING_FEATURES_ANALYSIS.md for full schema
 CREATE TABLE reviews (...)
 ```
 
 **Files to create:**
+
 - `components/product/reviews.tsx`
 - `app/api/reviews/route.ts`
 - Admin review moderation page
@@ -73,42 +83,51 @@ CREATE TABLE reviews (...)
 ## ⚡ HIGH PRIORITY - Implement Soon (Week 3-4)
 
 ### 6. Discount Codes/Coupons ⏱️ 3-4 days
+
 **Why:** Cannot run promotions or track marketing campaigns  
 **Impact:** Drive sales, track campaign performance
 
 **Files to create:**
+
 - `app/api/coupons/validate/route.ts`
 - Update checkout to apply coupons
 - Admin coupon management
 
 ### 7. Inventory Management ⏱️ 2-3 days
+
 **Why:** Risk of overselling, no stock visibility  
 **Impact:** Operational efficiency, prevent customer disappointment
 
 **Database changes:**
+
 ```sql
 ALTER TABLE product_variants ADD COLUMN stock_quantity INTEGER;
 ALTER TABLE product_variants ADD COLUMN low_stock_threshold INTEGER;
 ```
 
 ### 8. Size Guide ⏱️ 1 day
+
 **Why:** Critical for footwear - reduces returns and support questions  
 **Impact:** Fewer size-related returns and exchanges
 
 **Quick implementation:**
+
 - Modal component with size chart
 - Add "Size Guide" link on product pages
 - Static content can be managed in database
 
 ### 9. TikTok Pixel ⏱️ 1 day
+
 **Why:** Business mentions TikTok discovery - need to track performance  
 **Impact:** Optimize TikTok advertising
 
 ### 10. Dashboard Analytics ⏱️ 2-3 days
+
 **Why:** Cannot see revenue, orders, or business metrics  
 **Impact:** Data-driven decision making
 
 **Metrics to add:**
+
 - Revenue (today, week, month)
 - Order count trends
 - Average order value
@@ -120,6 +139,7 @@ ALTER TABLE product_variants ADD COLUMN low_stock_threshold INTEGER;
 ## 🎯 QUICK WINS - Can Do in 1 Day Each
 
 ### Week 1 Quick Wins:
+
 1. **WhatsApp Chat Button** - Floating button with business number
 2. **Trust Badges** - "Handmade in Nigeria", "Secure Checkout", payment logos
 3. **Social Media Links** - Add to footer
@@ -127,6 +147,7 @@ ALTER TABLE product_variants ADD COLUMN low_stock_threshold INTEGER;
 5. **FAQ Content Review** - Verify FAQ page content is complete
 
 ### Week 2 Quick Wins:
+
 6. **Contact Page Review** - Ensure contact info is up to date
 7. **Breadcrumb Navigation** - Improve navigation
 8. **Related Products** - Enhance existing recommendations
@@ -167,6 +188,7 @@ Week 4: Operations
 ## 🛠️ Quick Setup Commands
 
 ### Install Dependencies
+
 ```bash
 # Analytics
 npm install react-gtm-module
@@ -184,6 +206,7 @@ npm install sharp
 ```
 
 ### Environment Variables to Add
+
 ```env
 # Analytics
 NEXT_PUBLIC_GA_ID="G-XXXXXXXXXX"
@@ -209,14 +232,14 @@ NEXT_PUBLIC_WHATSAPP_NUMBER="+234XXXXXXXXXX"
 
 ## 📊 Expected Impact
 
-| Feature | Implementation Time | Business Impact |
-|---------|-------------------|----------------|
-| Google Analytics | 1 day | Measure everything |
-| Email Marketing | 2-3 days | +30% revenue from abandoned cart |
-| Product Reviews | 3-4 days | +15-30% conversion rate |
-| Coupons | 3-4 days | Run promotions, track campaigns |
-| Inventory | 2-3 days | Prevent overselling |
-| Dashboard | 2-3 days | Data-driven decisions |
+| Feature          | Implementation Time | Business Impact                  |
+| ---------------- | ------------------- | -------------------------------- |
+| Google Analytics | 1 day               | Measure everything               |
+| Email Marketing  | 2-3 days            | +30% revenue from abandoned cart |
+| Product Reviews  | 3-4 days            | +15-30% conversion rate          |
+| Coupons          | 3-4 days            | Run promotions, track campaigns  |
+| Inventory        | 2-3 days            | Prevent overselling              |
+| Dashboard        | 2-3 days            | Data-driven decisions            |
 
 **Total Time for Critical Features:** ~2-3 weeks  
 **Expected ROI:** 2-3x increase in conversion rate and revenue
@@ -226,14 +249,17 @@ NEXT_PUBLIC_WHATSAPP_NUMBER="+234XXXXXXXXXX"
 ## 🎓 Free Resources
 
 ### Analytics
+
 - [GA4 Tutorial](https://www.youtube.com/watch?v=LWGUEOWKgbM) - 20 min video
 - [Facebook Pixel Setup](https://www.facebook.com/business/help/952192354843755)
 
 ### Email Marketing
+
 - [Resend Quickstart](https://resend.com/docs/send-with-nextjs) - 5 min
 - [SendGrid Next.js](https://docs.sendgrid.com/for-developers/sending-email/quickstart-nodejs)
 
 ### SEO
+
 - [Next.js SEO](https://nextjs.org/learn/seo/introduction-to-seo)
 - [Schema Generator](https://technicalseo.com/tools/schema-markup-generator/)
 
@@ -242,6 +268,7 @@ NEXT_PUBLIC_WHATSAPP_NUMBER="+234XXXXXXXXXX"
 ## ✅ Daily Checklist
 
 ### Day 1: Analytics Setup
+
 - [ ] Create Google Analytics 4 property
 - [ ] Add GA4 tracking code to layout
 - [ ] Test page view tracking
@@ -252,6 +279,7 @@ NEXT_PUBLIC_WHATSAPP_NUMBER="+234XXXXXXXXXX"
 - [ ] Create TikTok Pixel (optional)
 
 ### Day 2: Email Foundation
+
 - [ ] Choose email service (Resend recommended)
 - [ ] Sign up and get API key
 - [ ] Add to environment variables
@@ -261,6 +289,7 @@ NEXT_PUBLIC_WHATSAPP_NUMBER="+234XXXXXXXXXX"
 - [ ] Create shipping notification template
 
 ### Day 3: Newsletter
+
 - [ ] Design newsletter form component
 - [ ] Create API route for subscription
 - [ ] Add form to footer
@@ -269,6 +298,7 @@ NEXT_PUBLIC_WHATSAPP_NUMBER="+234XXXXXXXXXX"
 - [ ] Test welcome email automation
 
 ### Day 4-5: Reviews System
+
 - [ ] Design database schema
 - [ ] Run migration
 - [ ] Create review submission form
@@ -300,6 +330,7 @@ Before deploying any new features:
 **Full Documentation:** `REMAINING_FEATURES_ANALYSIS.md`
 
 **Questions About:**
+
 - Feature priorities → See "Priority Matrix" in full doc
 - Implementation details → See category sections in full doc
 - Time estimates → See "Estimated Development Time" in full doc

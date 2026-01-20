@@ -12,10 +12,7 @@ import type {
 } from "../shopify/types";
 import prisma from "lib/prisma";
 import { Prisma } from "@/app/generated/prisma/client";
-import {
-  PRODUCT_IMAGE_HEIGHT,
-  PRODUCT_IMAGE_WIDTH,
-} from "../image-constants";
+import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "../image-constants";
 
 const db = prisma;
 // Helper function to reshape database product to match Shopify Product type

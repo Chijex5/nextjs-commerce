@@ -24,7 +24,7 @@ export default function Error({ reset }: { reset: () => void }) {
                   />
                 </svg>
               </div>
-              
+
               {/* Title and Description */}
               <div className="flex-1">
                 <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
@@ -47,7 +47,9 @@ export default function Error({ reset }: { reset: () => void }) {
               <ul className="space-y-2 text-sm text-neutral-600 dark:text-neutral-400">
                 <li className="flex items-start gap-2">
                   <span className="mt-0.5 text-neutral-400">•</span>
-                  <span>Try refreshing the page or performing the action again</span>
+                  <span>
+                    Try refreshing the page or performing the action again
+                  </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="mt-0.5 text-neutral-400">•</span>

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 interface ProductVariant {
   id?: string;
@@ -52,20 +52,20 @@ export default function ProductsManagement() {
   const [products, setProducts] = useState<Product[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({
-    title: '',
-    handle: '',
-    description: '',
+    title: "",
+    handle: "",
+    description: "",
     availableForSale: true,
-    seoTitle: '',
-    seoDescription: '',
-    tags: '',
-    collectionIds: [] as string[]
+    seoTitle: "",
+    seoDescription: "",
+    tags: "",
+    collectionIds: [] as string[],
   });
 
   useEffect(() => {
@@ -78,19 +78,19 @@ export default function ProductsManagement() {
       setLoading(true);
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        perPage: '12',
-        ...(searchTerm && { search: searchTerm })
+        perPage: "12",
+        ...(searchTerm && { search: searchTerm }),
       });
 
       const response = await fetch(`/api/admin/products?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch products');
+      if (!response.ok) throw new Error("Failed to fetch products");
 
       const data = await response.json();
       setProducts(data.products || []);
       setTotalPages(Math.ceil((data.total || 0) / 12));
     } catch (error) {
-      console.error('Error fetching products:', error);
-      toast.error('Failed to load products');
+      console.error("Error fetching products:", error);
+      toast.error("Failed to load products");
     } finally {
       setLoading(false);
     }
@@ -98,12 +98,12 @@ export default function ProductsManagement() {
 
   const fetchCollections = async () => {
     try {
-      const response = await fetch('/api/admin/collections?perPage=100');
-      if (!response.ok) throw new Error('Failed to fetch collections');
+      const response = await fetch("/api/admin/collections?perPage=100");
+      if (!response.ok) throw new Error("Failed to fetch collections");
       const data = await response.json();
       setCollections(data.collections || []);
     } catch (error) {
-      console.error('Error fetching collections:', error);
+      console.error("Error fetching collections:", error);
     }
   };
 
@@ -113,24 +113,24 @@ export default function ProductsManagement() {
       setFormData({
         title: product.title,
         handle: product.handle,
-        description: product.description || '',
+        description: product.description || "",
         availableForSale: product.availableForSale,
-        seoTitle: product.seoTitle || '',
-        seoDescription: product.seoDescription || '',
-        tags: product.tags?.join(', ') || '',
-        collectionIds: product.collections?.map((c) => c.id) || []
+        seoTitle: product.seoTitle || "",
+        seoDescription: product.seoDescription || "",
+        tags: product.tags?.join(", ") || "",
+        collectionIds: product.collections?.map((c) => c.id) || [],
       });
     } else {
       setEditingProduct(null);
       setFormData({
-        title: '',
-        handle: '',
-        description: '',
+        title: "",
+        handle: "",
+        description: "",
         availableForSale: true,
-        seoTitle: '',
-        seoDescription: '',
-        tags: '',
-        collectionIds: []
+        seoTitle: "",
+        seoDescription: "",
+        tags: "",
+        collectionIds: [],
       });
     }
     setShowModal(true);
@@ -145,7 +145,7 @@ export default function ProductsManagement() {
     e.preventDefault();
 
     if (!formData.title || !formData.handle) {
-      toast.error('Title and handle are required');
+      toast.error("Title and handle are required");
       return;
     }
 
@@ -153,53 +153,55 @@ export default function ProductsManagement() {
       const payload = {
         ...formData,
         tags: formData.tags
-          .split(',')
+          .split(",")
           .map((t) => t.trim())
-          .filter(Boolean)
+          .filter(Boolean),
       };
 
       const url = editingProduct
         ? `/api/admin/products/${editingProduct.id}`
-        : '/api/admin/products';
+        : "/api/admin/products";
 
       const response = await fetch(url, {
-        method: editingProduct ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        method: editingProduct ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to save product');
+        throw new Error(error.error || "Failed to save product");
       }
 
-      toast.success(`Product ${editingProduct ? 'updated' : 'created'} successfully`);
+      toast.success(
+        `Product ${editingProduct ? "updated" : "created"} successfully`,
+      );
       handleCloseModal();
       fetchProducts();
     } catch (error: any) {
-      console.error('Error saving product:', error);
-      toast.error(error.message || 'Failed to save product');
+      console.error("Error saving product:", error);
+      toast.error(error.message || "Failed to save product");
     }
   };
 
   const handleDelete = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+    if (!confirm("Are you sure you want to delete this product?")) return;
 
     try {
       const response = await fetch(`/api/admin/products/${productId}`, {
-        method: 'DELETE'
+        method: "DELETE",
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to delete product');
+        throw new Error(error.error || "Failed to delete product");
       }
 
-      toast.success('Product deleted successfully');
+      toast.success("Product deleted successfully");
       fetchProducts();
     } catch (error: any) {
-      console.error('Error deleting product:', error);
-      toast.error(error.message || 'Failed to delete product');
+      console.error("Error deleting product:", error);
+      toast.error(error.message || "Failed to delete product");
     }
   };
 
@@ -208,12 +210,13 @@ export default function ProductsManagement() {
       ...prev,
       collectionIds: prev.collectionIds.includes(collectionId)
         ? prev.collectionIds.filter((id) => id !== collectionId)
-        : [...prev.collectionIds, collectionId]
+        : [...prev.collectionIds, collectionId],
     }));
   };
 
   const getProductPrice = (product: Product) => {
-    if (!product.variants || product.variants.length === 0) return 'No variants';
+    if (!product.variants || product.variants.length === 0)
+      return "No variants";
 
     const prices = product.variants.map((v) => parseFloat(v.price));
     const minPrice = Math.min(...prices);
@@ -254,7 +257,9 @@ export default function ProductsManagement() {
         <div className="flex items-center justify-center p-12">
           <div className="text-center">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading products...</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              Loading products...
+            </p>
           </div>
         </div>
       ) : products.length === 0 ? (
@@ -278,7 +283,9 @@ export default function ProductsManagement() {
             No products found
           </h3>
           <p className="text-gray-500 dark:text-gray-400 mb-4">
-            {searchTerm ? 'Try adjusting your search' : 'Get started by creating your first product'}
+            {searchTerm
+              ? "Try adjusting your search"
+              : "Get started by creating your first product"}
           </p>
           {!searchTerm && (
             <button
@@ -327,11 +334,11 @@ export default function ProductsManagement() {
                     <span
                       className={`px-2 py-1 text-xs font-semibold rounded-full ${
                         product.availableForSale
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                          : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
                       }`}
                     >
-                      {product.availableForSale ? 'Available' : 'Unavailable'}
+                      {product.availableForSale ? "Available" : "Unavailable"}
                     </span>
                   </div>
                 </div>
@@ -396,7 +403,9 @@ export default function ProductsManagement() {
                 Page {currentPage} of {totalPages}
               </span>
               <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
                 disabled={currentPage === totalPages}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white"
               >
@@ -414,14 +423,19 @@ export default function ProductsManagement() {
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {editingProduct ? 'Edit Product' : 'Create Product'}
+                  {editingProduct ? "Edit Product" : "Create Product"}
                 </h2>
                 <button
-                  title='close-modal'
+                  title="close-modal"
                   onClick={handleCloseModal}
                   className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                 >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -445,7 +459,9 @@ export default function ProductsManagement() {
                       setFormData((prev) => ({
                         ...prev,
                         title: e.target.value,
-                        handle: prev.handle || e.target.value.toLowerCase().replace(/\s+/g, '-')
+                        handle:
+                          prev.handle ||
+                          e.target.value.toLowerCase().replace(/\s+/g, "-"),
                       }))
                     }
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
@@ -461,7 +477,12 @@ export default function ProductsManagement() {
                     title="handle"
                     type="text"
                     value={formData.handle}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, handle: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        handle: e.target.value,
+                      }))
+                    }
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                     required
                   />
@@ -475,7 +496,10 @@ export default function ProductsManagement() {
                     title="description"
                     value={formData.description}
                     onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, description: e.target.value }))
+                      setFormData((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
                     }
                     rows={4}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
@@ -489,7 +513,9 @@ export default function ProductsManagement() {
                   <input
                     type="text"
                     value={formData.tags}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, tags: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, tags: e.target.value }))
+                    }
                     placeholder="fashion, summer, trending"
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   />
@@ -513,8 +539,12 @@ export default function ProductsManagement() {
                           >
                             <input
                               type="checkbox"
-                              checked={formData.collectionIds.includes(collection.id)}
-                              onChange={() => toggleCollectionSelection(collection.id)}
+                              checked={formData.collectionIds.includes(
+                                collection.id,
+                              )}
+                              onChange={() =>
+                                toggleCollectionSelection(collection.id)
+                              }
                               className="rounded text-blue-600 focus:ring-blue-500"
                             />
                             <span className="text-sm text-gray-700 dark:text-gray-300">
@@ -533,7 +563,10 @@ export default function ProductsManagement() {
                       type="checkbox"
                       checked={formData.availableForSale}
                       onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, availableForSale: e.target.checked }))
+                        setFormData((prev) => ({
+                          ...prev,
+                          availableForSale: e.target.checked,
+                        }))
                       }
                       className="rounded text-blue-600 focus:ring-blue-500"
                     />
@@ -557,7 +590,10 @@ export default function ProductsManagement() {
                         type="text"
                         value={formData.seoTitle}
                         onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, seoTitle: e.target.value }))
+                          setFormData((prev) => ({
+                            ...prev,
+                            seoTitle: e.target.value,
+                          }))
                         }
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                       />
@@ -570,7 +606,10 @@ export default function ProductsManagement() {
                         title="seoDescription"
                         value={formData.seoDescription}
                         onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, seoDescription: e.target.value }))
+                          setFormData((prev) => ({
+                            ...prev,
+                            seoDescription: e.target.value,
+                          }))
                         }
                         rows={3}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
@@ -591,7 +630,7 @@ export default function ProductsManagement() {
                     type="submit"
                     className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
-                    {editingProduct ? 'Update' : 'Create'} Product
+                    {editingProduct ? "Update" : "Create"} Product
                   </button>
                 </div>
               </form>

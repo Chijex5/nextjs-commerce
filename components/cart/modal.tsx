@@ -42,7 +42,7 @@ export default function CartModal() {
     "coupon" | "note" | "shipping" | null
   >(null);
   const [discountAmount, setDiscountAmount] = useState(0);
-  const [couponCode, setCouponCode] = useState('');
+  const [couponCode, setCouponCode] = useState("");
   const [orderNote, setOrderNote] = useState("");
   const [noteDraft, setNoteDraft] = useState("");
   const quantityRef = useRef(cart?.totalQuantity);
@@ -348,7 +348,9 @@ export default function CartModal() {
                               <Price
                                 className="text-right text-sm font-medium text-neutral-900 dark:text-white"
                                 amount={cart.cost.subtotalAmount.amount}
-                                currencyCode={cart.cost.subtotalAmount.currencyCode}
+                                currencyCode={
+                                  cart.cost.subtotalAmount.currencyCode
+                                }
                               />
                             </div>
                             {discountAmount > 0 && (
@@ -366,7 +368,9 @@ export default function CartModal() {
                               <Price
                                 className="text-right text-sm font-medium text-neutral-900 dark:text-white"
                                 amount={cart.cost.totalTaxAmount.amount}
-                                currencyCode={cart.cost.totalTaxAmount.currencyCode}
+                                currencyCode={
+                                  cart.cost.totalTaxAmount.currencyCode
+                                }
                               />
                             </div>
                             <div className="flex items-center justify-between px-4 py-2.5">
@@ -384,7 +388,9 @@ export default function CartModal() {
                                     discountAmount,
                                   0,
                                 ).toString()}
-                                currencyCode={cart.cost.totalAmount.currencyCode}
+                                currencyCode={
+                                  cart.cost.totalAmount.currencyCode
+                                }
                               />
                             </div>
                           </div>
@@ -394,7 +400,9 @@ export default function CartModal() {
                   </div>
                   {status === "unauthenticated" && (
                     <div className="mb-4 rounded-md border border-neutral-200 bg-white p-3 text-sm text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200">
-                      <p className="font-medium">Save your cart and track orders</p>
+                      <p className="font-medium">
+                        Save your cart and track orders
+                      </p>
                       <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
                         Create an account for faster checkout next time.
                       </p>

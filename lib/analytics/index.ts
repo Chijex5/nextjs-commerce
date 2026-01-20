@@ -1,7 +1,7 @@
 // Unified analytics tracking service
-import * as ga from './google-analytics';
-import * as fbPixel from './facebook-pixel';
-import * as tiktok from './tiktok-pixel';
+import * as ga from "./google-analytics";
+import * as fbPixel from "./facebook-pixel";
+import * as tiktok from "./tiktok-pixel";
 
 /**
  * Track page views across all analytics platforms
@@ -25,32 +25,32 @@ export const trackProductView = (product: {
 }) => {
   // Google Analytics
   ga.event({
-    action: 'view_item',
-    category: 'ecommerce',
+    action: "view_item",
+    category: "ecommerce",
     label: product.name,
     value: product.price,
   });
 
   // Facebook Pixel
-  fbPixel.event('ViewContent', {
+  fbPixel.event("ViewContent", {
     content_ids: [product.id],
     content_name: product.name,
-    content_type: 'product',
+    content_type: "product",
     value: product.price,
-    currency: 'NGN',
+    currency: "NGN",
   });
 
   // TikTok Pixel
-  tiktok.event('ViewContent', {
+  tiktok.event("ViewContent", {
     contents: [
       {
         content_id: product.id,
-        content_type: 'product',
+        content_type: "product",
         content_name: product.name,
       },
     ],
     value: product.price,
-    currency: 'NGN',
+    currency: "NGN",
   });
 };
 
@@ -66,31 +66,31 @@ export const trackAddToCart = (product: {
 }) => {
   // Google Analytics
   ga.event({
-    action: 'add_to_cart',
-    category: 'ecommerce',
+    action: "add_to_cart",
+    category: "ecommerce",
     label: product.name,
     value: product.price * product.quantity,
   });
 
   // Facebook Pixel
-  fbPixel.event('AddToCart', {
+  fbPixel.event("AddToCart", {
     content_ids: [product.id],
     content_name: product.name,
     value: product.price * product.quantity,
-    currency: 'NGN',
+    currency: "NGN",
   });
 
   // TikTok Pixel
-  tiktok.event('AddToCart', {
+  tiktok.event("AddToCart", {
     contents: [
       {
         content_id: product.id,
-        content_type: 'product',
+        content_type: "product",
         content_name: product.name,
       },
     ],
     value: product.price * product.quantity,
-    currency: 'NGN',
+    currency: "NGN",
   });
 };
 
@@ -104,26 +104,26 @@ export const trackInitiateCheckout = (
 ) => {
   // Google Analytics
   ga.event({
-    action: 'begin_checkout',
-    category: 'ecommerce',
+    action: "begin_checkout",
+    category: "ecommerce",
     value: cartValue,
   });
 
   // Facebook Pixel
-  fbPixel.event('InitiateCheckout', {
+  fbPixel.event("InitiateCheckout", {
     value: cartValue,
-    currency: 'NGN',
+    currency: "NGN",
   });
 
   // TikTok Pixel
-  tiktok.event('InitiateCheckout', {
+  tiktok.event("InitiateCheckout", {
     contents: items.map((item) => ({
       content_id: item.id,
-      content_type: 'product',
+      content_type: "product",
       content_name: item.name,
     })),
     value: cartValue,
-    currency: 'NGN',
+    currency: "NGN",
   });
 };
 
@@ -138,42 +138,42 @@ export const trackPurchase = (order: {
 }) => {
   // Google Analytics
   ga.event({
-    action: 'purchase',
-    category: 'ecommerce',
+    action: "purchase",
+    category: "ecommerce",
     label: order.orderId,
     value: order.value,
   });
 
   // Facebook Pixel
-  fbPixel.event('Purchase', {
+  fbPixel.event("Purchase", {
     value: order.value,
-    currency: 'NGN',
+    currency: "NGN",
     content_ids: order.items.map((item) => item.id),
   });
 
   // TikTok Pixel
   const tiktokContents = order.items.map((item) => ({
     content_id: item.id,
-    content_type: 'product',
+    content_type: "product",
     content_name: item.name,
     num_items: item.quantity,
   }));
 
-  tiktok.event('Purchase', {
+  tiktok.event("Purchase", {
     contents: tiktokContents,
     value: order.value,
-    currency: 'NGN',
+    currency: "NGN",
   });
 
-  tiktok.event('PlaceAnOrder', {
+  tiktok.event("PlaceAnOrder", {
     contents: order.items.map((item) => ({
       content_id: item.id,
-      content_type: 'product',
+      content_type: "product",
       content_name: item.name,
       num_items: item.quantity,
     })),
     value: order.value,
-    currency: 'NGN',
+    currency: "NGN",
   });
 };
 
@@ -182,13 +182,13 @@ export const trackPurchase = (order: {
  */
 export const trackSignUp = () => {
   ga.event({
-    action: 'sign_up',
-    category: 'engagement',
+    action: "sign_up",
+    category: "engagement",
   });
 
-  fbPixel.event('CompleteRegistration');
+  fbPixel.event("CompleteRegistration");
 
-  tiktok.event('CompleteRegistration');
+  tiktok.event("CompleteRegistration");
 };
 
 /**
@@ -196,13 +196,13 @@ export const trackSignUp = () => {
  */
 export const trackCustomOrderRequest = () => {
   ga.event({
-    action: 'custom_order_request',
-    category: 'engagement',
+    action: "custom_order_request",
+    category: "engagement",
   });
 
-  fbPixel.event('Lead');
+  fbPixel.event("Lead");
 
-  tiktok.event('SubmitForm', {
-    content_name: 'Custom Order Request',
+  tiktok.event("SubmitForm", {
+    content_name: "Custom Order Request",
   });
 };

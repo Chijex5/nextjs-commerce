@@ -27,8 +27,7 @@ export async function generateMetadata(props: {
   console.log(product);
 
   const { url, width, height, altText: alt } = product.featuredImage || {};
-  const hasSearchParams =
-    searchParams && Object.keys(searchParams).length > 0;
+  const hasSearchParams = searchParams && Object.keys(searchParams).length > 0;
   const indexable =
     !product.tags.includes(HIDDEN_PRODUCT_TAG) && !hasSearchParams;
   const title = product.seo.title || product.title;

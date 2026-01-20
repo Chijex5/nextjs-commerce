@@ -1,4 +1,4 @@
-import { baseTemplate } from './base';
+import { baseTemplate } from "./base";
 
 interface OrderConfirmationWithMarkupData {
   orderNumber: string;
@@ -10,6 +10,10 @@ interface OrderConfirmationWithMarkupData {
     variantTitle: string;
     quantity: number;
     price: number;
+    productImage?: string | null;
+    productUrl?: string;
+    productHandle?: string;
+    sku?: string;
   }>;
   shippingAddress: any;
   orderDate: string;
@@ -19,9 +23,14 @@ interface OrderConfirmationWithMarkupData {
  * Order confirmation email template with Google Email Markup (JSON-LD)
  * Includes structured data for Gmail to show order tracking
  */
-export const orderConfirmationWithMarkupTemplate = (order: OrderConfirmationWithMarkupData) => {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'https://yourdomain.com';
-  
+export const orderConfirmationWithMarkupTemplate = (
+  order: OrderConfirmationWithMarkupData,
+) => {
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXTAUTH_URL ||
+    "https://yourdomain.com";
+
   const itemsHtml = order.items
     .map(
       (item) => `
@@ -30,59 +39,81 @@ export const orderConfirmationWithMarkupTemplate = (order: OrderConfirmationWith
         <td style="text-align: center;">${item.quantity}</td>
         <td style="text-align: right;">₦${item.price.toLocaleString()}</td>
       </tr>
-    `
+    `,
     )
-    .join('');
+    .join("");
+
+  const currencyCode = "NGN";
 
   // Google Email Markup (JSON-LD) for Order
   const jsonLd = {
     "@context": "http://schema.org",
     "@type": "Order",
-    "merchant": {
+    merchant: {
       "@type": "Organization",
-      "name": "D'FOOTPRINT"
+      name: "D'FOOTPRINT",
     },
-    "orderNumber": order.orderNumber,
-    "orderDate": order.orderDate,
-    "orderStatus": "http://schema.org/OrderProcessing",
-    "priceCurrency": "NGN",
-    "price": order.totalAmount,
-    "acceptedOffer": order.items.map(item => ({
-      "@type": "Offer",
-      "itemOffered": {
-        "@type": "Product",
-        "name": `${item.productTitle} - ${item.variantTitle}`
-      },
-      "price": item.price,
-      "priceCurrency": "NGN",
-      "eligibleQuantity": {
-        "@type": "QuantitativeValue",
-        "value": item.quantity
-      }
-    })),
-    "customer": {
+    orderNumber: order.orderNumber,
+    orderDate: order.orderDate,
+    orderStatus: "http://schema.org/OrderProcessing",
+    priceCurrency: currencyCode,
+    price: order.totalAmount,
+    acceptedOffer: order.items.map((item) => {
+      const productUrl =
+        item.productUrl ||
+        (item.productHandle
+          ? `${siteUrl}/product/${item.productHandle}`
+          : undefined);
+
+      return {
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "Product",
+          name: `${item.productTitle} - ${item.variantTitle}`,
+          image: item.productImage || undefined,
+          sku: item.sku || undefined,
+          url: productUrl,
+        },
+        price: item.price,
+        priceCurrency: currencyCode,
+        priceSpecification: {
+          "@type": "PriceSpecification",
+          price: item.price,
+          priceCurrency: currencyCode,
+        },
+        eligibleQuantity: {
+          "@type": "QuantitativeValue",
+          value: item.quantity,
+        },
+      };
+    }),
+    customer: {
       "@type": "Person",
-      "name": order.customerName,
-      "email": order.email
+      name: order.customerName,
+      email: order.email,
     },
-    "orderDelivery": {
+    orderDelivery: {
       "@type": "ParcelDelivery",
-      "deliveryAddress": {
+      deliveryAddress: {
         "@type": "PostalAddress",
-        "streetAddress": order.shippingAddress.address,
-        "addressLocality": order.shippingAddress.city,
-        "addressRegion": order.shippingAddress.state,
-        "addressCountry": "NG"
+        streetAddress: order.shippingAddress.address,
+        addressLocality: order.shippingAddress.city,
+        addressRegion: order.shippingAddress.state,
+        addressCountry: "NG",
       },
-      "expectedArrivalFrom": new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      "expectedArrivalUntil": new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+      expectedArrivalFrom: new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000,
+      ).toISOString(),
+      expectedArrivalUntil: new Date(
+        Date.now() + 14 * 24 * 60 * 60 * 1000,
+      ).toISOString(),
     },
-    "url": `${siteUrl}/orders`,
-    "potentialAction": {
+    url: `${siteUrl}/orders`,
+    potentialAction: {
       "@type": "ViewAction",
-      "url": `${siteUrl}/orders`,
-      "name": "View Order"
-    }
+      url: `${siteUrl}/orders`,
+      name: "View Order",
+    },
   };
 
   const content = `

@@ -5,22 +5,24 @@
  * Run: node scripts/send-google-test-email.js
  */
 
-const { Resend } = require('resend');
-require('dotenv').config();
+const { Resend } = require("resend");
+require("dotenv").config();
 
 async function sendGoogleTestEmail() {
   const apiKey = process.env.RESEND_API_KEY;
-  const fromEmail = 'order@dfootprint.me';
-  const replyToEmail = 'support@dfootprint.me';
+  const fromEmail = "order@dfootprint.me";
+  const replyToEmail = "support@dfootprint.me";
 
   if (!apiKey) {
-    console.error('❌ Error: RESEND_API_KEY not set in environment variables');
-    console.log('Please set your Resend API key:');
+    console.error("❌ Error: RESEND_API_KEY not set in environment variables");
+    console.log("Please set your Resend API key:");
     console.log('export RESEND_API_KEY="re_xxxxxxxxxxxxx"');
     process.exit(1);
   }
 
-  console.log('🚀 Sending test email to Google for Email Markup whitelisting...');
+  console.log(
+    "🚀 Sending test email to Google for Email Markup whitelisting...",
+  );
   console.log(`From: ${fromEmail}`);
   console.log(`To: schema.whitelisting+sample@gmail.com`);
   console.log(`Reply-To: ${replyToEmail}`);
@@ -31,61 +33,66 @@ async function sendGoogleTestEmail() {
   const testOrder = {
     "@context": "http://schema.org",
     "@type": "Order",
-    "merchant": {
+    merchant: {
       "@type": "Organization",
-      "name": "D'FOOTPRINT"
+      name: "D'FOOTPRINT",
     },
-    "orderNumber": "ORD-TEST-12345",
-    "orderDate": new Date().toISOString(),
-    "orderStatus": "http://schema.org/OrderProcessing",
-    "priceCurrency": "NGN",
-    "price": 25000,
-    "acceptedOffer": [
+    orderNumber: "ORD-TEST-12345",
+    orderDate: new Date().toISOString(),
+    orderStatus: "http://schema.org/OrderProcessing",
+    priceCurrency: "NGN",
+    price: 25000,
+    acceptedOffer: [
       {
         "@type": "Offer",
-        "itemOffered": {
+        itemOffered: {
           "@type": "Product",
-          "name": "Handcrafted Leather Sandals - Size 42",
-          "image": "https://dfootprint.me/images/products/handcrafted-leather-sandals-42.jpg",
-          "sku": "SANDAL-42",
-          "url": "https://dfootprint.me/products/handcrafted-leather-sandals"
+          name: "Handcrafted Leather Sandals - Size 42",
+          image:
+            "https://dfootprint.me/images/products/handcrafted-leather-sandals-42.jpg",
+          sku: "SANDAL-42",
+          url: "https://dfootprint.me/products/handcrafted-leather-sandals",
         },
-        "price": 25000,
-        "priceCurrency": "NGN",
-        "priceSpecification": {
+        price: 25000,
+        priceCurrency: "NGN",
+        priceSpecification: {
           "@type": "PriceSpecification",
-          "price": 25000,
-          "priceCurrency": "NGN"
+          price: 25000,
+          priceCurrency: "NGN",
         },
-        "eligibleQuantity": {
+        eligibleQuantity: {
           "@type": "QuantitativeValue",
-          "value": 1
-        }
-      }
-    ],
-    "customer": {
-      "@type": "Person",
-      "name": "Test Customer",
-      "email": "schema.whitelisting+sample@gmail.com"
-    },
-    "orderDelivery": {
-      "@type": "ParcelDelivery",
-      "deliveryAddress": {
-        "@type": "PostalAddress",
-        "streetAddress": "123 Test Street",
-        "addressLocality": "Lagos",
-        "addressRegion": "Lagos State",
-        "addressCountry": "NG"
+          value: 1,
+        },
       },
-      "expectedArrivalFrom": new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      "expectedArrivalUntil": new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+    ],
+    customer: {
+      "@type": "Person",
+      name: "Test Customer",
+      email: "schema.whitelisting+sample@gmail.com",
     },
-    "url": "https://dfootprint.me/orders",
-    "potentialAction": {
+    orderDelivery: {
+      "@type": "ParcelDelivery",
+      deliveryAddress: {
+        "@type": "PostalAddress",
+        streetAddress: "123 Test Street",
+        addressLocality: "Lagos",
+        addressRegion: "Lagos State",
+        addressCountry: "NG",
+      },
+      expectedArrivalFrom: new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000,
+      ).toISOString(),
+      expectedArrivalUntil: new Date(
+        Date.now() + 14 * 24 * 60 * 60 * 1000,
+      ).toISOString(),
+    },
+    url: "https://dfootprint.me/orders",
+    potentialAction: {
       "@type": "ViewAction",
-      "url": "https://dfootprint.me/orders",
-      "name": "View Order"
-    }
+      url: "https://dfootprint.me/orders",
+      name: "View Order",
+    },
   };
 
   const emailHtml = `
@@ -133,26 +140,33 @@ async function sendGoogleTestEmail() {
   try {
     const result = await resend.emails.send({
       from: fromEmail,
-      to: 'schema.whitelisting+sample@gmail.com',
+      to: "schema.whitelisting+sample@gmail.com",
       replyTo: replyToEmail,
-      subject: '[Test] Order Confirmation - Google Email Markup Whitelisting Request',
+      subject:
+        "[Test] Order Confirmation - Google Email Markup Whitelisting Request",
       html: emailHtml,
     });
 
     console.log(result);
 
-    console.log('✅ Test email sent successfully!');
-    console.log('📧 Email ID:', result.data?.id);
-    console.log('\n📝 Next Steps:');
-    console.log('1. Wait for Google to process your whitelisting request (can take 5-7 business days)');
-    console.log('2. You will receive an email confirmation when approved');
-    console.log('3. Once approved, Email Markup will work in Gmail for all your order emails');
-    console.log('\n💡 Tip: Make sure your production domain is verified in Resend');
+    console.log("✅ Test email sent successfully!");
+    console.log("📧 Email ID:", result.data?.id);
+    console.log("\n📝 Next Steps:");
+    console.log(
+      "1. Wait for Google to process your whitelisting request (can take 5-7 business days)",
+    );
+    console.log("2. You will receive an email confirmation when approved");
+    console.log(
+      "3. Once approved, Email Markup will work in Gmail for all your order emails",
+    );
+    console.log(
+      "\n💡 Tip: Make sure your production domain is verified in Resend",
+    );
     console.log('💡 Tip: Use the same "From" email address in production');
   } catch (error) {
-    console.error('❌ Failed to send test email:', error);
+    console.error("❌ Failed to send test email:", error);
     if (error.message) {
-      console.error('Error message:', error.message);
+      console.error("Error message:", error.message);
     }
     process.exit(1);
   }
@@ -160,6 +174,6 @@ async function sendGoogleTestEmail() {
 
 // Run the script
 sendGoogleTestEmail().catch((error) => {
-  console.error('❌ Script failed:', error);
+  console.error("❌ Script failed:", error);
   process.exit(1);
 });

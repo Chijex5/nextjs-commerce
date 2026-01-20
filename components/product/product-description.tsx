@@ -111,7 +111,11 @@ export function ProductDescription({ product }: { product: Product }) {
             disabled={alertLoading}
             className="rounded-md bg-black px-4 py-2 text-xs font-medium text-white hover:bg-neutral-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
           >
-            {alertLoading ? <LoadingDots className="bg-white dark:bg-black" /> : "Notify me"}
+            {alertLoading ? (
+              <LoadingDots className="bg-white dark:bg-black" />
+            ) : (
+              "Notify me"
+            )}
           </button>
         </div>
       </form>

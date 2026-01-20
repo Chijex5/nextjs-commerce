@@ -200,7 +200,8 @@ export default function ProductsTable({
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  {product.productCollections && product.productCollections.length > 0 ? (
+                  {product.productCollections &&
+                  product.productCollections.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
                       {product.productCollections.slice(0, 2).map((pc) => (
                         <span
@@ -322,18 +323,19 @@ export default function ProductsTable({
                       {product._count.variants} variants
                     </span>
                   </div>
-                  {product.productCollections && product.productCollections.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {product.productCollections.map((pc) => (
-                        <span
-                          key={pc.collection.id}
-                          className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-                        >
-                          {pc.collection.title}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  {product.productCollections &&
+                    product.productCollections.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {product.productCollections.map((pc) => (
+                          <span
+                            key={pc.collection.id}
+                            className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                          >
+                            {pc.collection.title}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   {product.variants[0] && (
                     <p className="mt-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
                       {product.variants[0].currencyCode}{" "}

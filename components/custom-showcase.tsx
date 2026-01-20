@@ -16,8 +16,8 @@ export function CustomShowcase({ orders }: { orders: CustomOrder[] }) {
       <section className="relative overflow-hidden border-t border-neutral-200 bg-gradient-to-b from-white via-neutral-50/50 to-white py-16 dark:border-neutral-700 dark:from-black dark:via-neutral-900/50 dark:to-black">
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-2xl border border-dashed border-neutral-300 bg-white/70 p-10 text-center text-sm text-neutral-600 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/80 dark:text-neutral-400">
-            Custom order stories are coming soon. Check back for fresh before-and-after
-            transformations.
+            Custom order stories are coming soon. Check back for fresh
+            before-and-after transformations.
           </div>
         </div>
       </section>
@@ -60,26 +60,90 @@ export function CustomShowcase({ orders }: { orders: CustomOrder[] }) {
               "https://via.placeholder.com/400?text=Final+Product";
 
             return (
-            <Link
-              key={order.id}
-              href={`/custom-orders#order-${order.id}`}
-              className="group relative opacity-0"
-              style={{
-                animation: `fadeInUp 600ms ease-out ${index * 100}ms forwards`,
-              }}
-            >
-              {/* Card Container */}
-              <div className="relative overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-neutral-200/50 transition-all duration-300 group-hover:shadow-2xl group-hover:ring-neutral-300 dark:bg-neutral-900 dark:ring-neutral-800/50 dark:group-hover:ring-neutral-700">
-                {/* Before/After Grid */}
-                <div className="grid grid-cols-2 gap-3 p-5">
-                  {/* Before Image */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                        Inspiration
-                      </span>
+              <Link
+                key={order.id}
+                href={`/custom-orders#order-${order.id}`}
+                className="group relative opacity-0"
+                style={{
+                  animation: `fadeInUp 600ms ease-out ${index * 100}ms forwards`,
+                }}
+              >
+                {/* Card Container */}
+                <div className="relative overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-neutral-200/50 transition-all duration-300 group-hover:shadow-2xl group-hover:ring-neutral-300 dark:bg-neutral-900 dark:ring-neutral-800/50 dark:group-hover:ring-neutral-700">
+                  {/* Before/After Grid */}
+                  <div className="grid grid-cols-2 gap-3 p-5">
+                    {/* Before Image */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                          Inspiration
+                        </span>
+                        <svg
+                          className="h-4 w-4 text-neutral-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="relative aspect-square overflow-hidden rounded-xl ring-1 ring-neutral-200 dark:ring-neutral-800">
+                        <Image
+                          src={beforeImage}
+                          alt="Customer inspiration"
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                          sizes="(min-width: 1024px) 200px, (min-width: 640px) 300px, 150px"
+                        />
+                      </div>
+                    </div>
+
+                    {/* After Image */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100">
+                          Our Creation
+                        </span>
+                        <svg
+                          className="h-4 w-4 text-green-500"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      </div>
+                      <div className="relative aspect-square overflow-hidden rounded-xl ring-2 ring-green-500/50 dark:ring-green-500/30">
+                        <Image
+                          src={afterImage}
+                          alt="Final product"
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                          sizes="(min-width: 1024px) 200px, (min-width: 640px) 300px, 150px"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Footer */}
+                  <div className="border-t border-neutral-200 bg-gradient-to-br from-neutral-50 to-neutral-100 px-5 py-4 dark:border-neutral-800 dark:from-neutral-800/50 dark:to-neutral-900/50">
+                    <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                      {order.title}
+                    </p>
+                    <p className="mt-1 flex items-center text-xs text-neutral-600 transition-colors group-hover:text-neutral-900 dark:text-neutral-400 dark:group-hover:text-neutral-100">
+                      View transformation story
                       <svg
-                        className="h-4 w-4 text-neutral-400"
+                        className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-1"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -88,78 +152,14 @@ export function CustomShowcase({ orders }: { orders: CustomOrder[] }) {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                          d="M9 5l7 7-7 7"
                         />
                       </svg>
-                    </div>
-                    <div className="relative aspect-square overflow-hidden rounded-xl ring-1 ring-neutral-200 dark:ring-neutral-800">
-                      <Image
-                        src={beforeImage}
-                        alt="Customer inspiration"
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
-                        sizes="(min-width: 1024px) 200px, (min-width: 640px) 300px, 150px"
-                      />
-                    </div>
-                  </div>
-
-                  {/* After Image */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100">
-                        Our Creation
-                      </span>
-                      <svg
-                        className="h-4 w-4 text-green-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                    <div className="relative aspect-square overflow-hidden rounded-xl ring-2 ring-green-500/50 dark:ring-green-500/30">
-                      <Image
-                        src={afterImage}
-                        alt="Final product"
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
-                        sizes="(min-width: 1024px) 200px, (min-width: 640px) 300px, 150px"
-                      />
-                    </div>
+                    </p>
                   </div>
                 </div>
-
-                {/* Card Footer */}
-                <div className="border-t border-neutral-200 bg-gradient-to-br from-neutral-50 to-neutral-100 px-5 py-4 dark:border-neutral-800 dark:from-neutral-800/50 dark:to-neutral-900/50">
-                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                    {order.title}
-                  </p>
-                  <p className="mt-1 flex items-center text-xs text-neutral-600 transition-colors group-hover:text-neutral-900 dark:text-neutral-400 dark:group-hover:text-neutral-100">
-                    View transformation story
-                    <svg
-                      className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-1"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </p>
-                </div>
-              </div>
-            </Link>
-          );
+              </Link>
+            );
           })}
         </div>
 

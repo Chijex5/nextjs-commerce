@@ -17,8 +17,7 @@ export async function POST(request: NextRequest) {
     const payload = await request.json();
     const name =
       typeof payload.name === "string" ? payload.name.trim() : undefined;
-    const email =
-      typeof payload.email === "string" ? payload.email.trim() : "";
+    const email = typeof payload.email === "string" ? payload.email.trim() : "";
     const message =
       typeof payload.message === "string" ? payload.message.trim() : "";
 
@@ -75,7 +74,9 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: "Thanks for reaching out. We'll reply within 1 business day." },
+      {
+        message: "Thanks for reaching out. We'll reply within 1 business day.",
+      },
       { status: 200 },
     );
   } catch (error) {

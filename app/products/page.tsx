@@ -11,8 +11,7 @@ export async function generateMetadata(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }): Promise<Metadata> {
   const searchParams = await props.searchParams;
-  const hasSearchParams =
-    searchParams && Object.keys(searchParams).length > 0;
+  const hasSearchParams = searchParams && Object.keys(searchParams).length > 0;
 
   return {
     title: "All Products",

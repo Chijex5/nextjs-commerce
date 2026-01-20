@@ -3,8 +3,11 @@
  * Clean, minimal styling matching the D'FOOTPRINT website aesthetic
  */
 export const baseTemplate = (content: string) => {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'https://yourdomain.com';
-  
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXTAUTH_URL ||
+    "https://yourdomain.com";
+
   return `
   <!DOCTYPE html>
   <html>

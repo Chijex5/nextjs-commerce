@@ -14,10 +14,7 @@ export default function ContactForm() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleChange = (
-    field: "name" | "email" | "message",
-    value: string,
-  ) => {
+  const handleChange = (field: "name" | "email" | "message", value: string) => {
     setFormValues((prev) => ({ ...prev, [field]: value }));
   };
 

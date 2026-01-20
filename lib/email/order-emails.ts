@@ -1,14 +1,14 @@
-import { sendEmail } from './resend';
-import { orderConfirmationTemplate } from './templates/order-confirmation';
-import { orderConfirmationWithMarkupTemplate } from './templates/order-confirmation-with-markup';
-import { shippingNotificationTemplate } from './templates/shipping-notification';
-import { orderStatusUpdateTemplate } from './templates/order-status-update';
-import { abandonedCartTemplate } from './templates/abandoned-cart';
-import { getReviewApprovedEmailTemplate } from './templates/review-approved';
-import { adminNewOrderTemplate } from './templates/admin-new-order';
+import { sendEmail } from "./resend";
+import { orderConfirmationTemplate } from "./templates/order-confirmation";
+import { orderConfirmationWithMarkupTemplate } from "./templates/order-confirmation-with-markup";
+import { shippingNotificationTemplate } from "./templates/shipping-notification";
+import { orderStatusUpdateTemplate } from "./templates/order-status-update";
+import { abandonedCartTemplate } from "./templates/abandoned-cart";
+import { getReviewApprovedEmailTemplate } from "./templates/review-approved";
+import { adminNewOrderTemplate } from "./templates/admin-new-order";
 
-const ORDER_FROM_EMAIL = 'order@dfootprint.me';
-const ORDER_REPLY_TO = 'support@dfootprint.me';
+const ORDER_FROM_EMAIL = "order@dfootprint.me";
+const ORDER_REPLY_TO = "support@dfootprint.me";
 
 interface OrderData {
   orderNumber: string;
@@ -22,6 +22,9 @@ interface OrderData {
     quantity: number;
     price: number;
     productImage?: string | null;
+    productUrl?: string;
+    productHandle?: string;
+    sku?: string;
   }>;
   trackingNumber?: string;
   estimatedArrival?: string;
@@ -35,7 +38,9 @@ interface OrderData {
  */
 export const sendOrderConfirmationWithMarkup = async (order: OrderData) => {
   if (!order.shippingAddress || !order.orderDate) {
-    console.warn('Missing shippingAddress or orderDate for order confirmation with markup');
+    console.warn(
+      "Missing shippingAddress or orderDate for order confirmation with markup",
+    );
     // Fall back to simple confirmation
     return sendOrderConfirmation(order);
   }
@@ -174,7 +179,7 @@ export const sendAdminNewOrderNotification = async (data: {
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXTAUTH_URL ||
-    'https://yourdomain.com';
+    "https://yourdomain.com";
 
   return sendEmail({
     to: data.to,

@@ -7,12 +7,15 @@ This update adds comprehensive product variant support to the Bulk Product Edito
 ## What's New
 
 ### 1. Expandable Product Rows
+
 - Each product row now has an expand/collapse arrow button (▶/▼)
 - When expanded, shows all variants associated with the product
 - Collapsed by default for a clean interface
 
 ### 2. Inline Variant Editing
+
 When a product row is expanded, variants are displayed as indented sub-rows with:
+
 - **Title field**: Edit the variant name (e.g., "Small / Red", "Large / Blue")
 - **Price field**: Edit variant-specific price in Naira (₦)
 - **Available checkbox**: Toggle variant availability
@@ -20,6 +23,7 @@ When a product row is expanded, variants are displayed as indented sub-rows with
 - **Status indicators**: Shows "New" or "Modified" state
 
 ### 3. Variant Modal (Detailed View)
+
 - Click the purple "X variant(s)" button to open a detailed modal
 - Shows all variants for the product in a larger, more comfortable view
 - Same editing capabilities as inline view
@@ -27,6 +31,7 @@ When a product row is expanded, variants are displayed as indented sub-rows with
 - Changes are tracked and saved together with the product
 
 ### 4. Visual Indicators
+
 - Variant count badge shows number of active variants
 - Purple color coding for variant-related UI elements
 - Left border on variant rows for clear visual hierarchy
@@ -35,11 +40,13 @@ When a product row is expanded, variants are displayed as indented sub-rows with
 ## How to Use
 
 ### Viewing Variants
+
 1. Navigate to `/admin/products/bulk-edit`
 2. Click the arrow button (▶) next to any product
 3. Variants appear as indented rows below the product
 
 ### Editing Variants Inline
+
 1. Expand a product row
 2. Edit any field directly in the variant row:
    - Click in title/price fields to edit
@@ -48,6 +55,7 @@ When a product row is expanded, variants are displayed as indented sub-rows with
 4. Click "Delete" on any variant to mark it for removal
 
 ### Using the Variants Modal
+
 1. Click the purple "X variant(s)" button for any product
 2. A modal opens showing all variants
 3. Edit, add, or delete variants in the modal
@@ -55,6 +63,7 @@ When a product row is expanded, variants are displayed as indented sub-rows with
 5. Changes are not persisted until you click "Save All Changes"
 
 ### Saving Changes
+
 1. Make edits to products and their variants
 2. The toolbar shows count of modified products
 3. Click "Save All Changes" to persist all modifications
@@ -63,6 +72,7 @@ When a product row is expanded, variants are displayed as indented sub-rows with
 ## Technical Details
 
 ### New Data Structures
+
 ```typescript
 interface ProductVariant {
   id: string;
@@ -83,12 +93,14 @@ interface ProductRow {
 ```
 
 ### API Changes
+
 - **New endpoint**: `PUT /api/admin/products/[id]/variants`
   - Handles creation, update, and deletion of variants
   - Processes variants based on flags (isNew, isModified, isDeleted)
   - Returns updated product with variants
 
 ### Change Tracking
+
 - Variants use the same change tracking as products:
   - `isNew`: New variant to be created
   - `isModified`: Existing variant with changes
@@ -99,22 +111,26 @@ interface ProductRow {
 ## Use Cases
 
 ### 1. Products with Size Variations
+
 - T-shirt available in Small, Medium, Large, X-Large
 - Small/Medium at ₦5,000
 - Large/X-Large at ₦6,000
 - Edit prices for specific sizes
 
 ### 2. Products with Color Variations
+
 - Shoes available in multiple colors
 - Premium colors at higher price points
 - Manage availability per color
 
 ### 3. Size + Color Combinations
+
 - Manage all combinations from the bulk editor
 - Edit specific variant prices without recreating the product
 - Quick availability toggles per variant
 
 ### 4. Seasonal Price Adjustments
+
 - Bulk select multiple products
 - Expand each to adjust variant prices
 - Save all changes at once
