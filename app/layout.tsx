@@ -1,6 +1,7 @@
 import { CartProvider } from "components/cart/cart-context";
 import { Navbar } from "components/layout/navbar";
 import { WelcomeToast } from "components/welcome-toast";
+import { CrispChat } from "components/crisp-chat";
 import AnalyticsPageView from "components/analytics/page-view";
 import AbandonedCartTracker from "components/cart/abandoned-cart-tracker";
 import TikTokIdentify from "components/analytics/tiktok-identify";
@@ -160,6 +161,7 @@ export default async function RootLayout({
           <Navbar />
           <FirstVisitSignupPopup />
           <ExitIntentPopup />
+          <CrispChat />
           <main>
             {children}
             <Toaster closeButton />

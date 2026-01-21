@@ -2,6 +2,8 @@ import { Carousel } from "components/carousel";
 import { ThreeItemGrid } from "components/grid/three-items";
 import { CustomShowcase } from "components/custom-showcase";
 import { CollectionSections } from "components/collection-sections";
+import { TestimonialsCarousel } from "components/testimonials-carousel";
+import { TrustBadges } from "components/trust-badges";
 import Footer from "components/layout/footer";
 import prisma from "lib/prisma";
 import { canonicalUrl, siteName } from "lib/seo";
@@ -42,7 +44,22 @@ export default async function HomePage() {
     <>
       <ThreeItemGrid />
       <Carousel />
+      
+      {/* Trust Badges Section */}
+      <div className="mx-auto max-w-(--breakpoint-2xl) px-4 py-12">
+        <TrustBadges variant="grid" />
+      </div>
+
       <CollectionSections />
+      
+      {/* Testimonials Section */}
+      <div className="mx-auto max-w-(--breakpoint-2xl) px-4 py-12">
+        <h2 className="mb-8 text-center text-3xl font-bold text-black dark:text-white">
+          What Our Customers Say
+        </h2>
+        <TestimonialsCarousel />
+      </div>
+
       <CustomShowcase
         orders={customOrders.map((order) => ({
           id: order.id,
