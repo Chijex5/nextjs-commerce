@@ -110,8 +110,8 @@ export function SizeGuideButton({ productType = "footwear" }: SizeGuideProps) {
             <div className="mt-6 rounded-lg border border-neutral-200 p-4 dark:border-neutral-700">
               <h4 className="mb-2 font-semibold text-black dark:text-white">Sizing Tips</h4>
               <ul className="space-y-1 text-sm text-neutral-700 dark:text-neutral-300">
-                <li>• If you&apos;re between sizes, we recommend sizing up</li>
-                <li>• Measure your feet at the end of the day when they&apos;re slightly larger</li>
+                <li>• If you're between sizes, we recommend sizing up</li>
+                <li>• Measure your feet at the end of the day when they're slightly larger</li>
                 <li>• Handmade footwear may fit slightly differently than mass-produced shoes</li>
               </ul>
             </div>

@@ -46,14 +46,14 @@ export default async function HomePage() {
       <Carousel />
       
       {/* Trust Badges Section */}
-      <div className="mx-auto max-w-(--breakpoint-2xl) px-4 py-12">
+      <div className="mx-auto max-w-7xl px-4 py-12">
         <TrustBadges variant="grid" />
       </div>
 
       <CollectionSections />
       
       {/* Testimonials Section */}
-      <div className="mx-auto max-w-(--breakpoint-2xl) px-4 py-12">
+      <div className="mx-auto max-w-7xl px-4 py-12">
         <h2 className="mb-8 text-center text-3xl font-bold text-black dark:text-white">
           What Our Customers Say
         </h2>

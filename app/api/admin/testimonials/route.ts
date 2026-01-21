@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import prisma from "lib/prisma";
 import { requireAdminSession } from "lib/admin-auth";
 
 // GET /api/admin/testimonials - Get all testimonials with filtering
