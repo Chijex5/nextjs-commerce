@@ -20,6 +20,9 @@ export default function AdminNav({
     },
     { href: "/admin/orders", label: "Orders", key: "orders" },
     { href: "/admin/coupons", label: "Coupons", key: "coupons" },
+    { href: "/admin/reviews", label: "Reviews", key: "reviews" },
+    { href: "/admin/testimonials", label: "Testimonials", key: "testimonials" },
+    { href: "/admin/size-guides", label: "Size Guides", key: "size-guides" },
     { href: "/admin/users", label: "Users", key: "users" },
     { href: "/admin/admins", label: "Admins", key: "admins" },
   ];
