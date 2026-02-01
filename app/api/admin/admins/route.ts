@@ -4,6 +4,7 @@ import { db } from "lib/db";
 import { adminUsers } from "lib/db/schema";
 import bcrypt from "bcryptjs";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { CreateAdminBody } from "types/api";
 
 export async function GET(request: NextRequest) {
   try {
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = (await request.json()) as CreateAdminBody;
     const { email, name, password, role } = body;
 
     if (!email || !password) {

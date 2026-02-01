@@ -9,6 +9,7 @@ import {
   productVariants,
   products,
 } from "lib/db/schema";
+import type { CreateProductBody } from "types/api";
 
 export async function POST(request: Request) {
   try {
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = (await request.json()) as CreateProductBody;
 
     const product = await db.transaction(async (tx) => {
       const [createdProduct] = await tx
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
 
       if (body.images && Array.isArray(body.images) && body.images.length > 0) {
         await tx.insert(productImages).values(
-          body.images.map((img: any) => ({
+          body.images.map((img) => ({
             productId: createdProduct.id,
             url: img.url,
             altText: createdProduct.title,
@@ -75,17 +76,17 @@ export async function POST(request: Request) {
         const largeSizeFrom = body.largeSizeFrom;
         const sizePriceRules = Array.isArray(body.sizePriceRules)
           ? body.sizePriceRules
-              .map((rule: any) => ({
-                from: parseInt(rule.from, 10),
-                price: parseFloat(rule.price),
+              .map((rule) => ({
+                from: parseInt(String(rule.from), 10),
+                price: parseFloat(String(rule.price)),
               }))
               .filter(
-                (rule: any) =>
+                (rule) =>
                   !Number.isNaN(rule.from) &&
                   !Number.isNaN(rule.price) &&
                   rule.from > 0,
               )
-              .sort((a: any, b: any) => b.from - a.from)
+              .sort((a, b) => b.from - a.from)
           : [];
 
         const colorKey = color.trim().toLowerCase();
@@ -175,7 +176,7 @@ export async function POST(request: Request) {
         body.collectionIds.length > 0
       ) {
         await tx.insert(productCollections).values(
-          body.collectionIds.map((collectionId: string, index: number) => ({
+          body.collectionIds.map((collectionId, index) => ({
             productId: createdProduct.id,
             collectionId,
             position: index,

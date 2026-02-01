@@ -3,6 +3,7 @@ import { db } from "lib/db";
 import { coupons } from "lib/db/schema";
 import { verifyAuth } from "app/api/utils/auth";
 import { eq } from "drizzle-orm";
+import { UpdateCouponBody } from "types/api";
 
 export async function PATCH(
   request: NextRequest,
@@ -16,7 +17,7 @@ export async function PATCH(
 
     const params = await context.params;
     const { id } = params;
-    const body = await request.json();
+    const body = (await request.json()) as UpdateCouponBody;
 
     const [existing] = await db
       .select({ id: coupons.id })

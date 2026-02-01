@@ -11,6 +11,7 @@ import {
   sendShippingNotification,
 } from "@/lib/email/order-emails";
 import { eq } from "drizzle-orm";
+import { UpdateOrderBody } from "types/api";
 
 export async function GET(
   request: NextRequest,
@@ -114,19 +115,16 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const body = await request.json();
+    const body = (await request.json()) as UpdateOrderBody & {
+      deliveryStatus?: DeliveryStatus;
+      acknowledge?: boolean;
+    };
     const {
       status,
       deliveryStatus,
       trackingNumber,
       notes,
       acknowledge,
-    }: {
-      status?: string;
-      deliveryStatus?: DeliveryStatus;
-      trackingNumber?: string;
-      notes?: string;
-      acknowledge?: boolean;
     } = body;
 
     const [existingOrder] = await db

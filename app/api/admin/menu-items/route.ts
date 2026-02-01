@@ -3,6 +3,7 @@ import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
 import { menuItems } from "lib/db/schema";
 import { desc, eq } from "drizzle-orm";
+import { CreateMenuItemBody } from "types/api";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +13,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = (await request.json()) as CreateMenuItemBody;
     const { menuId, title, url, position } = body;
 
     if (!menuId || !title || !url) {

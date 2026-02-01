@@ -3,6 +3,7 @@ import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
 import { pages } from "lib/db/schema";
 import { and, eq, ne } from "drizzle-orm";
+import { UpdatePageBody } from "types/api";
 
 export async function GET(
   request: NextRequest,
@@ -61,7 +62,7 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const body = await request.json();
+    const body = (await request.json()) as UpdatePageBody;
     const {
       handle,
       title,

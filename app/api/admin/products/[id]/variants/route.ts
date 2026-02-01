@@ -4,6 +4,21 @@ import { db } from "lib/db";
 import { productVariants, products } from "lib/db/schema";
 import { asc, eq, inArray } from "drizzle-orm";
 
+interface ProductVariantInput {
+  id?: string;
+  title: string;
+  price: string | number;
+  availableForSale?: boolean;
+  selectedOptions?: Array<{ name: string; value: string }>;
+  isNew?: boolean;
+  isModified?: boolean;
+  isDeleted?: boolean;
+}
+
+interface UpdateProductVariantsBody {
+  variants: ProductVariantInput[];
+}
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -16,7 +31,7 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const body = await request.json();
+    const body = (await request.json()) as UpdateProductVariantsBody;
     const { variants } = body;
 
     if (!variants || !Array.isArray(variants)) {

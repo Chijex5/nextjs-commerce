@@ -4,6 +4,17 @@ import { db } from "lib/db";
 import { customOrders } from "lib/db/schema";
 import { eq } from "drizzle-orm";
 
+interface UpdateCustomOrderShowcaseBody {
+  title?: string;
+  customerStory?: string;
+  beforeImage?: string;
+  afterImage?: string;
+  details?: string[];
+  completionTime?: string;
+  position?: number;
+  isPublished?: boolean;
+}
+
 const toDetailsArray = (value: unknown): string[] => {
   if (!Array.isArray(value)) return [];
   return value.filter((item): item is string => typeof item === "string");
@@ -67,7 +78,7 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = (await request.json()) as UpdateCustomOrderShowcaseBody;
     const {
       title,
       customerStory,

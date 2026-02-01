@@ -3,6 +3,7 @@ import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
 import { adminUsers } from "lib/db/schema";
 import { eq } from "drizzle-orm";
+import { UpdateAdminBody } from "types/api";
 
 export async function PUT(
   request: NextRequest,
@@ -16,7 +17,7 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const body = await request.json();
+    const body = (await request.json()) as UpdateAdminBody;
     const { name, role, isActive } = body;
 
     const updateData: Partial<typeof adminUsers.$inferInsert> = {};

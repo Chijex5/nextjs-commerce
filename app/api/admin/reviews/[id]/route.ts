@@ -4,6 +4,7 @@ import { products, reviews, users } from "@/lib/db/schema";
 import { requireAdminSession } from "lib/admin-auth";
 import { sendReviewApprovedEmail } from "@/lib/email/order-emails";
 import { eq } from "drizzle-orm";
+import { UpdateReviewBody } from "types/api";
 
 export async function PATCH(
   request: NextRequest,
@@ -19,7 +20,7 @@ export async function PATCH(
       );
     }
 
-    const { status } = await request.json();
+    const { status } = (await request.json()) as UpdateReviewBody;
     const { id } = await context.params;
 
     if (!["approved", "rejected", "pending"].includes(status)) {
