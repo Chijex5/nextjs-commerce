@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
+import { getVariantPrice } from "lib/admin-utils";
 import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "lib/image-constants";
 import { db } from "lib/db";
 import {
@@ -203,50 +204,12 @@ export async function PUT(
           });
         }
 
-        const getVariantPrice = (size: string, color: string): number => {
-          const basePrice = body.basePrice || 0;
-          const colorPrices = body.colorPrices || {};
-          const largeSizePrice = body.largeSizePrice;
-          const largeSizeFrom = body.largeSizeFrom;
-          const sizePriceRules = Array.isArray(body.sizePriceRules)
-            ? body.sizePriceRules
-                .map((rule: any) => ({
-                  from: parseInt(rule.from, 10),
-                  price: parseFloat(rule.price),
-                }))
-                .filter(
-                  (rule: any) =>
-                    !Number.isNaN(rule.from) &&
-                    !Number.isNaN(rule.price) &&
-                    rule.from > 0,
-                )
-                .sort((a: any, b: any) => b.from - a.from)
-            : [];
-
-          const colorKey = color.trim().toLowerCase();
-          if (colorPrices[colorKey] !== undefined) {
-            return colorPrices[colorKey];
-          }
-
-          if (sizePriceRules.length > 0) {
-            const sizeValue = parseInt(size, 10);
-            if (!Number.isNaN(sizeValue)) {
-              const matched = sizePriceRules.find(
-                (rule: any) => sizeValue >= rule.from,
-              );
-              if (matched) return matched.price;
-            }
-          }
-
-          if (
-            largeSizeFrom !== null &&
-            largeSizePrice !== null &&
-            parseInt(size, 10) >= largeSizeFrom
-          ) {
-            return largeSizePrice;
-          }
-
-          return basePrice;
+        const pricingConfig = {
+          basePrice: body.basePrice,
+          colorPrices: body.colorPrices,
+          largeSizePrice: body.largeSizePrice,
+          largeSizeFrom: body.largeSizeFrom,
+          sizePriceRules: body.sizePriceRules,
         };
 
         const variants: Array<typeof productVariants.$inferInsert> = [];
@@ -257,7 +220,7 @@ export async function PUT(
               variants.push({
                 productId: id,
                 title: `${size} / ${color}`,
-                price: String(getVariantPrice(size, color)),
+                price: String(getVariantPrice(size, color, pricingConfig)),
                 currencyCode: "NGN",
                 availableForSale: body.availableForSale ?? true,
                 selectedOptions: [
@@ -272,7 +235,7 @@ export async function PUT(
             variants.push({
               productId: id,
               title: `Size ${size}`,
-              price: String(getVariantPrice(size, "")),
+              price: String(getVariantPrice(size, "", pricingConfig)),
               currencyCode: "NGN",
               availableForSale: body.availableForSale ?? true,
               selectedOptions: [{ name: "Size", value: size }],
@@ -283,7 +246,7 @@ export async function PUT(
             variants.push({
               productId: id,
               title: color,
-              price: String(getVariantPrice("", color)),
+              price: String(getVariantPrice("", color, pricingConfig)),
               currencyCode: "NGN",
               availableForSale: body.availableForSale ?? true,
               selectedOptions: [{ name: "Color", value: color }],
