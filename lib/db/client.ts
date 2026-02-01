@@ -12,7 +12,7 @@ const {
   AMAZON_DB_USER,
   AMAZON_DB_PASSWORD,
   AMAZON_DB_SSL = "require",
-  AMAZON_DB_CA_PATH,
+  AMAZON_DB_CA,
   NODE_ENV,
 } = process.env;
 
@@ -25,30 +25,9 @@ if (!AMAZON_DB_PASSWORD) throw new Error("AMAZON_DB_PASSWORD is not set");
 const port = Number(AMAZON_DB_PORT);
 if (!Number.isFinite(port)) throw new Error("AMAZON_DB_PORT must be a number");
 
-const isVerifyFull = AMAZON_DB_SSL === "verify-full";
-const isRequire = AMAZON_DB_SSL === "require";
 
-if (!isVerifyFull && !isRequire) {
-  throw new Error('AMAZON_DB_SSL must be "require" or "verify-full"');
-}
+const ssl = { rejectUnauthorized: false };
 
-// If you set verify-full, you MUST provide the CA bundle,
-// and you SHOULD use hostname (not IP) to avoid hostname mismatch.
-const ssl =
-  AMAZON_DB_SSL === "require"
-    ? { rejectUnauthorized: false }
-    : {
-        rejectUnauthorized: true,
-        ca: AMAZON_DB_CA_PATH
-          ? fs.readFileSync(path.resolve(AMAZON_DB_CA_PATH), "utf8")
-          : undefined,
-      };
-
-if (AMAZON_DB_SSL === "verify-full" && !ssl.ca) {
-  throw new Error(
-    "AMAZON_DB_CA_PATH is required when AMAZON_DB_SSL=verify-full"
-  );
-}
 
 const globalForDb = globalThis as unknown as {
   drizzleClient?: ReturnType<typeof drizzle>;
