@@ -3,7 +3,16 @@ import { authOptions } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import AdminNav from "@/components/admin/AdminNav";
 import ProductForm from "@/components/admin/ProductForm";
-import prisma from "@/lib/prisma";
+import { db } from "@/lib/db";
+import {
+  collections,
+  productCollections,
+  productImages,
+  productOptions,
+  productVariants,
+  products,
+} from "@/lib/db/schema";
+import { asc, eq } from "drizzle-orm";
 
 export default async function EditProductPage({
   params,
@@ -18,33 +27,64 @@ export default async function EditProductPage({
 
   const { id } = await params;
 
-  // Get product with all relations
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: {
-      images: {
-        orderBy: { position: "asc" },
-      },
-      variants: {
-        orderBy: { createdAt: "asc" },
-      },
-      options: true,
-      productCollections: {
-        include: {
-          collection: true,
-        },
-      },
-    },
-  });
+  const [product] = await db
+    .select()
+    .from(products)
+    .where(eq(products.id, id))
+    .limit(1);
 
   if (!product) {
     notFound();
   }
 
-  // Get all collections for the form
-  const collections = await prisma.collection.findMany({
-    orderBy: { title: "asc" },
-  });
+  const [images, variants, options, collectionLinks, collectionRows] =
+    await Promise.all([
+      db
+        .select()
+        .from(productImages)
+        .where(eq(productImages.productId, id))
+        .orderBy(asc(productImages.position)),
+      db
+        .select()
+        .from(productVariants)
+        .where(eq(productVariants.productId, id))
+        .orderBy(asc(productVariants.createdAt)),
+      db
+        .select()
+        .from(productOptions)
+        .where(eq(productOptions.productId, id)),
+      db
+        .select({
+          id: productCollections.id,
+          productId: productCollections.productId,
+          collectionId: productCollections.collectionId,
+          position: productCollections.position,
+          createdAt: productCollections.createdAt,
+          collection: collections,
+        })
+        .from(productCollections)
+        .innerJoin(
+          collections,
+          eq(productCollections.collectionId, collections.id),
+        )
+        .where(eq(productCollections.productId, id)),
+      db.select().from(collections).orderBy(asc(collections.title)),
+    ]);
+
+  const productWithRelations = {
+    ...product,
+    images,
+    variants,
+    options,
+    productCollections: collectionLinks.map((link) => ({
+      id: link.id,
+      productId: link.productId,
+      collectionId: link.collectionId,
+      position: link.position,
+      createdAt: link.createdAt,
+      collection: link.collection,
+    })),
+  };
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
@@ -61,7 +101,7 @@ export default async function EditProductPage({
             </p>
           </div>
 
-          <ProductForm collections={collections} product={product} />
+          <ProductForm collections={collectionRows} product={productWithRelations} />
         </div>
       </div>
     </div>

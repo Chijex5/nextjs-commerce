@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { couponUsages, coupons } from "lib/db/schema";
 import { getUserSession } from "lib/user-session";
+import { eq, ilike } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,22 +23,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user session
     const session = await getUserSession();
     const currentUserId = session?.id;
 
-    // Find coupon (case-insensitive)
-    const coupon = await prisma.coupon.findFirst({
-      where: {
-        code: {
-          equals: code.toUpperCase(),
-          mode: "insensitive",
-        },
-      },
-      include: {
-        usages: true,
-      },
-    });
+    const [coupon] = await db
+      .select()
+      .from(coupons)
+      .where(ilike(coupons.code, code.toUpperCase()))
+      .limit(1);
 
     if (!coupon) {
       return NextResponse.json(
@@ -45,7 +39,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if active
     if (!coupon.isActive) {
       return NextResponse.json(
         { error: "This coupon is no longer active" },
@@ -53,7 +46,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if requires login
     if (coupon.requiresLogin && !currentUserId) {
       return NextResponse.json(
         { error: "Please sign in to use this coupon" },
@@ -61,7 +53,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check start date
     if (coupon.startDate && new Date() < new Date(coupon.startDate)) {
       return NextResponse.json(
         { error: "This coupon is not yet valid" },
@@ -69,7 +60,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check expiry date
     if (coupon.expiryDate && new Date() > new Date(coupon.expiryDate)) {
       return NextResponse.json(
         { error: "This coupon has expired" },
@@ -77,7 +67,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check usage limit
     if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) {
       return NextResponse.json(
         { error: "This coupon has reached its usage limit" },
@@ -85,20 +74,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check per-user usage limit
     if (coupon.maxUsesPerUser) {
+      const usages = await db
+        .select()
+        .from(couponUsages)
+        .where(eq(couponUsages.couponId, coupon.id));
+
       let userUsageCount = 0;
 
       if (currentUserId) {
-        // Count usage by user ID
-        userUsageCount = coupon.usages.filter(
-          (u) => u.userId === currentUserId,
-        ).length;
+        userUsageCount = usages.filter((u) => u.userId === currentUserId).length;
       } else if (sessionId) {
-        // Count usage by session ID for guest users
-        userUsageCount = coupon.usages.filter(
-          (u) => u.sessionId === sessionId,
-        ).length;
+        userUsageCount = usages.filter((u) => u.sessionId === sessionId).length;
       }
 
       if (userUsageCount >= coupon.maxUsesPerUser) {
@@ -112,7 +99,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check minimum order value
     if (coupon.minOrderValue && cartTotal < Number(coupon.minOrderValue)) {
       return NextResponse.json(
         {
@@ -122,16 +108,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate discount amount
     let discountAmount = 0;
     if (coupon.discountType === "percentage") {
       discountAmount = (cartTotal * Number(coupon.discountValue)) / 100;
     } else if (coupon.discountType === "fixed") {
       discountAmount = Math.min(Number(coupon.discountValue), cartTotal);
     }
-
-    // Note: Usage is tracked when order is created, not during validation
-    // This prevents premature usage counting
 
     return NextResponse.json({
       success: true,

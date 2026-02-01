@@ -2,8 +2,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../../../lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import prisma from "../../../lib/prisma";
+import { db } from "lib/db";
+import { collections, orders, products } from "lib/db/schema";
 import AdminNav from "../../../components/admin/AdminNav";
+import { desc, eq, sql } from "drizzle-orm";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -12,32 +14,39 @@ export default async function DashboardPage() {
     redirect("/admin/login");
   }
 
-  // Get dashboard stats
   const [
-    productsCount,
-    collectionsCount,
-    ordersCount,
-    pendingOrdersCount,
+    productsCountResult,
+    collectionsCountResult,
+    ordersCountResult,
+    pendingOrdersCountResult,
     recentOrders,
   ] = await Promise.all([
-    prisma.product.count(),
-    prisma.collection.count(),
-    prisma.order.count(),
-    prisma.order.count({ where: { status: "pending" } }),
-    prisma.order.findMany({
-      take: 5,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        orderNumber: true,
-        customerName: true,
-        status: true,
-        totalAmount: true,
-        currencyCode: true,
-        createdAt: true,
-      },
-    }),
+    db.select({ count: sql<number>`count(*)` }).from(products),
+    db.select({ count: sql<number>`count(*)` }).from(collections),
+    db.select({ count: sql<number>`count(*)` }).from(orders),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(orders)
+      .where(eq(orders.status, "pending")),
+    db
+      .select({
+        id: orders.id,
+        orderNumber: orders.orderNumber,
+        customerName: orders.customerName,
+        status: orders.status,
+        totalAmount: orders.totalAmount,
+        currencyCode: orders.currencyCode,
+        createdAt: orders.createdAt,
+      })
+      .from(orders)
+      .orderBy(desc(orders.createdAt))
+      .limit(5),
   ]);
+
+  const productsCount = Number(productsCountResult[0]?.count ?? 0);
+  const collectionsCount = Number(collectionsCountResult[0]?.count ?? 0);
+  const ordersCount = Number(ordersCountResult[0]?.count ?? 0);
+  const pendingOrdersCount = Number(pendingOrdersCountResult[0]?.count ?? 0);
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
@@ -202,7 +211,7 @@ export default async function DashboardPage() {
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          d="M2.25 7.125C2.25 6.504 2.754 6 3.375 6h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 01-1.125-1.125v-3.75zM14.25 8.625c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v8.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 01-1.125-1.125v-8.25zM3.75 16.125c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v2.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 01-1.125-1.125v-2.25z"
+                          d="M19 7l-7-4-7 4m14 0l-7 4m7-4v10l-7 4m0-10L5 7m7 4v10m0-10l7-4"
                         />
                       </svg>
                     </div>
@@ -230,147 +239,57 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* Recent Orders & Quick Actions */}
-          <div className="grid gap-6 lg:grid-cols-3">
-            {/* Recent Orders */}
-            <div className="lg:col-span-2">
-              <div className="rounded-lg border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-                <div className="border-b border-neutral-200 px-6 py-4 dark:border-neutral-800">
-                  <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                    Recent Orders
-                  </h2>
-                </div>
-                <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
-                  {recentOrders.length > 0 ? (
-                    recentOrders.map((order) => (
-                      <Link
-                        key={order.id}
-                        href={`/admin/orders/${order.id}`}
-                        className="block px-6 py-4 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center">
-                              <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                                {order.orderNumber}
-                              </p>
-                              <span
-                                className={`ml-2 inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                                  order.status === "completed"
-                                    ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                                    : order.status === "pending"
-                                      ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                                      : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
-                                }`}
-                              >
-                                {order.status}
-                              </span>
-                            </div>
-                            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-                              {order.customerName}
-                            </p>
-                          </div>
-                          <div className="ml-4 text-right">
-                            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                              {order.currencyCode}{" "}
-                              {Number(order.totalAmount).toLocaleString()}
-                            </p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                              {new Date(order.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                      </Link>
-                    ))
-                  ) : (
-                    <div className="px-6 py-8 text-center">
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                        No orders yet
-                      </p>
-                    </div>
-                  )}
-                </div>
-                <div className="border-t border-neutral-200 px-6 py-3 dark:border-neutral-800">
-                  <Link
-                    href="/admin/orders"
-                    className="text-sm font-medium text-neutral-900 hover:text-neutral-700 dark:text-neutral-100 dark:hover:text-neutral-300"
-                  >
-                    View all orders →
-                  </Link>
-                </div>
-              </div>
+          {/* Recent Orders */}
+          <div className="rounded-lg border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="border-b border-neutral-200 px-6 py-4 dark:border-neutral-800">
+              <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">
+                Recent Orders
+              </h2>
             </div>
-
-            {/* Quick Actions */}
-            <div className="lg:col-span-1">
-              <div className="rounded-lg border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-                <div className="border-b border-neutral-200 px-6 py-4 dark:border-neutral-800">
-                  <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                    Quick Actions
-                  </h2>
+            <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
+              {recentOrders.length === 0 ? (
+                <div className="p-6 text-center text-neutral-500 dark:text-neutral-400">
+                  No orders yet
                 </div>
-                <div className="p-6">
-                  <div className="space-y-3">
-                    <Link
-                      href="/admin/products/new"
-                      className="flex items-center justify-between rounded-md bg-neutral-900 px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
-                    >
-                      <span>Add Product</span>
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+              ) : (
+                recentOrders.map((order) => (
+                  <div key={order.id} className="px-6 py-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                          {order.orderNumber}
+                        </p>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                          {order.customerName}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                          ₦{Number(order.totalAmount).toLocaleString()}
+                        </p>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                          order.status === "completed"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                            : order.status === "processing"
+                              ? "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                              : order.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                                : "bg-neutral-100 text-neutral-800 dark:bg-neutral-900/20 dark:text-neutral-400"
+                        }`}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 4v16m8-8H4"
-                        />
-                      </svg>
-                    </Link>
-                    <Link
-                      href="/admin/products/bulk-import"
-                      className="flex items-center justify-between rounded-md border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
-                    >
-                      <span>Bulk Import</span>
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                        />
-                      </svg>
-                    </Link>
-                    <Link
-                      href="/admin/orders?status=pending"
-                      className="flex items-center justify-between rounded-md border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
-                    >
-                      <span>View Pending Orders</span>
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </Link>
+                        {order.status}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </div>
+                ))
+              )}
             </div>
           </div>
         </div>

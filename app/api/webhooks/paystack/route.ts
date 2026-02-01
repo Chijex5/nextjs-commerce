@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { orders } from "lib/db/schema";
+import { ilike } from "drizzle-orm";
 
-// Paystack webhook handler
-// This endpoint receives payment notifications from Paystack
-// Configure this URL in your Paystack dashboard: https://dashboard.paystack.com/#/settings/developer
 export async function POST(request: NextRequest) {
   try {
-    // Verify Paystack signature
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
     if (!paystackSecretKey) {
       console.error("Paystack secret key not configured");
@@ -34,10 +32,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
-    // Parse the webhook data
     const event = JSON.parse(body);
 
-    // Handle different event types
     switch (event.event) {
       case "charge.success":
         await handleChargeSuccess(event.data);
@@ -70,21 +66,17 @@ async function handleChargeSuccess(data: any) {
       return;
     }
 
-    // Check if order already exists
-    const existingOrder = await prisma.order.findFirst({
-      where: {
-        notes: {
-          contains: reference,
-        },
-      },
-    });
+    const [existingOrder] = await db
+      .select({ id: orders.id })
+      .from(orders)
+      .where(ilike(orders.notes, `%${reference}%`))
+      .limit(1);
 
     if (existingOrder) {
       return;
     }
 
-    // The order should have been created by the verify endpoint
-    // This webhook is mainly for logging and backup
+    // Order should be created by verify endpoint
   } catch (error) {
     console.error("Error handling charge success:", error);
   }
@@ -94,8 +86,8 @@ async function handleChargeFailed(data: any) {
   try {
     const reference = data.reference;
     const cartId = data.metadata?.cart_id;
-
-    // You could send an email notification here or log to a monitoring service
+    void reference;
+    void cartId;
   } catch (error) {
     console.error("Error handling charge failed:", error);
   }

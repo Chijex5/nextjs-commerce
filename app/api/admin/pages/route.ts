@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { pages } from "lib/db/schema";
+import { desc, eq, ilike, or } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,22 +15,21 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");
 
-    const where: any = {};
+    const whereClause = search
+      ? or(
+          ilike(pages.title, `%${search}%`),
+          ilike(pages.handle, `%${search}%`),
+        )
+      : undefined;
 
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: "insensitive" as const } },
-        { handle: { contains: search, mode: "insensitive" as const } },
-      ];
-    }
-
-    const pages = await prisma.page.findMany({
-      where,
-      orderBy: { updatedAt: "desc" },
-    });
+    const pageRows = await db
+      .select()
+      .from(pages)
+      .where(whereClause)
+      .orderBy(desc(pages.updatedAt));
 
     return NextResponse.json({
-      pages: pages.map((page) => ({
+      pages: pageRows.map((page) => ({
         id: page.id,
         handle: page.handle,
         title: page.title,
@@ -74,9 +75,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existingPage = await prisma.page.findUnique({
-      where: { handle },
-    });
+    const [existingPage] = await db
+      .select({ id: pages.id })
+      .from(pages)
+      .where(eq(pages.handle, handle))
+      .limit(1);
 
     if (existingPage) {
       return NextResponse.json(
@@ -85,16 +88,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const page = await prisma.page.create({
-      data: {
+    const [page] = await db
+      .insert(pages)
+      .values({
         handle,
         title,
         body: pageBody || null,
         bodySummary: bodySummary || null,
         seoTitle: seoTitle || null,
         seoDescription: seoDescription || null,
-      },
-    });
+      })
+      .returning();
+
+    if (!page) {
+      return NextResponse.json(
+        { error: "Failed to create page" },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json({
       success: true,

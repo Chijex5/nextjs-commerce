@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { productImages, products, reviews, users } from "@/lib/db/schema";
 import { requireAdminSession } from "lib/admin-auth";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
-// GET /api/admin/reviews - Get all reviews with filtering
 export async function GET(request: NextRequest) {
   try {
     const session = await requireAdminSession();
 
-    // Check if user is admin
     if (!session) {
       return NextResponse.json(
         { error: "Admin access required" },
@@ -25,62 +25,101 @@ export async function GET(request: NextRequest) {
     const perPage = parseInt(searchParams.get("perPage") || "20");
     const skip = (page - 1) * perPage;
 
-    // Build where clause
-    const where: any = {};
-    if (status) where.status = status;
-    if (productId) where.productId = productId;
-    if (rating) where.rating = rating;
+    const filters = [];
+    if (status) filters.push(eq(reviews.status, status));
+    if (productId) filters.push(eq(reviews.productId, productId));
+    if (rating) filters.push(eq(reviews.rating, rating));
 
-    // Fetch reviews with pagination
-    const [reviews, total] = await Promise.all([
-      prisma.review.findMany({
-        where,
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          product: {
-            select: {
-              id: true,
-              title: true,
-              handle: true,
-              images: {
-                where: { isFeatured: true },
-                take: 1,
-                select: { url: true, altText: true },
-              },
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: perPage,
-      }),
-      prisma.review.count({ where }),
+    const whereClause = filters.length ? and(...filters) : undefined;
+
+    const [reviewRows, totalResult] = await Promise.all([
+      db
+        .select({
+          review: reviews,
+          user: users,
+          product: products,
+        })
+        .from(reviews)
+        .leftJoin(users, eq(reviews.userId, users.id))
+        .leftJoin(products, eq(reviews.productId, products.id))
+        .where(whereClause)
+        .orderBy(desc(reviews.createdAt))
+        .limit(perPage)
+        .offset(skip),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(reviews)
+        .where(whereClause),
     ]);
 
-    // Get statistics
-    const stats = await prisma.review.groupBy({
-      by: ["status"],
-      _count: {
-        id: true,
-      },
-    });
+    const productIds = reviewRows
+      .map((row) => row.review.productId)
+      .filter((id): id is string => Boolean(id));
+
+    const featuredImages = productIds.length
+      ? await db
+          .select({
+            productId: productImages.productId,
+            url: productImages.url,
+            altText: productImages.altText,
+          })
+          .from(productImages)
+          .where(
+            and(
+              inArray(productImages.productId, productIds),
+              eq(productImages.isFeatured, true),
+            ),
+          )
+      : [];
+
+    const imagesByProduct = new Map(
+      featuredImages.map((image) => [image.productId, image]),
+    );
+
+    const stats = await db
+      .select({ status: reviews.status, count: sql<number>`count(*)` })
+      .from(reviews)
+      .groupBy(reviews.status);
 
     const statusCounts = stats.reduce(
       (acc, stat) => {
-        acc[stat.status] = stat._count.id;
+        acc[stat.status] = Number(stat.count);
         return acc;
       },
       {} as Record<string, number>,
     );
 
+    const total = Number(totalResult[0]?.count ?? 0);
+
     return NextResponse.json({
-      reviews,
+      reviews: reviewRows.map((row) => {
+        const featuredImage = imagesByProduct.get(row.review.productId || "");
+        return {
+          ...row.review,
+          user: row.user
+            ? {
+                id: row.user.id,
+                name: row.user.name,
+                email: row.user.email,
+              }
+            : null,
+          product: row.product
+            ? {
+                id: row.product.id,
+                title: row.product.title,
+                handle: row.product.handle,
+                images: featuredImage
+                  ? [
+                      {
+                        url: featuredImage.url,
+                        altText: featuredImage.altText,
+                      },
+                    ]
+                  : [],
+              }
+            : null,
+        };
+      }),
       pagination: {
         page,
         perPage,

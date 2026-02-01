@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { collections, productCollections } from "lib/db/schema";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 
-// GET - List all collections with pagination
 export async function GET(request: NextRequest) {
   try {
     const session = await requireAdminSession();
@@ -16,51 +17,65 @@ export async function GET(request: NextRequest) {
     const perPage = parseInt(searchParams.get("perPage") || "20");
     const search = searchParams.get("search");
 
-    // Build where clause
-    const where: any = {};
+    const whereClause = search
+      ? or(
+          ilike(collections.title, `%${search}%`),
+          ilike(collections.handle, `%${search}%`),
+          ilike(collections.description, `%${search}%`),
+        )
+      : undefined;
 
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: "insensitive" as const } },
-        { handle: { contains: search, mode: "insensitive" as const } },
-        { description: { contains: search, mode: "insensitive" as const } },
-      ];
-    }
-
-    const [collections, total] = await Promise.all([
-      prisma.collection.findMany({
-        where,
-        select: {
-          id: true,
-          handle: true,
-          title: true,
-          description: true,
-          seoTitle: true,
-          seoDescription: true,
-          createdAt: true,
-          updatedAt: true,
-          _count: {
-            select: { productCollections: true },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * perPage,
-        take: perPage,
-      }),
-      prisma.collection.count({ where }),
+    const [collectionRows, totalResult] = await Promise.all([
+      db
+        .select({
+          id: collections.id,
+          handle: collections.handle,
+          title: collections.title,
+          description: collections.description,
+          seoTitle: collections.seoTitle,
+          seoDescription: collections.seoDescription,
+          createdAt: collections.createdAt,
+          updatedAt: collections.updatedAt,
+        })
+        .from(collections)
+        .where(whereClause)
+        .orderBy(desc(collections.createdAt))
+        .limit(perPage)
+        .offset((page - 1) * perPage),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(collections)
+        .where(whereClause),
     ]);
 
+    const collectionIds = collectionRows.map((collection) => collection.id);
+    const collectionCounts = collectionIds.length
+      ? await db
+          .select({
+            collectionId: productCollections.collectionId,
+            count: sql<number>`count(*)`,
+          })
+          .from(productCollections)
+          .where(inArray(productCollections.collectionId, collectionIds))
+          .groupBy(productCollections.collectionId)
+      : [];
+
+    const countsByCollection = new Map(
+      collectionCounts.map((row) => [row.collectionId, Number(row.count)]),
+    );
+
+    const total = Number(totalResult[0]?.count ?? 0);
     const totalPages = Math.ceil(total / perPage);
 
     return NextResponse.json({
-      collections: collections.map((collection) => ({
+      collections: collectionRows.map((collection) => ({
         id: collection.id,
         handle: collection.handle,
         title: collection.title,
         description: collection.description,
         seoTitle: collection.seoTitle,
         seoDescription: collection.seoDescription,
-        productCount: collection._count.productCollections,
+        productCount: countsByCollection.get(collection.id) || 0,
         createdAt: collection.createdAt.toISOString(),
         updatedAt: collection.updatedAt.toISOString(),
       })),
@@ -80,7 +95,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new collection
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAdminSession();
@@ -92,7 +106,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { handle, title, description, seoTitle, seoDescription } = body;
 
-    // Validate inputs
     if (!handle || !title) {
       return NextResponse.json(
         { error: "Handle and title are required" },
@@ -100,10 +113,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if collection with this handle already exists
-    const existingCollection = await prisma.collection.findUnique({
-      where: { handle },
-    });
+    const [existingCollection] = await db
+      .select({ id: collections.id })
+      .from(collections)
+      .where(eq(collections.handle, handle))
+      .limit(1);
 
     if (existingCollection) {
       return NextResponse.json(
@@ -112,37 +126,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create collection
-    const collection = await prisma.collection.create({
-      data: {
+    const [collection] = await db
+      .insert(collections)
+      .values({
         handle,
         title,
         description: description || null,
         seoTitle: seoTitle || null,
         seoDescription: seoDescription || null,
-      },
-      select: {
-        id: true,
-        handle: true,
-        title: true,
-        description: true,
-        seoTitle: true,
-        seoDescription: true,
-        createdAt: true,
-      },
-    });
+      })
+      .returning({
+        id: collections.id,
+        handle: collections.handle,
+        title: collections.title,
+        description: collections.description,
+        seoTitle: collections.seoTitle,
+        seoDescription: collections.seoDescription,
+        createdAt: collections.createdAt,
+      });
 
     return NextResponse.json({
       success: true,
       message: "Collection created successfully",
       collection: {
-        id: collection.id,
-        handle: collection.handle,
-        title: collection.title,
-        description: collection.description,
-        seoTitle: collection.seoTitle,
-        seoDescription: collection.seoDescription,
-        createdAt: collection.createdAt.toISOString(),
+        id: collection?.id,
+        handle: collection?.handle,
+        title: collection?.title,
+        description: collection?.description,
+        seoTitle: collection?.seoTitle,
+        seoDescription: collection?.seoDescription,
+        createdAt: collection?.createdAt.toISOString(),
       },
     });
   } catch (error) {

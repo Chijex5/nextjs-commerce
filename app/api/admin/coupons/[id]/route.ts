@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { coupons } from "lib/db/schema";
 import { verifyAuth } from "app/api/utils/auth";
+import { eq } from "drizzle-orm";
 
-// PATCH /api/admin/coupons/[id] - Update coupon
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    // Verify admin authentication
     const authResult = await verifyAuth(request);
     if (!authResult.isValid) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -18,24 +18,25 @@ export async function PATCH(
     const { id } = params;
     const body = await request.json();
 
-    // Find existing coupon
-    const existing = await prisma.coupon.findUnique({
-      where: { id },
-    });
+    const [existing] = await db
+      .select({ id: coupons.id })
+      .from(coupons)
+      .where(eq(coupons.id, id))
+      .limit(1);
 
     if (!existing) {
       return NextResponse.json({ error: "Coupon not found" }, { status: 404 });
     }
 
-    // Prepare update data
-    const updateData: any = {};
+    const updateData: Partial<typeof coupons.$inferInsert> = {};
 
-    if (body.description !== undefined)
-      updateData.description = body.description;
+    if (body.description !== undefined) updateData.description = body.description;
     if (body.discountValue !== undefined)
-      updateData.discountValue = body.discountValue;
+      updateData.discountValue = String(body.discountValue);
     if (body.minOrderValue !== undefined)
-      updateData.minOrderValue = body.minOrderValue || null;
+      updateData.minOrderValue = body.minOrderValue
+        ? String(body.minOrderValue)
+        : null;
     if (body.maxUses !== undefined) updateData.maxUses = body.maxUses || null;
     if (body.maxUsesPerUser !== undefined)
       updateData.maxUsesPerUser = body.maxUsesPerUser || null;
@@ -47,11 +48,11 @@ export async function PATCH(
         ? new Date(body.expiryDate)
         : null;
 
-    // Update coupon
-    const coupon = await prisma.coupon.update({
-      where: { id },
-      data: updateData,
-    });
+    const [coupon] = await db
+      .update(coupons)
+      .set(updateData)
+      .where(eq(coupons.id, id))
+      .returning();
 
     return NextResponse.json({ coupon });
   } catch (error) {
@@ -63,13 +64,11 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/admin/coupons/[id] - Delete coupon
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    // Verify admin authentication
     const authResult = await verifyAuth(request);
     if (!authResult.isValid) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -78,10 +77,7 @@ export async function DELETE(
     const params = await context.params;
     const { id } = params;
 
-    // Delete coupon
-    await prisma.coupon.delete({
-      where: { id },
-    });
+    await db.delete(coupons).where(eq(coupons.id, id));
 
     return NextResponse.json({ success: true });
   } catch (error) {

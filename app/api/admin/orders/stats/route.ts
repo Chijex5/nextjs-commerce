@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { orders } from "lib/db/schema";
+import { desc, eq, sql } from "drizzle-orm";
 
-// GET - Get orders statistics
 export async function GET() {
   try {
     const session = await requireAdminSession();
@@ -20,46 +21,61 @@ export async function GET() {
       deliveryStatusCounts,
       recentOrders,
     ] = await Promise.all([
-      prisma.order.count(),
-      prisma.order.count({ where: { status: "pending" } }),
-      prisma.order.count({ where: { status: "processing" } }),
-      prisma.order.count({ where: { status: "completed" } }),
-      prisma.order.count({ where: { status: "cancelled" } }),
-      prisma.order.groupBy({
-        by: ["deliveryStatus"],
-        _count: true,
-      }),
-      prisma.order.findMany({
-        take: 5,
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          orderNumber: true,
-          customerName: true,
-          totalAmount: true,
-          currencyCode: true,
-          status: true,
-          deliveryStatus: true,
-          createdAt: true,
-        },
-      }),
+      db.select({ count: sql<number>`count(*)` }).from(orders),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(orders)
+        .where(eq(orders.status, "pending")),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(orders)
+        .where(eq(orders.status, "processing")),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(orders)
+        .where(eq(orders.status, "completed")),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(orders)
+        .where(eq(orders.status, "cancelled")),
+      db
+        .select({
+          deliveryStatus: orders.deliveryStatus,
+          count: sql<number>`count(*)`,
+        })
+        .from(orders)
+        .groupBy(orders.deliveryStatus),
+      db
+        .select({
+          id: orders.id,
+          orderNumber: orders.orderNumber,
+          customerName: orders.customerName,
+          totalAmount: orders.totalAmount,
+          currencyCode: orders.currencyCode,
+          status: orders.status,
+          deliveryStatus: orders.deliveryStatus,
+          createdAt: orders.createdAt,
+        })
+        .from(orders)
+        .orderBy(desc(orders.createdAt))
+        .limit(5),
     ]);
 
     const deliveryStats = deliveryStatusCounts.reduce(
       (acc, item) => {
-        acc[item.deliveryStatus] = item._count;
+        acc[item.deliveryStatus] = Number(item.count);
         return acc;
       },
       {} as Record<string, number>,
     );
 
     return NextResponse.json({
-      totalOrders,
+      totalOrders: Number(totalOrders[0]?.count ?? 0),
       byStatus: {
-        pending: pendingOrders,
-        processing: processingOrders,
-        completed: completedOrders,
-        cancelled: cancelledOrders,
+        pending: Number(pendingOrders[0]?.count ?? 0),
+        processing: Number(processingOrders[0]?.count ?? 0),
+        completed: Number(completedOrders[0]?.count ?? 0),
+        cancelled: Number(cancelledOrders[0]?.count ?? 0),
       },
       byDeliveryStatus: {
         production: deliveryStats.production || 0,
@@ -73,7 +89,7 @@ export async function GET() {
         id: order.id,
         orderNumber: order.orderNumber,
         customerName: order.customerName,
-        totalAmount: order.totalAmount.toString(),
+        totalAmount: String(order.totalAmount),
         currencyCode: order.currencyCode,
         status: order.status,
         deliveryStatus: order.deliveryStatus,

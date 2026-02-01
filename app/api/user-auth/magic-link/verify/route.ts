@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { hash } from "bcryptjs";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { magicLinkTokens, users } from "lib/db/schema";
 import { createUserSession, setUserSessionCookie } from "lib/user-session";
 import { deriveNameFromEmail } from "lib/user-utils";
+import { and, eq, gt, isNull } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,14 +22,18 @@ export async function GET(request: NextRequest) {
 
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
-    const magicToken = await prisma.magicLinkToken.findFirst({
-      where: {
-        email,
-        tokenHash,
-        usedAt: null,
-        expiresAt: { gt: new Date() },
-      },
-    });
+    const [magicToken] = await db
+      .select()
+      .from(magicLinkTokens)
+      .where(
+        and(
+          eq(magicLinkTokens.email, email),
+          eq(magicLinkTokens.tokenHash, tokenHash),
+          isNull(magicLinkTokens.usedAt),
+          gt(magicLinkTokens.expiresAt, new Date()),
+        ),
+      )
+      .limit(1);
 
     if (!magicToken) {
       return NextResponse.redirect(
@@ -35,31 +41,41 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    await prisma.magicLinkToken.update({
-      where: { id: magicToken.id },
-      data: { usedAt: new Date() },
-    });
+    await db
+      .update(magicLinkTokens)
+      .set({ usedAt: new Date() })
+      .where(eq(magicLinkTokens.id, magicToken.id));
 
-    let user = await prisma.user.findUnique({
-      where: { email },
-    });
+    let [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
 
     if (!user) {
       const randomPassword = crypto.randomBytes(24).toString("hex");
       const passwordHash = await hash(randomPassword, 10);
-      user = await prisma.user.create({
-        data: {
+      const [created] = await db
+        .insert(users)
+        .values({
           email,
           name: deriveNameFromEmail(email),
           passwordHash,
-        },
-      });
+        })
+        .returning();
+      user = created;
     }
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
+    if (!user) {
+      return NextResponse.redirect(
+        new URL("/auth/login?error=failed", request.url),
+      );
+    }
+
+    await db
+      .update(users)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(users.id, user.id));
 
     const sessionToken = await createUserSession({
       id: user.id,

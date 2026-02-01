@@ -1,4 +1,6 @@
-import prisma from "lib/prisma";
+import { eq, ilike } from "drizzle-orm";
+import { db } from "./db";
+import { coupons, couponUsages } from "./db/schema";
 
 export class CouponValidationError extends Error {
   status: number;
@@ -28,17 +30,11 @@ export async function validateCouponForCheckout({
     throw new CouponValidationError("Cart total is required", 400);
   }
 
-  const coupon = await prisma.coupon.findFirst({
-    where: {
-      code: {
-        equals: code.toUpperCase(),
-        mode: "insensitive",
-      },
-    },
-    include: {
-      usages: true,
-    },
-  });
+  const [coupon] = await db
+    .select()
+    .from(coupons)
+    .where(ilike(coupons.code, code.toUpperCase()))
+    .limit(1);
 
   if (!coupon) {
     throw new CouponValidationError("Invalid coupon code", 404);
@@ -67,15 +63,22 @@ export async function validateCouponForCheckout({
     );
   }
 
+  let usages: typeof couponUsages.$inferSelect[] = [];
+
+  if (coupon.maxUsesPerUser) {
+    usages = await db
+      .select()
+      .from(couponUsages)
+      .where(eq(couponUsages.couponId, coupon.id));
+  }
+
   if (coupon.maxUsesPerUser) {
     let userUsageCount = 0;
 
     if (userId) {
-      userUsageCount = coupon.usages.filter(
-        (usage) => usage.userId === userId,
-      ).length;
+      userUsageCount = usages.filter((usage) => usage.userId === userId).length;
     } else if (sessionId) {
-      userUsageCount = coupon.usages.filter(
+      userUsageCount = usages.filter(
         (usage) => usage.sessionId === sessionId,
       ).length;
     }

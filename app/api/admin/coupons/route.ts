@@ -1,37 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { coupons } from "lib/db/schema";
 import { verifyAuth } from "app/api/utils/auth";
 import {
   generateCouponCode,
   formatCouponCode,
   isValidCouponCode,
 } from "lib/coupon-utils";
+import { desc, eq, ilike } from "drizzle-orm";
 
-// GET /api/admin/coupons - List all coupons
 export async function GET(request: NextRequest) {
   try {
-    // Verify admin authentication
     const authResult = await verifyAuth(request);
     if (!authResult.isValid) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status"); // 'active' | 'inactive' | 'all'
+    const status = searchParams.get("status");
 
-    const where: any = {};
+    let whereClause;
     if (status === "active") {
-      where.isActive = true;
+      whereClause = eq(coupons.isActive, true);
     } else if (status === "inactive") {
-      where.isActive = false;
+      whereClause = eq(coupons.isActive, false);
     }
 
-    const coupons = await prisma.coupon.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-    });
+    const couponRows = await db
+      .select()
+      .from(coupons)
+      .where(whereClause)
+      .orderBy(desc(coupons.createdAt));
 
-    return NextResponse.json({ coupons });
+    return NextResponse.json({ coupons: couponRows });
   } catch (error) {
     console.error("Get coupons error:", error);
     return NextResponse.json(
@@ -41,10 +42,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/admin/coupons - Create new coupon
 export async function POST(request: NextRequest) {
   try {
-    // Verify admin authentication
     const authResult = await verifyAuth(request);
     if (!authResult.isValid) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -66,16 +65,17 @@ export async function POST(request: NextRequest) {
       autoGenerate,
     } = body;
 
-    // Auto-generate code if requested or if code is empty
     if (autoGenerate || !code || code.trim() === "") {
       let attempts = 0;
       let unique = false;
 
       while (!unique && attempts < 10) {
         code = generateCouponCode();
-        const existing = await prisma.coupon.findFirst({
-          where: { code: { equals: code, mode: "insensitive" } },
-        });
+        const [existing] = await db
+          .select({ id: coupons.id })
+          .from(coupons)
+          .where(ilike(coupons.code, code))
+          .limit(1);
         unique = !existing;
         attempts++;
       }
@@ -87,7 +87,6 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      // Format and validate provided code
       code = formatCouponCode(code);
 
       if (!isValidCouponCode(code)) {
@@ -101,7 +100,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validation
     if (
       !discountType ||
       !["percentage", "fixed", "free_shipping"].includes(discountType)
@@ -121,15 +119,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if code already exists
-    const existing = await prisma.coupon.findFirst({
-      where: {
-        code: {
-          equals: code,
-          mode: "insensitive",
-        },
-      },
-    });
+    const [existing] = await db
+      .select({ id: coupons.id })
+      .from(coupons)
+      .where(ilike(coupons.code, code))
+      .limit(1);
 
     if (existing) {
       return NextResponse.json(
@@ -138,22 +132,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create coupon
-    const coupon = await prisma.coupon.create({
-      data: {
+    const [coupon] = await db
+      .insert(coupons)
+      .values({
         code,
         description,
         discountType,
-        discountValue: discountType === "free_shipping" ? 0 : discountValue,
-        minOrderValue: minOrderValue || null,
+        discountValue:
+          discountType === "free_shipping" ? "0" : String(discountValue),
+        minOrderValue: minOrderValue ? String(minOrderValue) : null,
         maxUses: maxUses || null,
         maxUsesPerUser: maxUsesPerUser || null,
         requiresLogin: requiresLogin || false,
         startDate: startDate ? new Date(startDate) : null,
         expiryDate: expiryDate ? new Date(expiryDate) : null,
         isActive: isActive !== undefined ? isActive : true,
-      },
-    });
+      })
+      .returning();
 
     return NextResponse.json({ coupon }, { status: 201 });
   } catch (error) {

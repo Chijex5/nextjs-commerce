@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "@/lib/prisma";
+import { db } from "lib/db";
+import { productVariants, products } from "lib/db/schema";
+import { asc, eq, inArray } from "drizzle-orm";
 
 export async function PUT(
   request: Request,
@@ -24,14 +26,12 @@ export async function PUT(
       );
     }
 
-    // Separate variants by operation type
     const variantsToDelete = variants.filter((v) => v.isDeleted && !v.isNew);
     const variantsToCreate = variants.filter((v) => v.isNew && !v.isDeleted);
     const variantsToUpdate = variants.filter(
       (v) => v.isModified && !v.isDeleted && !v.isNew,
     );
 
-    // Validate prices for new and updated variants
     [...variantsToCreate, ...variantsToUpdate].forEach((variant) => {
       const price = parseFloat(variant.price);
       if (isNaN(price) || price < 0) {
@@ -41,53 +41,55 @@ export async function PUT(
       }
     });
 
-    // Batch delete existing variants
-    if (variantsToDelete.length > 0) {
-      await prisma.productVariant.deleteMany({
-        where: {
-          id: { in: variantsToDelete.map((v) => v.id) },
-        },
-      });
-    }
+    await db.transaction(async (tx) => {
+      if (variantsToDelete.length > 0) {
+        await tx
+          .delete(productVariants)
+          .where(inArray(productVariants.id, variantsToDelete.map((v) => v.id)));
+      }
 
-    // Batch create new variants
-    if (variantsToCreate.length > 0) {
-      await prisma.productVariant.createMany({
-        data: variantsToCreate.map((variant) => ({
-          productId: id,
-          title: variant.title,
-          price: parseFloat(variant.price),
-          currencyCode: "NGN",
-          availableForSale: variant.availableForSale,
-          selectedOptions: variant.selectedOptions || [],
-        })),
-      });
-    }
+      if (variantsToCreate.length > 0) {
+        await tx.insert(productVariants).values(
+          variantsToCreate.map((variant) => ({
+            productId: id,
+            title: variant.title,
+            price: String(parseFloat(variant.price)),
+            currencyCode: "NGN",
+            availableForSale: variant.availableForSale,
+            selectedOptions: variant.selectedOptions || [],
+          })),
+        );
+      }
 
-    // Update existing variants (these must be done individually due to different data per variant)
-    for (const variant of variantsToUpdate) {
-      await prisma.productVariant.update({
-        where: { id: variant.id },
-        data: {
-          title: variant.title,
-          price: parseFloat(variant.price),
-          availableForSale: variant.availableForSale,
-          selectedOptions: variant.selectedOptions || [],
-        },
-      });
-    }
-
-    // Fetch updated product with variants
-    const product = await prisma.product.findUnique({
-      where: { id },
-      include: {
-        variants: {
-          orderBy: { createdAt: "asc" },
-        },
-      },
+      for (const variant of variantsToUpdate) {
+        await tx
+          .update(productVariants)
+          .set({
+            title: variant.title,
+            price: String(parseFloat(variant.price)),
+            availableForSale: variant.availableForSale,
+            selectedOptions: variant.selectedOptions || [],
+          })
+          .where(eq(productVariants.id, variant.id));
+      }
     });
 
-    return NextResponse.json(product);
+    const [product] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, id))
+      .limit(1);
+
+    const productVariantRows = await db
+      .select()
+      .from(productVariants)
+      .where(eq(productVariants.productId, id))
+      .orderBy(asc(productVariants.createdAt));
+
+    return NextResponse.json({
+      ...product,
+      variants: productVariantRows,
+    });
   } catch (error) {
     console.error("Error updating variants:", error);
     const errorMessage =

@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { orderItems, orders } from "lib/db/schema";
+import { NextRequest, NextResponse } from "next/server";
 
-// GET - List all orders with filtering and pagination
 export async function GET(request: NextRequest) {
   try {
     const session = await requireAdminSession();
@@ -18,76 +19,92 @@ export async function GET(request: NextRequest) {
     const deliveryStatus = searchParams.get("deliveryStatus");
     const search = searchParams.get("search");
 
-    // Build where clause
-    const where: any = {};
+    const filters = [];
 
     if (status && status !== "all") {
-      where.status = status;
+      filters.push(eq(orders.status, status));
     }
 
     if (deliveryStatus && deliveryStatus !== "all") {
-      where.deliveryStatus = deliveryStatus;
+      filters.push(eq(orders.deliveryStatus, deliveryStatus));
     }
 
     if (search) {
-      where.OR = [
-        { orderNumber: { contains: search, mode: "insensitive" as const } },
-        { customerName: { contains: search, mode: "insensitive" as const } },
-        { email: { contains: search, mode: "insensitive" as const } },
-      ];
+      const searchValue = `%${search}%`;
+      filters.push(
+        or(
+          ilike(orders.orderNumber, searchValue),
+          ilike(orders.customerName, searchValue),
+          ilike(orders.email, searchValue),
+        ),
+      );
     }
 
-    const [orders, total] = await Promise.all([
-      prisma.order.findMany({
-        where,
-        include: {
-          items: {
-            select: {
-              id: true,
-              productTitle: true,
-              variantTitle: true,
-              quantity: true,
-              price: true,
-              totalAmount: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * perPage,
-        take: perPage,
-      }),
-      prisma.order.count({ where }),
+    const whereClause = filters.length ? and(...filters) : undefined;
+
+    const [orderRows, totalResult] = await Promise.all([
+      db
+        .select()
+        .from(orders)
+        .where(whereClause)
+        .orderBy(desc(orders.createdAt))
+        .limit(perPage)
+        .offset((page - 1) * perPage),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(orders)
+        .where(whereClause),
     ]);
 
+    const orderIds = orderRows.map((order) => order.id);
+    const items = orderIds.length
+      ? await db
+          .select()
+          .from(orderItems)
+          .where(inArray(orderItems.orderId, orderIds))
+      : [];
+
+    const itemsByOrder = items.reduce<Record<string, typeof items>>(
+      (acc, item) => {
+        (acc[item.orderId] ??= [] as typeof items).push(item);
+        return acc;
+      },
+      {},
+    );
+
+    const total = Number(totalResult[0]?.count ?? 0);
     const totalPages = Math.ceil(total / perPage);
 
     return NextResponse.json({
-      orders: orders.map((order) => ({
-        id: order.id,
-        orderNumber: order.orderNumber,
-        customerName: order.customerName,
-        email: order.email,
-        phone: order.phone,
-        status: order.status,
-        deliveryStatus: order.deliveryStatus,
-        estimatedArrival: order.estimatedArrival?.toISOString() || null,
-        totalAmount: order.totalAmount.toString(),
-        currencyCode: order.currencyCode,
-        shippingAddress: order.shippingAddress,
-        acknowledgedAt: order.acknowledgedAt?.toISOString() || null,
-        acknowledgedBy: order.acknowledgedBy,
-        createdAt: order.createdAt.toISOString(),
-        updatedAt: order.updatedAt.toISOString(),
-        itemCount: order.items.length,
-        items: order.items.map((item) => ({
-          id: item.id,
-          productTitle: item.productTitle,
-          variantTitle: item.variantTitle,
-          quantity: item.quantity,
-          price: item.price.toString(),
-          totalAmount: item.totalAmount.toString(),
-        })),
-      })),
+      orders: orderRows.map((order) => {
+        const orderItemsList = itemsByOrder[order.id] || [];
+        return {
+          id: order.id,
+          orderNumber: order.orderNumber,
+          customerName: order.customerName,
+          email: order.email,
+          phone: order.phone,
+          status: order.status,
+          deliveryStatus: order.deliveryStatus,
+          estimatedArrival: order.estimatedArrival?.toISOString() || null,
+          totalAmount: String(order.totalAmount),
+          currencyCode: order.currencyCode,
+          shippingAddress: order.shippingAddress,
+          acknowledgedAt: order.acknowledgedAt?.toISOString() || null,
+          acknowledgedBy: order.acknowledgedBy,
+          createdAt: order.createdAt.toISOString(),
+          updatedAt: order.updatedAt.toISOString(),
+          itemCount: orderItemsList.length,
+          items: orderItemsList.map((item) => ({
+            id: item.id,
+            productTitle: item.productTitle,
+            variantTitle: item.variantTitle,
+            quantity: item.quantity,
+            price: String(item.price),
+            totalAmount: String(item.totalAmount),
+          })),
+        };
+      }),
       pagination: {
         page,
         perPage,

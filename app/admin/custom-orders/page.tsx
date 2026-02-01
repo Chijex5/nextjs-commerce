@@ -1,7 +1,9 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "lib/auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { customOrders } from "lib/db/schema";
+import { asc, desc } from "drizzle-orm";
 import AdminNav from "components/admin/AdminNav";
 import CustomOrdersManagement from "components/admin/CustomOrdersManagement";
 
@@ -17,11 +19,12 @@ export default async function AdminCustomOrdersPage() {
     redirect("/admin/login");
   }
 
-  const customOrders = await prisma.customOrder.findMany({
-    orderBy: [{ position: "asc" }, { updatedAt: "desc" }],
-  });
+  const orderRows = await db
+    .select()
+    .from(customOrders)
+    .orderBy(asc(customOrders.position), desc(customOrders.updatedAt));
 
-  const mappedOrders = customOrders.map((order) => ({
+  const mappedOrders = orderRows.map((order) => ({
     ...order,
     details: toDetailsArray(order.details),
   }));
