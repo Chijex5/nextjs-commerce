@@ -3,10 +3,11 @@ import { db } from "lib/db";
 import { couponUsages, coupons } from "lib/db/schema";
 import { getUserSession } from "lib/user-session";
 import { eq, ilike } from "drizzle-orm";
+import { ValidateCouponBody } from "types/api";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = (await request.json()) as ValidateCouponBody;
     const { code, cartTotal, sessionId } = body;
 
     if (!code || typeof code !== "string") {

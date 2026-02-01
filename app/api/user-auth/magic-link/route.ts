@@ -4,10 +4,11 @@ import { db } from "lib/db";
 import { magicLinkTokens } from "lib/db/schema";
 import { sendMagicLinkEmail } from "lib/email/auth-emails";
 import { baseUrl, ensureStartsWith } from "lib/utils";
+import { MagicLinkBody } from "types/api";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, callbackUrl } = await request.json();
+    const { email, callbackUrl } = (await request.json()) as MagicLinkBody;
 
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });

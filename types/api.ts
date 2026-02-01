@@ -280,15 +280,46 @@ export interface CreateAddressBody {
   isDefault?: boolean;
 }
 
+export interface MagicLinkBody {
+  email: string;
+  callbackUrl?: string;
+}
+
+export interface DeleteUploadBody {
+  publicId: string;
+}
+
+export interface UpdateAddressBody {
+  type: "shipping" | "billing";
+  address: {
+    firstName: string;
+    lastName: string;
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    postalCode?: string;
+    phone?: string;
+  };
+}
+
 // Other API Types
 export interface ValidateCouponBody {
   code: string;
   cartTotal: number;
+  sessionId?: string;
 }
 
 export interface AbandonedCartBody {
   cartId: string;
-  email: string;
+  items: Array<{
+    productTitle: string;
+    variantTitle: string;
+    quantity: number;
+    price: number;
+    imageUrl?: string;
+  }>;
+  cartTotal: number;
 }
 
 export interface ContactBody {
@@ -299,6 +330,7 @@ export interface ContactBody {
 
 export interface NewsletterSubscribeBody {
   email: string;
+  name?: string;
 }
 
 export interface UploadBody {
@@ -307,7 +339,7 @@ export interface UploadBody {
 }
 
 export interface ReviewVoteBody {
-  helpful: boolean;
+  isHelpful: boolean;
 }
 
 export interface CreateReviewBody {
@@ -319,27 +351,26 @@ export interface CreateReviewBody {
 
 export interface CheckoutInitializeBody {
   email: string;
+  phone: string;
   shippingAddress: {
     firstName: string;
     lastName: string;
-    line1: string;
-    line2?: string;
+    address: string;
     city: string;
     state: string;
-    country: string;
     postalCode: string;
-    phone?: string;
+    country: string;
   };
   billingAddress?: {
     firstName: string;
     lastName: string;
-    line1: string;
-    line2?: string;
+    address: string;
     city: string;
     state: string;
-    country: string;
     postalCode: string;
-    phone?: string;
+    country: string;
   };
+  saveAddress: boolean;
   couponCode?: string;
+  notes?: string;
 }

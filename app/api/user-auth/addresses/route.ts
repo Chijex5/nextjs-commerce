@@ -3,6 +3,7 @@ import { getUserSession } from "lib/user-session";
 import { db } from "lib/db";
 import { users } from "lib/db/schema";
 import { eq } from "drizzle-orm";
+import { UpdateAddressBody } from "types/api";
 
 export async function GET() {
   try {
@@ -48,7 +49,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = (await request.json()) as UpdateAddressBody;
     const { type, address } = body;
 
     if (!type || !address) {
