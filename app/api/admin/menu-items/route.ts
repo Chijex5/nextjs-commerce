@@ -48,12 +48,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       menuItem: {
-        id: menuItem.id,
-        menuId: menuItem.menuId,
-        title: menuItem.title,
-        url: menuItem.url,
-        position: menuItem.position,
-        createdAt: menuItem.createdAt.toISOString(),
+        id: menuItem?.id,
+        menuId: menuItem?.menuId,
+        title: menuItem?.title,
+        url: menuItem?.url,
+        position: menuItem?.position,
+        createdAt: menuItem?.createdAt.toISOString(),
       },
     });
   } catch (error) {

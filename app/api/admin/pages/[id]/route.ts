@@ -104,6 +104,10 @@ export async function PUT(
       .where(eq(pages.id, id))
       .returning();
 
+    if (!page) {
+      return NextResponse.json({ error: "Page not found" }, { status: 404 });
+    }
+
     return NextResponse.json({
       success: true,
       page: {

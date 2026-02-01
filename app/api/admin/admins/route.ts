@@ -152,12 +152,12 @@ export async function POST(request: NextRequest) {
       success: true,
       message: "Admin created successfully",
       admin: {
-        id: admin.id,
-        email: admin.email,
-        name: admin.name,
-        role: admin.role,
-        isActive: admin.isActive,
-        createdAt: admin.createdAt.toISOString(),
+        id: admin?.id,
+        email: admin?.email,
+        name: admin?.name,
+        role: admin?.role,
+        isActive: admin?.isActive,
+        createdAt: admin?.createdAt.toISOString(),
       },
     });
   } catch (error) {

@@ -149,13 +149,13 @@ export async function POST(request: NextRequest) {
       success: true,
       message: "Collection created successfully",
       collection: {
-        id: collection.id,
-        handle: collection.handle,
-        title: collection.title,
-        description: collection.description,
-        seoTitle: collection.seoTitle,
-        seoDescription: collection.seoDescription,
-        createdAt: collection.createdAt.toISOString(),
+        id: collection?.id,
+        handle: collection?.handle,
+        title: collection?.title,
+        description: collection?.description,
+        seoTitle: collection?.seoTitle,
+        seoDescription: collection?.seoDescription,
+        createdAt: collection?.createdAt.toISOString(),
       },
     });
   } catch (error) {

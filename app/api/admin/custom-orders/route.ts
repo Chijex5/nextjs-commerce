@@ -95,16 +95,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       customOrder: {
-        id: order.id,
-        title: order.title,
-        customerStory: order.customerStory,
-        beforeImage: order.beforeImage,
-        afterImage: order.afterImage,
-        details: toDetailsArray(order.details),
-        completionTime: order.completionTime,
-        position: order.position,
-        isPublished: order.isPublished,
-        createdAt: order.createdAt.toISOString(),
+        id: order?.id,
+        title: order?.title,
+        customerStory: order?.customerStory,
+        beforeImage: order?.beforeImage,
+        afterImage: order?.afterImage,
+        details: toDetailsArray(order?.details),
+        completionTime: order?.completionTime,
+        position: order?.position,
+        isPublished: order?.isPublished,
+        createdAt: order?.createdAt.toISOString(),
       },
     });
   } catch (error) {

@@ -73,6 +73,10 @@ export async function PUT(request: NextRequest) {
         phone: users.phone,
       });
 
+    if (!updatedUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
     const token = await createUserSession({
       id: updatedUser.id,
       email: updatedUser.email,

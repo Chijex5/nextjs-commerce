@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { eq } from "drizzle-orm";
 import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
 import {
@@ -7,7 +7,7 @@ import {
   productVariants,
   products,
 } from "lib/db/schema";
-import { eq } from "drizzle-orm";
+import { NextResponse } from "next/server";
 
 export async function POST(
   request: Request,
@@ -62,6 +62,10 @@ export async function POST(
           tags: originalProduct.tags,
         })
         .returning();
+
+      if (!createdProduct) {
+        throw new Error("Failed to create duplicated product");
+      }
 
       if (originalImages.length > 0) {
         await tx.insert(productImages).values(

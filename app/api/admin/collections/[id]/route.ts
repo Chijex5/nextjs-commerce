@@ -127,13 +127,13 @@ export async function PUT(
       success: true,
       message: "Collection updated successfully",
       collection: {
-        id: collection.id,
-        handle: collection.handle,
-        title: collection.title,
-        description: collection.description,
-        seoTitle: collection.seoTitle,
-        seoDescription: collection.seoDescription,
-        updatedAt: collection.updatedAt.toISOString(),
+        id: collection?.id,
+        handle: collection?.handle,
+        title: collection?.title,
+        description: collection?.description,
+        seoTitle: collection?.seoTitle,
+        seoDescription: collection?.seoDescription,
+        updatedAt: collection?.updatedAt.toISOString(),
       },
     });
   } catch (error) {

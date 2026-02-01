@@ -35,6 +35,10 @@ export async function POST(request: Request) {
         })
         .returning();
 
+      if (!createdProduct) {
+        throw new Error("Failed to create product");
+      }
+
       if (body.images && Array.isArray(body.images) && body.images.length > 0) {
         await tx.insert(productImages).values(
           body.images.map((img: any) => ({

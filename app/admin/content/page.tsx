@@ -30,10 +30,14 @@ export default async function AdminContentPage() {
 
   const itemsByMenu = menuItemRows.reduce<Record<string, typeof menuItemRows>>(
     (acc, item) => {
-      if (!acc[item.menuId]) {
-        acc[item.menuId] = [] as typeof menuItemRows;
+      const menuId = item.menuId;
+      if (!menuId) {
+        return acc;
       }
-      acc[item.menuId].push(item);
+      if (!acc[menuId]) {
+        acc[menuId] = [] as typeof menuItemRows;
+      }
+      acc[menuId].push(item);
       return acc;
     },
     {},

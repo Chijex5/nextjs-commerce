@@ -106,10 +106,10 @@ export async function PUT(
     return NextResponse.json({
       success: true,
       menu: {
-        id: menu.id,
-        handle: menu.handle,
-        title: menu.title,
-        updatedAt: menu.updatedAt.toISOString(),
+        id: menu?.id,
+        handle: menu?.handle,
+        title: menu?.title,
+        updatedAt: menu?.updatedAt.toISOString(),
       },
     });
   } catch (error) {

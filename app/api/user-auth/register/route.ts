@@ -51,7 +51,14 @@ export async function POST(request: NextRequest) {
         passwordHash,
       })
       .returning();
-
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: "Failed to create user" },
+        { status: 500 },
+      );
+    }
+      
     return NextResponse.json(
       {
         message: "User created successfully",

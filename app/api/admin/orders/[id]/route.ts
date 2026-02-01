@@ -176,6 +176,10 @@ export async function PUT(
       .where(eq(orders.id, id))
       .returning();
 
+    if (!updatedOrder) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
     const items = await db
       .select()
       .from(orderItems)

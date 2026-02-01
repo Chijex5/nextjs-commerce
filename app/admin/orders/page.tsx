@@ -82,10 +82,8 @@ export default async function AdminOrdersPage({
 
   const itemsByOrder = orderItemRows.reduce<Record<string, { quantity: number }[]>>(
     (acc, item) => {
-      if (!acc[item.orderId]) {
-        acc[item.orderId] = [];
-      }
-      acc[item.orderId].push({ quantity: item.quantity });
+      const items = (acc[item.orderId] ??= []);
+      items.push({ quantity: item.quantity });
       return acc;
     },
     {},

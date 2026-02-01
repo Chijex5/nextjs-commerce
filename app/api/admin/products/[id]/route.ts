@@ -154,7 +154,7 @@ export async function PUT(
             body.images.map((img: any) => ({
               productId: id,
               url: img.url,
-              altText: updatedProduct.title,
+              altText: updatedProduct?.title,
               width: img.width ?? PRODUCT_IMAGE_WIDTH,
               height: img.height ?? PRODUCT_IMAGE_HEIGHT,
               position: img.position || 0,

@@ -35,7 +35,7 @@ async function createAdmin() {
   console.log("✅ Admin user created successfully!");
   console.log("\nLogin Credentials:");
   console.log("==================");
-  console.log(`Email:    ${admin.email}`);
+  console.log(`Email:    ${admin?.email}`);
   console.log(`Password: ${password}`);
   console.log(
     "\n⚠️  IMPORTANT: Change this password immediately after first login!",

@@ -101,16 +101,16 @@ export async function PUT(
     return NextResponse.json({
       success: true,
       customOrder: {
-        id: order.id,
-        title: order.title,
-        customerStory: order.customerStory,
-        beforeImage: order.beforeImage,
-        afterImage: order.afterImage,
-        details: toDetailsArray(order.details),
-        completionTime: order.completionTime,
-        position: order.position,
-        isPublished: order.isPublished,
-        updatedAt: order.updatedAt.toISOString(),
+        id: order?.id,
+        title: order?.title,
+        customerStory: order?.customerStory,
+        beforeImage: order?.beforeImage,
+        afterImage: order?.afterImage,
+        details: toDetailsArray(order?.details),
+        completionTime: order?.completionTime,
+        position: order?.position,
+        isPublished: order?.isPublished,
+        updatedAt: order?.updatedAt.toISOString(),
       },
     });
   } catch (error) {

@@ -229,6 +229,10 @@ export async function GET(request: NextRequest) {
         })
         .returning();
 
+      if (!createdOrder) {
+        throw new Error("Failed to create order");
+      }
+
       if (orderItemsData.length > 0) {
         await tx.insert(orderItems).values(
           orderItemsData.map((item) => ({

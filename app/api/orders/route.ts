@@ -28,10 +28,8 @@ export async function GET(request: NextRequest) {
 
     const itemsByOrder = items.reduce<Record<string, typeof items>>(
       (acc, item) => {
-        if (!acc[item.orderId]) {
-          acc[item.orderId] = [] as typeof items;
-        }
-        acc[item.orderId].push(item);
+        const bucket = acc[item.orderId] ?? (acc[item.orderId] = [] as typeof items);
+        bucket.push(item);
         return acc;
       },
       {},

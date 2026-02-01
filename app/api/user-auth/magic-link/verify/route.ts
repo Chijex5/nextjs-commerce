@@ -66,6 +66,12 @@ export async function GET(request: NextRequest) {
       user = created;
     }
 
+    if (!user) {
+      return NextResponse.redirect(
+        new URL("/auth/login?error=failed", request.url),
+      );
+    }
+
     await db
       .update(users)
       .set({ lastLoginAt: new Date() })

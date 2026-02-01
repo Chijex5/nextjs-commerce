@@ -100,6 +100,13 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
+    if (!page) {
+      return NextResponse.json(
+        { error: "Failed to create page" },
+        { status: 500 },
+      );
+    }
+
     return NextResponse.json({
       success: true,
       page: {

@@ -41,12 +41,12 @@ export async function PUT(
       success: true,
       message: "Admin updated successfully",
       admin: {
-        id: admin.id,
-        email: admin.email,
-        name: admin.name,
-        role: admin.role,
-        isActive: admin.isActive,
-        updatedAt: admin.updatedAt.toISOString(),
+        id: admin?.id,
+        email: admin?.email,
+        name: admin?.name,
+        role: admin?.role,
+        isActive: admin?.isActive,
+        updatedAt: admin?.updatedAt.toISOString(),
       },
     });
   } catch (error) {

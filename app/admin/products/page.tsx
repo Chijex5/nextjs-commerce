@@ -1,7 +1,4 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "../../../lib/auth";
-import { redirect } from "next/navigation";
-import Link from "next/link";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db } from "lib/db";
 import {
   collections,
@@ -10,9 +7,12 @@ import {
   productVariants,
   products,
 } from "lib/db/schema";
+import { getServerSession } from "next-auth";
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import AdminNav from "../../../components/admin/AdminNav";
 import ProductsListWithSelection from "../../../components/admin/ProductsListWithSelection";
-import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { authOptions } from "../../../lib/auth";
 
 export default async function ProductsPage({
   searchParams,
@@ -111,7 +111,10 @@ export default async function ProductsPage({
     featuredImages.map((image) => [image.productId, image]),
   );
 
-  const variantsByProduct = new Map<string, { price: any; currencyCode: string }[]>();
+  const variantsByProduct = new Map<
+    string,
+    { price: any; currencyCode: string }[]
+  >();
   for (const variant of variantRows) {
     if (!variantsByProduct.has(variant.productId)) {
       variantsByProduct.set(variant.productId, []);
@@ -124,10 +127,12 @@ export default async function ProductsPage({
 
   const collectionsByProduct = collectionRows.reduce(
     (acc, row) => {
-      if (!acc[row.productId]) {
-        acc[row.productId] = [] as { collection: { id: string; title: string } }[];
-      }
-      acc[row.productId].push({
+      const collectionsForProduct =
+        acc[row.productId] ??
+        (acc[row.productId] = [] as {
+          collection: { id: string; title: string };
+        }[]);
+      collectionsForProduct.push({
         collection: { id: row.collection.id, title: row.collection.title },
       });
       return acc;

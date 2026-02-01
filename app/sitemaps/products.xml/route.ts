@@ -14,7 +14,7 @@ export async function GET() {
     .orderBy(desc(products.updatedAt));
 
   const entries = productRows
-    .filter((product) => !product.tags.includes(HIDDEN_PRODUCT_TAG))
+    .filter((product) => !(product.tags ?? []).includes(HIDDEN_PRODUCT_TAG))
     .map((product) => ({
       loc: canonicalUrl(`/product/${product.handle}`),
       lastmod: product.updatedAt.toISOString(),

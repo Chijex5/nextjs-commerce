@@ -151,11 +151,13 @@ async function seed() {
         },
       ]);
 
-      if (createdCollections.length > 0) {
+      const firstCollection = createdCollections[0];
+
+      if (firstCollection) {
         await db.insert(productCollections).values([
           {
             productId: product1.id,
-            collectionId: createdCollections[0].id,
+            collectionId: firstCollection.id,
             position: 0,
           },
         ]);

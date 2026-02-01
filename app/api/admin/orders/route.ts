@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
 import { orderItems, orders } from "lib/db/schema";
-import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -66,10 +66,7 @@ export async function GET(request: NextRequest) {
 
     const itemsByOrder = items.reduce<Record<string, typeof items>>(
       (acc, item) => {
-        if (!acc[item.orderId]) {
-          acc[item.orderId] = [] as typeof items;
-        }
-        acc[item.orderId].push(item);
+        (acc[item.orderId] ??= [] as typeof items).push(item);
         return acc;
       },
       {},

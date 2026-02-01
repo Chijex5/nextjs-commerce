@@ -39,10 +39,9 @@ export async function GET(request: NextRequest) {
 
     const itemsByMenu = items.reduce<Record<string, typeof items>>(
       (acc, item) => {
-        if (!acc[item.menuId]) {
-          acc[item.menuId] = [] as typeof items;
-        }
-        acc[item.menuId].push(item);
+        const menuItemsForMenu =
+          acc[item.menuId] ?? (acc[item.menuId] = [] as typeof items);
+        menuItemsForMenu.push(item);
         return acc;
       },
       {},
@@ -116,10 +115,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       menu: {
-        id: menu.id,
-        handle: menu.handle,
-        title: menu.title,
-        createdAt: menu.createdAt.toISOString(),
+        id: menu?.id,
+        handle: menu?.handle,
+        title: menu?.title,
+        createdAt: menu?.createdAt.toISOString(),
       },
     });
   } catch (error) {

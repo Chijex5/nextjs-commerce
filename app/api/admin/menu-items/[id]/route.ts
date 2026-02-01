@@ -69,11 +69,11 @@ export async function PUT(
     return NextResponse.json({
       success: true,
       menuItem: {
-        id: menuItem.id,
-        menuId: menuItem.menuId,
-        title: menuItem.title,
-        url: menuItem.url,
-        position: menuItem.position,
+        id: menuItem?.id,
+        menuId: menuItem?.menuId,
+        title: menuItem?.title,
+        url: menuItem?.url,
+        position: menuItem?.position,
       },
     });
   } catch (error) {
