@@ -31,17 +31,9 @@ export default defineConfig({
     user: AMAZON_DB_USER,
     password: AMAZON_DB_PASSWORD,
     database: AMAZON_DB_NAME,
-    ssl: useStrictSSL
-      ? {
-          rejectUnauthorized: true,
-          ca: fs.readFileSync(
-            path.resolve(AMAZON_DB_CA_PATH!),
-            "utf8"
-          ),
-        }
-      : {
-          rejectUnauthorized: false,
-        },
+    ssl: {
+      rejectUnauthorized: false,
+    },
   },
   strict: true,
 });
