@@ -4,9 +4,10 @@ import {
   getUserSession,
   setUserSessionCookie,
 } from "lib/user-session";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { users } from "lib/db/schema";
+import { eq } from "drizzle-orm";
 
-// GET - Fetch user profile
 export async function GET() {
   try {
     const session = await getUserSession();
@@ -15,18 +16,19 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        phone: true,
-        shippingAddress: true,
-        billingAddress: true,
-        createdAt: true,
-      },
-    });
+    const [user] = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        phone: users.phone,
+        shippingAddress: users.shippingAddress,
+        billingAddress: users.billingAddress,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(eq(users.id, session.id))
+      .limit(1);
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -42,7 +44,6 @@ export async function GET() {
   }
 }
 
-// PUT - Update user profile
 export async function PUT(request: NextRequest) {
   try {
     const session = await getUserSession();
@@ -54,25 +55,23 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { name, phone } = body;
 
-    // Validate inputs
     if (!name?.trim()) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
-    // Update user profile (email cannot be changed)
-    const updatedUser = await prisma.user.update({
-      where: { id: session.id },
-      data: {
+    const [updatedUser] = await db
+      .update(users)
+      .set({
         name: name.trim(),
         phone: phone?.trim() || null,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        phone: true,
-      },
-    });
+      })
+      .where(eq(users.id, session.id))
+      .returning({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        phone: users.phone,
+      });
 
     const token = await createUserSession({
       id: updatedUser.id,

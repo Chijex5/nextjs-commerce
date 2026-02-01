@@ -3,7 +3,9 @@ import { authOptions } from "lib/auth";
 import { redirect, notFound } from "next/navigation";
 import AdminNav from "components/admin/AdminNav";
 import OrderDetailView from "components/admin/OrderDetailView";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { orderItems, orders, users } from "lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export default async function AdminOrderDetailPage({
   params,
@@ -18,24 +20,32 @@ export default async function AdminOrderDetailPage({
 
   const { id } = await params;
 
-  const order = await prisma.order.findUnique({
-    where: { id },
-    include: {
-      items: true,
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-        },
-      },
-    },
-  });
+  const [order] = await db
+    .select()
+    .from(orders)
+    .where(eq(orders.id, id))
+    .limit(1);
 
   if (!order) {
     notFound();
   }
+
+  const [items, user] = await Promise.all([
+    db.select().from(orderItems).where(eq(orderItems.orderId, id)),
+    order.userId
+      ? db
+          .select({
+            id: users.id,
+            name: users.name,
+            email: users.email,
+            phone: users.phone,
+          })
+          .from(users)
+          .where(eq(users.id, order.userId))
+          .limit(1)
+          .then((rows) => rows[0] ?? null)
+      : Promise.resolve(null),
+  ]);
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
@@ -43,7 +53,7 @@ export default async function AdminOrderDetailPage({
 
       <div className="py-6 sm:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <OrderDetailView order={order} />
+          <OrderDetailView order={{ ...order, items, user }} />
         </div>
       </div>
     </div>

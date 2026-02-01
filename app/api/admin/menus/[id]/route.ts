@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { menuItems, menus } from "lib/db/schema";
+import { and, asc, eq, ne } from "drizzle-orm";
 
 export async function GET(
   request: NextRequest,
@@ -15,14 +17,21 @@ export async function GET(
 
     const { id } = await params;
 
-    const menu = await prisma.menu.findUnique({
-      where: { id },
-      include: { items: { orderBy: { position: "asc" } } },
-    });
+    const [menu] = await db
+      .select()
+      .from(menus)
+      .where(eq(menus.id, id))
+      .limit(1);
 
     if (!menu) {
       return NextResponse.json({ error: "Menu not found" }, { status: 404 });
     }
+
+    const items = await db
+      .select()
+      .from(menuItems)
+      .where(eq(menuItems.menuId, menu.id))
+      .orderBy(asc(menuItems.position));
 
     return NextResponse.json({
       menu: {
@@ -31,7 +40,7 @@ export async function GET(
         title: menu.title,
         createdAt: menu.createdAt.toISOString(),
         updatedAt: menu.updatedAt.toISOString(),
-        items: menu.items.map((item) => ({
+        items: items.map((item) => ({
           id: item.id,
           menuId: item.menuId,
           title: item.title,
@@ -72,12 +81,11 @@ export async function PUT(
       );
     }
 
-    const existingMenu = await prisma.menu.findFirst({
-      where: {
-        handle,
-        NOT: { id },
-      },
-    });
+    const [existingMenu] = await db
+      .select({ id: menus.id })
+      .from(menus)
+      .where(and(eq(menus.handle, handle), ne(menus.id, id)))
+      .limit(1);
 
     if (existingMenu) {
       return NextResponse.json(
@@ -86,13 +94,14 @@ export async function PUT(
       );
     }
 
-    const menu = await prisma.menu.update({
-      where: { id },
-      data: {
+    const [menu] = await db
+      .update(menus)
+      .set({
         handle,
         title,
-      },
-    });
+      })
+      .where(eq(menus.id, id))
+      .returning();
 
     return NextResponse.json({
       success: true,
@@ -125,9 +134,7 @@ export async function DELETE(
 
     const { id } = await params;
 
-    await prisma.menu.delete({
-      where: { id },
-    });
+    await db.delete(menus).where(eq(menus.id, id));
 
     return NextResponse.json({
       success: true,

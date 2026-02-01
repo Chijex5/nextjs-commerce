@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { menuItems, menus } from "lib/db/schema";
+import { asc, eq, ilike, inArray, or } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,31 +15,47 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");
 
-    const where: any = {};
+    const whereClause = search
+      ? or(
+          ilike(menus.title, `%${search}%`),
+          ilike(menus.handle, `%${search}%`),
+        )
+      : undefined;
 
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: "insensitive" as const } },
-        { handle: { contains: search, mode: "insensitive" as const } },
-      ];
-    }
+    const menuRows = await db
+      .select()
+      .from(menus)
+      .where(whereClause)
+      .orderBy(asc(menus.title));
 
-    const menus = await prisma.menu.findMany({
-      where,
-      include: {
-        items: { orderBy: { position: "asc" } },
+    const menuIds = menuRows.map((menu) => menu.id);
+    const items = menuIds.length
+      ? await db
+          .select()
+          .from(menuItems)
+          .where(inArray(menuItems.menuId, menuIds))
+          .orderBy(asc(menuItems.position))
+      : [];
+
+    const itemsByMenu = items.reduce<Record<string, typeof items>>(
+      (acc, item) => {
+        if (!acc[item.menuId]) {
+          acc[item.menuId] = [] as typeof items;
+        }
+        acc[item.menuId].push(item);
+        return acc;
       },
-      orderBy: { title: "asc" },
-    });
+      {},
+    );
 
     return NextResponse.json({
-      menus: menus.map((menu) => ({
+      menus: menuRows.map((menu) => ({
         id: menu.id,
         handle: menu.handle,
         title: menu.title,
         createdAt: menu.createdAt.toISOString(),
         updatedAt: menu.updatedAt.toISOString(),
-        items: menu.items.map((item) => ({
+        items: (itemsByMenu[menu.id] || []).map((item) => ({
           id: item.id,
           menuId: item.menuId,
           title: item.title,
@@ -74,9 +92,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existingMenu = await prisma.menu.findUnique({
-      where: { handle },
-    });
+    const [existingMenu] = await db
+      .select({ id: menus.id })
+      .from(menus)
+      .where(eq(menus.handle, handle))
+      .limit(1);
 
     if (existingMenu) {
       return NextResponse.json(
@@ -85,12 +105,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const menu = await prisma.menu.create({
-      data: {
+    const [menu] = await db
+      .insert(menus)
+      .values({
         handle,
         title,
-      },
-    });
+      })
+      .returning();
 
     return NextResponse.json({
       success: true,

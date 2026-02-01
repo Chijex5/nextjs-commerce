@@ -1,21 +1,19 @@
 import { HIDDEN_PRODUCT_TAG } from "lib/constants";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { products } from "lib/db/schema";
 import { canonicalUrl } from "lib/seo";
 import { buildSitemapXml } from "lib/sitemap";
+import { desc } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const products = await prisma.product.findMany({
-    select: {
-      handle: true,
-      updatedAt: true,
-      tags: true,
-    },
-    orderBy: { updatedAt: "desc" },
-  });
+  const productRows = await db
+    .select({ handle: products.handle, updatedAt: products.updatedAt, tags: products.tags })
+    .from(products)
+    .orderBy(desc(products.updatedAt));
 
-  const entries = products
+  const entries = productRows
     .filter((product) => !product.tags.includes(HIDDEN_PRODUCT_TAG))
     .map((product) => ({
       loc: canonicalUrl(`/product/${product.handle}`),

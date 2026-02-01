@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { customOrders } from "lib/db/schema";
 import { canonicalUrl, siteName } from "lib/seo";
+import { asc, desc, eq } from "drizzle-orm";
 
 export const metadata: Metadata = {
   title: "Custom Orders Gallery - D'FOOTPRINT",
@@ -33,10 +35,11 @@ const toDetailsArray = (value: unknown): string[] => {
 };
 
 export default async function CustomOrdersPage() {
-  const customOrders = await prisma.customOrder.findMany({
-    where: { isPublished: true },
-    orderBy: [{ position: "asc" }, { updatedAt: "desc" }],
-  });
+  const customOrdersList = await db
+    .select()
+    .from(customOrders)
+    .where(eq(customOrders.isPublished, true))
+    .orderBy(asc(customOrders.position), desc(customOrders.updatedAt));
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -53,12 +56,12 @@ export default async function CustomOrdersPage() {
 
       {/* Custom Orders Grid */}
       <div className="space-y-16">
-        {customOrders.length === 0 ? (
+        {customOrdersList.length === 0 ? (
           <div className="rounded-lg border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
             No custom orders yet. Check back soon for new stories.
           </div>
         ) : (
-          customOrders.map((order) => {
+          customOrdersList.map((order) => {
             const details = toDetailsArray(order.details);
             const beforeImage =
               order.beforeImage ||

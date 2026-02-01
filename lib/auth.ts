@@ -1,7 +1,9 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
-import prisma from "./prisma";
+import { db } from "./db";
+import { adminUsers } from "./db/schema";
+import { eq } from "drizzle-orm";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -16,9 +18,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email and password required");
         }
 
-        const user = await prisma.adminUser.findUnique({
-          where: { email: credentials.email },
-        });
+        const [user] = await db
+          .select()
+          .from(adminUsers)
+          .where(eq(adminUsers.email, credentials.email))
+          .limit(1);
 
         if (!user || !user.isActive) {
           throw new Error("Invalid credentials");
@@ -33,11 +37,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials");
         }
 
-        // Update last login
-        await prisma.adminUser.update({
-          where: { id: user.id },
-          data: { lastLoginAt: new Date() },
-        });
+        await db
+          .update(adminUsers)
+          .set({ lastLoginAt: new Date() })
+          .where(eq(adminUsers.id, user.id));
 
         return {
           id: user.id,

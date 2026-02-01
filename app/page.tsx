@@ -3,8 +3,10 @@ import { ThreeItemGrid } from "components/grid/three-items";
 import { CustomShowcase } from "components/custom-showcase";
 import { CollectionSections } from "components/collection-sections";
 import Footer from "components/layout/footer";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { customOrders } from "lib/db/schema";
 import { canonicalUrl, siteName } from "lib/seo";
+import { asc, desc, eq } from "drizzle-orm";
 import type { Metadata } from "next";
 
 const description =
@@ -32,11 +34,12 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const customOrders = await prisma.customOrder.findMany({
-    where: { isPublished: true },
-    orderBy: [{ position: "asc" }, { updatedAt: "desc" }],
-    take: 3,
-  });
+  const customOrdersList = await db
+    .select()
+    .from(customOrders)
+    .where(eq(customOrders.isPublished, true))
+    .orderBy(asc(customOrders.position), desc(customOrders.updatedAt))
+    .limit(3);
 
   return (
     <>
@@ -44,7 +47,7 @@ export default async function HomePage() {
       <Carousel />
       <CollectionSections />
       <CustomShowcase
-        orders={customOrders.map((order) => ({
+        orders={customOrdersList.map((order) => ({
           id: order.id,
           title: order.title,
           beforeImage: order.beforeImage,

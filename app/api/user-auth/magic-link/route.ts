@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { magicLinkTokens } from "lib/db/schema";
 import { sendMagicLinkEmail } from "lib/email/auth-emails";
 import { baseUrl, ensureStartsWith } from "lib/utils";
 
@@ -21,12 +22,10 @@ export async function POST(request: NextRequest) {
         ? callbackUrl
         : "/account?welcome=1";
 
-    await prisma.magicLinkToken.create({
-      data: {
-        email,
-        tokenHash,
-        expiresAt,
-      },
+    await db.insert(magicLinkTokens).values({
+      email,
+      tokenHash,
+      expiresAt,
     });
 
     const verifyUrl = `${baseUrl}/api/user-auth/magic-link/verify?email=${encodeURIComponent(

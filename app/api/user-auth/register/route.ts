@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { users } from "lib/db/schema";
 import { deriveNameFromEmail } from "lib/user-utils";
+import { eq } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
     const { name, email, password } = await request.json();
 
-    // Validate input
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
@@ -22,10 +23,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+    const [existingUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
 
     if (existingUser) {
       return NextResponse.json(
@@ -34,22 +36,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Hash password
     const passwordHash = await hash(password, 10);
 
-    // Create user
     const userName =
       typeof name === "string" && name.trim()
         ? name.trim()
         : deriveNameFromEmail(email);
 
-    const user = await prisma.user.create({
-      data: {
+    const [user] = await db
+      .insert(users)
+      .values({
         name: userName,
         email,
         passwordHash,
-      },
-    });
+      })
+      .returning();
 
     return NextResponse.json(
       {

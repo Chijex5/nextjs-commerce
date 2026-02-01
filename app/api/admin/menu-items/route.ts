@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { menuItems } from "lib/db/schema";
+import { desc, eq } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,22 +26,24 @@ export async function POST(request: NextRequest) {
     if (typeof position === "number") {
       nextPosition = position;
     } else {
-      const lastItem = await prisma.menuItem.findFirst({
-        where: { menuId },
-        orderBy: { position: "desc" },
-        select: { position: true },
-      });
+      const [lastItem] = await db
+        .select({ position: menuItems.position })
+        .from(menuItems)
+        .where(eq(menuItems.menuId, menuId))
+        .orderBy(desc(menuItems.position))
+        .limit(1);
       nextPosition = lastItem ? lastItem.position + 1 : 0;
     }
 
-    const menuItem = await prisma.menuItem.create({
-      data: {
+    const [menuItem] = await db
+      .insert(menuItems)
+      .values({
         menuId,
         title,
         url,
         position: nextPosition,
-      },
-    });
+      })
+      .returning();
 
     return NextResponse.json({
       success: true,

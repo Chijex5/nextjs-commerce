@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { orderItems, orders, reviews } from "@/lib/db/schema";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { and, desc, eq } from "drizzle-orm";
 
-// GET /api/reviews/verify-purchase?productId=xxx - Check if user can review a product
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -25,47 +26,37 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if user has purchased this product
-    const orders = await prisma.order.findMany({
-      where: {
-        userId: session.user.id,
-        items: {
-          some: {
-            productId,
-          },
-        },
-      },
-      include: {
-        items: {
-          where: {
-            productId,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    const orderRows = await db
+      .select({ order: orders })
+      .from(orders)
+      .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+      .where(
+        and(eq(orders.userId, session.user.id), eq(orderItems.productId, productId)),
+      )
+      .orderBy(desc(orders.createdAt));
 
-    const hasPurchased = orders.length > 0;
+    const ordersMap = new Map(
+      orderRows.map(({ order }) => [order.id, order]),
+    );
 
-    // Check if user already reviewed this product
-    const existingReview = await prisma.review.findFirst({
-      where: {
-        productId,
-        userId: session.user.id,
-      },
-    });
+    const uniqueOrders = Array.from(ordersMap.values());
+    const hasPurchased = uniqueOrders.length > 0;
+
+    const [existingReview] = await db
+      .select({ id: reviews.id })
+      .from(reviews)
+      .where(and(eq(reviews.productId, productId), eq(reviews.userId, session.user.id)))
+      .limit(1);
 
     return NextResponse.json({
       canReview: hasPurchased && !existingReview,
       hasPurchased,
       hasReviewed: !!existingReview,
       orders: hasPurchased
-        ? orders.map((o) => ({
-            id: o.id,
-            orderNumber: o.orderNumber,
-            createdAt: o.createdAt,
+        ? uniqueOrders.map((order) => ({
+            id: order.id,
+            orderNumber: order.orderNumber,
+            createdAt: order.createdAt,
           }))
         : [],
     });

@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
 import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "lib/image-constants";
-import prisma from "@/lib/prisma";
+import { db } from "lib/db";
+import {
+  cartLines,
+  collections,
+  productCollections,
+  productImages,
+  productOptions,
+  productVariants,
+  products,
+} from "lib/db/schema";
+import { eq, inArray, asc } from "drizzle-orm";
 
 export async function DELETE(
   request: Request,
@@ -16,10 +26,7 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Delete product (cascades to images, variants, options, etc.)
-    await prisma.product.delete({
-      where: { id },
-    });
+    await db.delete(products).where(eq(products.id, id));
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -44,29 +51,62 @@ export async function GET(
 
     const { id } = await params;
 
-    const product = await prisma.product.findUnique({
-      where: { id },
-      include: {
-        images: {
-          orderBy: { position: "asc" },
-        },
-        variants: {
-          orderBy: { createdAt: "asc" },
-        },
-        options: true,
-        productCollections: {
-          include: {
-            collection: true,
-          },
-        },
-      },
-    });
+    const [product] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, id))
+      .limit(1);
 
     if (!product) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    return NextResponse.json(product);
+    const [images, variants, options, collectionLinks] = await Promise.all([
+      db
+        .select()
+        .from(productImages)
+        .where(eq(productImages.productId, id))
+        .orderBy(asc(productImages.position)),
+      db
+        .select()
+        .from(productVariants)
+        .where(eq(productVariants.productId, id))
+        .orderBy(asc(productVariants.createdAt)),
+      db
+        .select()
+        .from(productOptions)
+        .where(eq(productOptions.productId, id)),
+      db
+        .select({
+          id: productCollections.id,
+          productId: productCollections.productId,
+          collectionId: productCollections.collectionId,
+          position: productCollections.position,
+          createdAt: productCollections.createdAt,
+          collection: collections,
+        })
+        .from(productCollections)
+        .innerJoin(
+          collections,
+          eq(productCollections.collectionId, collections.id),
+        )
+        .where(eq(productCollections.productId, id)),
+    ]);
+
+    return NextResponse.json({
+      ...product,
+      images,
+      variants,
+      options,
+      productCollections: collectionLinks.map((link) => ({
+        id: link.id,
+        productId: link.productId,
+        collectionId: link.collectionId,
+        position: link.position,
+        createdAt: link.createdAt,
+        collection: link.collection,
+      })),
+    });
   } catch (error) {
     console.error("Error fetching product:", error);
     return NextResponse.json(
@@ -90,197 +130,190 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    // Update product
-    const product = await prisma.product.update({
-      where: { id },
-      data: {
-        title: body.title,
-        handle: body.handle,
-        description: body.description,
-        descriptionHtml: body.descriptionHtml,
-        availableForSale: body.availableForSale,
-        seoTitle: body.seoTitle,
-        seoDescription: body.seoDescription,
-        tags: body.tags || [],
-      },
-    });
+    const product = await db.transaction(async (tx) => {
+      const [updatedProduct] = await tx
+        .update(products)
+        .set({
+          title: body.title,
+          handle: body.handle,
+          description: body.description,
+          descriptionHtml: body.descriptionHtml,
+          availableForSale: body.availableForSale,
+          seoTitle: body.seoTitle,
+          seoDescription: body.seoDescription,
+          tags: body.tags || [],
+        })
+        .where(eq(products.id, id))
+        .returning();
 
-    // Update images - delete old ones and create new ones
-    if (body.images && Array.isArray(body.images)) {
-      // Delete existing images
-      await prisma.productImage.deleteMany({
-        where: { productId: id },
-      });
+      if (body.images && Array.isArray(body.images)) {
+        await tx.delete(productImages).where(eq(productImages.productId, id));
 
-      // Create new images
-      if (body.images.length > 0) {
-        await prisma.productImage.createMany({
-          data: body.images.map((img: any) => ({
-            productId: id,
-            url: img.url,
-            altText: product.title,
-            width: img.width ?? PRODUCT_IMAGE_WIDTH,
-            height: img.height ?? PRODUCT_IMAGE_HEIGHT,
-            position: img.position || 0,
-            isFeatured: img.isFeatured || false,
-          })),
-        });
+        if (body.images.length > 0) {
+          await tx.insert(productImages).values(
+            body.images.map((img: any) => ({
+              productId: id,
+              url: img.url,
+              altText: updatedProduct.title,
+              width: img.width ?? PRODUCT_IMAGE_WIDTH,
+              height: img.height ?? PRODUCT_IMAGE_HEIGHT,
+              position: img.position || 0,
+              isFeatured: img.isFeatured || false,
+            })),
+          );
+        }
       }
-    }
 
-    // Update variants and options if sizes/colors provided
-    if (body.sizes || body.colors) {
-      // Delete existing variants and options
-      await prisma.cartLine.deleteMany({
-        where: { variant: { productId: id } },
-      });
-      await prisma.productVariant.deleteMany({ where: { productId: id } });
-      await prisma.productOption.deleteMany({ where: { productId: id } });
+      if (body.sizes || body.colors) {
+        const variantRows = await tx
+          .select({ id: productVariants.id })
+          .from(productVariants)
+          .where(eq(productVariants.productId, id));
 
-      const sizes = body.sizes || [];
-      const colors = body.colors || [];
+        const variantIds = variantRows.map((variant) => variant.id);
+        if (variantIds.length) {
+          await tx
+            .delete(cartLines)
+            .where(inArray(cartLines.productVariantId, variantIds));
+        }
 
-      // Recreate options
-      if (sizes.length > 0) {
-        await prisma.productOption.create({
-          data: {
+        await tx
+          .delete(productVariants)
+          .where(eq(productVariants.productId, id));
+        await tx
+          .delete(productOptions)
+          .where(eq(productOptions.productId, id));
+
+        const sizes = body.sizes || [];
+        const colors = body.colors || [];
+
+        if (sizes.length > 0) {
+          await tx.insert(productOptions).values({
             productId: id,
             name: "Size",
             values: sizes,
-          },
-        });
-      }
+          });
+        }
 
-      if (colors.length > 0) {
-        await prisma.productOption.create({
-          data: {
+        if (colors.length > 0) {
+          await tx.insert(productOptions).values({
             productId: id,
             name: "Color",
             values: colors,
-          },
-        });
-      }
-
-      // Function to calculate variant price based on rules
-      const getVariantPrice = (size: string, color: string): number => {
-        const basePrice = body.basePrice || 0;
-        const colorPrices = body.colorPrices || {};
-        const largeSizePrice = body.largeSizePrice;
-        const largeSizeFrom = body.largeSizeFrom;
-        const sizePriceRules = Array.isArray(body.sizePriceRules)
-          ? body.sizePriceRules
-              .map((rule: any) => ({
-                from: parseInt(rule.from, 10),
-                price: parseFloat(rule.price),
-              }))
-              .filter(
-                (rule: any) =>
-                  !Number.isNaN(rule.from) &&
-                  !Number.isNaN(rule.price) &&
-                  rule.from > 0,
-              )
-              .sort((a: any, b: any) => b.from - a.from)
-          : [];
-
-        // Check color-specific price first (highest priority)
-        const colorKey = color.trim().toLowerCase();
-        if (colorPrices[colorKey] !== undefined) {
-          return colorPrices[colorKey];
+          });
         }
 
-        // Check size-based tier rules
-        if (sizePriceRules.length > 0) {
-          const sizeValue = parseInt(size, 10);
-          if (!Number.isNaN(sizeValue)) {
-            const matched = sizePriceRules.find(
-              (rule: any) => sizeValue >= rule.from,
-            );
-            if (matched) return matched.price;
+        const getVariantPrice = (size: string, color: string): number => {
+          const basePrice = body.basePrice || 0;
+          const colorPrices = body.colorPrices || {};
+          const largeSizePrice = body.largeSizePrice;
+          const largeSizeFrom = body.largeSizeFrom;
+          const sizePriceRules = Array.isArray(body.sizePriceRules)
+            ? body.sizePriceRules
+                .map((rule: any) => ({
+                  from: parseInt(rule.from, 10),
+                  price: parseFloat(rule.price),
+                }))
+                .filter(
+                  (rule: any) =>
+                    !Number.isNaN(rule.from) &&
+                    !Number.isNaN(rule.price) &&
+                    rule.from > 0,
+                )
+                .sort((a: any, b: any) => b.from - a.from)
+            : [];
+
+          const colorKey = color.trim().toLowerCase();
+          if (colorPrices[colorKey] !== undefined) {
+            return colorPrices[colorKey];
           }
-        }
 
-        // Check legacy single-tier size price
-        if (
-          largeSizeFrom !== null &&
-          largeSizePrice !== null &&
-          parseInt(size, 10) >= largeSizeFrom
-        ) {
-          return largeSizePrice;
-        }
+          if (sizePriceRules.length > 0) {
+            const sizeValue = parseInt(size, 10);
+            if (!Number.isNaN(sizeValue)) {
+              const matched = sizePriceRules.find(
+                (rule: any) => sizeValue >= rule.from,
+              );
+              if (matched) return matched.price;
+            }
+          }
 
-        return basePrice;
-      };
+          if (
+            largeSizeFrom !== null &&
+            largeSizePrice !== null &&
+            parseInt(size, 10) >= largeSizeFrom
+          ) {
+            return largeSizePrice;
+          }
 
-      // Recreate variants with new prices
-      const variants = [];
+          return basePrice;
+        };
 
-      if (sizes.length > 0 && colors.length > 0) {
-        for (const size of sizes) {
+        const variants: Array<typeof productVariants.$inferInsert> = [];
+
+        if (sizes.length > 0 && colors.length > 0) {
+          for (const size of sizes) {
+            for (const color of colors) {
+              variants.push({
+                productId: id,
+                title: `${size} / ${color}`,
+                price: String(getVariantPrice(size, color)),
+                currencyCode: "NGN",
+                availableForSale: body.availableForSale ?? true,
+                selectedOptions: [
+                  { name: "Size", value: size },
+                  { name: "Color", value: color },
+                ],
+              });
+            }
+          }
+        } else if (sizes.length > 0) {
+          for (const size of sizes) {
+            variants.push({
+              productId: id,
+              title: `Size ${size}`,
+              price: String(getVariantPrice(size, "")),
+              currencyCode: "NGN",
+              availableForSale: body.availableForSale ?? true,
+              selectedOptions: [{ name: "Size", value: size }],
+            });
+          }
+        } else if (colors.length > 0) {
           for (const color of colors) {
             variants.push({
               productId: id,
-              title: `${size} / ${color}`,
-              price: getVariantPrice(size, color),
+              title: color,
+              price: String(getVariantPrice("", color)),
               currencyCode: "NGN",
               availableForSale: body.availableForSale ?? true,
-              selectedOptions: [
-                { name: "Size", value: size },
-                { name: "Color", value: color },
-              ],
+              selectedOptions: [{ name: "Color", value: color }],
             });
           }
         }
-      } else if (sizes.length > 0) {
-        for (const size of sizes) {
-          variants.push({
-            productId: id,
-            title: `Size ${size}`,
-            price: getVariantPrice(size, ""),
-            currencyCode: "NGN",
-            availableForSale: body.availableForSale ?? true,
-            selectedOptions: [{ name: "Size", value: size }],
-          });
-        }
-      } else if (colors.length > 0) {
-        for (const color of colors) {
-          variants.push({
-            productId: id,
-            title: color,
-            price: getVariantPrice("", color),
-            currencyCode: "NGN",
-            availableForSale: body.availableForSale ?? true,
-            selectedOptions: [{ name: "Color", value: color }],
-          });
+
+        if (variants.length > 0) {
+          await tx.insert(productVariants).values(variants);
         }
       }
 
-      if (variants.length > 0) {
-        await prisma.productVariant.createMany({
-          data: variants,
-        });
-      }
-    }
+      if (body.collectionIds !== undefined && Array.isArray(body.collectionIds)) {
+        await tx
+          .delete(productCollections)
+          .where(eq(productCollections.productId, id));
 
-    // Handle collection assignments if provided
-    if (body.collectionIds !== undefined && Array.isArray(body.collectionIds)) {
-      // Delete existing collection assignments
-      await prisma.productCollection.deleteMany({
-        where: { productId: id },
-      });
-
-      // Create new collection assignments
-      if (body.collectionIds.length > 0) {
-        await prisma.productCollection.createMany({
-          data: body.collectionIds.map(
-            (collectionId: string, index: number) => ({
+        if (body.collectionIds.length > 0) {
+          await tx.insert(productCollections).values(
+            body.collectionIds.map((collectionId: string, index: number) => ({
               productId: id,
               collectionId,
               position: index,
-            }),
-          ),
-        });
+            })),
+          );
+        }
       }
-    }
+
+      return updatedProduct;
+    });
 
     return NextResponse.json(product);
   } catch (error) {

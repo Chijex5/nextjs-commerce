@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserSession } from "lib/user-session";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { users } from "lib/db/schema";
+import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
-// POST - Change user password
 export async function POST(request: NextRequest) {
   try {
     const session = await getUserSession();
@@ -15,7 +16,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { currentPassword, newPassword, confirmPassword } = body;
 
-    // Validate inputs
     if (!currentPassword || !newPassword || !confirmPassword) {
       return NextResponse.json(
         { error: "All fields are required" },
@@ -37,20 +37,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user with password hash
-    const user = await prisma.user.findUnique({
-      where: { id: session.id },
-      select: {
-        id: true,
-        passwordHash: true,
-      },
-    });
+    const [user] = await db
+      .select({ id: users.id, passwordHash: users.passwordHash })
+      .from(users)
+      .where(eq(users.id, session.id))
+      .limit(1);
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Verify current password
     const isValidPassword = await bcrypt.compare(
       currentPassword,
       user.passwordHash,
@@ -63,16 +59,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Update password
-    await prisma.user.update({
-      where: { id: session.id },
-      data: {
-        passwordHash: hashedPassword,
-      },
-    });
+    await db
+      .update(users)
+      .set({ passwordHash: hashedPassword })
+      .where(eq(users.id, session.id));
 
     return NextResponse.json({
       success: true,

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserSession } from "lib/user-session";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { users } from "lib/db/schema";
+import { eq } from "drizzle-orm";
 
-// GET - Fetch user addresses
 export async function GET() {
   try {
     const session = await getUserSession();
@@ -11,13 +12,14 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.id },
-      select: {
-        shippingAddress: true,
-        billingAddress: true,
-      },
-    });
+    const [user] = await db
+      .select({
+        shippingAddress: users.shippingAddress,
+        billingAddress: users.billingAddress,
+      })
+      .from(users)
+      .where(eq(users.id, session.id))
+      .limit(1);
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -38,7 +40,6 @@ export async function GET() {
   }
 }
 
-// PUT - Update user address
 export async function PUT(request: NextRequest) {
   try {
     const session = await getUserSession();
@@ -64,7 +65,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Validate address fields
     const requiredFields = [
       "firstName",
       "lastName",
@@ -82,16 +82,12 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Update user address
     const updateData =
       type === "shipping"
         ? { shippingAddress: address }
         : { billingAddress: address };
 
-    await prisma.user.update({
-      where: { id: session.id },
-      data: updateData,
-    });
+    await db.update(users).set(updateData).where(eq(users.id, session.id));
 
     return NextResponse.json({
       success: true,

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { adminUsers } from "lib/db/schema";
+import { eq } from "drizzle-orm";
 
-// PUT - Update admin
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -18,23 +19,23 @@ export async function PUT(
     const body = await request.json();
     const { name, role, isActive } = body;
 
-    const updateData: any = {};
+    const updateData: Partial<typeof adminUsers.$inferInsert> = {};
     if (name !== undefined) updateData.name = name;
     if (role !== undefined) updateData.role = role;
     if (isActive !== undefined) updateData.isActive = isActive;
 
-    const admin = await prisma.adminUser.update({
-      where: { id },
-      data: updateData,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        isActive: true,
-        updatedAt: true,
-      },
-    });
+    const [admin] = await db
+      .update(adminUsers)
+      .set(updateData)
+      .where(eq(adminUsers.id, id))
+      .returning({
+        id: adminUsers.id,
+        email: adminUsers.email,
+        name: adminUsers.name,
+        role: adminUsers.role,
+        isActive: adminUsers.isActive,
+        updatedAt: adminUsers.updatedAt,
+      });
 
     return NextResponse.json({
       success: true,
@@ -57,7 +58,6 @@ export async function PUT(
   }
 }
 
-// DELETE - Delete admin
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -71,7 +71,6 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Don't allow deleting yourself
     if (session.user.id === id) {
       return NextResponse.json(
         { error: "Cannot delete your own admin account" },
@@ -79,9 +78,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.adminUser.delete({
-      where: { id },
-    });
+    await db.delete(adminUsers).where(eq(adminUsers.id, id));
 
     return NextResponse.json({
       success: true,

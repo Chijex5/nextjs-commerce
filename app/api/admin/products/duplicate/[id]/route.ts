@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "@/lib/prisma";
+import { db } from "lib/db";
+import {
+  productImages,
+  productOptions,
+  productVariants,
+  products,
+} from "lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function POST(
   request: Request,
@@ -15,75 +22,86 @@ export async function POST(
 
     const { id } = await params;
 
-    // Get the original product with all relations
-    const originalProduct = await prisma.product.findUnique({
-      where: { id },
-      include: {
-        images: {
-          orderBy: { position: "asc" },
-        },
-        variants: true,
-        options: true,
-      },
-    });
+    const [originalProduct] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, id))
+      .limit(1);
 
     if (!originalProduct) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    // Create duplicate with "(Copy)" suffix
-    const newProduct = await prisma.product.create({
-      data: {
-        title: `${originalProduct.title} (Copy)`,
-        handle: `${originalProduct.handle}-copy-${Date.now()}`,
-        description: originalProduct.description,
-        descriptionHtml: originalProduct.descriptionHtml,
-        availableForSale: originalProduct.availableForSale,
-        seoTitle: originalProduct.seoTitle,
-        seoDescription: originalProduct.seoDescription,
-        tags: originalProduct.tags,
-      },
+    const [originalImages, originalVariants, originalOptions] =
+      await Promise.all([
+        db
+          .select()
+          .from(productImages)
+          .where(eq(productImages.productId, id)),
+        db
+          .select()
+          .from(productVariants)
+          .where(eq(productVariants.productId, id)),
+        db
+          .select()
+          .from(productOptions)
+          .where(eq(productOptions.productId, id)),
+      ]);
+
+    const newProduct = await db.transaction(async (tx) => {
+      const [createdProduct] = await tx
+        .insert(products)
+        .values({
+          title: `${originalProduct.title} (Copy)`,
+          handle: `${originalProduct.handle}-copy-${Date.now()}`,
+          description: originalProduct.description,
+          descriptionHtml: originalProduct.descriptionHtml,
+          availableForSale: originalProduct.availableForSale,
+          seoTitle: originalProduct.seoTitle,
+          seoDescription: originalProduct.seoDescription,
+          tags: originalProduct.tags,
+        })
+        .returning();
+
+      if (originalImages.length > 0) {
+        await tx.insert(productImages).values(
+          originalImages.map((img) => ({
+            productId: createdProduct.id,
+            url: img.url,
+            altText: img.altText,
+            width: img.width,
+            height: img.height,
+            position: img.position,
+            isFeatured: img.isFeatured,
+          })),
+        );
+      }
+
+      if (originalOptions.length > 0) {
+        await tx.insert(productOptions).values(
+          originalOptions.map((opt) => ({
+            productId: createdProduct.id,
+            name: opt.name,
+            values: opt.values,
+          })),
+        );
+      }
+
+      if (originalVariants.length > 0) {
+        await tx.insert(productVariants).values(
+          originalVariants.map((variant) => ({
+            productId: createdProduct.id,
+            title: variant.title,
+            price: String(variant.price),
+            currencyCode: variant.currencyCode,
+            availableForSale: variant.availableForSale,
+            selectedOptions: variant.selectedOptions ?? [],
+          })),
+        );
+      }
+
+      return createdProduct;
     });
-
-    // Duplicate images
-    if (originalProduct.images.length > 0) {
-      await prisma.productImage.createMany({
-        data: originalProduct.images.map((img) => ({
-          productId: newProduct.id,
-          url: img.url,
-          altText: img.altText,
-          width: img.width,
-          height: img.height,
-          position: img.position,
-          isFeatured: img.isFeatured,
-        })),
-      });
-    }
-
-    // Duplicate options
-    if (originalProduct.options.length > 0) {
-      await prisma.productOption.createMany({
-        data: originalProduct.options.map((opt) => ({
-          productId: newProduct.id,
-          name: opt.name,
-          values: opt.values,
-        })),
-      });
-    }
-
-    // Duplicate variants
-    if (originalProduct.variants.length > 0) {
-      await prisma.productVariant.createMany({
-        data: originalProduct.variants.map((variant) => ({
-          productId: newProduct.id,
-          title: variant.title,
-          price: variant.price,
-          currencyCode: variant.currencyCode,
-          availableForSale: variant.availableForSale,
-          selectedOptions: variant.selectedOptions ?? {}, // 👈 FIX
-        })),
-      });
-    }
 
     return NextResponse.json({ success: true, product: newProduct });
   } catch (error) {

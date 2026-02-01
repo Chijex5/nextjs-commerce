@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { adminUsers } from "lib/db/schema";
 import bcrypt from "bcryptjs";
+import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 
-// GET - List all admins with pagination
 export async function GET(request: NextRequest) {
   try {
     const session = await requireAdminSession();
@@ -18,41 +19,49 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search");
     const status = searchParams.get("status");
 
-    // Build where clause
-    const where: any = {};
+    const filters = [];
 
     if (status === "active") {
-      where.isActive = true;
+      filters.push(eq(adminUsers.isActive, true));
     } else if (status === "inactive") {
-      where.isActive = false;
+      filters.push(eq(adminUsers.isActive, false));
     }
 
     if (search) {
-      where.OR = [
-        { email: { contains: search, mode: "insensitive" as const } },
-        { name: { contains: search, mode: "insensitive" as const } },
-      ];
+      const searchValue = `%${search}%`;
+      filters.push(
+        or(
+          ilike(adminUsers.email, searchValue),
+          ilike(adminUsers.name, searchValue),
+        ),
+      );
     }
 
-    const [admins, total] = await Promise.all([
-      prisma.adminUser.findMany({
-        where,
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          isActive: true,
-          createdAt: true,
-          lastLoginAt: true,
-        },
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * perPage,
-        take: perPage,
-      }),
-      prisma.adminUser.count({ where }),
+    const whereClause = filters.length ? and(...filters) : undefined;
+
+    const [admins, totalResult] = await Promise.all([
+      db
+        .select({
+          id: adminUsers.id,
+          email: adminUsers.email,
+          name: adminUsers.name,
+          role: adminUsers.role,
+          isActive: adminUsers.isActive,
+          createdAt: adminUsers.createdAt,
+          lastLoginAt: adminUsers.lastLoginAt,
+        })
+        .from(adminUsers)
+        .where(whereClause)
+        .orderBy(desc(adminUsers.createdAt))
+        .limit(perPage)
+        .offset((page - 1) * perPage),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(adminUsers)
+        .where(whereClause),
     ]);
 
+    const total = Number(totalResult[0]?.count ?? 0);
     const totalPages = Math.ceil(total / perPage);
 
     return NextResponse.json({
@@ -81,7 +90,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new admin
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAdminSession();
@@ -93,7 +101,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, name, password, role } = body;
 
-    // Validate inputs
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
@@ -108,10 +115,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if admin already exists
-    const existingAdmin = await prisma.adminUser.findUnique({
-      where: { email },
-    });
+    const [existingAdmin] = await db
+      .select({ id: adminUsers.id })
+      .from(adminUsers)
+      .where(eq(adminUsers.email, email))
+      .limit(1);
 
     if (existingAdmin) {
       return NextResponse.json(
@@ -120,27 +128,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Create admin
-    const admin = await prisma.adminUser.create({
-      data: {
+    const [admin] = await db
+      .insert(adminUsers)
+      .values({
         email,
         name: name || null,
         passwordHash,
         role: role || "admin",
         isActive: true,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-      },
-    });
+      })
+      .returning({
+        id: adminUsers.id,
+        email: adminUsers.email,
+        name: adminUsers.name,
+        role: adminUsers.role,
+        isActive: adminUsers.isActive,
+        createdAt: adminUsers.createdAt,
+      });
 
     return NextResponse.json({
       success: true,

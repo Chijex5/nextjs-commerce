@@ -2,9 +2,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../../../lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import prisma from "../../../lib/prisma";
+import { db } from "lib/db";
+import {
+  collections,
+  productCollections,
+  productImages,
+  productVariants,
+  products,
+} from "lib/db/schema";
 import AdminNav from "../../../components/admin/AdminNav";
 import ProductsListWithSelection from "../../../components/admin/ProductsListWithSelection";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 
 export default async function ProductsPage({
   searchParams,
@@ -22,53 +30,118 @@ export default async function ProductsPage({
   const page = parseInt(params.page || "1");
   const perPage = parseInt(params.perPage || "20");
 
-  // Build where clause for search
-  const where = search
-    ? {
-        OR: [
-          { title: { contains: search, mode: "insensitive" as const } },
-          { handle: { contains: search, mode: "insensitive" as const } },
-          { tags: { has: search } },
-        ],
-      }
-    : {};
+  const whereClause = search
+    ? or(
+        ilike(products.title, `%${search}%`),
+        ilike(products.handle, `%${search}%`),
+        sql`${products.tags} @> ${JSON.stringify([search])}::text[]`,
+      )
+    : undefined;
 
-  const [products, total] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      include: {
-        images: {
-          where: { isFeatured: true },
-          take: 1,
-        },
-        variants: {
-          take: 1,
-          orderBy: { price: "asc" },
-        },
-        productCollections: {
-          include: {
-            collection: {
-              select: {
-                id: true,
-                title: true,
-              },
-            },
-          },
-        },
-        _count: {
-          select: { variants: true },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * perPage,
-      take: perPage,
-    }),
-    prisma.product.count({ where }),
+  const [productRows, totalResult] = await Promise.all([
+    db
+      .select()
+      .from(products)
+      .where(whereClause)
+      .orderBy(desc(products.createdAt))
+      .limit(perPage)
+      .offset((page - 1) * perPage),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(products)
+      .where(whereClause),
   ]);
 
+  const productIds = productRows.map((product) => product.id);
+
+  const [featuredImages, variantRows, collectionRows, variantCounts] =
+    await Promise.all([
+      productIds.length
+        ? db
+            .select({
+              productId: productImages.productId,
+              url: productImages.url,
+              altText: productImages.altText,
+            })
+            .from(productImages)
+            .where(
+              and(
+                inArray(productImages.productId, productIds),
+                eq(productImages.isFeatured, true),
+              ),
+            )
+        : [],
+      productIds.length
+        ? db
+            .select({
+              productId: productVariants.productId,
+              price: productVariants.price,
+              currencyCode: productVariants.currencyCode,
+            })
+            .from(productVariants)
+            .where(inArray(productVariants.productId, productIds))
+            .orderBy(productVariants.price)
+        : [],
+      productIds.length
+        ? db
+            .select({
+              productId: productCollections.productId,
+              collection: collections,
+            })
+            .from(productCollections)
+            .innerJoin(
+              collections,
+              eq(productCollections.collectionId, collections.id),
+            )
+            .where(inArray(productCollections.productId, productIds))
+        : [],
+      productIds.length
+        ? db
+            .select({
+              productId: productVariants.productId,
+              count: sql<number>`count(*)`,
+            })
+            .from(productVariants)
+            .where(inArray(productVariants.productId, productIds))
+            .groupBy(productVariants.productId)
+        : [],
+    ]);
+
+  const imagesByProduct = new Map(
+    featuredImages.map((image) => [image.productId, image]),
+  );
+
+  const variantsByProduct = new Map<string, { price: any; currencyCode: string }[]>();
+  for (const variant of variantRows) {
+    if (!variantsByProduct.has(variant.productId)) {
+      variantsByProduct.set(variant.productId, []);
+    }
+    variantsByProduct.get(variant.productId)!.push({
+      price: variant.price,
+      currencyCode: variant.currencyCode,
+    });
+  }
+
+  const collectionsByProduct = collectionRows.reduce(
+    (acc, row) => {
+      if (!acc[row.productId]) {
+        acc[row.productId] = [] as { collection: { id: string; title: string } }[];
+      }
+      acc[row.productId].push({
+        collection: { id: row.collection.id, title: row.collection.title },
+      });
+      return acc;
+    },
+    {} as Record<string, { collection: { id: string; title: string } }[]>,
+  );
+
+  const countsByProduct = new Map(
+    variantCounts.map((row) => [row.productId, Number(row.count)]),
+  );
+
+  const total = Number(totalResult[0]?.count ?? 0);
   const totalPages = Math.ceil(total / perPage);
 
-  // Helper function to build query strings for pagination
   const buildPageUrl = (pageNum: number) => {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
@@ -76,6 +149,18 @@ export default async function ProductsPage({
     params.set("page", pageNum.toString());
     return `/admin/products?${params.toString()}`;
   };
+
+  const mappedProducts = productRows.map((product) => {
+    const image = imagesByProduct.get(product.id);
+    const variants = variantsByProduct.get(product.id) || [];
+    return {
+      ...product,
+      images: image ? [{ url: image.url, altText: image.altText }] : [],
+      variants: variants.slice(0, 1),
+      productCollections: collectionsByProduct[product.id] || [],
+      _count: { variants: countsByProduct.get(product.id) || 0 },
+    };
+  });
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
@@ -136,7 +221,7 @@ export default async function ProductsPage({
           </div>
 
           {/* Products Table/Cards */}
-          <ProductsListWithSelection products={products} />
+          <ProductsListWithSelection products={mappedProducts} />
 
           {/* Pagination */}
           {totalPages > 1 && (
@@ -240,14 +325,15 @@ export default async function ProductsPage({
                       } else {
                         pageNum = page - 3 + i;
                       }
+
                       return (
                         <Link
                           key={pageNum}
                           href={buildPageUrl(pageNum)}
                           className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
                             page === pageNum
-                              ? "z-10 bg-neutral-900 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 dark:bg-neutral-100 dark:text-neutral-900"
-                              : "text-neutral-900 ring-1 ring-inset ring-neutral-300 hover:bg-neutral-50 focus:z-20 focus:outline-offset-0 dark:text-neutral-100 dark:ring-neutral-700 dark:hover:bg-neutral-700"
+                              ? "z-10 bg-neutral-900 text-white"
+                              : "text-neutral-900 ring-1 ring-inset ring-neutral-300 hover:bg-neutral-50 dark:text-neutral-100 dark:ring-neutral-700 dark:hover:bg-neutral-700"
                           }`}
                         >
                           {pageNum}

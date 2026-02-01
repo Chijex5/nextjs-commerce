@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { orderItems, orders, users } from "lib/db/schema";
 import {
   calculateEstimatedArrival,
   type DeliveryStatus,
@@ -9,8 +10,8 @@ import {
   sendOrderStatusUpdate,
   sendShippingNotification,
 } from "@/lib/email/order-emails";
+import { eq } from "drizzle-orm";
 
-// GET - Get single order
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -24,24 +25,35 @@ export async function GET(
 
     const { id } = await params;
 
-    const order = await prisma.order.findUnique({
-      where: { id },
-      include: {
-        items: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-          },
-        },
-      },
-    });
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, id))
+      .limit(1);
 
     if (!order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
+
+    const items = await db
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.orderId, order.id));
+
+    const user = order.userId
+      ? (
+          await db
+            .select({
+              id: users.id,
+              name: users.name,
+              email: users.email,
+              phone: users.phone,
+            })
+            .from(users)
+            .where(eq(users.id, order.userId))
+            .limit(1)
+        )[0]
+      : null;
 
     return NextResponse.json({
       order: {
@@ -55,10 +67,10 @@ export async function GET(
         estimatedArrival: order.estimatedArrival?.toISOString() || null,
         shippingAddress: order.shippingAddress,
         billingAddress: order.billingAddress,
-        subtotalAmount: order.subtotalAmount.toString(),
-        taxAmount: order.taxAmount.toString(),
-        shippingAmount: order.shippingAmount.toString(),
-        totalAmount: order.totalAmount.toString(),
+        subtotalAmount: String(order.subtotalAmount),
+        taxAmount: String(order.taxAmount),
+        shippingAmount: String(order.shippingAmount),
+        totalAmount: String(order.totalAmount),
         currencyCode: order.currencyCode,
         notes: order.notes,
         trackingNumber: order.trackingNumber,
@@ -66,16 +78,16 @@ export async function GET(
         acknowledgedBy: order.acknowledgedBy,
         createdAt: order.createdAt.toISOString(),
         updatedAt: order.updatedAt.toISOString(),
-        user: order.user,
-        items: order.items.map((item) => ({
+        user,
+        items: items.map((item) => ({
           id: item.id,
           productId: item.productId,
           productVariantId: item.productVariantId,
           productTitle: item.productTitle,
           variantTitle: item.variantTitle,
           quantity: item.quantity,
-          price: item.price.toString(),
-          totalAmount: item.totalAmount.toString(),
+          price: String(item.price),
+          totalAmount: String(item.totalAmount),
           currencyCode: item.currencyCode,
           productImage: item.productImage,
         })),
@@ -90,7 +102,6 @@ export async function GET(
   }
 }
 
-// PUT - Update order
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -118,26 +129,25 @@ export async function PUT(
       acknowledge?: boolean;
     } = body;
 
-    // Get the order to access shipping address for ETA calculation
-    const existingOrder = await prisma.order.findUnique({
-      where: { id },
-      select: {
-        createdAt: true,
-        shippingAddress: true,
-        status: true,
-        deliveryStatus: true,
-        customerName: true,
-        email: true,
-        orderNumber: true,
-        acknowledgedAt: true,
-      },
-    });
+    const [existingOrder] = await db
+      .select({
+        createdAt: orders.createdAt,
+        shippingAddress: orders.shippingAddress,
+        status: orders.status,
+        deliveryStatus: orders.deliveryStatus,
+        customerName: orders.customerName,
+        email: orders.email,
+        orderNumber: orders.orderNumber,
+        acknowledgedAt: orders.acknowledgedAt,
+      })
+      .from(orders)
+      .where(eq(orders.id, id))
+      .limit(1);
 
     if (!existingOrder) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    // Calculate new estimated arrival if delivery status is being updated
     let estimatedArrival: Date | null | undefined = undefined;
     if (deliveryStatus) {
       estimatedArrival = calculateEstimatedArrival(
@@ -147,48 +157,46 @@ export async function PUT(
       );
     }
 
-    // Build update data
-    const updateData: any = {};
+    const updateData: Partial<typeof orders.$inferInsert> = {};
     if (status !== undefined) updateData.status = status;
     if (deliveryStatus !== undefined) {
       updateData.deliveryStatus = deliveryStatus;
       updateData.estimatedArrival = estimatedArrival;
     }
-    if (trackingNumber !== undefined)
-      updateData.trackingNumber = trackingNumber;
+    if (trackingNumber !== undefined) updateData.trackingNumber = trackingNumber;
     if (notes !== undefined) updateData.notes = notes;
     if (acknowledge && !existingOrder.acknowledgedAt) {
       updateData.acknowledgedAt = new Date();
       updateData.acknowledgedBy = session.user?.email || null;
     }
 
-    const updatedOrder = await prisma.order.update({
-      where: { id },
-      data: updateData,
-      include: {
-        items: true,
-      },
-    });
+    const [updatedOrder] = await db
+      .update(orders)
+      .set(updateData)
+      .where(eq(orders.id, id))
+      .returning();
 
-    // Send email notification if status or delivery status changed
+    const items = await db
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.orderId, updatedOrder.id));
+
     try {
       const oldStatus = existingOrder.status || "processing";
       const oldDeliveryStatus = existingOrder.deliveryStatus;
 
-      // Check if status changed
       const statusChanged = status && status !== oldStatus;
       const deliveryStatusChanged =
         deliveryStatus && deliveryStatus !== oldDeliveryStatus;
 
       if (statusChanged || deliveryStatusChanged) {
-        // Special case: if dispatch status, send shipping notification
         if (deliveryStatus === "dispatch") {
           await sendShippingNotification({
             orderNumber: updatedOrder.orderNumber,
             customerName: updatedOrder.customerName,
             email: updatedOrder.email,
             totalAmount: Number(updatedOrder.totalAmount),
-            items: updatedOrder.items.map((item) => ({
+            items: items.map((item) => ({
               productTitle: item.productTitle,
               variantTitle: item.variantTitle,
               quantity: item.quantity,
@@ -200,7 +208,6 @@ export async function PUT(
               updatedOrder.estimatedArrival?.toLocaleDateString() || undefined,
           });
         } else {
-          // Send general status update email
           await sendOrderStatusUpdate({
             orderNumber: updatedOrder.orderNumber,
             customerName: updatedOrder.customerName,
@@ -216,7 +223,6 @@ export async function PUT(
       }
     } catch (emailError) {
       console.error("Failed to send status update email:", emailError);
-      // Don't fail the order update if email fails
     }
 
     return NextResponse.json({

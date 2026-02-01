@@ -3,7 +3,9 @@ import { authOptions } from "lib/auth";
 import { redirect } from "next/navigation";
 import AdminNav from "components/admin/AdminNav";
 import OrdersTable from "components/admin/OrdersTable";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { orderItems, orders } from "lib/db/schema";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 
 export default async function AdminOrdersPage({
   searchParams,
@@ -29,54 +31,75 @@ export default async function AdminOrdersPage({
   const statusFilter = params.status || "all";
   const deliveryStatusFilter = params.deliveryStatus || "all";
 
-  // Build where clause
-  const where: any = {};
+  const filters = [];
 
   if (statusFilter !== "all") {
-    where.status = statusFilter;
+    filters.push(eq(orders.status, statusFilter));
   }
 
   if (deliveryStatusFilter !== "all") {
-    where.deliveryStatus = deliveryStatusFilter;
+    filters.push(eq(orders.deliveryStatus, deliveryStatusFilter));
   }
 
   if (search) {
-    where.OR = [
-      { orderNumber: { contains: search, mode: "insensitive" as const } },
-      { customerName: { contains: search, mode: "insensitive" as const } },
-      { email: { contains: search, mode: "insensitive" as const } },
-    ];
+    const searchValue = `%${search}%`;
+    filters.push(
+      or(
+        ilike(orders.orderNumber, searchValue),
+        ilike(orders.customerName, searchValue),
+        ilike(orders.email, searchValue),
+      ),
+    );
   }
 
-  const [orders, total, stats] = await Promise.all([
-    prisma.order.findMany({
-      where,
-      include: {
-        items: {
-          select: {
-            quantity: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * perPage,
-      take: perPage,
-    }),
-    prisma.order.count({ where }),
-    prisma.order.groupBy({
-      by: ["deliveryStatus"],
-      _count: true,
-    }),
+  const whereClause = filters.length ? and(...filters) : undefined;
+
+  const [orderRows, totalResult, stats] = await Promise.all([
+    db
+      .select()
+      .from(orders)
+      .where(whereClause)
+      .orderBy(desc(orders.createdAt))
+      .limit(perPage)
+      .offset((page - 1) * perPage),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(orders)
+      .where(whereClause),
+    db
+      .select({ deliveryStatus: orders.deliveryStatus, count: sql<number>`count(*)` })
+      .from(orders)
+      .groupBy(orders.deliveryStatus),
   ]);
+
+  const orderIds = orderRows.map((order) => order.id);
+  const orderItemRows = orderIds.length
+    ? await db
+        .select({ orderId: orderItems.orderId, quantity: orderItems.quantity })
+        .from(orderItems)
+        .where(inArray(orderItems.orderId, orderIds))
+    : [];
+
+  const itemsByOrder = orderItemRows.reduce<Record<string, { quantity: number }[]>>(
+    (acc, item) => {
+      if (!acc[item.orderId]) {
+        acc[item.orderId] = [];
+      }
+      acc[item.orderId].push({ quantity: item.quantity });
+      return acc;
+    },
+    {},
+  );
 
   const deliveryStats = stats.reduce(
     (acc, item) => {
-      acc[item.deliveryStatus] = item._count;
+      acc[item.deliveryStatus] = Number(item.count);
       return acc;
     },
     {} as Record<string, number>,
   );
 
+  const total = Number(totalResult[0]?.count ?? 0);
   const totalPages = Math.ceil(total / perPage);
 
   return (
@@ -198,7 +221,10 @@ export default async function AdminOrdersPage({
 
           {/* Orders Table */}
           <OrdersTable
-            orders={orders}
+            orders={orderRows.map((order) => ({
+              ...order,
+              items: itemsByOrder[order.id] || [],
+            }))}
             currentPage={page}
             totalPages={totalPages}
             total={total}

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { pages } from "lib/db/schema";
+import { and, eq, ne } from "drizzle-orm";
 
 export async function GET(
   request: NextRequest,
@@ -15,9 +17,11 @@ export async function GET(
 
     const { id } = await params;
 
-    const page = await prisma.page.findUnique({
-      where: { id },
-    });
+    const [page] = await db
+      .select()
+      .from(pages)
+      .where(eq(pages.id, id))
+      .limit(1);
 
     if (!page) {
       return NextResponse.json({ error: "Page not found" }, { status: 404 });
@@ -74,12 +78,11 @@ export async function PUT(
       );
     }
 
-    const existingPage = await prisma.page.findFirst({
-      where: {
-        handle,
-        NOT: { id },
-      },
-    });
+    const [existingPage] = await db
+      .select({ id: pages.id })
+      .from(pages)
+      .where(and(eq(pages.handle, handle), ne(pages.id, id)))
+      .limit(1);
 
     if (existingPage) {
       return NextResponse.json(
@@ -88,17 +91,18 @@ export async function PUT(
       );
     }
 
-    const page = await prisma.page.update({
-      where: { id },
-      data: {
+    const [page] = await db
+      .update(pages)
+      .set({
         handle,
         title,
         body: pageBody || null,
         bodySummary: bodySummary || null,
         seoTitle: seoTitle || null,
         seoDescription: seoDescription || null,
-      },
-    });
+      })
+      .where(eq(pages.id, id))
+      .returning();
 
     return NextResponse.json({
       success: true,
@@ -135,9 +139,7 @@ export async function DELETE(
 
     const { id } = await params;
 
-    await prisma.page.delete({
-      where: { id },
-    });
+    await db.delete(pages).where(eq(pages.id, id));
 
     return NextResponse.json({
       success: true,

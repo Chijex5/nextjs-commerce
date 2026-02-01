@@ -7,17 +7,36 @@ import type {
   Image,
   ProductVariant,
   ProductOption,
-  Money,
-  SEO,
 } from "../shopify/types";
-import prisma from "lib/prisma";
-import { Prisma } from "@/app/generated/prisma/client";
+import { db } from "./client";
+import {
+  carts,
+  cartLines,
+  collections,
+  menus,
+  menuItems,
+  pages,
+  productCollections,
+  productImages,
+  productOptions,
+  productVariants,
+  products,
+  reviews,
+} from "./schema";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  inArray,
+  sql,
+  ilike,
+} from "drizzle-orm";
 import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "../image-constants";
 
-const db = prisma;
 // Helper function to reshape database product to match Shopify Product type
 export async function reshapeDbProduct(
-  dbProduct: any,
+  dbProduct: typeof products.$inferSelect | undefined,
   includeRelations: boolean = true,
 ): Promise<Product | undefined> {
   if (!dbProduct) return undefined;
@@ -28,27 +47,27 @@ export async function reshapeDbProduct(
   let featuredImage: Image | undefined;
 
   if (includeRelations) {
-    // Get variants
-    const dbVariants = await db.productVariant.findMany({
-      where: { productId: dbProduct.id },
-    });
+    const dbVariants = await db
+      .select()
+      .from(productVariants)
+      .where(eq(productVariants.productId, dbProduct.id));
 
-    variants = dbVariants.map((v) => ({
-      id: v.id,
-      title: v.title,
-      availableForSale: v.availableForSale,
-      selectedOptions: v.selectedOptions as { name: string; value: string }[],
+    variants = dbVariants.map((variant) => ({
+      id: variant.id,
+      title: variant.title,
+      availableForSale: variant.availableForSale,
+      selectedOptions: variant.selectedOptions as { name: string; value: string }[],
       price: {
-        amount: v.price.toString(),
-        currencyCode: v.currencyCode,
+        amount: String(variant.price),
+        currencyCode: variant.currencyCode,
       },
     }));
 
-    // Get images
-    const dbImages = await db.productImage.findMany({
-      where: { productId: dbProduct.id },
-      orderBy: { position: "asc" },
-    });
+    const dbImages = await db
+      .select()
+      .from(productImages)
+      .where(eq(productImages.productId, dbProduct.id))
+      .orderBy(asc(productImages.position));
 
     images = dbImages.map((img) => ({
       url: img.url,
@@ -60,10 +79,10 @@ export async function reshapeDbProduct(
     featuredImage =
       images.find((_, idx) => dbImages[idx]?.isFeatured) || images[0];
 
-    // Get options
-    const dbOptions = await db.productOption.findMany({
-      where: { productId: dbProduct.id },
-    });
+    const dbOptions = await db
+      .select()
+      .from(productOptions)
+      .where(eq(productOptions.productId, dbProduct.id));
 
     options = dbOptions.map((opt) => ({
       id: opt.id,
@@ -72,8 +91,7 @@ export async function reshapeDbProduct(
     }));
   }
 
-  // Calculate price range
-  const prices = variants.map((v) => parseFloat(v.price.amount));
+  const prices = variants.map((variant) => Number(variant.price.amount));
   const minPrice = prices.length ? Math.min(...prices) : 0;
   const maxPrice = prices.length ? Math.max(...prices) : 0;
 
@@ -112,83 +130,77 @@ export async function reshapeDbProduct(
   };
 }
 
-// Helper function to reshape database cart to match Shopify Cart type
-async function reshapeDbCart(dbCart: any): Promise<Cart | undefined> {
+async function reshapeDbCart(
+  dbCart: typeof carts.$inferSelect | undefined,
+): Promise<Cart | undefined> {
   if (!dbCart) return undefined;
 
-  // Get cart lines with product and variant information
-  const dbLines = await db.cartLine.findMany({
-    where: { cartId: dbCart.id },
-    include: {
-      variant: {
-        include: {
-          product: {
-            include: {
-              images: {
-                where: { isFeatured: true },
-                take: 1,
-              },
-            },
-          },
+  const dbLines = await db
+    .select({
+      line: cartLines,
+      variant: productVariants,
+      product: products,
+      image: productImages,
+    })
+    .from(cartLines)
+    .innerJoin(
+      productVariants,
+      eq(cartLines.productVariantId, productVariants.id),
+    )
+    .innerJoin(products, eq(productVariants.productId, products.id))
+    .leftJoin(
+      productImages,
+      and(
+        eq(productImages.productId, products.id),
+        eq(productImages.isFeatured, true),
+      ),
+    )
+    .where(eq(cartLines.cartId, dbCart.id));
+
+  const lines = dbLines.map(({ line, variant, product, image }) => ({
+    id: line.id,
+    quantity: line.quantity,
+    cost: {
+      totalAmount: {
+        amount: String(line.totalAmount),
+        currencyCode: line.currencyCode,
+      },
+    },
+    merchandise: {
+      id: variant.id,
+      title: variant.title,
+      selectedOptions: variant.selectedOptions as {
+        name: string;
+        value: string;
+      }[],
+      product: {
+        id: product.id,
+        handle: product.handle,
+        title: product.title,
+        featuredImage: {
+          url: image?.url || "",
+          altText: image?.altText || "",
+          width: image?.width || PRODUCT_IMAGE_WIDTH,
+          height: image?.height || PRODUCT_IMAGE_HEIGHT,
         },
       },
     },
-  });
-
-  const lines = dbLines.map(({ variant, ...line }) => {
-    const product = variant.product;
-    const featuredImage = product.images[0] || {
-      url: "",
-      altText: "",
-      width: PRODUCT_IMAGE_WIDTH,
-      height: PRODUCT_IMAGE_HEIGHT,
-    };
-
-    return {
-      id: line.id,
-      quantity: line.quantity,
-      cost: {
-        totalAmount: {
-          amount: line.totalAmount.toString(),
-          currencyCode: line.currencyCode,
-        },
-      },
-      merchandise: {
-        id: variant.id,
-        title: variant.title,
-        selectedOptions: variant.selectedOptions as {
-          name: string;
-          value: string;
-        }[],
-        product: {
-          id: product.id,
-          handle: product.handle,
-          title: product.title,
-          featuredImage: {
-            url: featuredImage.url,
-            altText: featuredImage.altText || "",
-            width: featuredImage.width || PRODUCT_IMAGE_WIDTH,
-            height: featuredImage.height || PRODUCT_IMAGE_HEIGHT,
-          },
-        },
-      },
-    };
-  });
+  }));
 
   return {
     id: dbCart.id,
     checkoutUrl: dbCart.checkoutUrl || "",
     cost: {
       subtotalAmount: {
-        amount: dbCart.subtotalAmount.toString(),
+        amount: String(dbCart.subtotalAmount),
         currencyCode: dbCart.currencyCode,
       },
       totalAmount: {
-        amount: dbCart.totalAmount.toString(),
+        amount: String(dbCart.totalAmount),
         currencyCode: dbCart.currencyCode,
       },
       totalTaxAmount: {
-        amount: dbCart.totalTaxAmount.toString(),
+        amount: String(dbCart.totalTaxAmount),
         currencyCode: dbCart.currencyCode,
       },
     },
@@ -197,11 +209,12 @@ async function reshapeDbCart(dbCart: any): Promise<Cart | undefined> {
   };
 }
 
-// Product queries
 export async function getProduct(handle: string): Promise<Product | undefined> {
-  const dbProduct = await db.product.findUnique({
-    where: { handle },
-  });
+  const [dbProduct] = await db
+    .select()
+    .from(products)
+    .where(eq(products.handle, handle))
+    .limit(1);
 
   return reshapeDbProduct(dbProduct);
 }
@@ -215,23 +228,28 @@ export async function getProducts({
   reverse?: boolean;
   sortKey?: string;
 }): Promise<Product[]> {
-  const orderBy: Prisma.ProductOrderByWithRelationInput = {};
+  const filters = [];
 
-  if (sortKey === "CREATED_AT" || sortKey === "CREATED") {
-    orderBy.createdAt = reverse ? "desc" : "asc";
-  } else if (sortKey === "PRICE") {
-    orderBy.title = reverse ? "desc" : "asc"; // Simplified sorting
-  } else {
-    orderBy.createdAt = "desc";
+  if (query) {
+    filters.push(ilike(products.title, `%${query}%`));
   }
 
-  const dbProducts = await db.product.findMany({
-    orderBy,
-    take: 100,
-  });
+  let orderBy = desc(products.createdAt);
+  if (sortKey === "CREATED_AT" || sortKey === "CREATED") {
+    orderBy = reverse ? desc(products.createdAt) : asc(products.createdAt);
+  } else if (sortKey === "PRICE") {
+    orderBy = reverse ? desc(products.title) : asc(products.title);
+  }
+
+  const dbProducts = await db
+    .select()
+    .from(products)
+    .where(filters.length ? and(...filters) : undefined)
+    .orderBy(orderBy)
+    .limit(100);
 
   const productsWithDetails = await Promise.all(
-    dbProducts.map((p) => reshapeDbProduct(p)),
+    dbProducts.map((product) => reshapeDbProduct(product)),
   );
 
   return productsWithDetails.filter((p): p is Product => p !== undefined);
@@ -240,37 +258,38 @@ export async function getProducts({
 export async function getProductRecommendations(
   productId: string,
 ): Promise<Product[]> {
-  // Get products from same collections
-  const productCols = await db.productCollection.findMany({
-    where: { productId },
-  });
+  const productCols = await db
+    .select({ collectionId: productCollections.collectionId })
+    .from(productCollections)
+    .where(eq(productCollections.productId, productId));
 
-  if (productCols.length === 0) {
-    // Return random products if no collections
-    const dbProducts = await db.product.findMany({
-      where: { id: { not: productId } },
-      take: 4,
-    });
+  if (!productCols.length) {
+    const dbProducts = await db
+      .select()
+      .from(products)
+      .where(sql`${products.id} <> ${productId}`)
+      .limit(4);
     const productsWithDetails = await Promise.all(
-      dbProducts.map((p) => reshapeDbProduct(p)),
+      dbProducts.map((product) => reshapeDbProduct(product)),
     );
     return productsWithDetails.filter((p): p is Product => p !== undefined);
   }
 
   const collectionIds = productCols.map((pc) => pc.collectionId);
-  const relatedProducts = await db.productCollection.findMany({
-    where: {
-      collectionId: { in: collectionIds },
-      productId: { not: productId },
-    },
-    take: 4,
-    include: {
-      product: true,
-    },
-  });
+  const related = await db
+    .select({ product: products })
+    .from(productCollections)
+    .innerJoin(products, eq(productCollections.productId, products.id))
+    .where(
+      and(
+        inArray(productCollections.collectionId, collectionIds),
+        sql`${productCollections.productId} <> ${productId}`,
+      ),
+    )
+    .limit(4);
 
   const productsWithDetails = await Promise.all(
-    relatedProducts.map((rp) => reshapeDbProduct(rp.product)),
+    related.map((rp) => reshapeDbProduct(rp.product)),
   );
 
   return productsWithDetails.filter((p): p is Product => p !== undefined);
@@ -280,25 +299,28 @@ export async function getProductReviewAggregate(productId: string): Promise<{
   averageRating: number | null;
   reviewCount: number;
 }> {
-  const stats = await db.review.aggregate({
-    where: { productId, status: "approved" },
-    _avg: { rating: true },
-    _count: { rating: true },
-  });
+  const [stats] = await db
+    .select({
+      averageRating: sql<number>`avg(${reviews.rating})`,
+      reviewCount: sql<number>`count(${reviews.rating})`,
+    })
+    .from(reviews)
+    .where(and(eq(reviews.productId, productId), eq(reviews.status, "approved")));
 
   return {
-    averageRating: stats._avg.rating ?? null,
-    reviewCount: stats._count.rating ?? 0,
+    averageRating: stats?.averageRating ?? null,
+    reviewCount: Number(stats?.reviewCount ?? 0),
   };
 }
 
-// Collection queries
 export async function getCollection(
   handle: string,
 ): Promise<Collection | undefined> {
-  const dbCollection = await db.collection.findUnique({
-    where: { handle },
-  });
+  const [dbCollection] = await db
+    .select()
+    .from(collections)
+    .where(eq(collections.handle, handle))
+    .limit(1);
 
   if (!dbCollection) return undefined;
 
@@ -308,8 +330,7 @@ export async function getCollection(
     description: dbCollection.description || "",
     seo: {
       title: dbCollection.seoTitle || dbCollection.title,
-      description:
-        dbCollection.seoDescription || dbCollection.description || "",
+      description: dbCollection.seoDescription || dbCollection.description || "",
     },
     updatedAt: dbCollection.updatedAt.toISOString(),
     path: `/search/${dbCollection.handle}`,
@@ -317,7 +338,7 @@ export async function getCollection(
 }
 
 export async function getCollections(): Promise<Collection[]> {
-  const dbCollections = await db.collection.findMany();
+  const dbCollections = await db.select().from(collections);
 
   return [
     {
@@ -331,16 +352,16 @@ export async function getCollections(): Promise<Collection[]> {
       path: "/search",
       updatedAt: new Date().toISOString(),
     },
-    ...dbCollections.map((c) => ({
-      handle: c.handle,
-      title: c.title,
-      description: c.description || "",
+    ...dbCollections.map((collection) => ({
+      handle: collection.handle,
+      title: collection.title,
+      description: collection.description || "",
       seo: {
-        title: c.seoTitle || c.title,
-        description: c.seoDescription || c.description || "",
+        title: collection.seoTitle || collection.title,
+        description: collection.seoDescription || collection.description || "",
       },
-      updatedAt: c.updatedAt.toISOString(),
-      path: `/search/${c.handle}`,
+      updatedAt: collection.updatedAt.toISOString(),
+      path: `/search/${collection.handle}`,
     })),
   ];
 }
@@ -358,55 +379,59 @@ export async function getCollectionProducts({
     return getProducts({ reverse, sortKey });
   }
 
-  const dbCollection = await db.collection.findUnique({
-    where: { handle: collection },
-  });
+  const [dbCollection] = await db
+    .select()
+    .from(collections)
+    .where(eq(collections.handle, collection))
+    .limit(1);
 
   if (!dbCollection) {
     return [];
   }
 
-  const productCollections = await db.productCollection.findMany({
-    where: { collectionId: dbCollection.id },
-    include: { product: true },
-  });
+  const productCollectionRows = await db
+    .select({ product: products })
+    .from(productCollections)
+    .innerJoin(products, eq(productCollections.productId, products.id))
+    .where(eq(productCollections.collectionId, dbCollection.id));
 
-  if (productCollections.length === 0) {
+  if (!productCollectionRows.length) {
     return [];
   }
 
   const productsWithDetails = await Promise.all(
-    productCollections.map((pc) => reshapeDbProduct(pc.product)),
+    productCollectionRows.map((pc) => reshapeDbProduct(pc.product)),
   );
 
   return productsWithDetails.filter((p): p is Product => p !== undefined);
 }
 
-// Get all collections with their products (excluding hidden collections)
 export async function getCollectionsWithProducts(): Promise<
   Array<{ collection: Collection; products: Product[] }>
 > {
-  const dbCollections = await db.collection.findMany({
-    where: {
-      AND: [
-        { handle: { not: { startsWith: "hidden-" } } },
-        { handle: { not: "all" } },
-      ],
-    },
-    orderBy: { createdAt: "asc" },
-  });
+  const dbCollections = await db
+    .select()
+    .from(collections)
+    .where(
+      and(
+        sql`${collections.handle} not like ${"hidden-%"}`,
+        sql`${collections.handle} <> ${"all"}`,
+      ),
+    )
+    .orderBy(asc(collections.createdAt));
 
   const collectionsWithProducts = await Promise.all(
     dbCollections.map(async (dbCollection) => {
-      const productCollections = await db.productCollection.findMany({
-        where: { collectionId: dbCollection.id },
-        include: { product: true },
-        orderBy: { position: "asc" },
-        take: 8, // Limit to 8 products per collection for homepage
-      });
+      const productCollectionRows = await db
+        .select({ product: products })
+        .from(productCollections)
+        .innerJoin(products, eq(productCollections.productId, products.id))
+        .where(eq(productCollections.collectionId, dbCollection.id))
+        .orderBy(asc(productCollections.position))
+        .limit(8);
 
       const productsWithDetails = await Promise.all(
-        productCollections.map((pc) => reshapeDbProduct(pc.product)),
+        productCollectionRows.map((pc) => reshapeDbProduct(pc.product)),
       );
 
       return {
@@ -429,29 +454,30 @@ export async function getCollectionsWithProducts(): Promise<
     }),
   );
 
-  // Filter out collections with no products
   return collectionsWithProducts.filter((c) => c.products.length > 0);
 }
 
-// Cart queries and mutations
 export async function createCart(): Promise<Cart> {
-  const dbCart = await db.cart.create({
-    data: {
+  const [dbCart] = await db
+    .insert(carts)
+    .values({
       totalQuantity: 0,
-      subtotalAmount: 0,
-      totalAmount: 0,
-      totalTaxAmount: 0,
+      subtotalAmount: "0.00",
+      totalAmount: "0.00",
+      totalTaxAmount: "0.00",
       currencyCode: "NGN",
-    },
-  });
+    })
+    .returning();
 
   return (await reshapeDbCart(dbCart))!;
 }
 
 export async function getCart(cartId: string): Promise<Cart | undefined> {
-  const dbCart = await db.cart.findUnique({
-    where: { id: cartId },
-  });
+  const [dbCart] = await db
+    .select()
+    .from(carts)
+    .where(eq(carts.id, cartId))
+    .limit(1);
 
   return reshapeDbCart(dbCart);
 }
@@ -460,49 +486,48 @@ export async function addToCart(
   cartId: string,
   lines: { merchandiseId: string; quantity: number }[],
 ): Promise<Cart> {
-  // Add each line to cart
   for (const line of lines) {
-    const variant = await db.productVariant.findUnique({
-      where: { id: line.merchandiseId },
-    });
+    const [variant] = await db
+      .select()
+      .from(productVariants)
+      .where(eq(productVariants.id, line.merchandiseId))
+      .limit(1);
 
     if (!variant) continue;
 
-    const totalAmount = variant.price.toNumber() * line.quantity;
+    const totalAmount = Number(variant.price) * line.quantity;
 
-    // Check if line already exists
-    const existingLine = await db.cartLine.findFirst({
-      where: {
-        cartId,
-        productVariantId: line.merchandiseId,
-      },
-    });
+    const [existingLine] = await db
+      .select()
+      .from(cartLines)
+      .where(
+        and(
+          eq(cartLines.cartId, cartId),
+          eq(cartLines.productVariantId, line.merchandiseId),
+        ),
+      )
+      .limit(1);
 
     if (existingLine) {
-      // Update quantity
-      await db.cartLine.update({
-        where: { id: existingLine.id },
-        data: {
+      await db
+        .update(cartLines)
+        .set({
           quantity: existingLine.quantity + line.quantity,
-          totalAmount: existingLine.totalAmount.toNumber() + totalAmount,
+          totalAmount: String(Number(existingLine.totalAmount) + totalAmount),
           updatedAt: new Date(),
-        },
-      });
+        })
+        .where(eq(cartLines.id, existingLine.id));
     } else {
-      // Insert new line
-      await db.cartLine.create({
-        data: {
-          cartId,
-          productVariantId: line.merchandiseId,
-          quantity: line.quantity,
-          totalAmount,
-          currencyCode: variant.currencyCode,
-        },
+      await db.insert(cartLines).values({
+        cartId,
+        productVariantId: line.merchandiseId,
+        quantity: line.quantity,
+        totalAmount: String(totalAmount),
+        currencyCode: variant.currencyCode,
       });
     }
   }
 
-  // Recalculate cart totals
   await recalculateCartTotals(cartId);
 
   return (await getCart(cartId))!;
@@ -512,11 +537,8 @@ export async function removeFromCart(
   cartId: string,
   lineIds: string[],
 ): Promise<Cart> {
-  await db.cartLine.deleteMany({
-    where: { id: { in: lineIds } },
-  });
+  await db.delete(cartLines).where(inArray(cartLines.id, lineIds));
 
-  // Recalculate cart totals
   await recalculateCartTotals(cartId);
 
   return (await getCart(cartId))!;
@@ -528,63 +550,65 @@ export async function updateCart(
 ): Promise<Cart> {
   for (const line of lines) {
     if (line.quantity === 0) {
-      await db.cartLine.delete({
-        where: { id: line.id },
-      });
-    } else {
-      const variant = await db.productVariant.findUnique({
-        where: { id: line.merchandiseId },
-      });
-
-      if (!variant) continue;
-
-      const totalAmount = variant.price.toNumber() * line.quantity;
-
-      await db.cartLine.update({
-        where: { id: line.id },
-        data: {
-          quantity: line.quantity,
-          totalAmount,
-          updatedAt: new Date(),
-        },
-      });
+      await db.delete(cartLines).where(eq(cartLines.id, line.id));
+      continue;
     }
+
+    const [variant] = await db
+      .select()
+      .from(productVariants)
+      .where(eq(productVariants.id, line.merchandiseId))
+      .limit(1);
+
+    if (!variant) continue;
+
+    const totalAmount = Number(variant.price) * line.quantity;
+
+    await db
+      .update(cartLines)
+      .set({
+        quantity: line.quantity,
+        totalAmount: String(totalAmount),
+        updatedAt: new Date(),
+      })
+      .where(eq(cartLines.id, line.id));
   }
 
-  // Recalculate cart totals
   await recalculateCartTotals(cartId);
 
   return (await getCart(cartId))!;
 }
 
 async function recalculateCartTotals(cartId: string): Promise<void> {
-  const lines = await db.cartLine.findMany({
-    where: { cartId },
-  });
+  const lines = await db
+    .select()
+    .from(cartLines)
+    .where(eq(cartLines.cartId, cartId));
 
   const totalQuantity = lines.reduce((sum, line) => sum + line.quantity, 0);
   const subtotalAmount = lines.reduce(
-    (sum, line) => sum + line.totalAmount.toNumber(),
+    (sum, line) => sum + Number(line.totalAmount),
     0,
   );
 
-  await db.cart.update({
-    where: { id: cartId },
-    data: {
+  await db
+    .update(carts)
+    .set({
       totalQuantity,
-      subtotalAmount,
-      totalAmount: subtotalAmount, // No tax for now
-      totalTaxAmount: 0,
+      subtotalAmount: String(subtotalAmount),
+      totalAmount: String(subtotalAmount),
+      totalTaxAmount: "0.00",
       updatedAt: new Date(),
-    },
-  });
+    })
+    .where(eq(carts.id, cartId));
 }
 
-// Page queries
 export async function getPage(handle: string): Promise<Page> {
-  const dbPage = await db.page.findUnique({
-    where: { handle },
-  });
+  const [dbPage] = await db
+    .select()
+    .from(pages)
+    .where(eq(pages.handle, handle))
+    .limit(1);
 
   if (!dbPage) {
     throw new Error(`Page not found: ${handle}`);
@@ -606,37 +630,39 @@ export async function getPage(handle: string): Promise<Page> {
 }
 
 export async function getPages(): Promise<Page[]> {
-  const dbPages = await db.page.findMany();
+  const dbPages = await db.select().from(pages);
 
-  return dbPages.map((p) => ({
-    id: p.id,
-    title: p.title,
-    handle: p.handle,
-    body: p.body || "",
-    bodySummary: p.bodySummary || "",
+  return dbPages.map((page) => ({
+    id: page.id,
+    title: page.title,
+    handle: page.handle,
+    body: page.body || "",
+    bodySummary: page.bodySummary || "",
     seo: {
-      title: p.seoTitle || p.title,
-      description: p.seoDescription || "",
+      title: page.seoTitle || page.title,
+      description: page.seoDescription || "",
     },
-    createdAt: p.createdAt.toISOString(),
-    updatedAt: p.updatedAt.toISOString(),
+    createdAt: page.createdAt.toISOString(),
+    updatedAt: page.updatedAt.toISOString(),
   }));
 }
 
-// Menu queries
 export async function getMenu(handle: string): Promise<Menu[]> {
-  const dbMenu = await db.menu.findUnique({
-    where: { handle },
-    include: {
-      items: {
-        orderBy: { position: "asc" },
-      },
-    },
-  });
+  const [dbMenu] = await db
+    .select()
+    .from(menus)
+    .where(eq(menus.handle, handle))
+    .limit(1);
 
   if (!dbMenu) return [];
 
-  return dbMenu.items.map((item) => ({
+  const items = await db
+    .select()
+    .from(menuItems)
+    .where(eq(menuItems.menuId, dbMenu.id))
+    .orderBy(asc(menuItems.position));
+
+  return items.map((item) => ({
     title: item.title,
     path: item.url,
   }));

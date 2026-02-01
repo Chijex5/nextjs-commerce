@@ -1,7 +1,9 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "lib/auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { menuItems, menus, pages } from "lib/db/schema";
+import { asc, desc, inArray } from "drizzle-orm";
 import AdminNav from "components/admin/AdminNav";
 import ContentManagement from "components/admin/ContentManagement";
 
@@ -12,19 +14,35 @@ export default async function AdminContentPage() {
     redirect("/admin/login");
   }
 
-  const [pages, menus] = await Promise.all([
-    prisma.page.findMany({
-      orderBy: { updatedAt: "desc" },
-    }),
-    prisma.menu.findMany({
-      orderBy: { title: "asc" },
-      include: {
-        items: {
-          orderBy: { position: "asc" },
-        },
-      },
-    }),
+  const [pageRows, menuRows] = await Promise.all([
+    db.select().from(pages).orderBy(desc(pages.updatedAt)),
+    db.select().from(menus).orderBy(asc(menus.title)),
   ]);
+
+  const menuIds = menuRows.map((menu) => menu.id);
+  const menuItemRows = menuIds.length
+    ? await db
+        .select()
+        .from(menuItems)
+        .where(inArray(menuItems.menuId, menuIds))
+        .orderBy(asc(menuItems.position))
+    : [];
+
+  const itemsByMenu = menuItemRows.reduce<Record<string, typeof menuItemRows>>(
+    (acc, item) => {
+      if (!acc[item.menuId]) {
+        acc[item.menuId] = [] as typeof menuItemRows;
+      }
+      acc[item.menuId].push(item);
+      return acc;
+    },
+    {},
+  );
+
+  const menusWithItems = menuRows.map((menu) => ({
+    ...menu,
+    items: itemsByMenu[menu.id] || [],
+  }));
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
@@ -41,7 +59,7 @@ export default async function AdminContentPage() {
             </p>
           </div>
 
-          <ContentManagement pages={pages} menus={menus} />
+          <ContentManagement pages={pageRows} menus={menusWithItems} />
         </div>
       </div>
     </div>

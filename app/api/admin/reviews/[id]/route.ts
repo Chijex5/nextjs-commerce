@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { products, reviews, users } from "@/lib/db/schema";
 import { requireAdminSession } from "lib/admin-auth";
 import { sendReviewApprovedEmail } from "@/lib/email/order-emails";
+import { eq } from "drizzle-orm";
 
-// PATCH /api/admin/reviews/[id] - Update review status (approve/reject)
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
@@ -11,7 +12,6 @@ export async function PATCH(
   try {
     const session = await requireAdminSession();
 
-    // Check if user is admin
     if (!session) {
       return NextResponse.json(
         { error: "Admin access required" },
@@ -29,52 +29,41 @@ export async function PATCH(
       );
     }
 
-    // Get review details before updating
-    const review = await prisma.review.findUnique({
-      where: { id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        product: {
-          select: {
-            id: true,
-            title: true,
-            handle: true,
-          },
-        },
-      },
-    });
+    const [reviewRow] = await db
+      .select({
+        review: reviews,
+        user: users,
+        product: products,
+      })
+      .from(reviews)
+      .leftJoin(users, eq(reviews.userId, users.id))
+      .leftJoin(products, eq(reviews.productId, products.id))
+      .where(eq(reviews.id, id))
+      .limit(1);
 
-    if (!review) {
+    if (!reviewRow) {
       return NextResponse.json({ error: "Review not found" }, { status: 404 });
     }
 
-    // Update review status
-    const updatedReview = await prisma.review.update({
-      where: { id },
-      data: { status },
-    });
+    const [updatedReview] = await db
+      .update(reviews)
+      .set({ status })
+      .where(eq(reviews.id, id))
+      .returning();
 
-    // Send email notification if approved
-    if (status === "approved" && review.user && review.user.email) {
+    if (status === "approved" && reviewRow.user?.email && reviewRow.product) {
       try {
         await sendReviewApprovedEmail({
-          to: review.user.email,
-          customerName: review.user.name || "Customer",
-          productTitle: review.product.title,
-          productHandle: review.product.handle,
-          reviewTitle: review.title || "",
-          reviewComment: review.comment || "",
-          rating: review.rating,
+          to: reviewRow.user.email,
+          customerName: reviewRow.user.name || "Customer",
+          productTitle: reviewRow.product.title,
+          productHandle: reviewRow.product.handle,
+          reviewTitle: reviewRow.review.title || "",
+          reviewComment: reviewRow.review.comment || "",
+          rating: reviewRow.review.rating,
         });
       } catch (emailError) {
         console.error("Failed to send review approved email:", emailError);
-        // Don't fail the request if email fails
       }
     }
 
@@ -91,7 +80,6 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/admin/reviews/[id] - Delete a review
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
@@ -99,7 +87,6 @@ export async function DELETE(
   try {
     const session = await requireAdminSession();
 
-    // Check if user is admin
     if (!session) {
       return NextResponse.json(
         { error: "Admin access required" },
@@ -109,10 +96,7 @@ export async function DELETE(
 
     const { id } = await context.params;
 
-    // Delete the review (votes will be cascade deleted)
-    await prisma.review.delete({
-      where: { id },
-    });
+    await db.delete(reviews).where(eq(reviews.id, id));
 
     return NextResponse.json({
       success: true,

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { orderItems, orders, products, reviews, users } from "@/lib/db/schema";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 
-// POST /api/reviews - Submit a new review
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -18,7 +19,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { productId, rating, title, comment, images, orderId } = body;
 
-    // Validate required fields
     if (!productId || !rating) {
       return NextResponse.json(
         { error: "Product ID and rating are required" },
@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate rating is between 1-5
     if (rating < 1 || rating > 5) {
       return NextResponse.json(
         { error: "Rating must be between 1 and 5" },
@@ -34,22 +33,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if product exists
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
-    });
+    const [product] = await db
+      .select({ id: products.id, title: products.title })
+      .from(products)
+      .where(eq(products.id, productId))
+      .limit(1);
 
     if (!product) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    // Check if user already reviewed this product
-    const existingReview = await prisma.review.findFirst({
-      where: {
-        productId,
-        userId: session.user.id,
-      },
-    });
+    const [existingReview] = await db
+      .select({ id: reviews.id })
+      .from(reviews)
+      .where(and(eq(reviews.productId, productId), eq(reviews.userId, session.user.id)))
+      .limit(1);
 
     if (existingReview) {
       return NextResponse.json(
@@ -58,29 +56,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if this is a verified purchase
     let isVerified = false;
     if (orderId) {
-      const order = await prisma.order.findFirst({
-        where: {
-          id: orderId,
-          userId: session.user.id,
-        },
-        include: {
-          items: {
-            where: {
-              productId,
-            },
-          },
-        },
-      });
+      const [order] = await db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(and(eq(orders.id, orderId), eq(orders.userId, session.user.id)))
+        .limit(1);
 
-      isVerified = !!order && order.items.length > 0;
+      if (order) {
+        const [item] = await db
+          .select({ id: orderItems.id })
+          .from(orderItems)
+          .where(
+            and(eq(orderItems.orderId, order.id), eq(orderItems.productId, productId)),
+          )
+          .limit(1);
+        isVerified = !!item;
+      }
     }
 
-    // Create the review
-    const review = await prisma.review.create({
-      data: {
+    const [createdReview] = await db
+      .insert(reviews)
+      .values({
         productId,
         userId: session.user.id,
         orderId: orderId || null,
@@ -89,30 +87,23 @@ export async function POST(request: NextRequest) {
         comment: comment || null,
         images: images || [],
         isVerified,
-        status: "pending", // Reviews start as pending for moderation
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        product: {
-          select: {
-            id: true,
-            title: true,
-          },
-        },
-      },
-    });
+        status: "pending",
+      })
+      .returning();
 
-    // TODO: Send email notification to admin about pending review
+    const [user] = await db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1);
 
     return NextResponse.json({
       success: true,
-      review,
+      review: {
+        ...createdReview,
+        user,
+        product,
+      },
     });
   } catch (error) {
     console.error("Error submitting review:", error);
@@ -123,7 +114,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET /api/reviews?productId=xxx - Get reviews for a product
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -138,51 +128,42 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Build sort order
-    let orderBy: any = { createdAt: "desc" };
+    let orderBy = desc(reviews.createdAt);
     if (sort === "highest") {
-      orderBy = { rating: "desc" };
+      orderBy = desc(reviews.rating);
     } else if (sort === "lowest") {
-      orderBy = { rating: "asc" };
+      orderBy = asc(reviews.rating);
     } else if (sort === "helpful") {
-      orderBy = { helpfulCount: "desc" };
+      orderBy = desc(reviews.helpfulCount);
     }
 
-    // Fetch reviews
-    const reviews = await prisma.review.findMany({
-      where: {
-        productId,
-        status,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-      orderBy,
-    });
+    const reviewRows = await db
+      .select({ review: reviews, user: users })
+      .from(reviews)
+      .leftJoin(users, eq(reviews.userId, users.id))
+      .where(and(eq(reviews.productId, productId), eq(reviews.status, status)))
+      .orderBy(orderBy);
 
-    // Calculate average rating and total count
-    const stats = await prisma.review.aggregate({
-      where: {
-        productId,
-        status: "approved",
-      },
-      _avg: {
-        rating: true,
-      },
-      _count: {
-        id: true,
-      },
-    });
+    const [stats] = await db
+      .select({
+        averageRating: sql<number>`avg(${reviews.rating})`,
+        totalReviews: sql<number>`count(${reviews.id})`,
+      })
+      .from(reviews)
+      .where(and(eq(reviews.productId, productId), eq(reviews.status, "approved")));
 
     return NextResponse.json({
-      reviews,
-      averageRating: stats._avg.rating || 0,
-      totalReviews: stats._count.id,
+      reviews: reviewRows.map(({ review, user }) => ({
+        ...review,
+        user: user
+          ? {
+              id: user.id,
+              name: user.name,
+            }
+          : null,
+      })),
+      averageRating: Number(stats?.averageRating ?? 0),
+      totalReviews: Number(stats?.totalReviews ?? 0),
     });
   } catch (error) {
     console.error("Error fetching reviews:", error);

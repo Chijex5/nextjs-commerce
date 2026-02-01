@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { orders, users } from "lib/db/schema";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 
-// GET - List all users with pagination
 export async function GET(request: NextRequest) {
   try {
     const session = await requireAdminSession();
@@ -17,55 +18,76 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search");
     const status = searchParams.get("status");
 
-    // Build where clause
-    const where: any = {};
+    const filters = [];
 
     if (status === "active") {
-      where.isActive = true;
+      filters.push(eq(users.isActive, true));
     } else if (status === "inactive") {
-      where.isActive = false;
+      filters.push(eq(users.isActive, false));
     }
 
     if (search) {
-      where.OR = [
-        { email: { contains: search, mode: "insensitive" as const } },
-        { name: { contains: search, mode: "insensitive" as const } },
-        { phone: { contains: search, mode: "insensitive" as const } },
-      ];
+      const searchValue = `%${search}%`;
+      filters.push(
+        or(
+          ilike(users.email, searchValue),
+          ilike(users.name, searchValue),
+          ilike(users.phone, searchValue),
+        ),
+      );
     }
 
-    const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          phone: true,
-          isActive: true,
-          createdAt: true,
-          lastLoginAt: true,
-          _count: {
-            select: { orders: true },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * perPage,
-        take: perPage,
-      }),
-      prisma.user.count({ where }),
+    const whereClause = filters.length ? and(...filters) : undefined;
+
+    const [userRows, totalResult] = await Promise.all([
+      db
+        .select({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          phone: users.phone,
+          isActive: users.isActive,
+          createdAt: users.createdAt,
+          lastLoginAt: users.lastLoginAt,
+        })
+        .from(users)
+        .where(whereClause)
+        .orderBy(desc(users.createdAt))
+        .limit(perPage)
+        .offset((page - 1) * perPage),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(whereClause),
     ]);
 
+    const userIds = userRows.map((user) => user.id);
+    const orderCounts = userIds.length
+      ? await db
+          .select({
+            userId: orders.userId,
+            count: sql<number>`count(*)`,
+          })
+          .from(orders)
+          .where(inArray(orders.userId, userIds))
+          .groupBy(orders.userId)
+      : [];
+
+    const countsByUser = new Map(
+      orderCounts.map((row) => [row.userId, Number(row.count)]),
+    );
+
+    const total = Number(totalResult[0]?.count ?? 0);
     const totalPages = Math.ceil(total / perPage);
 
     return NextResponse.json({
-      users: users.map((user) => ({
+      users: userRows.map((user) => ({
         id: user.id,
         email: user.email,
         name: user.name,
         phone: user.phone,
         isActive: user.isActive,
-        orderCount: user._count.orders,
+        orderCount: countsByUser.get(user.id) || 0,
         createdAt: user.createdAt.toISOString(),
         lastLoginAt: user.lastLoginAt?.toISOString() || null,
       })),

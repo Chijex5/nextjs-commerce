@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { menuItems } from "lib/db/schema";
+import { desc, eq } from "drizzle-orm";
 
 export async function PUT(
   request: NextRequest,
@@ -24,9 +26,11 @@ export async function PUT(
       );
     }
 
-    const existingItem = await prisma.menuItem.findUnique({
-      where: { id },
-    });
+    const [existingItem] = await db
+      .select()
+      .from(menuItems)
+      .where(eq(menuItems.id, id))
+      .limit(1);
 
     if (!existingItem) {
       return NextResponse.json(
@@ -42,23 +46,25 @@ export async function PUT(
     if (typeof position === "number") {
       nextPosition = position;
     } else if (menuId && menuId !== existingItem.menuId) {
-      const lastItem = await prisma.menuItem.findFirst({
-        where: { menuId },
-        orderBy: { position: "desc" },
-        select: { position: true },
-      });
+      const [lastItem] = await db
+        .select({ position: menuItems.position })
+        .from(menuItems)
+        .where(eq(menuItems.menuId, menuId))
+        .orderBy(desc(menuItems.position))
+        .limit(1);
       nextPosition = lastItem ? lastItem.position + 1 : 0;
     }
 
-    const menuItem = await prisma.menuItem.update({
-      where: { id },
-      data: {
+    const [menuItem] = await db
+      .update(menuItems)
+      .set({
         menuId: nextMenuId,
         title,
         url,
         ...(typeof nextPosition === "number" ? { position: nextPosition } : {}),
-      },
-    });
+      })
+      .where(eq(menuItems.id, id))
+      .returning();
 
     return NextResponse.json({
       success: true,
@@ -92,9 +98,7 @@ export async function DELETE(
 
     const { id } = await params;
 
-    await prisma.menuItem.delete({
-      where: { id },
-    });
+    await db.delete(menuItems).where(eq(menuItems.id, id));
 
     return NextResponse.json({
       success: true,

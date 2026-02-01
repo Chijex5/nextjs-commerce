@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { collections, productCollections } from "lib/db/schema";
+import { and, eq, ne, sql } from "drizzle-orm";
 
-// GET - Get single collection
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -16,22 +17,20 @@ export async function GET(
 
     const { id } = await params;
 
-    const collection = await prisma.collection.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        handle: true,
-        title: true,
-        description: true,
-        seoTitle: true,
-        seoDescription: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: { productCollections: true },
-        },
-      },
-    });
+    const [collection] = await db
+      .select({
+        id: collections.id,
+        handle: collections.handle,
+        title: collections.title,
+        description: collections.description,
+        seoTitle: collections.seoTitle,
+        seoDescription: collections.seoDescription,
+        createdAt: collections.createdAt,
+        updatedAt: collections.updatedAt,
+      })
+      .from(collections)
+      .where(eq(collections.id, id))
+      .limit(1);
 
     if (!collection) {
       return NextResponse.json(
@@ -39,6 +38,13 @@ export async function GET(
         { status: 404 },
       );
     }
+
+    const [countResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(productCollections)
+      .where(eq(productCollections.collectionId, id));
+
+    const productCount = Number(countResult?.count ?? 0);
 
     return NextResponse.json({
       collection: {
@@ -48,7 +54,7 @@ export async function GET(
         description: collection.description,
         seoTitle: collection.seoTitle,
         seoDescription: collection.seoDescription,
-        productCount: collection._count.productCollections,
+        productCount,
         createdAt: collection.createdAt.toISOString(),
         updatedAt: collection.updatedAt.toISOString(),
       },
@@ -62,7 +68,6 @@ export async function GET(
   }
 }
 
-// PUT - Update collection
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -78,7 +83,6 @@ export async function PUT(
     const body = await request.json();
     const { handle, title, description, seoTitle, seoDescription } = body;
 
-    // Validate inputs
     if (!handle || !title) {
       return NextResponse.json(
         { error: "Handle and title are required" },
@@ -86,13 +90,11 @@ export async function PUT(
       );
     }
 
-    // Check if another collection has the same handle
-    const existingCollection = await prisma.collection.findFirst({
-      where: {
-        handle,
-        NOT: { id },
-      },
-    });
+    const [existingCollection] = await db
+      .select({ id: collections.id })
+      .from(collections)
+      .where(and(eq(collections.handle, handle), ne(collections.id, id)))
+      .limit(1);
 
     if (existingCollection) {
       return NextResponse.json(
@@ -101,25 +103,25 @@ export async function PUT(
       );
     }
 
-    const collection = await prisma.collection.update({
-      where: { id },
-      data: {
+    const [collection] = await db
+      .update(collections)
+      .set({
         handle,
         title,
         description: description || null,
         seoTitle: seoTitle || null,
         seoDescription: seoDescription || null,
-      },
-      select: {
-        id: true,
-        handle: true,
-        title: true,
-        description: true,
-        seoTitle: true,
-        seoDescription: true,
-        updatedAt: true,
-      },
-    });
+      })
+      .where(eq(collections.id, id))
+      .returning({
+        id: collections.id,
+        handle: collections.handle,
+        title: collections.title,
+        description: collections.description,
+        seoTitle: collections.seoTitle,
+        seoDescription: collections.seoDescription,
+        updatedAt: collections.updatedAt,
+      });
 
     return NextResponse.json({
       success: true,
@@ -143,7 +145,6 @@ export async function PUT(
   }
 }
 
-// DELETE - Delete collection
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -157,35 +158,23 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Check if collection has products
-    const collection = await prisma.collection.findUnique({
-      where: { id },
-      select: {
-        _count: {
-          select: { productCollections: true },
-        },
-      },
-    });
+    const [countResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(productCollections)
+      .where(eq(productCollections.collectionId, id));
 
-    if (!collection) {
-      return NextResponse.json(
-        { error: "Collection not found" },
-        { status: 404 },
-      );
-    }
+    const productCount = Number(countResult?.count ?? 0);
 
-    if (collection._count.productCollections > 0) {
+    if (productCount > 0) {
       return NextResponse.json(
         {
-          error: `Cannot delete collection with ${collection._count.productCollections} product(s). Remove products first.`,
+          error: `Cannot delete collection with ${productCount} product(s). Remove products first.`,
         },
         { status: 400 },
       );
     }
 
-    await prisma.collection.delete({
-      where: { id },
-    });
+    await db.delete(collections).where(eq(collections.id, id));
 
     return NextResponse.json({
       success: true,
