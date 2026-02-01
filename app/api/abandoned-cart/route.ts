@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { abandonedCarts, users } from "lib/db/schema";
 import { sendAbandonedCartEmail } from "@/lib/email/order-emails";
+import { and, eq, lte } from "drizzle-orm";
 
-/**
- * Track abandoned cart for logged-in user
- * POST /api/abandoned-cart/route
- */
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -26,51 +24,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid cart data" }, { status: 400 });
     }
 
-    // Get user details
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-    });
+    const [user] = await db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users)
+      .where(eq(users.email, session.user.email))
+      .limit(1);
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check if there's already an abandoned cart entry for this user/cart
-    const existing = await prisma.abandonedCart.findFirst({
-      where: {
-        userId: user.id,
-        cartId: cartId,
-        emailSent: false,
-      },
-    });
+    const [existing] = await db
+      .select()
+      .from(abandonedCarts)
+      .where(
+        and(
+          eq(abandonedCarts.userId, user.id),
+          eq(abandonedCarts.cartId, cartId),
+          eq(abandonedCarts.emailSent, false),
+        ),
+      )
+      .limit(1);
 
     if (existing) {
-      // Update existing entry
-      await prisma.abandonedCart.update({
-        where: { id: existing.id },
-        data: {
-          items: items,
-          cartTotal: cartTotal,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
-        },
-      });
+      await db
+        .update(abandonedCarts)
+        .set({
+          items,
+          cartTotal: String(cartTotal),
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        })
+        .where(eq(abandonedCarts.id, existing.id));
     } else {
-      // Create new entry
-      await prisma.abandonedCart.create({
-        data: {
-          userId: user.id,
-          cartId: cartId,
-          email: user.email,
-          customerName: user.name || "Valued Customer",
-          items: items,
-          cartTotal: cartTotal,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
-        },
+      await db.insert(abandonedCarts).values({
+        userId: user.id,
+        cartId,
+        email: user.email,
+        customerName: user.name || "Valued Customer",
+        items,
+        cartTotal: String(cartTotal),
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
       });
     }
 
@@ -84,11 +77,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/**
- * Send abandoned cart emails for carts that have expired
- * GET /api/abandoned-cart/route
- * (This should be called by a cron job)
- */
 export async function GET(request: NextRequest) {
   try {
     const cronSecret = process.env.CRON_SECRET;
@@ -98,19 +86,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get abandoned carts that are expired and haven't been emailed yet
-    const abandonedCarts = await prisma.abandonedCart.findMany({
-      where: {
-        emailSent: false,
-        recovered: false,
-        expiresAt: {
-          lte: new Date(), // Expired
-        },
-      },
-      take: 50, // Process in batches
-    });
+    const expiredCarts = await db
+      .select()
+      .from(abandonedCarts)
+      .where(
+        and(
+          eq(abandonedCarts.emailSent, false),
+          eq(abandonedCarts.recovered, false),
+          lte(abandonedCarts.expiresAt, new Date()),
+        ),
+      )
+      .limit(50);
 
-    if (abandonedCarts.length === 0) {
+    if (expiredCarts.length === 0) {
       return NextResponse.json({
         success: true,
         message: "No abandoned carts to process",
@@ -121,7 +109,7 @@ export async function GET(request: NextRequest) {
     let emailsSent = 0;
     const errors: string[] = [];
 
-    for (const cart of abandonedCarts) {
+    for (const cart of expiredCarts) {
       try {
         const items = cart.items as Array<{
           productTitle: string;
@@ -134,18 +122,17 @@ export async function GET(request: NextRequest) {
         await sendAbandonedCartEmail({
           customerName: cart.customerName,
           email: cart.email,
-          items: items,
+          items,
           cartTotal: Number(cart.cartTotal),
         });
 
-        // Mark as email sent
-        await prisma.abandonedCart.update({
-          where: { id: cart.id },
-          data: {
+        await db
+          .update(abandonedCarts)
+          .set({
             emailSent: true,
             emailSentAt: new Date(),
-          },
-        });
+          })
+          .where(eq(abandonedCarts.id, cart.id));
 
         emailsSent++;
       } catch (emailError) {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { sql } from "drizzle-orm";
 
 export async function GET() {
   const startedAt = Date.now();
@@ -8,7 +9,7 @@ export async function GET() {
     process.env.CLOUDINARY_USAGE_ENABLED === "true";
 
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    await db.execute(sql`SELECT 1`);
 
     let cloudinaryUsage: unknown = undefined;
     if (cloudinaryUsageEnabled) {

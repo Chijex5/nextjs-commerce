@@ -1,19 +1,18 @@
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { collections } from "lib/db/schema";
 import { canonicalUrl } from "lib/seo";
 import { buildSitemapXml } from "lib/sitemap";
+import { desc } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const collections = await prisma.collection.findMany({
-    select: {
-      handle: true,
-      updatedAt: true,
-    },
-    orderBy: { updatedAt: "desc" },
-  });
+  const collectionRows = await db
+    .select({ handle: collections.handle, updatedAt: collections.updatedAt })
+    .from(collections)
+    .orderBy(desc(collections.updatedAt));
 
-  const entries = collections
+  const entries = collectionRows
     .filter(
       (collection) =>
         !collection.handle.startsWith("hidden-") && collection.handle !== "all",

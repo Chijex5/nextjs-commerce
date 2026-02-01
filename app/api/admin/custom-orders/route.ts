@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { customOrders } from "lib/db/schema";
+import { asc, desc, ilike } from "drizzle-orm";
 
 const toDetailsArray = (value: unknown): string[] => {
   if (!Array.isArray(value)) return [];
@@ -18,19 +20,18 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");
 
-    const where: any = {};
+    const whereClause = search
+      ? ilike(customOrders.title, `%${search}%`)
+      : undefined;
 
-    if (search) {
-      where.title = { contains: search, mode: "insensitive" as const };
-    }
-
-    const customOrders = await prisma.customOrder.findMany({
-      where,
-      orderBy: [{ position: "asc" }, { updatedAt: "desc" }],
-    });
+    const orderRows = await db
+      .select()
+      .from(customOrders)
+      .where(whereClause)
+      .orderBy(asc(customOrders.position), desc(customOrders.updatedAt));
 
     return NextResponse.json({
-      customOrders: customOrders.map((order) => ({
+      customOrders: orderRows.map((order) => ({
         id: order.id,
         title: order.title,
         customerStory: order.customerStory,
@@ -77,8 +78,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
 
-    const order = await prisma.customOrder.create({
-      data: {
+    const [order] = await db
+      .insert(customOrders)
+      .values({
         title: title.trim(),
         customerStory: customerStory || null,
         beforeImage: beforeImage || null,
@@ -87,22 +89,22 @@ export async function POST(request: NextRequest) {
         completionTime: completionTime || null,
         position: typeof position === "number" ? position : 0,
         isPublished: isPublished === undefined ? true : Boolean(isPublished),
-      },
-    });
+      })
+      .returning();
 
     return NextResponse.json({
       success: true,
       customOrder: {
-        id: order.id,
-        title: order.title,
-        customerStory: order.customerStory,
-        beforeImage: order.beforeImage,
-        afterImage: order.afterImage,
-        details: toDetailsArray(order.details),
-        completionTime: order.completionTime,
-        position: order.position,
-        isPublished: order.isPublished,
-        createdAt: order.createdAt.toISOString(),
+        id: order?.id,
+        title: order?.title,
+        customerStory: order?.customerStory,
+        beforeImage: order?.beforeImage,
+        afterImage: order?.afterImage,
+        details: toDetailsArray(order?.details),
+        completionTime: order?.completionTime,
+        position: order?.position,
+        isPublished: order?.isPublished,
+        createdAt: order?.createdAt.toISOString(),
       },
     });
   } catch (error) {

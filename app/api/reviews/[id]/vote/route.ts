@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { reviewVotes, reviews } from "@/lib/db/schema";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { and, eq, sql } from "drizzle-orm";
 
-// POST /api/reviews/[id]/vote - Vote on a review (helpful/not helpful)
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
@@ -28,62 +29,54 @@ export async function POST(
       );
     }
 
-    // Check if review exists
-    const review = await prisma.review.findUnique({
-      where: { id },
-    });
+    const [review] = await db
+      .select({ id: reviews.id })
+      .from(reviews)
+      .where(eq(reviews.id, id))
+      .limit(1);
 
     if (!review) {
       return NextResponse.json({ error: "Review not found" }, { status: 404 });
     }
 
-    // Check if user already voted on this review
-    const existingVote = await prisma.reviewVote.findUnique({
-      where: {
-        review_vote_unique: {
-          reviewId: id,
-          userId: session.user.id,
-        },
-      },
-    });
+    const [existingVote] = await db
+      .select()
+      .from(reviewVotes)
+      .where(
+        and(eq(reviewVotes.reviewId, id), eq(reviewVotes.userId, session.user.id)),
+      )
+      .limit(1);
 
     if (existingVote) {
-      // Update existing vote
-      await prisma.reviewVote.update({
-        where: {
-          id: existingVote.id,
-        },
-        data: {
-          isHelpful,
-        },
-      });
+      await db
+        .update(reviewVotes)
+        .set({ isHelpful })
+        .where(eq(reviewVotes.id, existingVote.id));
     } else {
-      // Create new vote
-      await prisma.reviewVote.create({
-        data: {
-          reviewId: id,
-          userId: session.user.id,
-          isHelpful,
-        },
+      await db.insert(reviewVotes).values({
+        reviewId: id,
+        userId: session.user.id,
+        isHelpful,
       });
     }
 
-    // Update helpful count on the review
-    const helpfulVotes = await prisma.reviewVote.count({
-      where: {
-        reviewId: id,
-        isHelpful: true,
-      },
-    });
+    const [helpfulStats] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(reviewVotes)
+      .where(
+        and(eq(reviewVotes.reviewId, id), eq(reviewVotes.isHelpful, true)),
+      );
 
-    await prisma.review.update({
-      where: { id },
-      data: { helpfulCount: helpfulVotes },
-    });
+    const helpfulCount = Number(helpfulStats?.count ?? 0);
+
+    await db
+      .update(reviews)
+      .set({ helpfulCount })
+      .where(eq(reviews.id, id));
 
     return NextResponse.json({
       success: true,
-      helpfulCount: helpfulVotes,
+      helpfulCount,
     });
   } catch (error) {
     console.error("Error voting on review:", error);

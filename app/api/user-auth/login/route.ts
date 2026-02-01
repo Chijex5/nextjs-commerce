@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { compare } from "bcryptjs";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { users } from "lib/db/schema";
 import { createUserSession, setUserSessionCookie } from "lib/user-session";
+import { eq } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
 
-    // Validate input
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
@@ -15,10 +16,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
 
     if (!user || !user.isActive) {
       return NextResponse.json(
@@ -27,7 +29,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify password
     const isPasswordValid = await compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
@@ -37,13 +38,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update last login
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
+    await db
+      .update(users)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(users.id, user.id));
 
-    // Create session token
     const token = await createUserSession({
       id: user.id,
       email: user.email,
@@ -51,7 +50,6 @@ export async function POST(request: NextRequest) {
       phone: user.phone,
     });
 
-    // Set session cookie
     await setUserSessionCookie(token);
 
     return NextResponse.json({

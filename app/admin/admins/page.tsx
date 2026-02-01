@@ -3,7 +3,9 @@ import { authOptions } from "lib/auth";
 import { redirect } from "next/navigation";
 import AdminNav from "components/admin/AdminNav";
 import AdminsManagement from "components/admin/AdminsManagement";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { adminUsers } from "lib/db/schema";
+import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 
 export default async function AdminAdminsPage({
   searchParams,
@@ -27,47 +29,66 @@ export default async function AdminAdminsPage({
   const perPage = parseInt(params.perPage || "20");
   const statusFilter = params.status || "all";
 
-  // Build where clause
-  const where: any = {};
+  const filters = [];
 
   if (statusFilter === "active") {
-    where.isActive = true;
+    filters.push(eq(adminUsers.isActive, true));
   } else if (statusFilter === "inactive") {
-    where.isActive = false;
+    filters.push(eq(adminUsers.isActive, false));
   }
 
   if (search) {
-    where.OR = [
-      { email: { contains: search, mode: "insensitive" as const } },
-      { name: { contains: search, mode: "insensitive" as const } },
-    ];
+    const searchValue = `%${search}%`;
+    filters.push(
+      or(
+        ilike(adminUsers.email, searchValue),
+        ilike(adminUsers.name, searchValue),
+      ),
+    );
   }
 
-  const [admins, total, stats] = await Promise.all([
-    prisma.adminUser.findMany({
-      where,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-        lastLoginAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * perPage,
-      take: perPage,
-    }),
-    prisma.adminUser.count({ where }),
+  const whereClause = filters.length ? and(...filters) : undefined;
+
+  const [admins, totalResult, totalStats] = await Promise.all([
+    db
+      .select({
+        id: adminUsers.id,
+        email: adminUsers.email,
+        name: adminUsers.name,
+        role: adminUsers.role,
+        isActive: adminUsers.isActive,
+        createdAt: adminUsers.createdAt,
+        lastLoginAt: adminUsers.lastLoginAt,
+      })
+      .from(adminUsers)
+      .where(whereClause)
+      .orderBy(desc(adminUsers.createdAt))
+      .limit(perPage)
+      .offset((page - 1) * perPage),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(adminUsers)
+      .where(whereClause),
     Promise.all([
-      prisma.adminUser.count(),
-      prisma.adminUser.count({ where: { isActive: true } }),
-      prisma.adminUser.count({ where: { isActive: false } }),
+      db.select({ count: sql<number>`count(*)` }).from(adminUsers),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(adminUsers)
+        .where(eq(adminUsers.isActive, true)),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(adminUsers)
+        .where(eq(adminUsers.isActive, false)),
     ]),
   ]);
 
-  const [totalAdmins, activeAdmins, inactiveAdmins] = stats;
+  const [totalAdminsResult, activeAdminsResult, inactiveAdminsResult] =
+    totalStats;
+  const totalAdmins = Number(totalAdminsResult[0]?.count ?? 0);
+  const activeAdmins = Number(activeAdminsResult[0]?.count ?? 0);
+  const inactiveAdmins = Number(inactiveAdminsResult[0]?.count ?? 0);
+
+  const total = Number(totalResult[0]?.count ?? 0);
   const totalPages = Math.ceil(total / perPage);
 
   return (

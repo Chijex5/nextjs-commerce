@@ -3,7 +3,9 @@ import { authOptions } from "lib/auth";
 import { redirect } from "next/navigation";
 import AdminNav from "components/admin/AdminNav";
 import UsersTable from "components/admin/UsersTable";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { orders, users } from "lib/db/schema";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 
 export default async function AdminUsersPage({
   searchParams,
@@ -27,51 +29,82 @@ export default async function AdminUsersPage({
   const perPage = parseInt(params.perPage || "20");
   const statusFilter = params.status || "all";
 
-  // Build where clause
-  const where: any = {};
+  const filters = [];
 
   if (statusFilter === "active") {
-    where.isActive = true;
+    filters.push(eq(users.isActive, true));
   } else if (statusFilter === "inactive") {
-    where.isActive = false;
+    filters.push(eq(users.isActive, false));
   }
 
   if (search) {
-    where.OR = [
-      { email: { contains: search, mode: "insensitive" as const } },
-      { name: { contains: search, mode: "insensitive" as const } },
-      { phone: { contains: search, mode: "insensitive" as const } },
-    ];
+    const searchValue = `%${search}%`;
+    filters.push(
+      or(
+        ilike(users.email, searchValue),
+        ilike(users.name, searchValue),
+        ilike(users.phone, searchValue),
+      ),
+    );
   }
 
-  const [users, total, stats] = await Promise.all([
-    prisma.user.findMany({
-      where,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        phone: true,
-        isActive: true,
-        createdAt: true,
-        lastLoginAt: true,
-        _count: {
-          select: { orders: true },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * perPage,
-      take: perPage,
-    }),
-    prisma.user.count({ where }),
+  const whereClause = filters.length ? and(...filters) : undefined;
+
+  const [userRows, totalResult, stats] = await Promise.all([
+    db
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        phone: users.phone,
+        isActive: users.isActive,
+        createdAt: users.createdAt,
+        lastLoginAt: users.lastLoginAt,
+      })
+      .from(users)
+      .where(whereClause)
+      .orderBy(desc(users.createdAt))
+      .limit(perPage)
+      .offset((page - 1) * perPage),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(whereClause),
     Promise.all([
-      prisma.user.count(),
-      prisma.user.count({ where: { isActive: true } }),
-      prisma.user.count({ where: { isActive: false } }),
+      db.select({ count: sql<number>`count(*)` }).from(users),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(eq(users.isActive, true)),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(eq(users.isActive, false)),
     ]),
   ]);
 
-  const [totalUsers, activeUsers, inactiveUsers] = stats;
+  const userIds = userRows.map((user) => user.id);
+  const orderCounts = userIds.length
+    ? await db
+        .select({
+          userId: orders.userId,
+          count: sql<number>`count(*)`,
+        })
+        .from(orders)
+        .where(inArray(orders.userId, userIds))
+        .groupBy(orders.userId)
+    : [];
+
+  const countsByUser = new Map(
+    orderCounts.map((row) => [row.userId, Number(row.count)]),
+  );
+
+  const [totalUsersResult, activeUsersResult, inactiveUsersResult] = stats;
+  const totalUsers = Number(totalUsersResult[0]?.count ?? 0);
+  const activeUsers = Number(activeUsersResult[0]?.count ?? 0);
+  const inactiveUsers = Number(inactiveUsersResult[0]?.count ?? 0);
+
+  const total = Number(totalResult[0]?.count ?? 0);
   const totalPages = Math.ceil(total / perPage);
 
   return (
@@ -154,7 +187,12 @@ export default async function AdminUsersPage({
 
           {/* Users Table */}
           <UsersTable
-            users={users}
+            users={userRows.map((user) => ({
+              ...user,
+              _count: {
+                orders: countsByUser.get(user.id) || 0,
+              },
+            }))}
             currentPage={page}
             totalPages={totalPages}
             total={total}

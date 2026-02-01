@@ -3,7 +3,9 @@ import { authOptions } from "../../../../lib/auth";
 import { redirect } from "next/navigation";
 import AdminNav from "../../../../components/admin/AdminNav";
 import ProductForm from "../../../../components/admin/ProductForm";
-import prisma from "../../../../lib/prisma";
+import { db } from "lib/db";
+import { collections } from "lib/db/schema";
+import { asc } from "drizzle-orm";
 
 export default async function NewProductPage() {
   const session = await getServerSession(authOptions);
@@ -12,10 +14,10 @@ export default async function NewProductPage() {
     redirect("/admin/login");
   }
 
-  // Get all collections for the form
-  const collections = await prisma.collection.findMany({
-    orderBy: { title: "asc" },
-  });
+  const collectionRows = await db
+    .select()
+    .from(collections)
+    .orderBy(asc(collections.title));
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
@@ -32,7 +34,7 @@ export default async function NewProductPage() {
             </p>
           </div>
 
-          <ProductForm collections={collections} />
+          <ProductForm collections={collectionRows} />
         </div>
       </div>
     </div>

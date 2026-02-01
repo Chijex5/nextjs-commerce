@@ -8,18 +8,14 @@
     "prettier": "prettier --write --ignore-unknown .",
     "prettier:check": "prettier --check --ignore-unknown .",
     "test": "pnpm prettier:check",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:g": "prisma db push",
-    "db:studio": "prisma studio",
-    "db:seed": "tsx lib/db/scripts/seed.ts",
-    "postinstall": "prisma generate"
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx lib/db/scripts/seed.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
-    "@prisma/adapter-pg": "^7.2.0",
-    "@prisma/client": "^7.2.0",
     "@tiptap/react": "^2.12.0",
     "@tiptap/starter-kit": "^2.12.0",
     "bcryptjs": "^2.4.3",
@@ -60,7 +56,6 @@
     "postcss": "^8.5.3",
     "prettier": "3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.11",
-    "prisma": "^7.2.0",
     "tailwindcss": "^4.0.14",
     "tsx": "^4.21.0",
     "typescript": "5.8.2"

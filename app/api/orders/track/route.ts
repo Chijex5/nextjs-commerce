@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { orderItems, orders } from "lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,18 +15,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const order = await prisma.order.findUnique({
-      where: {
-        orderNumber,
-      },
-      include: {
-        items: true,
-      },
-    });
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.orderNumber, orderNumber))
+      .limit(1);
 
     if (!order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
+
+    const items = await db
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.orderId, order.id));
 
     return NextResponse.json({
       order: {
@@ -33,19 +37,19 @@ export async function GET(request: NextRequest) {
         status: order.status,
         deliveryStatus: order.deliveryStatus,
         estimatedArrival: order.estimatedArrival?.toISOString() || null,
-        totalAmount: order.totalAmount.toString(),
+        totalAmount: String(order.totalAmount),
         currencyCode: order.currencyCode,
         createdAt: order.createdAt.toISOString(),
         trackingNumber: order.trackingNumber,
         shippingAddress: order.shippingAddress,
-        items: order.items.map((item) => ({
+        items: items.map((item) => ({
           id: item.id,
           productId: item.productId,
           productVariantId: item.productVariantId,
           productTitle: item.productTitle,
           variantTitle: item.variantTitle,
           quantity: item.quantity,
-          price: item.price.toString(),
+          price: String(item.price),
           productImage: item.productImage,
         })),
       },

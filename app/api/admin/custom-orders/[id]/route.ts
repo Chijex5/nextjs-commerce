@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import prisma from "lib/prisma";
+import { db } from "lib/db";
+import { customOrders } from "lib/db/schema";
+import { eq } from "drizzle-orm";
 
 const toDetailsArray = (value: unknown): string[] => {
   if (!Array.isArray(value)) return [];
@@ -19,9 +21,11 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const order = await prisma.customOrder.findUnique({
-      where: { id: params.id },
-    });
+    const [order] = await db
+      .select()
+      .from(customOrders)
+      .where(eq(customOrders.id, params.id))
+      .limit(1);
 
     if (!order) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -79,9 +83,9 @@ export async function PUT(
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
 
-    const order = await prisma.customOrder.update({
-      where: { id: params.id },
-      data: {
+    const [order] = await db
+      .update(customOrders)
+      .set({
         title: title.trim(),
         customerStory: customerStory || null,
         beforeImage: beforeImage || null,
@@ -90,22 +94,23 @@ export async function PUT(
         completionTime: completionTime || null,
         position: typeof position === "number" ? position : 0,
         isPublished: isPublished === undefined ? true : Boolean(isPublished),
-      },
-    });
+      })
+      .where(eq(customOrders.id, params.id))
+      .returning();
 
     return NextResponse.json({
       success: true,
       customOrder: {
-        id: order.id,
-        title: order.title,
-        customerStory: order.customerStory,
-        beforeImage: order.beforeImage,
-        afterImage: order.afterImage,
-        details: toDetailsArray(order.details),
-        completionTime: order.completionTime,
-        position: order.position,
-        isPublished: order.isPublished,
-        updatedAt: order.updatedAt.toISOString(),
+        id: order?.id,
+        title: order?.title,
+        customerStory: order?.customerStory,
+        beforeImage: order?.beforeImage,
+        afterImage: order?.afterImage,
+        details: toDetailsArray(order?.details),
+        completionTime: order?.completionTime,
+        position: order?.position,
+        isPublished: order?.isPublished,
+        updatedAt: order?.updatedAt.toISOString(),
       },
     });
   } catch (error) {
@@ -129,7 +134,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await prisma.customOrder.delete({ where: { id: params.id } });
+    await db.delete(customOrders).where(eq(customOrders.id, params.id));
 
     return NextResponse.json({ success: true });
   } catch (error) {
