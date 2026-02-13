@@ -253,7 +253,11 @@ export default async function DashboardPage() {
                 </div>
               ) : (
                 recentOrders.map((order) => (
-                  <div key={order.id} className="px-6 py-4">
+                  <Link
+                    key={order.id}
+                    href={`/admin/orders/${order.id}`}
+                    className="block px-6 py-4 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                  >
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
@@ -287,7 +291,7 @@ export default async function DashboardPage() {
                         {order.status}
                       </span>
                     </div>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>
