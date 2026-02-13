@@ -144,3 +144,64 @@ export function generateBulkImportTemplate(): string {
 
   return `${headers.join(",")}\n${sampleRow.join(",")}\n`;
 }
+
+/**
+ * Calculate variant price based on size, color, and pricing rules
+ */
+export function getVariantPrice(
+  size: string,
+  color: string,
+  pricingConfig: {
+    basePrice?: number;
+    colorPrices?: Record<string, number>;
+    largeSizePrice?: number | null;
+    largeSizeFrom?: number | null;
+    sizePriceRules?: Array<{ from: string | number; price: string | number }>;
+  },
+): number {
+  const basePrice = pricingConfig.basePrice || 0;
+  const colorPrices = pricingConfig.colorPrices || {};
+  const largeSizePrice = pricingConfig.largeSizePrice;
+  const largeSizeFrom = pricingConfig.largeSizeFrom;
+  const sizePriceRules = Array.isArray(pricingConfig.sizePriceRules)
+    ? pricingConfig.sizePriceRules
+        .map((rule: any) => ({
+          from: parseInt(String(rule.from), 10),
+          price: parseFloat(String(rule.price)),
+        }))
+        .filter(
+          (rule: any) =>
+            !Number.isNaN(rule.from) &&
+            !Number.isNaN(rule.price) &&
+            rule.from > 0,
+        )
+        .sort((a: any, b: any) => b.from - a.from)
+    : [];
+
+  const colorKey = color.trim().toLowerCase();
+  if (colorPrices[colorKey] !== undefined) {
+    return colorPrices[colorKey];
+  }
+
+  if (sizePriceRules.length > 0) {
+    const sizeValue = parseInt(size, 10);
+    if (!Number.isNaN(sizeValue)) {
+      const matched = sizePriceRules.find(
+        (rule: any) => sizeValue >= rule.from,
+      );
+      if (matched) return matched.price;
+    }
+  }
+
+  if (
+    largeSizeFrom !== null &&
+    largeSizeFrom !== undefined &&
+    largeSizePrice !== null &&
+    largeSizePrice !== undefined &&
+    parseInt(size, 10) >= largeSizeFrom
+  ) {
+    return largeSizePrice;
+  }
+
+  return basePrice;
+}
