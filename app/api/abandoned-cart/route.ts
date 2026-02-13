@@ -5,6 +5,7 @@ import { db } from "lib/db";
 import { abandonedCarts, users } from "lib/db/schema";
 import { sendAbandonedCartEmail } from "@/lib/email/order-emails";
 import { and, eq, lte } from "drizzle-orm";
+import { AbandonedCartBody } from "types/api";
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    const body = (await request.json()) as AbandonedCartBody;
     const { cartId, items, cartTotal } = body;
 
     if (!cartId || !items || !Array.isArray(items) || items.length === 0) {

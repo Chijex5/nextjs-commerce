@@ -4,10 +4,11 @@ import { db } from "lib/db";
 import { users } from "lib/db/schema";
 import { createUserSession, setUserSessionCookie } from "lib/user-session";
 import { eq } from "drizzle-orm";
+import { LoginUserBody } from "types/api";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    const { email, password } = (await request.json()) as LoginUserBody;
 
     if (!email || !password) {
       return NextResponse.json(

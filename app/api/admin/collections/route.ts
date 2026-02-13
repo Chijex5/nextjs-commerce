@@ -3,6 +3,7 @@ import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
 import { collections, productCollections } from "lib/db/schema";
 import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import type { CreateCollectionBody } from "types/api";
 
 export async function GET(request: NextRequest) {
   try {
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = (await request.json()) as CreateCollectionBody;
     const { handle, title, description, seoTitle, seoDescription } = body;
 
     if (!handle || !title) {

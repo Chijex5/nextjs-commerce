@@ -3,6 +3,7 @@ import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
 import { pages } from "lib/db/schema";
 import { desc, eq, ilike, or } from "drizzle-orm";
+import { CreatePageBody } from "types/api";
 
 export async function GET(request: NextRequest) {
   try {
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = (await request.json()) as CreatePageBody;
     const {
       handle,
       title,

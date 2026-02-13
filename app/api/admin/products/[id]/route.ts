@@ -12,6 +12,7 @@ import {
   products,
 } from "lib/db/schema";
 import { eq, inArray, asc } from "drizzle-orm";
+import type { UpdateProductBody } from "types/api";
 
 export async function DELETE(
   request: Request,
@@ -128,7 +129,7 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const body = await request.json();
+    const body = (await request.json()) as UpdateProductBody;
 
     const product = await db.transaction(async (tx) => {
       const [updatedProduct] = await tx
@@ -151,7 +152,7 @@ export async function PUT(
 
         if (body.images.length > 0) {
           await tx.insert(productImages).values(
-            body.images.map((img: any) => ({
+            body.images.map((img) => ({
               productId: id,
               url: img.url,
               altText: updatedProduct?.title,
@@ -210,17 +211,17 @@ export async function PUT(
           const largeSizeFrom = body.largeSizeFrom;
           const sizePriceRules = Array.isArray(body.sizePriceRules)
             ? body.sizePriceRules
-                .map((rule: any) => ({
-                  from: parseInt(rule.from, 10),
-                  price: parseFloat(rule.price),
+                .map((rule) => ({
+                  from: parseInt(String(rule.from), 10),
+                  price: parseFloat(String(rule.price)),
                 }))
                 .filter(
-                  (rule: any) =>
+                  (rule) =>
                     !Number.isNaN(rule.from) &&
                     !Number.isNaN(rule.price) &&
                     rule.from > 0,
                 )
-                .sort((a: any, b: any) => b.from - a.from)
+                .sort((a, b) => b.from - a.from)
             : [];
 
           const colorKey = color.trim().toLowerCase();
@@ -232,7 +233,7 @@ export async function PUT(
             const sizeValue = parseInt(size, 10);
             if (!Number.isNaN(sizeValue)) {
               const matched = sizePriceRules.find(
-                (rule: any) => sizeValue >= rule.from,
+                (rule) => sizeValue >= rule.from,
               );
               if (matched) return matched.price;
             }
@@ -303,7 +304,7 @@ export async function PUT(
 
         if (body.collectionIds.length > 0) {
           await tx.insert(productCollections).values(
-            body.collectionIds.map((collectionId: string, index: number) => ({
+            body.collectionIds.map((collectionId, index) => ({
               productId: id,
               collectionId,
               position: index,

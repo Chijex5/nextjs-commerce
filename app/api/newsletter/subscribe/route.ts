@@ -4,10 +4,11 @@ import { newsletterSubscribers } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email/resend";
 import { welcomeEmailTemplate } from "@/lib/email/templates/welcome";
 import { eq } from "drizzle-orm";
+import { NewsletterSubscribeBody } from "types/api";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, name } = await request.json();
+    const { email, name } = (await request.json()) as NewsletterSubscribeBody;
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email)) {

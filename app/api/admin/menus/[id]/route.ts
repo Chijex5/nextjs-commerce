@@ -3,6 +3,7 @@ import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
 import { menuItems, menus } from "lib/db/schema";
 import { and, asc, eq, ne } from "drizzle-orm";
+import { UpdateMenuBody } from "types/api";
 
 export async function GET(
   request: NextRequest,
@@ -71,7 +72,7 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const body = await request.json();
+    const body = (await request.json()) as UpdateMenuBody;
     const { handle, title } = body;
 
     if (!handle || !title) {

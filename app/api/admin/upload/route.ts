@@ -3,6 +3,7 @@ import { requireAdminSession } from "lib/admin-auth";
 import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "lib/image-constants";
 import { v2 as cloudinary } from "cloudinary";
 import sharp from "sharp";
+import { DeleteUploadBody } from "types/api";
 
 const OUTPUT_QUALITY = 82;
 
@@ -82,7 +83,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { publicId } = await request.json();
+    const { publicId } = (await request.json()) as DeleteUploadBody;
 
     if (!publicId) {
       return NextResponse.json(

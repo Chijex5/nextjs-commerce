@@ -6,36 +6,11 @@ import {
   CouponValidationError,
   validateCouponForCheckout,
 } from "lib/coupon-validation";
-
-interface CheckoutData {
-  email: string;
-  phone: string;
-  shippingAddress: {
-    firstName: string;
-    lastName: string;
-    address: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-  };
-  billingAddress: {
-    firstName: string;
-    lastName: string;
-    address: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-  };
-  saveAddress: boolean;
-  couponCode?: string;
-  notes?: string;
-}
+import { CheckoutInitializeBody } from "types/api";
 
 export async function POST(request: NextRequest) {
   try {
-    const body: CheckoutData = await request.json();
+    const body = (await request.json()) as CheckoutInitializeBody;
 
     // Validate required fields
     if (!body.email || !body.phone || !body.shippingAddress) {

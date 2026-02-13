@@ -4,10 +4,11 @@ import { db } from "lib/db";
 import { users } from "lib/db/schema";
 import { deriveNameFromEmail } from "lib/user-utils";
 import { eq } from "drizzle-orm";
+import { RegisterUserBody } from "types/api";
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password } = await request.json();
+    const { name, email, password } = (await request.json()) as RegisterUserBody;
 
     if (!email || !password) {
       return NextResponse.json(

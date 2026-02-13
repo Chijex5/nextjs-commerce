@@ -4,6 +4,7 @@ import { reviewVotes, reviews } from "@/lib/db/schema";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { and, eq, sql } from "drizzle-orm";
+import { ReviewVoteBody } from "types/api";
 
 export async function POST(
   request: NextRequest,
@@ -19,7 +20,7 @@ export async function POST(
       );
     }
 
-    const { isHelpful } = await request.json();
+    const { isHelpful } = (await request.json()) as ReviewVoteBody;
     const { id } = await context.params;
 
     if (typeof isHelpful !== "boolean") {

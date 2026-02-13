@@ -8,6 +8,7 @@ import {
   isValidCouponCode,
 } from "lib/coupon-utils";
 import { desc, eq, ilike } from "drizzle-orm";
+import { CreateCouponBody } from "types/api";
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = (await request.json()) as CreateCouponBody;
     let {
       code,
       description,

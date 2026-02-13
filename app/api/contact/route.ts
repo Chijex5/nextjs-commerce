@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "lib/email/resend";
 import { contactConfirmationTemplate } from "lib/email/templates/contact-confirmation";
 import { contactNotificationTemplate } from "lib/email/templates/contact-notification";
+import { ContactBody } from "types/api";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const maxMessageLength = 2000;
@@ -14,7 +15,7 @@ const getSupportEmail = () =>
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = await request.json();
+    const payload = (await request.json()) as ContactBody;
     const name =
       typeof payload.name === "string" ? payload.name.trim() : undefined;
     const email = typeof payload.email === "string" ? payload.email.trim() : "";

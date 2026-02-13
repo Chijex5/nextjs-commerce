@@ -3,6 +3,7 @@ import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
 import { collections, productCollections } from "lib/db/schema";
 import { and, eq, ne, sql } from "drizzle-orm";
+import type { UpdateCollectionBody } from "types/api";
 
 export async function GET(
   request: NextRequest,
@@ -80,7 +81,7 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const body = await request.json();
+    const body = (await request.json()) as UpdateCollectionBody;
     const { handle, title, description, seoTitle, seoDescription } = body;
 
     if (!handle || !title) {
