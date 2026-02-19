@@ -139,21 +139,22 @@ export async function getProducts({
   reverse?: boolean;
   sortKey?: string;
 }): Promise<Product[]> {
-  let queryBuilder = db.select().from(products);
+  const baseQuery = db.select().from(products);
 
-  if (sortKey === "CREATED_AT" || sortKey === "CREATED") {
-    queryBuilder = reverse
-      ? queryBuilder.orderBy(desc(products.createdAt))
-      : queryBuilder.orderBy(asc(products.createdAt));
-  } else if (sortKey === "PRICE") {
-    queryBuilder = reverse
-      ? queryBuilder.orderBy(desc(products.title))
-      : queryBuilder.orderBy(asc(products.title));
-  } else {
-    queryBuilder = queryBuilder.orderBy(desc(products.createdAt));
-  }
-
-  const dbProducts = await queryBuilder.limit(100);
+  const dbProducts =
+    sortKey === "CREATED_AT" || sortKey === "CREATED"
+      ? await (
+          reverse
+            ? baseQuery.orderBy(desc(products.createdAt))
+            : baseQuery.orderBy(asc(products.createdAt))
+        ).limit(100)
+      : sortKey === "PRICE"
+        ? await (
+            reverse
+              ? baseQuery.orderBy(desc(products.title))
+              : baseQuery.orderBy(asc(products.title))
+          ).limit(100)
+        : await baseQuery.orderBy(desc(products.createdAt)).limit(100);
 
   const productsWithDetails = await Promise.all(
     dbProducts.map((p) => reshapeDbProduct(p)),
@@ -222,7 +223,9 @@ export async function getProductReviewAggregate(productId: string): Promise<{
       reviewCount: sql<number>`count(${reviews.rating})`,
     })
     .from(reviews)
-    .where(and(eq(reviews.productId, productId), eq(reviews.status, "approved")));
+    .where(
+      and(eq(reviews.productId, productId), eq(reviews.status, "approved")),
+    );
 
   return {
     averageRating:
