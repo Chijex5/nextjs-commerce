@@ -139,7 +139,7 @@ export async function getProducts({
   reverse?: boolean;
   sortKey?: string;
 }): Promise<Product[]> {
-  let queryBuilder = db.select().from(products);
+  let queryBuilder = db.select().from(products).$dynamic();
 
   if (sortKey === "CREATED_AT" || sortKey === "CREATED") {
     queryBuilder = reverse
