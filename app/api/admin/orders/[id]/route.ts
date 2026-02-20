@@ -110,6 +110,7 @@ export async function PUT(
     const session = await requireAdminSession();
 
     if (!session) {
+      console.log("No admin session found");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

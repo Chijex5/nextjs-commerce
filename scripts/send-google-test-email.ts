@@ -1,23 +1,38 @@
 #!/usr/bin/env tsx
 
 /**
- * Script to send test email to Google for Email Markup whitelisting
+ * Script to send a real order confirmation email to Google for Email Markup review.
  * Run: pnpm tsx scripts/send-google-test-email.ts
  *
  * Optional overrides:
- * - --product-id <uuid>
- * - PRODUCT_ID_OVERRIDE env var
+ * - --order-id <uuid>
+ * - --order-number <value>
+ * - --product-id <uuid> (selects the latest order containing this product)
+ * - --create-order (create a real order if none exist)
+ * - --customer-email / --customer-name / --customer-phone
+ * - --quantity <number>
+ * - ORDER_ID_OVERRIDE / ORDER_NUMBER_OVERRIDE / PRODUCT_ID_OVERRIDE env vars
+ * - CREATE_ORDER_IF_MISSING / CUSTOMER_EMAIL / CUSTOMER_NAME / CUSTOMER_PHONE
+ * - SHIPPING_ADDRESS_JSON (JSON string override)
  */
 
 import "dotenv/config";
-import { and, asc, desc, eq } from "drizzle-orm";
-import { Resend } from "resend";
-import { db, productImages, productVariants, products } from "../lib/db";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { sendEmail } from "../lib/email/resend";
+import { orderConfirmationWithMarkupTemplate } from "../lib/email/templates/order-confirmation-with-markup";
+import {
+  db,
+  orderItems,
+  orders,
+  productImages,
+  productVariants,
+  products,
+  users,
+} from "../lib/db";
 
-const GOOGLE_TEST_EMAIL = "schema.whitelisting+sample@gmail.com";
+const GOOGLE_REVIEW_EMAIL = "schema.whitelisting+sample@gmail.com";
 const FROM_EMAIL = "order@dfootprint.me";
 const REPLY_TO_EMAIL = "support@dfootprint.me";
-const STORE_BASE_URL = "https://dfootprint.me";
 
 const getArgValue = (flag: string): string | undefined => {
   const flagIndex = process.argv.findIndex((arg) => arg === flag);
@@ -33,16 +48,87 @@ const getArgValue = (flag: string): string | undefined => {
   return undefined;
 };
 
+const orderIdOverride =
+  getArgValue("--order-id") ||
+  process.env.ORDER_ID_OVERRIDE ||
+  process.env.GOOGLE_TEST_ORDER_ID ||
+  process.env.TEST_ORDER_ID;
+
+const orderNumberOverride =
+  getArgValue("--order-number") ||
+  process.env.ORDER_NUMBER_OVERRIDE ||
+  process.env.GOOGLE_TEST_ORDER_NUMBER ||
+  process.env.TEST_ORDER_NUMBER;
+
 const productIdOverride =
   getArgValue("--product-id") ||
   process.env.PRODUCT_ID_OVERRIDE ||
   process.env.GOOGLE_TEST_PRODUCT_ID ||
   process.env.TEST_PRODUCT_ID;
 
+const createOrderIfMissing =
+  process.argv.includes("--create-order") ||
+  ["1", "true", "yes"].includes(
+    (process.env.CREATE_ORDER_IF_MISSING || "").toLowerCase(),
+  );
+
+const customerEmailOverride =
+  getArgValue("--customer-email") ||
+  process.env.CUSTOMER_EMAIL ||
+  process.env.GOOGLE_REVIEW_CUSTOMER_EMAIL;
+
+const customerNameOverride =
+  getArgValue("--customer-name") ||
+  process.env.CUSTOMER_NAME ||
+  process.env.GOOGLE_REVIEW_CUSTOMER_NAME;
+
+const customerPhoneOverride =
+  getArgValue("--customer-phone") ||
+  process.env.CUSTOMER_PHONE ||
+  process.env.GOOGLE_REVIEW_CUSTOMER_PHONE;
+
+const quantityOverrideRaw =
+  getArgValue("--quantity") || process.env.ORDER_ITEM_QUANTITY;
+
+const shippingAddressOverrideRaw =
+  process.env.SHIPPING_ADDRESS_JSON || process.env.GOOGLE_REVIEW_SHIPPING_ADDRESS;
+
+type SelectedItem = {
+  productTitle: string;
+  variantTitle: string;
+  quantity: number;
+  price: number;
+  productImage?: string | null;
+  productHandle?: string;
+  sku?: string;
+};
+
+type OrderSelection = {
+  order: typeof orders.$inferSelect;
+  items: SelectedItem[];
+};
+
 type ProductSelection = {
   product: typeof products.$inferSelect;
   variant: typeof productVariants.$inferSelect;
-  imageUrl?: string;
+  imageUrl?: string | null;
+};
+
+const parseQuantity = (): number => {
+  if (!quantityOverrideRaw) return 1;
+  const parsed = Number(quantityOverrideRaw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 1;
+  return Math.round(parsed);
+};
+
+const parseShippingAddressOverride = (): Record<string, any> | null => {
+  if (!shippingAddressOverrideRaw) return null;
+  try {
+    const parsed = JSON.parse(shippingAddressOverrideRaw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (error) {
+    throw new Error("SHIPPING_ADDRESS_JSON is not valid JSON");
+  }
 };
 
 const loadProductSelection = async (): Promise<ProductSelection> => {
@@ -101,195 +187,315 @@ const loadProductSelection = async (): Promise<ProductSelection> => {
   return {
     product,
     variant,
-    imageUrl: image?.url,
+    imageUrl: image?.url ?? null,
   };
 };
 
-const formatCurrency = (amount: number, currencyCode: string): string => {
-  try {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: currencyCode,
-    }).format(amount);
-  } catch {
-    return `${currencyCode} ${amount.toFixed(2)}`;
-  }
+const loadCustomerDefaults = async (): Promise<{
+  userId: string | null;
+  email: string;
+  name: string;
+  phone: string | null;
+  shippingAddress: Record<string, any>;
+}> => {
+  const shippingOverride = parseShippingAddressOverride();
+
+  const [user] = await db
+    .select()
+    .from(users)
+    .orderBy(desc(users.updatedAt))
+    .limit(1);
+
+  const email =
+    customerEmailOverride ||
+    user?.email ||
+    process.env.SUPPORT_EMAIL ||
+    REPLY_TO_EMAIL;
+
+  const nameFromAddress = shippingOverride
+    ? `${shippingOverride.firstName || ""} ${shippingOverride.lastName || ""}`.trim()
+    : "";
+
+  const name =
+    customerNameOverride ||
+    user?.name ||
+    nameFromAddress ||
+    "Customer";
+
+  const phone =
+    customerPhoneOverride ||
+    user?.phone ||
+    (typeof shippingOverride?.phone1 === "string"
+      ? shippingOverride.phone1
+      : null);
+
+  const shippingAddress =
+    shippingOverride ||
+    (user?.shippingAddress as Record<string, any> | null) || {
+      firstName: name.split(" ")[0] || "Customer",
+      lastName: name.split(" ").slice(1).join(" ") || "Order",
+      address: "12 Ozumba Mbadiwe Rd",
+      streetAddress: "12 Ozumba Mbadiwe Rd",
+      city: "Lagos",
+      lga: "Lagos Island",
+      state: "Lagos",
+      phone1: phone || "08000000000",
+      phone2: "",
+      country: "Nigeria",
+    };
+
+  const useUserId =
+    !!user &&
+    !customerEmailOverride &&
+    !customerNameOverride &&
+    !customerPhoneOverride &&
+    !shippingOverride;
+
+  return {
+    userId: useUserId ? user.id : null,
+    email,
+    name,
+    phone,
+    shippingAddress,
+  };
 };
 
-async function sendGoogleTestEmail() {
-  const apiKey = process.env.RESEND_API_KEY;
+const createOrderFromProduct = async (): Promise<OrderSelection> => {
+  const quantity = parseQuantity();
+  const { product, variant, imageUrl } = await loadProductSelection();
+  const customer = await loadCustomerDefaults();
 
-  if (!apiKey) {
-    console.error("❌ Error: RESEND_API_KEY not set in environment variables");
+  const unitPrice = Number(variant.price);
+  const safeUnitPrice = Number.isFinite(unitPrice) ? unitPrice : 0;
+  const lineTotal = safeUnitPrice * quantity;
+  const currencyCode = variant.currencyCode || "NGN";
+
+  const orderNumber = `ORD-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 11)
+    .toUpperCase()}`;
+
+  const order = await db.transaction(async (tx) => {
+    const [createdOrder] = await tx
+      .insert(orders)
+      .values({
+        orderNumber,
+        userId: customer.userId,
+        email: customer.email,
+        phone: customer.phone,
+        customerName: customer.name,
+        shippingAddress: customer.shippingAddress,
+        billingAddress: customer.shippingAddress,
+        status: "processing",
+        deliveryStatus: "production",
+        subtotalAmount: lineTotal.toFixed(2),
+        shippingAmount: "0.00",
+        discountAmount: "0.00",
+        totalAmount: lineTotal.toFixed(2),
+        currencyCode,
+      })
+      .returning();
+
+    if (!createdOrder) {
+      throw new Error("Failed to create order");
+    }
+
+    await tx.insert(orderItems).values({
+      orderId: createdOrder.id,
+      productId: product.id,
+      productVariantId: variant.id,
+      productTitle: product.title,
+      variantTitle: variant.title,
+      quantity,
+      price: safeUnitPrice.toFixed(2),
+      totalAmount: lineTotal.toFixed(2),
+      currencyCode,
+      productImage: imageUrl ?? null,
+    });
+
+    return createdOrder;
+  });
+
+  return {
+    order,
+    items: [
+      {
+        productTitle: product.title,
+        variantTitle: variant.title,
+        quantity,
+        price: safeUnitPrice,
+        productImage: imageUrl ?? null,
+        productHandle: product.handle,
+        sku: variant.id,
+      },
+    ],
+  };
+};
+
+const loadOrderSelection = async (): Promise<OrderSelection> => {
+  let selectedOrder: typeof orders.$inferSelect | undefined;
+
+  if (orderIdOverride) {
+    [selectedOrder] = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, orderIdOverride))
+      .limit(1);
+  } else if (orderNumberOverride) {
+    [selectedOrder] = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.orderNumber, orderNumberOverride))
+      .limit(1);
+  } else if (productIdOverride) {
+    const [row] = await db
+      .select({ order: orders })
+      .from(orders)
+      .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+      .where(eq(orderItems.productId, productIdOverride))
+      .orderBy(desc(orders.createdAt))
+      .limit(1);
+
+    selectedOrder = row?.order;
+  } else {
+    [selectedOrder] = await db
+      .select()
+      .from(orders)
+      .orderBy(desc(orders.createdAt))
+      .limit(1);
+  }
+
+  if (!selectedOrder) {
+    if (createOrderIfMissing) {
+      console.log("No existing orders found. Creating a real order...");
+      return createOrderFromProduct();
+    }
+    if (orderIdOverride) {
+      throw new Error(`No order found for id ${orderIdOverride}`);
+    }
+    if (orderNumberOverride) {
+      throw new Error(`No order found for number ${orderNumberOverride}`);
+    }
+    if (productIdOverride) {
+      throw new Error(
+        `No order found containing product id ${productIdOverride}`,
+      );
+    }
+    throw new Error(
+      "No orders found in the database (pass --create-order to create one)",
+    );
+  }
+
+  const items = await db
+    .select()
+    .from(orderItems)
+    .where(eq(orderItems.orderId, selectedOrder.id))
+    .orderBy(asc(orderItems.createdAt));
+
+  if (!items.length) {
+    throw new Error(`No items found for order ${selectedOrder.orderNumber}`);
+  }
+
+  const productIds = Array.from(new Set(items.map((item) => item.productId)));
+  const productRows = productIds.length
+    ? await db
+        .select({ id: products.id, handle: products.handle })
+        .from(products)
+        .where(inArray(products.id, productIds))
+    : [];
+
+  const handleById = new Map(productRows.map((row) => [row.id, row.handle]));
+
+  const mappedItems = items.map((item) => ({
+    productTitle: item.productTitle,
+    variantTitle: item.variantTitle,
+    quantity: item.quantity,
+    price: Number(item.price),
+    productImage: item.productImage,
+    productHandle: handleById.get(item.productId),
+    sku: item.productVariantId,
+  }));
+
+  return {
+    order: selectedOrder,
+    items: mappedItems,
+  };
+};
+
+async function sendGoogleReviewEmail() {
+  if (!process.env.RESEND_API_KEY) {
+    console.error("Error: RESEND_API_KEY not set in environment variables");
     console.log("Please set your Resend API key:");
     console.log('export RESEND_API_KEY="re_xxxxxxxxxxxxx"');
     process.exit(1);
   }
 
-  const { product, variant, imageUrl } = await loadProductSelection();
-  const productUrl = `${STORE_BASE_URL}/products/${product.handle}`;
-  const priceNumber = Number(variant.price);
-  const currencyCode = variant.currencyCode || "NGN";
-  const priceDisplay = formatCurrency(
-    Number.isFinite(priceNumber) ? priceNumber : 0,
-    currencyCode,
-  );
-  const orderNumber = `ORD-GOOGLE-${Date.now()}`;
+  const { order, items } = await loadOrderSelection();
+
+  if (!order.shippingAddress) {
+    throw new Error(
+      `Order ${order.orderNumber} is missing shipping address data`,
+    );
+  }
+
+  const siteUrl = "https://dfootprint.me";
+  const orderUrl = `${siteUrl}/orders?orderNumber=${encodeURIComponent(order.orderNumber)}`;
 
   console.log(
-    "🚀 Sending test email to Google for Email Markup whitelisting...",
+    "Sending production-style order confirmation to Google review inbox...",
   );
   console.log(`From: ${FROM_EMAIL}`);
-  console.log(`To: ${GOOGLE_TEST_EMAIL}`);
+  console.log(`To: ${GOOGLE_REVIEW_EMAIL}`);
   console.log(`Reply-To: ${REPLY_TO_EMAIL}`);
-  console.log(`Product: ${product.title} (${product.id})`);
+  console.log(`Order: ${order.orderNumber} (${order.id})`);
+  if (orderIdOverride) {
+    console.log(`Order override: ${orderIdOverride}`);
+  }
+  if (orderNumberOverride) {
+    console.log(`Order number override: ${orderNumberOverride}`);
+  }
   if (productIdOverride) {
     console.log(`Product override: ${productIdOverride}`);
   }
 
-  const resend = new Resend(apiKey);
+  const html = orderConfirmationWithMarkupTemplate({
+    orderNumber: order.orderNumber,
+    customerName: order.customerName,
+    email: order.email,
+    totalAmount: Number(order.totalAmount),
+    currencyCode: order.currencyCode,
+    items,
+    shippingAddress: order.shippingAddress,
+    orderDate: order.createdAt.toISOString(),
+    estimatedArrival: order.estimatedArrival?.toISOString(),
+    trackingNumber: order.trackingNumber || undefined,
+    orderUrl,
+  });
 
-  const testOrder = {
-    "@context": "http://schema.org",
-    "@type": "Order",
-    merchant: {
-      "@type": "Organization",
-      name: "D'FOOTPRINT",
-    },
-    orderNumber,
-    orderDate: new Date().toISOString(),
-    orderStatus: "http://schema.org/OrderProcessing",
-    priceCurrency: currencyCode,
-    price: Number.isFinite(priceNumber) ? priceNumber : 0,
-    acceptedOffer: [
-      {
-        "@type": "Offer",
-        itemOffered: {
-          "@type": "Product",
-          name: product.title,
-          image: imageUrl || undefined,
-          sku: variant.id || product.id,
-          url: productUrl,
-        },
-        price: Number.isFinite(priceNumber) ? priceNumber : 0,
-        priceCurrency: currencyCode,
-        priceSpecification: {
-          "@type": "PriceSpecification",
-          price: Number.isFinite(priceNumber) ? priceNumber : 0,
-          priceCurrency: currencyCode,
-        },
-        eligibleQuantity: {
-          "@type": "QuantitativeValue",
-          value: 1,
-        },
-      },
-    ],
-    customer: {
-      "@type": "Person",
-      name: "Test Customer",
-      email: GOOGLE_TEST_EMAIL,
-    },
-    orderDelivery: {
-      "@type": "ParcelDelivery",
-      deliveryAddress: {
-        "@type": "PostalAddress",
-        streetAddress: "123 Test Street",
-        addressLocality: "Lagos",
-        addressRegion: "Lagos State",
-        addressCountry: "NG",
-      },
-      expectedArrivalFrom: new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      expectedArrivalUntil: new Date(
-        Date.now() + 14 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-    },
-    url: `${STORE_BASE_URL}/orders`,
-    potentialAction: {
-      "@type": "ViewAction",
-      url: `${STORE_BASE_URL}/orders`,
-      name: "View Order",
-    },
-  };
+  const result = await sendEmail({
+    to: GOOGLE_REVIEW_EMAIL,
+    from: FROM_EMAIL,
+    replyTo: REPLY_TO_EMAIL,
+    subject: `Order Confirmation #${order.orderNumber} - D'FOOTPRINT`,
+    html,
+  });
 
-  const emailHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Test Email for Google Email Markup Whitelisting</title>
-  <script type="application/ld+json">
-  ${JSON.stringify(testOrder, null, 2)}
-  </script>
-</head>
-<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h1>Test Email for Google Email Markup Whitelisting</h1>
-  <p>This is a test email sent to Google to request whitelisting for Email Markup.</p>
-
-  <div style="background-color: #f9f9f9; padding: 15px; border-radius: 6px; margin: 20px 0;">
-    <h2>Test Order Details</h2>
-    <p><strong>Order Number:</strong> ${orderNumber}</p>
-    <p><strong>Customer:</strong> Test Customer</p>
-    <p><strong>Product:</strong> ${product.title}</p>
-    <p><strong>Total:</strong> ${priceDisplay}</p>
-    <p><strong>Status:</strong> Processing</p>
-  </div>
-
-  <div style="background-color: #e8f5e9; padding: 15px; border-radius: 6px; margin: 20px 0;">
-    <h3>What is Email Markup?</h3>
-    <p>Email Markup allows Gmail to display rich, interactive information directly in the inbox, such as:</p>
-    <ul>
-      <li>Order tracking information</li>
-      <li>Quick action buttons</li>
-      <li>Structured order details</li>
-      <li>Delivery status updates</li>
-    </ul>
-  </div>
-
-  <p><strong>D'FOOTPRINT</strong> - Handcrafted Footwear from Lagos, Nigeria</p>
-  <p style="font-size: 12px; color: #666;">
-    This email contains structured data (JSON-LD) for Google Email Markup whitelisting.
-  </p>
-</body>
-</html>
-  `;
-
-  try {
-    const result = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: GOOGLE_TEST_EMAIL,
-      replyTo: REPLY_TO_EMAIL,
-      subject:
-        "[Test] Order Confirmation - Google Email Markup Whitelisting Request",
-      html: emailHtml,
-    });
-
-    console.log(result);
-    console.log("✅ Test email sent successfully!");
-    console.log("📧 Email ID:", result.data?.id);
-    console.log("\n📝 Next Steps:");
-    console.log(
-      "1. Wait for Google to process your whitelisting request (can take 5-7 business days)",
-    );
-    console.log("2. You will receive an email confirmation when approved");
-    console.log(
-      "3. Once approved, Email Markup will work in Gmail for all your order emails",
-    );
-    console.log(
-      "\n💡 Tip: Make sure your production domain is verified in Resend",
-    );
-    console.log('💡 Tip: Use the same "From" email address in production');
-  } catch (error) {
-    console.error("❌ Failed to send test email:", error);
-    if (error instanceof Error && error.message) {
-      console.error("Error message:", error.message);
-    }
+  if (!result.success) {
+    console.error("Failed to send review email:", result.error);
     process.exit(1);
+  }
+
+  console.log("Email sent successfully.");
+  const emailId =
+    result.data && typeof result.data === "object" && "id" in result.data
+      ? (result.data as { id?: string }).id
+      : undefined;
+  if (emailId) {
+    console.log("Email ID:", emailId);
   }
 }
 
-sendGoogleTestEmail().catch((error) => {
-  console.error("❌ Script failed:", error);
+sendGoogleReviewEmail().catch((error) => {
+  console.error("Script failed:", error);
   process.exit(1);
 });

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
+import { useSearchParams } from "next/navigation";
 import Price from "components/price";
 import PageLoader from "components/page-loader";
 import { useUserSession } from "hooks/useUserSession";
@@ -46,6 +47,9 @@ export default function OrdersPage() {
   const [trackedOrder, setTrackedOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isTrackingLoading, setIsTrackingLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const autoTrackedRef = useRef<string | null>(null);
+  const orderNumberParam = searchParams.get("orderNumber")?.trim() || "";
 
   useEffect(() => {
     if (session) {
@@ -68,9 +72,9 @@ export default function OrdersPage() {
     }
   };
 
-  const handleTrackOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!trackingId.trim()) {
+  const trackOrderByNumber = useCallback(async (orderNumber: string) => {
+    const trimmed = orderNumber.trim();
+    if (!trimmed) {
       toast.error("Please enter an order number");
       return;
     }
@@ -78,7 +82,7 @@ export default function OrdersPage() {
     setIsTrackingLoading(true);
     try {
       const response = await fetch(
-        `/api/orders/track?orderNumber=${trackingId}`,
+        `/api/orders/track?orderNumber=${encodeURIComponent(trimmed)}`,
       );
       if (response.ok) {
         const data = await response.json();
@@ -94,7 +98,20 @@ export default function OrdersPage() {
     } finally {
       setIsTrackingLoading(false);
     }
+  }, []);
+
+  const handleTrackOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await trackOrderByNumber(trackingId);
   };
+
+  useEffect(() => {
+    if (!orderNumberParam) return;
+    if (autoTrackedRef.current === orderNumberParam) return;
+    autoTrackedRef.current = orderNumberParam;
+    setTrackingId(orderNumberParam);
+    trackOrderByNumber(orderNumberParam);
+  }, [orderNumberParam, trackOrderByNumber]);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -281,10 +298,12 @@ export default function OrdersPage() {
 
   return (
     <div className="mx-auto mt-20 max-w-4xl px-4 pb-20">
-      <h1 className="mb-6 text-3xl font-bold">Orders</h1>
+      <h1 className="mb-6 text-3xl font-bold">
+        {orderNumberParam ? "Order Details" : "Orders"}
+      </h1>
 
       {/* Logged in user - Show their orders */}
-      {session && (
+      {session && !orderNumberParam && (
         <div className="mb-8">
           <h2 className="mb-4 text-xl font-semibold">My Orders</h2>
           {isLoading ? (
@@ -320,29 +339,43 @@ export default function OrdersPage() {
 
       {/* Track Order by ID - Available to all */}
       <div>
-        <h2 className="mb-4 text-xl font-semibold">Track an Order</h2>
-        <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-black">
-          <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
-            Enter your order number to track your order status
-          </p>
-          <form onSubmit={handleTrackOrder} className="flex gap-2">
-            <input
-              type="text"
-              value={trackingId}
-              onChange={(e) => setTrackingId(e.target.value)}
-              placeholder="Order number (e.g., ORD-123456)"
-              className="flex-1 rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-            />
-            <button
-              type="submit"
-              disabled={isTrackingLoading}
-              className="rounded-md bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              {isTrackingLoading ? "Tracking..." : "Track"}
-            </button>
-          </form>
-        </div>
+        {!orderNumberParam && (
+          <>
+            <h2 className="mb-4 text-xl font-semibold">Track an Order</h2>
+            <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-black">
+              <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
+                Enter your order number to track your order status
+              </p>
+              <form onSubmit={handleTrackOrder} className="flex gap-2">
+                <input
+                  type="text"
+                  value={trackingId}
+                  onChange={(e) => setTrackingId(e.target.value)}
+                  placeholder="Order number (e.g., ORD-123456)"
+                  className="flex-1 rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                />
+                <button
+                  type="submit"
+                  disabled={isTrackingLoading}
+                  className="rounded-md bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {isTrackingLoading ? "Tracking..." : "Track"}
+                </button>
+              </form>
+            </div>
+          </>
+        )}
 
+        {isTrackingLoading && orderNumberParam && (
+          <div className="mt-4 rounded-lg border border-neutral-200 bg-white p-6 text-center text-sm text-neutral-600 dark:border-neutral-800 dark:bg-black dark:text-neutral-400">
+            Loading order details...
+          </div>
+        )}
+        {!isTrackingLoading && orderNumberParam && !trackedOrder && (
+          <div className="mt-4 rounded-lg border border-neutral-200 bg-white p-6 text-center text-sm text-neutral-600 dark:border-neutral-800 dark:bg-black dark:text-neutral-400">
+            Order not found for that number.
+          </div>
+        )}
         {trackedOrder && (
           <div className="mt-4">
             <OrderCard order={trackedOrder} />
@@ -350,7 +383,7 @@ export default function OrdersPage() {
         )}
       </div>
 
-      {!session && (
+      {!session && !orderNumberParam && (
         <div className="mt-8 rounded-lg border border-neutral-200 bg-white p-6 text-center dark:border-neutral-800 dark:bg-black">
           <p className="mb-4 text-neutral-600 dark:text-neutral-400">
             Want to see all your orders?
