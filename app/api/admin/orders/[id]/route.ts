@@ -68,6 +68,8 @@ export async function GET(
         shippingAddress: order.shippingAddress,
         billingAddress: order.billingAddress,
         subtotalAmount: String(order.subtotalAmount),
+        discountAmount: String(order.discountAmount || 0),
+        couponCode: order.couponCode,
         taxAmount: String(order.taxAmount),
         shippingAmount: String(order.shippingAmount),
         totalAmount: String(order.totalAmount),
@@ -164,7 +166,8 @@ export async function PUT(
       updateData.deliveryStatus = deliveryStatus;
       updateData.estimatedArrival = estimatedArrival;
     }
-    if (trackingNumber !== undefined) updateData.trackingNumber = trackingNumber;
+    if (trackingNumber !== undefined)
+      updateData.trackingNumber = trackingNumber;
     if (notes !== undefined) updateData.notes = notes;
     if (acknowledge && !existingOrder.acknowledgedAt) {
       updateData.acknowledgedAt = new Date();

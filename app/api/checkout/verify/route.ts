@@ -190,18 +190,20 @@ export async function GET(request: NextRequest) {
       .substr(2, 9)
       .toUpperCase()}`;
 
-    const orderItemsData = uniqueLines.map(({ line, variant, product, image }) => ({
-      orderId: "",
-      productId: variant.productId,
-      productVariantId: line.productVariantId,
-      productTitle: product.title,
-      variantTitle: variant.title,
-      quantity: line.quantity,
-      price: String(variant.price),
-      totalAmount: String(line.totalAmount),
-      currencyCode: line.currencyCode,
-      productImage: image?.url || null,
-    }));
+    const orderItemsData = uniqueLines.map(
+      ({ line, variant, product, image }) => ({
+        orderId: "",
+        productId: variant.productId,
+        productVariantId: line.productVariantId,
+        productTitle: product.title,
+        variantTitle: variant.title,
+        quantity: line.quantity,
+        price: String(variant.price),
+        totalAmount: String(line.totalAmount),
+        currencyCode: line.currencyCode,
+        productImage: image?.url || null,
+      }),
+    );
 
     const order = await db.transaction(async (tx) => {
       const [createdOrder] = await tx
@@ -292,6 +294,11 @@ export async function GET(request: NextRequest) {
         customerName: order.customerName,
         email: order.email,
         totalAmount: Number(order.totalAmount),
+        subtotalAmount: Number(order.subtotalAmount),
+        shippingAmount: Number(order.shippingAmount),
+        taxAmount: Number(order.taxAmount),
+        discountAmount: Number(order.discountAmount || 0),
+        couponCode: order.couponCode,
         items: uniqueLines.map(({ line, variant, product, image }) => ({
           productTitle: product.title,
           variantTitle: variant.title,
@@ -337,6 +344,11 @@ export async function GET(request: NextRequest) {
           email: order.email,
           phone: order.phone,
           totalAmount: Number(order.totalAmount),
+          subtotalAmount: Number(order.subtotalAmount),
+          shippingAmount: Number(order.shippingAmount),
+          taxAmount: Number(order.taxAmount),
+          discountAmount: Number(order.discountAmount || 0),
+          couponCode: order.couponCode,
           currencyCode: order.currencyCode,
           orderDate: order.createdAt.toISOString(),
           items: order.items.map((item) => ({
@@ -366,7 +378,9 @@ export async function GET(request: NextRequest) {
 
     return redirect(`/checkout/success?order=${orderNumber}`);
   } catch (error) {
-    if ((error as Error & { digest?: string }).digest?.startsWith("NEXT_REDIRECT")) {
+    if (
+      (error as Error & { digest?: string }).digest?.startsWith("NEXT_REDIRECT")
+    ) {
       throw error;
     }
 

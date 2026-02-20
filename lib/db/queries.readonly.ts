@@ -1,27 +1,27 @@
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "../image-constants";
+import type {
+  Collection,
+  Image,
+  Menu,
+  Page,
+  Product,
+  ProductOption,
+  ProductVariant,
+} from "../shopify/types";
 import { db } from "./drizzle";
 import {
-  products,
-  productVariants,
+  collections,
+  menuItems,
+  menus,
+  pages,
+  productCollections,
   productImages,
   productOptions,
-  collections,
-  productCollections,
-  pages,
-  menus,
-  menuItems,
+  products,
+  productVariants,
   reviews,
 } from "./schema";
-import { eq, and, desc, asc, sql, inArray } from "drizzle-orm";
-import type {
-  Product,
-  Collection,
-  Page,
-  Menu,
-  Image,
-  ProductVariant,
-  ProductOption,
-} from "../shopify/types";
-import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "../image-constants";
 
 // Helper function to reshape database product to match Shopify Product type
 export async function reshapeDbProduct(
@@ -139,7 +139,7 @@ export async function getProducts({
   reverse?: boolean;
   sortKey?: string;
 }): Promise<Product[]> {
-  let queryBuilder = db.select().from(products);
+  let queryBuilder = db.select().from(products).$dynamic();
 
   if (sortKey === "CREATED_AT" || sortKey === "CREATED") {
     queryBuilder = reverse
