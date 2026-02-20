@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
         currencyCode: order.currencyCode,
         createdAt: order.createdAt.toISOString(),
         trackingNumber: order.trackingNumber,
+        notes: order.notes,
         shippingAddress: order.shippingAddress,
         items: items.map((item) => ({
           id: item.id,

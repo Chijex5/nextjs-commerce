@@ -4,6 +4,11 @@ interface OrderConfirmationData {
   orderNumber: string;
   customerName: string;
   totalAmount: number;
+  subtotalAmount?: number;
+  shippingAmount?: number;
+  taxAmount?: number;
+  discountAmount?: number;
+  couponCode?: string | null;
   items: Array<{
     productTitle: string;
     variantTitle: string;
@@ -55,6 +60,10 @@ export const orderConfirmationTemplate = (order: OrderConfirmationData) => {
         ${itemsHtml}
       </tbody>
       <tfoot>
+        ${order.subtotalAmount !== undefined ? `<tr><td colspan="2" style="text-align: right; padding-top: 16px;">Subtotal:</td><td style="text-align: right; padding-top: 16px;">₦${order.subtotalAmount.toLocaleString()}</td></tr>` : ""}
+        ${order.discountAmount && order.discountAmount > 0 ? `<tr><td colspan="2" style="text-align: right;">Discount${order.couponCode ? ` (${order.couponCode})` : ""}:</td><td style="text-align: right; color: #15803d;">-₦${order.discountAmount.toLocaleString()}</td></tr>` : ""}
+        ${order.shippingAmount !== undefined ? `<tr><td colspan="2" style="text-align: right;">Shipping:</td><td style="text-align: right;">₦${order.shippingAmount.toLocaleString()}</td></tr>` : ""}
+        ${order.taxAmount !== undefined && order.taxAmount > 0 ? `<tr><td colspan="2" style="text-align: right;">Tax:</td><td style="text-align: right;">₦${order.taxAmount.toLocaleString()}</td></tr>` : ""}
         <tr style="font-weight: 600;">
           <td colspan="2" style="text-align: right; padding-top: 16px;">Total:</td>
           <td style="text-align: right; padding-top: 16px;">₦${order.totalAmount.toLocaleString()}</td>

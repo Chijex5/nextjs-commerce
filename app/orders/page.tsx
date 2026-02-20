@@ -11,7 +11,6 @@ import {
   getDeliveryStatusDescription,
   getDeliveryStatusColor,
   formatEstimatedArrival,
-  getDeliveryProgress,
   type DeliveryStatus,
 } from "lib/order-utils/delivery-tracking";
 
@@ -35,6 +34,8 @@ interface Order {
   totalAmount: string;
   currencyCode: string;
   createdAt: string;
+  trackingNumber?: string | null;
+  notes?: string | null;
   shippingAddress?: any;
   items: OrderItem[];
 }
@@ -234,6 +235,27 @@ export default function OrdersPage() {
               <DeliveryTimeline deliveryStatus={deliveryStatus} />
             )}
         </div>
+
+        {(order.trackingNumber || order.notes) && (
+          <div className="mb-4 space-y-2 rounded-md border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-900">
+            {order.trackingNumber && (
+              <p className="text-sm">
+                <span className="font-medium">Tracking Number:</span>{" "}
+                <span className="text-neutral-700 dark:text-neutral-300">
+                  {order.trackingNumber}
+                </span>
+              </p>
+            )}
+            {order.notes && (
+              <p className="text-sm">
+                <span className="font-medium">Order Note:</span>{" "}
+                <span className="text-neutral-700 dark:text-neutral-300">
+                  {order.notes}
+                </span>
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Order Items */}
         <div className="mb-4 space-y-3">
