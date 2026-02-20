@@ -1,6 +1,7 @@
 "use client";
 
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import clsx from "clsx";
 import CartModal from "components/cart/modal";
 import LogoSquare from "components/logo-square";
 import Link from "next/link";
@@ -23,34 +24,75 @@ export default function NavbarClient({
 }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  if (isSearchOpen) {
-    return (
-      <nav className="relative flex items-center gap-3 p-4 lg:px-6">
-        <div className="w-full">
-          <Suspense fallback={<SearchSkeleton />}>
-            <Search />
-          </Suspense>
-        </div>
-        <button
-          type="button"
-          onClick={() => setIsSearchOpen(false)}
-          className="text-sm font-medium text-neutral-600 hover:text-black dark:text-neutral-300 dark:hover:text-white"
-          aria-label="Close search"
-        >
-          Cancel
-        </button>
-      </nav>
-    );
-  }
-
   return (
-    <nav className="relative flex items-center justify-between p-4 lg:px-6">
-      <div className="block flex-none md:hidden">
-        <Suspense fallback={null}>
-          <MobileMenu menu={menu} />
-        </Suspense>
+    <nav className="relative p-4 lg:px-6">
+      <div className="relative flex w-full items-center md:hidden">
+        <div
+          className={clsx(
+            "flex w-full items-center justify-between gap-2 transition-all duration-300 ease-out",
+            isSearchOpen
+              ? "pointer-events-none -translate-y-1 opacity-0"
+              : "translate-y-0 opacity-100",
+          )}
+          aria-hidden={isSearchOpen}
+        >
+          <div className="block flex-none">
+            <Suspense fallback={null}>
+              <MobileMenu menu={menu} />
+            </Suspense>
+          </div>
+
+          <Link
+            href="/"
+            prefetch={true}
+            className="mx-2 flex min-w-0 items-center justify-center"
+          >
+            <LogoSquare />
+            <div className="ml-2 truncate text-sm font-medium uppercase">
+              {siteName}
+            </div>
+          </Link>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              className="flex h-11 w-11 items-center justify-center rounded-md border border-neutral-200 text-black transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800"
+              aria-label="Open search"
+            >
+              <MagnifyingGlassIcon className="h-5 w-5" />
+            </button>
+            <UserAccountIcon />
+            <CartModal />
+          </div>
+        </div>
+
+        <div
+          className={clsx(
+            "absolute inset-0 flex items-center gap-3 transition-all duration-300 ease-out",
+            isSearchOpen
+              ? "translate-y-0 opacity-100"
+              : "pointer-events-none translate-y-1 opacity-0",
+          )}
+          aria-hidden={!isSearchOpen}
+        >
+          <div className="w-full">
+            <Suspense fallback={<SearchSkeleton />}>
+              <Search />
+            </Suspense>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsSearchOpen(false)}
+            className="text-sm font-medium text-neutral-600 transition-colors hover:text-black dark:text-neutral-300 dark:hover:text-white"
+            aria-label="Close search"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
-      <div className="flex w-full items-center">
+
+      <div className="hidden w-full items-center md:flex">
         <div className="flex w-full md:w-1/2">
           <Link
             href="/"
@@ -78,15 +120,13 @@ export default function NavbarClient({
             </ul>
           ) : null}
         </div>
+
         <div className="flex justify-end gap-2 md:w-1/2">
-          <button
-            type="button"
-            onClick={() => setIsSearchOpen(true)}
-            className="flex h-11 w-11 items-center justify-center rounded-md border border-neutral-200 text-black transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800"
-            aria-label="Open search"
-          >
-            <MagnifyingGlassIcon className="h-5 w-5" />
-          </button>
+          <div className="hidden justify-center md:flex md:w-full md:max-w-md lg:max-w-lg">
+            <Suspense fallback={<SearchSkeleton />}>
+              <Search />
+            </Suspense>
+          </div>
           <UserAccountIcon />
           <CartModal />
         </div>
