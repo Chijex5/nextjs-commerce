@@ -121,7 +121,7 @@ export default function OrdersTable({
   return (
     <div>
       {/* Desktop Table */}
-      <div className="hidden overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 lg:block">
+      <div className="hidden overflow-x-auto rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 lg:block">
         <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-800">
           <thead className="bg-neutral-50 dark:bg-neutral-800">
             <tr>
