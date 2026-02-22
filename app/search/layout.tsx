@@ -14,7 +14,9 @@ export default async function SearchLayout({
 
   return (
     <>
-      <SearchToolbar collections={collections} sorting={sorting} />
+      <Suspense fallback={null}>
+        <SearchToolbar collections={collections} sorting={sorting} />
+      </Suspense>
       <main className="mx-auto w-full max-w-(--breakpoint-2xl) px-4 pb-16 pt-10 text-black dark:text-white">
         <Suspense fallback={null}>
           <ChildrenWrapper>{children}</ChildrenWrapper>
