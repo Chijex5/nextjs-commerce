@@ -23,15 +23,7 @@ import {
   products,
   reviews,
 } from "./schema";
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  inArray,
-  sql,
-  ilike,
-} from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql, ilike, or } from "drizzle-orm";
 import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "../image-constants";
 
 // Helper function to reshape database product to match Shopify Product type
@@ -56,7 +48,10 @@ export async function reshapeDbProduct(
       id: variant.id,
       title: variant.title,
       availableForSale: variant.availableForSale,
-      selectedOptions: variant.selectedOptions as { name: string; value: string }[],
+      selectedOptions: variant.selectedOptions as {
+        name: string;
+        value: string;
+      }[],
       price: {
         amount: String(variant.price),
         currencyCode: variant.currencyCode,
@@ -229,16 +224,29 @@ export async function getProducts({
   sortKey?: string;
 }): Promise<Product[]> {
   const filters = [];
+  const sanitizedQuery = query?.trim();
 
-  if (query) {
-    filters.push(ilike(products.title, `%${query}%`));
+  if (sanitizedQuery) {
+    const pattern = `%${sanitizedQuery}%`;
+    filters.push(
+      or(
+        ilike(products.title, pattern),
+        ilike(products.description, pattern),
+        sql`${products.tags}::text ILIKE ${pattern}`,
+      ),
+    );
   }
 
   let orderBy = desc(products.createdAt);
   if (sortKey === "CREATED_AT" || sortKey === "CREATED") {
     orderBy = reverse ? desc(products.createdAt) : asc(products.createdAt);
   } else if (sortKey === "PRICE") {
-    orderBy = reverse ? desc(products.title) : asc(products.title);
+    const minVariantPrice = sql<number>`(
+      SELECT COALESCE(MIN(${productVariants.price}), 0)
+      FROM ${productVariants}
+      WHERE ${productVariants.productId} = ${products.id}
+    )`;
+    orderBy = reverse ? desc(minVariantPrice) : asc(minVariantPrice);
   }
 
   const dbProducts = await db
@@ -305,7 +313,9 @@ export async function getProductReviewAggregate(productId: string): Promise<{
       reviewCount: sql<number>`count(${reviews.rating})`,
     })
     .from(reviews)
-    .where(and(eq(reviews.productId, productId), eq(reviews.status, "approved")));
+    .where(
+      and(eq(reviews.productId, productId), eq(reviews.status, "approved")),
+    );
 
   return {
     averageRating: stats?.averageRating ?? null,
@@ -330,7 +340,8 @@ export async function getCollection(
     description: dbCollection.description || "",
     seo: {
       title: dbCollection.seoTitle || dbCollection.title,
-      description: dbCollection.seoDescription || dbCollection.description || "",
+      description:
+        dbCollection.seoDescription || dbCollection.description || "",
     },
     updatedAt: dbCollection.updatedAt.toISOString(),
     path: `/search/${dbCollection.handle}`,
@@ -603,7 +614,7 @@ async function recalculateCartTotals(cartId: string): Promise<void> {
     .where(eq(carts.id, cartId));
 }
 
-export async function getPage(handle: string): Promise<Page> {
+export async function getPage(handle: string): Promise<Page | undefined> {
   const [dbPage] = await db
     .select()
     .from(pages)
@@ -611,7 +622,7 @@ export async function getPage(handle: string): Promise<Page> {
     .limit(1);
 
   if (!dbPage) {
-    throw new Error(`Page not found: ${handle}`);
+    return undefined;
   }
 
   return {

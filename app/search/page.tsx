@@ -58,87 +58,59 @@ export default async function SearchPage(props: {
   } = sorting.find((item) => item.slug === sort) || defaultSort;
 
   const products = await getProducts({ sortKey, reverse, query: searchValue });
-  const resultsText = products.length === 1 ? "result" : "results";
 
   return (
-    <section className="space-y-6 pb-10">
-      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-neutral-50 shadow-sm dark:border-neutral-800 dark:from-neutral-900 dark:to-neutral-950">
-        <div className="border-b border-neutral-200 px-6 py-6 dark:border-neutral-800 sm:px-8">
-          <p className="text-xs font-semibold tracking-[0.18em] text-neutral-500 uppercase dark:text-neutral-400">
-            Search Experience
-          </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-3xl">
-            {hasQuery
-              ? `Results for “${searchValue}”`
-              : "Find your next favorite"}
+    <section className="space-y-10">
+      <header className="space-y-6">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-100 sm:text-4xl">
+            {hasQuery ? `“${searchValue}”` : "Search"}
           </h1>
-          <p className="mt-2 max-w-2xl text-sm text-neutral-600 dark:text-neutral-400 sm:text-base">
-            {hasQuery
-              ? "A cleaner view of your query with better context and quick actions to keep exploring."
-              : "Start with a keyword and we’ll instantly surface matching products with smart sorting."}
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+            {products.length} result{products.length === 1 ? "" : "s"} · Sorted
+            by {selectedSortTitle}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 px-6 py-5 sm:grid-cols-3 sm:px-8">
-          <div className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-            <p className="text-xs font-medium tracking-wide text-neutral-500 uppercase dark:text-neutral-400">
-              Total
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-              {products.length}
-            </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              matching {resultsText}
-            </p>
-          </div>
-          <div className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-            <p className="text-xs font-medium tracking-wide text-neutral-500 uppercase dark:text-neutral-400">
-              Active sort
-            </p>
-            <p className="mt-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-              {selectedSortTitle}
-            </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              update from the right sidebar
-            </p>
-          </div>
-          <div className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-            <p className="text-xs font-medium tracking-wide text-neutral-500 uppercase dark:text-neutral-400">
-              Suggested searches
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {suggestedSearches.slice(0, 3).map((term) => (
-                <Link
-                  key={term}
-                  href={`/search?q=${encodeURIComponent(term)}`}
-                  className="rounded-full border border-neutral-200 px-2.5 py-1 text-xs font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-600 dark:hover:bg-neutral-800"
-                >
-                  {term}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+        <form action="/search" className="flex flex-col gap-3 sm:flex-row">
+          <label htmlFor="search-query" className="sr-only">
+            Search products
+          </label>
+          <input
+            id="search-query"
+            name="q"
+            defaultValue={searchValue}
+            placeholder="Search products"
+            className="w-full rounded-2xl border border-neutral-300 bg-transparent px-5 py-3 text-base text-neutral-950 outline-none transition focus:border-neutral-500 dark:border-neutral-700 dark:text-neutral-100"
+          />
+          {sort ? <input type="hidden" name="sort" value={sort} /> : null}
+          <button
+            type="submit"
+            className="rounded-2xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+          >
+            Search
+          </button>
+        </form>
+      </header>
 
       {products.length > 0 ? (
-        <Grid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <Grid className="grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           <ProductGridItems products={products} />
         </Grid>
       ) : (
-        <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-6 py-12 text-center dark:border-neutral-700 dark:bg-neutral-900/40">
-          <p className="text-lg font-medium text-neutral-900 dark:text-neutral-100">
+        <div className="space-y-5 rounded-3xl border border-neutral-200 p-10 text-center dark:border-neutral-800">
+          <p className="text-xl font-medium text-neutral-950 dark:text-neutral-100">
             No products found
           </p>
-          <p className="mx-auto mt-2 max-w-xl text-sm text-neutral-600 dark:text-neutral-400">
-            Try another keyword or browse one of these curated suggestions.
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+            Try a different term or start with one of these suggestions.
           </p>
-          <div className="mt-5 flex flex-wrap justify-center gap-2">
+          <div className="flex flex-wrap justify-center gap-2">
             {suggestedSearches.map((term) => (
               <Link
                 key={term}
                 href={`/search?q=${encodeURIComponent(term)}`}
-                className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:bg-neutral-800"
+                className="rounded-full border border-neutral-300 px-4 py-2 text-sm text-neutral-700 transition hover:border-neutral-400 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-600"
               >
                 {term}
               </Link>
