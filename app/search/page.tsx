@@ -1,12 +1,13 @@
 import Grid from "components/grid";
 import ProductGridItems from "components/layout/product-grid-items";
 import { defaultSort, sorting } from "lib/constants";
-import { getProducts } from "lib/database";
+import { getProducts, getProductsCount } from "lib/database";
 import { canonicalUrl, siteName } from "lib/seo";
 import type { Metadata } from "next";
 import Link from "next/link";
 
 const description = "Search for products in the store.";
+const PRODUCTS_PER_PAGE = 12;
 
 const suggestedSearches = [
   "new arrivals",
@@ -42,22 +43,55 @@ export const metadata: Metadata = {
   },
 };
 
+function buildSearchUrl({
+  q,
+  sort,
+  page,
+}: {
+  q?: string;
+  sort?: string;
+  page?: number;
+}) {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (sort) params.set("sort", sort);
+  if (page && page > 1) params.set("page", String(page));
+  const query = params.toString();
+
+  return query ? `/search?${query}` : "/search";
+}
+
 export default async function SearchPage(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const searchParams = await props.searchParams;
-  const { sort, q: rawSearchValue } = searchParams as {
+  const {
+    sort,
+    q: rawSearchValue,
+    page: rawPage,
+  } = searchParams as {
     [key: string]: string;
   };
   const searchValue = rawSearchValue?.trim();
   const hasQuery = Boolean(searchValue);
+  const page = Math.max(1, Number.parseInt(rawPage || "1", 10) || 1);
   const {
     sortKey,
     reverse,
     title: selectedSortTitle,
   } = sorting.find((item) => item.slug === sort) || defaultSort;
 
-  const products = await getProducts({ sortKey, reverse, query: searchValue });
+  const totalResults = await getProductsCount(searchValue);
+  const totalPages = Math.max(1, Math.ceil(totalResults / PRODUCTS_PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const offset = (currentPage - 1) * PRODUCTS_PER_PAGE;
+  const products = await getProducts({
+    sortKey,
+    reverse,
+    query: searchValue,
+    limit: PRODUCTS_PER_PAGE,
+    offset,
+  });
 
   return (
     <section className="space-y-10">
@@ -67,8 +101,8 @@ export default async function SearchPage(props: {
             {hasQuery ? `“${searchValue}”` : "Search"}
           </h1>
           <p className="text-sm text-neutral-600 dark:text-neutral-400">
-            {products.length} result{products.length === 1 ? "" : "s"} · Sorted
-            by {selectedSortTitle}
+            {totalResults} result{totalResults === 1 ? "" : "s"} · Sorted by{" "}
+            {selectedSortTitle}
           </p>
         </div>
 
@@ -94,9 +128,47 @@ export default async function SearchPage(props: {
       </header>
 
       {products.length > 0 ? (
-        <Grid className="grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-          <ProductGridItems products={products} />
-        </Grid>
+        <>
+          <Grid className="grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            <ProductGridItems products={products} />
+          </Grid>
+
+          {totalPages > 1 ? (
+            <nav className="flex items-center justify-between border-t border-neutral-200 pt-6 dark:border-neutral-800">
+              <Link
+                href={buildSearchUrl({
+                  q: searchValue,
+                  sort,
+                  page: currentPage > 1 ? currentPage - 1 : 1,
+                })}
+                className={`rounded-xl border px-4 py-2 text-sm transition ${
+                  currentPage === 1
+                    ? "pointer-events-none border-neutral-200 text-neutral-400 dark:border-neutral-800 dark:text-neutral-600"
+                    : "border-neutral-300 text-neutral-700 hover:border-neutral-500 dark:border-neutral-700 dark:text-neutral-300"
+                }`}
+              >
+                Previous
+              </Link>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Page {currentPage} of {totalPages}
+              </p>
+              <Link
+                href={buildSearchUrl({
+                  q: searchValue,
+                  sort,
+                  page: currentPage < totalPages ? currentPage + 1 : totalPages,
+                })}
+                className={`rounded-xl border px-4 py-2 text-sm transition ${
+                  currentPage === totalPages
+                    ? "pointer-events-none border-neutral-200 text-neutral-400 dark:border-neutral-800 dark:text-neutral-600"
+                    : "border-neutral-300 text-neutral-700 hover:border-neutral-500 dark:border-neutral-700 dark:text-neutral-300"
+                }`}
+              >
+                Next
+              </Link>
+            </nav>
+          ) : null}
+        </>
       ) : (
         <div className="space-y-5 rounded-3xl border border-neutral-200 p-10 text-center dark:border-neutral-800">
           <p className="text-xl font-medium text-neutral-950 dark:text-neutral-100">

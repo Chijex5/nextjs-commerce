@@ -160,21 +160,39 @@ export async function getProducts({
   query,
   reverse,
   sortKey,
+  limit,
+  offset,
 }: {
   query?: string;
   reverse?: boolean;
   sortKey?: string;
+  limit?: number;
+  offset?: number;
 }): Promise<Product[]> {
   "use cache";
   cacheTag(TAGS.products);
   cacheLife("days");
 
-  const products = await dbQueries.getProducts({ query, reverse, sortKey });
+  const products = await dbQueries.getProducts({
+    query,
+    reverse,
+    sortKey,
+    limit,
+    offset,
+  });
 
   // Filter out hidden products
   return products.filter(
     (product) => !product.tags.includes(HIDDEN_PRODUCT_TAG),
   );
+}
+
+export async function getProductsCount(query?: string): Promise<number> {
+  "use cache";
+  cacheTag(TAGS.products);
+  cacheLife("hours");
+
+  return dbQueries.getProductsCount(query);
 }
 
 // Menu operations

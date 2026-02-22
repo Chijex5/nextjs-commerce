@@ -15,7 +15,8 @@ This review covers the current storefront search experience (`/search`) across U
 - ✅ Implemented: inline search refine input with quick clear action in the `/search` header.
 - ⏳ Next: faceted filters (price range, availability, tags).
 - ⏳ Next: ranked relevance (PostgreSQL FTS / `pg_trgm`).
-- ⏳ Next: pagination + analytics instrumentation.
+- ✅ Implemented: paginated search results with page controls (12 per page).
+- ⏳ Next: analytics instrumentation.
 
 ## Backend observations
 

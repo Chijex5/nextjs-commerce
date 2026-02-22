@@ -214,28 +214,37 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
   return reshapeDbProduct(dbProduct);
 }
 
+function buildSearchWhereClause(query?: string) {
+  const sanitizedQuery = query?.trim();
+
+  if (!sanitizedQuery) {
+    return undefined;
+  }
+
+  const pattern = `%${sanitizedQuery}%`;
+  return and(
+    or(
+      ilike(products.title, pattern),
+      ilike(products.description, pattern),
+      sql`${products.tags}::text ILIKE ${pattern}`,
+    ),
+  );
+}
+
 export async function getProducts({
   query,
   reverse,
   sortKey,
+  limit = 100,
+  offset = 0,
 }: {
   query?: string;
   reverse?: boolean;
   sortKey?: string;
+  limit?: number;
+  offset?: number;
 }): Promise<Product[]> {
-  const filters = [];
-  const sanitizedQuery = query?.trim();
-
-  if (sanitizedQuery) {
-    const pattern = `%${sanitizedQuery}%`;
-    filters.push(
-      or(
-        ilike(products.title, pattern),
-        ilike(products.description, pattern),
-        sql`${products.tags}::text ILIKE ${pattern}`,
-      ),
-    );
-  }
+  const whereClause = buildSearchWhereClause(query);
 
   let orderBy = desc(products.createdAt);
   if (sortKey === "CREATED_AT" || sortKey === "CREATED") {
@@ -252,15 +261,26 @@ export async function getProducts({
   const dbProducts = await db
     .select()
     .from(products)
-    .where(filters.length ? and(...filters) : undefined)
+    .where(whereClause)
     .orderBy(orderBy)
-    .limit(100);
+    .limit(limit)
+    .offset(offset);
 
   const productsWithDetails = await Promise.all(
     dbProducts.map((product) => reshapeDbProduct(product)),
   );
 
   return productsWithDetails.filter((p): p is Product => p !== undefined);
+}
+
+export async function getProductsCount(query?: string): Promise<number> {
+  const whereClause = buildSearchWhereClause(query);
+  const [result] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(products)
+    .where(whereClause);
+
+  return Number(result?.count ?? 0);
 }
 
 export async function getProductRecommendations(
