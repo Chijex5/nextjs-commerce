@@ -2,6 +2,7 @@ import { GridTileImage } from "components/grid/tile";
 import Footer from "components/layout/footer";
 import { Gallery } from "components/product/gallery";
 import { ProductDescription } from "components/product/product-description";
+import { ReviewList } from "components/reviews/review-list";
 import { HIDDEN_PRODUCT_TAG } from "lib/constants";
 import {
   getProduct,
@@ -146,6 +147,15 @@ export default async function ProductPage(props: {
             </Suspense>
           </div>
         </div>
+
+        {/* Customer Reviews Section */}
+        <div className="mt-12 rounded-lg border border-neutral-200 bg-white p-8 md:p-12 dark:border-neutral-800 dark:bg-black">
+          <h2 className="mb-6 text-2xl font-bold">Customer Reviews</h2>
+          <Suspense fallback={<div className="py-8 text-center text-neutral-600">Loading reviews...</div>}>
+            <ReviewList productId={product.id} showForm={true} canReview={false} />
+          </Suspense>
+        </div>
+
         <RelatedProducts id={product.id} />
       </div>
       <Footer />

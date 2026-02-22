@@ -4,6 +4,7 @@ import { AddToCart } from "components/cart/add-to-cart";
 import LoadingDots from "components/loading-dots";
 import Price from "components/price";
 import Prose from "components/prose";
+import { SizeGuideButton } from "components/size-guide-modal";
 import { trackProductView } from "lib/analytics";
 import { Product, ProductVariant } from "lib/shopify/types";
 import { useSearchParams } from "next/navigation";
@@ -80,6 +81,12 @@ export function ProductDescription({ product }: { product: Product }) {
         </div>
       </div>
       <VariantSelector options={product.options} variants={product.variants} />
+      
+      {/* Size Guide Link */}
+      <div className="mb-4 flex items-center gap-2">
+        <SizeGuideButton productType="footwear" />
+      </div>
+
       {product.descriptionHtml ? (
         <Prose
           className="mb-6 text-sm leading-tight dark:text-white/[60%]"

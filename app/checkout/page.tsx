@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import Price from "components/price";
 import LoadingDots from "components/loading-dots";
 import PageLoader from "components/page-loader";
+import { TrustBadges } from "components/trust-badges";
 import { useUserSession } from "hooks/useUserSession";
 import { identifyUser } from "lib/analytics/tiktok-pixel";
 
@@ -926,6 +927,11 @@ export default function CheckoutPage() {
                 <span className="text-xs text-neutral-600 dark:text-neutral-400">
                   Secure payment powered by Paystack
                 </span>
+              </div>
+
+              {/* Trust Badges */}
+              <div className="mt-6 border-t border-neutral-200 pt-6 dark:border-neutral-800">
+                <TrustBadges variant="inline" showIcons={false} />
               </div>
             </div>
           </div>
