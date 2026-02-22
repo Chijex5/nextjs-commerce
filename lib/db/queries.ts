@@ -614,7 +614,7 @@ async function recalculateCartTotals(cartId: string): Promise<void> {
     .where(eq(carts.id, cartId));
 }
 
-export async function getPage(handle: string): Promise<Page> {
+export async function getPage(handle: string): Promise<Page | undefined> {
   const [dbPage] = await db
     .select()
     .from(pages)
@@ -622,7 +622,7 @@ export async function getPage(handle: string): Promise<Page> {
     .limit(1);
 
   if (!dbPage) {
-    throw new Error(`Page not found: ${handle}`);
+    return undefined;
   }
 
   return {
