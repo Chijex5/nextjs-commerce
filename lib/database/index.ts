@@ -162,12 +162,14 @@ export async function getProducts({
   sortKey,
   limit,
   offset,
+  availableOnly,
 }: {
   query?: string;
   reverse?: boolean;
   sortKey?: string;
   limit?: number;
   offset?: number;
+  availableOnly?: boolean;
 }): Promise<Product[]> {
   "use cache";
   cacheTag(TAGS.products);
@@ -179,6 +181,7 @@ export async function getProducts({
     sortKey,
     limit,
     offset,
+    availableOnly,
   });
 
   // Filter out hidden products
@@ -187,12 +190,18 @@ export async function getProducts({
   );
 }
 
-export async function getProductsCount(query?: string): Promise<number> {
+export async function getProductsCount({
+  query,
+  availableOnly,
+}: {
+  query?: string;
+  availableOnly?: boolean;
+} = {}): Promise<number> {
   "use cache";
   cacheTag(TAGS.products);
   cacheLife("hours");
 
-  return dbQueries.getProductsCount(query);
+  return dbQueries.getProductsCount({ query, availableOnly });
 }
 
 // Menu operations

@@ -214,21 +214,32 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
   return reshapeDbProduct(dbProduct);
 }
 
-function buildSearchWhereClause(query?: string) {
+function buildSearchWhereClause({
+  query,
+  availableOnly,
+}: {
+  query?: string;
+  availableOnly?: boolean;
+}) {
+  const conditions = [];
   const sanitizedQuery = query?.trim();
 
-  if (!sanitizedQuery) {
-    return undefined;
+  if (sanitizedQuery) {
+    const pattern = `%${sanitizedQuery}%`;
+    conditions.push(
+      or(
+        ilike(products.title, pattern),
+        ilike(products.description, pattern),
+        sql`${products.tags}::text ILIKE ${pattern}`,
+      ),
+    );
   }
 
-  const pattern = `%${sanitizedQuery}%`;
-  return and(
-    or(
-      ilike(products.title, pattern),
-      ilike(products.description, pattern),
-      sql`${products.tags}::text ILIKE ${pattern}`,
-    ),
-  );
+  if (availableOnly) {
+    conditions.push(eq(products.availableForSale, true));
+  }
+
+  return conditions.length ? and(...conditions) : undefined;
 }
 
 export async function getProducts({
@@ -237,14 +248,16 @@ export async function getProducts({
   sortKey,
   limit = 100,
   offset = 0,
+  availableOnly,
 }: {
   query?: string;
   reverse?: boolean;
   sortKey?: string;
   limit?: number;
   offset?: number;
+  availableOnly?: boolean;
 }): Promise<Product[]> {
-  const whereClause = buildSearchWhereClause(query);
+  const whereClause = buildSearchWhereClause({ query, availableOnly });
 
   let orderBy = desc(products.createdAt);
   if (sortKey === "CREATED_AT" || sortKey === "CREATED") {
@@ -273,8 +286,14 @@ export async function getProducts({
   return productsWithDetails.filter((p): p is Product => p !== undefined);
 }
 
-export async function getProductsCount(query?: string): Promise<number> {
-  const whereClause = buildSearchWhereClause(query);
+export async function getProductsCount({
+  query,
+  availableOnly,
+}: {
+  query?: string;
+  availableOnly?: boolean;
+}): Promise<number> {
+  const whereClause = buildSearchWhereClause({ query, availableOnly });
   const [result] = await db
     .select({ count: sql<number>`count(*)` })
     .from(products)
