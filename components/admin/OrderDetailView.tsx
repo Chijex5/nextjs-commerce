@@ -39,6 +39,8 @@ interface Order {
   shippingAddress: any;
   billingAddress: any;
   subtotalAmount: any;
+  discountAmount: any;
+  couponCode: string | null;
   taxAmount: any;
   shippingAmount: any;
   totalAmount: any;
@@ -252,6 +254,21 @@ export default function OrderDetailView({ order }: { order: Order }) {
                   currencyCode={order.currencyCode}
                 />
               </div>
+              {Number(order.discountAmount) > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-neutral-600 dark:text-neutral-400">
+                    Discount
+                    {order.couponCode ? ` (${order.couponCode})` : ""}
+                  </span>
+                  <span className="text-green-700 dark:text-green-400">
+                    -
+                    <Price
+                      amount={order.discountAmount.toString()}
+                      currencyCode={order.currencyCode}
+                    />
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between text-sm">
                 <span className="text-neutral-600 dark:text-neutral-400">
                   Shipping

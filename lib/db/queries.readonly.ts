@@ -1,27 +1,27 @@
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "../image-constants";
+import type {
+  Collection,
+  Image,
+  Menu,
+  Page,
+  Product,
+  ProductOption,
+  ProductVariant,
+} from "../shopify/types";
 import { db } from "./drizzle";
 import {
-  products,
-  productVariants,
+  collections,
+  menuItems,
+  menus,
+  pages,
+  productCollections,
   productImages,
   productOptions,
-  collections,
-  productCollections,
-  pages,
-  menus,
-  menuItems,
+  products,
+  productVariants,
   reviews,
 } from "./schema";
-import { eq, and, desc, asc, sql, inArray } from "drizzle-orm";
-import type {
-  Product,
-  Collection,
-  Page,
-  Menu,
-  Image,
-  ProductVariant,
-  ProductOption,
-} from "../shopify/types";
-import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "../image-constants";
 
 // Helper function to reshape database product to match Shopify Product type
 export async function reshapeDbProduct(
@@ -139,22 +139,24 @@ export async function getProducts({
   reverse?: boolean;
   sortKey?: string;
 }): Promise<Product[]> {
-  const baseQuery = db.select().from(products);
+  let queryBuilder = db.select().from(products).$dynamic();
 
-  const dbProducts =
-    sortKey === "CREATED_AT" || sortKey === "CREATED"
-      ? await (
-          reverse
-            ? baseQuery.orderBy(desc(products.createdAt))
-            : baseQuery.orderBy(asc(products.createdAt))
-        ).limit(100)
-      : sortKey === "PRICE"
+  if (sortKey === "CREATED_AT" || sortKey === "CREATED") {
+    queryBuilder = reverse
+      ? queryBuilder.orderBy(desc(products.createdAt))
+      : queryBuilder.orderBy(asc(products.createdAt));
+  } else if (sortKey === "PRICE") {
+    queryBuilder = reverse
+      ? queryBuilder.orderBy(desc(products.title))
+      : queryBuilder.orderBy(asc(products.title));
+  } else {
+    queryBuilder = queryBuilder.orderBy(desc(products.createdAt));
+  }
+
+153
+ 
         ? await (
-            reverse
-              ? baseQuery.orderBy(desc(products.title))
-              : baseQuery.orderBy(asc(products.title))
-          ).limit(100)
-        : await baseQuery.orderBy(desc(products.createdAt)).limit(100);
+  const dbProducts = await queryBuilder.limit(100);
 
   const productsWithDetails = await Promise.all(
     dbProducts.map((p) => reshapeDbProduct(p)),
@@ -392,7 +394,7 @@ export async function getCollectionsWithProducts(): Promise<
 }
 
 // Page queries
-export async function getPage(handle: string): Promise<Page> {
+export async function getPage(handle: string): Promise<Page | undefined> {
   const [dbPage] = await db
     .select()
     .from(pages)
@@ -400,7 +402,7 @@ export async function getPage(handle: string): Promise<Page> {
     .limit(1);
 
   if (!dbPage) {
-    throw new Error(`Page not found: ${handle}`);
+    return undefined;
   }
 
   return {

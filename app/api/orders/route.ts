@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
 
     const itemsByOrder = items.reduce<Record<string, typeof items>>(
       (acc, item) => {
-        const bucket = acc[item.orderId] ?? (acc[item.orderId] = [] as typeof items);
+        const bucket =
+          acc[item.orderId] ?? (acc[item.orderId] = [] as typeof items);
         bucket.push(item);
         return acc;
       },
@@ -45,6 +46,8 @@ export async function GET(request: NextRequest) {
         totalAmount: String(order.totalAmount),
         currencyCode: order.currencyCode,
         createdAt: order.createdAt.toISOString(),
+        trackingNumber: order.trackingNumber,
+        notes: order.notes,
         shippingAddress: order.shippingAddress,
         items: (itemsByOrder[order.id] || []).map((item) => ({
           id: item.id,

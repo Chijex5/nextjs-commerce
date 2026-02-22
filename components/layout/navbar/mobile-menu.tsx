@@ -3,12 +3,11 @@
 import { Dialog, Transition } from "@headlessui/react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Fragment, Suspense, useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useUserSession } from "hooks/useUserSession";
 
 import { Bars3Icon, XMarkIcon, UserIcon } from "@heroicons/react/24/outline";
 import { Menu } from "lib/shopify/types";
-import Search, { SearchSkeleton } from "./search";
 
 export default function MobileMenu({ menu }: { menu: Menu[] }) {
   const pathname = usePathname();
@@ -72,13 +71,6 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                 >
                   <XMarkIcon className="h-6" />
                 </button>
-
-                <div className="mb-6">
-                  <Suspense fallback={<SearchSkeleton />}>
-                    <Search />
-                  </Suspense>
-                </div>
-
                 {menu.length ? (
                   <ul className="flex w-full flex-col gap-2">
                     {menu.map((item: Menu) => (

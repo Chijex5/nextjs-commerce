@@ -5,6 +5,12 @@ interface OrderConfirmationWithMarkupData {
   customerName: string;
   email: string;
   totalAmount: number;
+  subtotalAmount?: number;
+  shippingAmount?: number;
+  taxAmount?: number;
+  discountAmount?: number;
+  couponCode?: string | null;
+  currencyCode?: string;
   items: Array<{
     productTitle: string;
     variantTitle: string;
@@ -17,6 +23,9 @@ interface OrderConfirmationWithMarkupData {
   }>;
   shippingAddress: any;
   orderDate: string;
+  orderUrl?: string;
+  estimatedArrival?: string;
+  trackingNumber?: string;
 }
 
 /**
@@ -31,19 +40,61 @@ export const orderConfirmationWithMarkupTemplate = (
     process.env.NEXTAUTH_URL ||
     "https://yourdomain.com";
 
+  const currencyCode = order.currencyCode || "NGN";
+  const orderUrl =
+    order.orderUrl ||
+    `${siteUrl}/orders?orderNumber=${encodeURIComponent(order.orderNumber)}`;
+  const totalAmount = Number.isFinite(order.totalAmount) ? order.totalAmount : 0;
+  const formatMoney = (amount: number) => {
+    const safeAmount = Number.isFinite(amount) ? amount : 0;
+    try {
+      return new Intl.NumberFormat("en-NG", {
+        style: "currency",
+        currency: currencyCode,
+      }).format(safeAmount);
+    } catch {
+      return `${currencyCode} ${safeAmount.toLocaleString()}`;
+    }
+  };
+
   const itemsHtml = order.items
     .map(
-      (item) => `
+      (item) => {
+        const price = Number.isFinite(item.price) ? item.price : 0;
+        return `
       <tr>
         <td>${item.productTitle} - ${item.variantTitle}</td>
         <td style="text-align: center;">${item.quantity}</td>
-        <td style="text-align: right;">₦${item.price.toLocaleString()}</td>
+        <td style="text-align: right;">${formatMoney(price)}</td>
       </tr>
-    `,
+    `;
+      },
     )
     .join("");
 
-  const currencyCode = "NGN";
+  const shippingAddress = order.shippingAddress || {};
+  const streetAddress =
+    shippingAddress.address || shippingAddress.streetAddress || "";
+  const addressLocality = shippingAddress.city || shippingAddress.lga || "";
+  const addressRegion = shippingAddress.state || "";
+  const addressCountry = shippingAddress.country || "NG";
+  const postalCode =
+    shippingAddress.postalCode || shippingAddress.postcode || "";
+  const recipientName = `${shippingAddress.firstName || ""} ${shippingAddress.lastName || ""}`.trim();
+  const addressLines = [
+    recipientName,
+    streetAddress,
+    [addressLocality, addressRegion].filter(Boolean).join(", "),
+    postalCode,
+    addressCountry,
+  ].filter(Boolean);
+
+  const expectedArrivalFrom = order.estimatedArrival
+    ? new Date(order.estimatedArrival).toISOString()
+    : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const expectedArrivalUntil = order.estimatedArrival
+    ? new Date(order.estimatedArrival).toISOString()
+    : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
   // Google Email Markup (JSON-LD) for Order
   const jsonLd = {
@@ -57,13 +108,14 @@ export const orderConfirmationWithMarkupTemplate = (
     orderDate: order.orderDate,
     orderStatus: "http://schema.org/OrderProcessing",
     priceCurrency: currencyCode,
-    price: order.totalAmount,
+    price: totalAmount,
     acceptedOffer: order.items.map((item) => {
       const productUrl =
         item.productUrl ||
         (item.productHandle
           ? `${siteUrl}/product/${item.productHandle}`
           : undefined);
+      const price = Number.isFinite(item.price) ? item.price : 0;
 
       return {
         "@type": "Offer",
@@ -74,11 +126,11 @@ export const orderConfirmationWithMarkupTemplate = (
           sku: item.sku || undefined,
           url: productUrl,
         },
-        price: item.price,
+        price,
         priceCurrency: currencyCode,
         priceSpecification: {
           "@type": "PriceSpecification",
-          price: item.price,
+          price,
           priceCurrency: currencyCode,
         },
         eligibleQuantity: {
@@ -96,23 +148,21 @@ export const orderConfirmationWithMarkupTemplate = (
       "@type": "ParcelDelivery",
       deliveryAddress: {
         "@type": "PostalAddress",
-        streetAddress: order.shippingAddress.address,
-        addressLocality: order.shippingAddress.city,
-        addressRegion: order.shippingAddress.state,
-        addressCountry: "NG",
+        streetAddress: streetAddress || undefined,
+        addressLocality: addressLocality || undefined,
+        addressRegion: addressRegion || undefined,
+        addressCountry: addressCountry || undefined,
+        postalCode: postalCode || undefined,
       },
-      expectedArrivalFrom: new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      expectedArrivalUntil: new Date(
-        Date.now() + 14 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
+      expectedArrivalFrom,
+      expectedArrivalUntil,
+      trackingNumber: order.trackingNumber || undefined,
     },
-    url: `${siteUrl}/orders`,
+    url: orderUrl,
     potentialAction: {
       "@type": "ViewAction",
-      url: `${siteUrl}/orders`,
-      name: "View Order",
+      url: orderUrl,
+      name: "View Order Details",
     },
   };
 
@@ -144,26 +194,27 @@ export const orderConfirmationWithMarkupTemplate = (
         ${itemsHtml}
       </tbody>
       <tfoot>
+        ${order.subtotalAmount !== undefined ? `<tr><td colspan="2" style="text-align: right; padding-top: 16px;">Subtotal:</td><td style="text-align: right; padding-top: 16px;">₦${order.subtotalAmount.toLocaleString()}</td></tr>` : ""}
+        ${order.discountAmount && order.discountAmount > 0 ? `<tr><td colspan="2" style="text-align: right;">Discount${order.couponCode ? ` (${order.couponCode})` : ""}:</td><td style="text-align: right; color: #15803d;">-₦${order.discountAmount.toLocaleString()}</td></tr>` : ""}
+        ${order.shippingAmount !== undefined ? `<tr><td colspan="2" style="text-align: right;">Shipping:</td><td style="text-align: right;">₦${order.shippingAmount.toLocaleString()}</td></tr>` : ""}
+        ${order.taxAmount !== undefined && order.taxAmount > 0 ? `<tr><td colspan="2" style="text-align: right;">Tax:</td><td style="text-align: right;">₦${order.taxAmount.toLocaleString()}</td></tr>` : ""}
         <tr style="font-weight: 600;">
           <td colspan="2" style="text-align: right; padding-top: 16px;">Total:</td>
-          <td style="text-align: right; padding-top: 16px;">₦${order.totalAmount.toLocaleString()}</td>
+          <td style="text-align: right; padding-top: 16px;">${formatMoney(totalAmount)}</td>
         </tr>
       </tfoot>
     </table>
-    
+
     <div class="info-box">
       <p><strong>Shipping Address</strong></p>
-      <p>${order.shippingAddress.firstName} ${order.shippingAddress.lastName}</p>
-      <p>${order.shippingAddress.address}</p>
-      <p>${order.shippingAddress.city}, ${order.shippingAddress.state}</p>
-      <p>Nigeria</p>
+      ${addressLines.map((line) => `<p>${line}</p>`).join("")}
     </div>
     
     <p>Your order will be handcrafted with care. Production typically takes 7-10 days, after which we'll ship it to you.</p>
     
     <p>You'll receive another email when your order ships with tracking information.</p>
     
-    <a href="${siteUrl}/orders" class="button">Track Your Order</a>
+    <a href="${orderUrl}" class="button">Track Your Order</a>
     
     <p>If you have any questions, feel free to contact us.</p>
     <p>Best regards,<br>The D'FOOTPRINT Team</p>

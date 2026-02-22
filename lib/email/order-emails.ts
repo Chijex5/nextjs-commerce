@@ -16,6 +16,11 @@ interface OrderData {
   customerName: string;
   email: string;
   totalAmount: number;
+  subtotalAmount?: number;
+  shippingAmount?: number;
+  taxAmount?: number;
+  discountAmount?: number;
+  couponCode?: string | null;
   items: Array<{
     productTitle: string;
     variantTitle: string;
@@ -55,6 +60,11 @@ export const sendOrderConfirmationWithMarkup = async (order: OrderData) => {
       customerName: order.customerName,
       email: order.email,
       totalAmount: order.totalAmount,
+      subtotalAmount: order.subtotalAmount,
+      shippingAmount: order.shippingAmount,
+      taxAmount: order.taxAmount,
+      discountAmount: order.discountAmount,
+      couponCode: order.couponCode,
       items: order.items,
       shippingAddress: order.shippingAddress,
       orderDate: order.orderDate,
@@ -168,6 +178,11 @@ export const sendAdminNewOrderNotification = async (data: {
   email: string;
   phone?: string | null;
   totalAmount: number;
+  subtotalAmount?: number;
+  shippingAmount?: number;
+  taxAmount?: number;
+  discountAmount?: number;
+  couponCode?: string | null;
   currencyCode: string;
   orderDate: string;
   items: Array<{
@@ -193,6 +208,11 @@ export const sendAdminNewOrderNotification = async (data: {
       email: data.email,
       phone: data.phone,
       totalAmount: data.totalAmount,
+      subtotalAmount: data.subtotalAmount,
+      shippingAmount: data.shippingAmount,
+      taxAmount: data.taxAmount,
+      discountAmount: data.discountAmount,
+      couponCode: data.couponCode,
       currencyCode: data.currencyCode,
       orderDate: data.orderDate,
       items: data.items,

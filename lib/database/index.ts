@@ -187,7 +187,7 @@ export async function getMenu(handle: string): Promise<Menu[]> {
 }
 
 // Page operations
-export async function getPage(handle: string): Promise<Page> {
+export async function getPage(handle: string): Promise<Page | undefined> {
   return dbQueries.getPage(handle);
 }
 
