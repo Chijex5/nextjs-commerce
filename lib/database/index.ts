@@ -163,6 +163,9 @@ export async function getProducts({
   limit,
   offset,
   availableOnly,
+  tag,
+  minPrice,
+  maxPrice,
 }: {
   query?: string;
   reverse?: boolean;
@@ -170,6 +173,9 @@ export async function getProducts({
   limit?: number;
   offset?: number;
   availableOnly?: boolean;
+  tag?: string;
+  minPrice?: number;
+  maxPrice?: number;
 }): Promise<Product[]> {
   "use cache";
   cacheTag(TAGS.products);
@@ -182,6 +188,9 @@ export async function getProducts({
     limit,
     offset,
     availableOnly,
+    tag,
+    minPrice,
+    maxPrice,
   });
 
   // Filter out hidden products
@@ -193,15 +202,27 @@ export async function getProducts({
 export async function getProductsCount({
   query,
   availableOnly,
+  tag,
+  minPrice,
+  maxPrice,
 }: {
   query?: string;
   availableOnly?: boolean;
+  tag?: string;
+  minPrice?: number;
+  maxPrice?: number;
 } = {}): Promise<number> {
   "use cache";
   cacheTag(TAGS.products);
   cacheLife("hours");
 
-  return dbQueries.getProductsCount({ query, availableOnly });
+  return dbQueries.getProductsCount({
+    query,
+    availableOnly,
+    tag,
+    minPrice,
+    maxPrice,
+  });
 }
 
 // Menu operations

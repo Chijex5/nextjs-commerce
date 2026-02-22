@@ -14,10 +14,10 @@ This review covers the current storefront search experience (`/search`) across U
 - ✅ Implemented: price sorting by minimum variant price.
 - ✅ Implemented: inline search refine input with quick clear action in the `/search` header.
 - ✅ Implemented: first facet filter (`availability=in-stock`) with preserved paging/sort/query state.
-- ⏳ Next: additional facets (price range, tags).
-- ⏳ Next: ranked relevance (PostgreSQL FTS / `pg_trgm`).
+- ✅ Implemented: additional facets for price range and tags.
+- ✅ Implemented: weighted relevance ordering for search terms (exact/prefix/partial scoring).
 - ✅ Implemented: paginated search results with page controls (12 per page).
-- ⏳ Next: analytics instrumentation.
+- ✅ Implemented: search analytics instrumentation for query/filter/page result views.
 
 ## Backend observations
 

@@ -214,13 +214,21 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
   return reshapeDbProduct(dbProduct);
 }
 
+type SearchFilters = {
+  query?: string;
+  availableOnly?: boolean;
+  tag?: string;
+  minPrice?: number;
+  maxPrice?: number;
+};
+
 function buildSearchWhereClause({
   query,
   availableOnly,
-}: {
-  query?: string;
-  availableOnly?: boolean;
-}) {
+  tag,
+  minPrice,
+  maxPrice,
+}: SearchFilters) {
   const conditions = [];
   const sanitizedQuery = query?.trim();
 
@@ -239,6 +247,22 @@ function buildSearchWhereClause({
     conditions.push(eq(products.availableForSale, true));
   }
 
+  if (tag) {
+    conditions.push(sql`${products.tags} @> ARRAY[${tag}]::text[]`);
+  }
+
+  if (typeof minPrice === "number" || typeof maxPrice === "number") {
+    const lowerBound = typeof minPrice === "number" ? minPrice : 0;
+    const upperBound = typeof maxPrice === "number" ? maxPrice : 999999999;
+    conditions.push(sql`EXISTS (
+      SELECT 1
+      FROM ${productVariants}
+      WHERE ${productVariants.productId} = ${products.id}
+      AND ${productVariants.price}::numeric >= ${lowerBound}
+      AND ${productVariants.price}::numeric <= ${upperBound}
+    )`);
+  }
+
   return conditions.length ? and(...conditions) : undefined;
 }
 
@@ -249,6 +273,9 @@ export async function getProducts({
   limit = 100,
   offset = 0,
   availableOnly,
+  tag,
+  minPrice,
+  maxPrice,
 }: {
   query?: string;
   reverse?: boolean;
@@ -256,8 +283,18 @@ export async function getProducts({
   limit?: number;
   offset?: number;
   availableOnly?: boolean;
+  tag?: string;
+  minPrice?: number;
+  maxPrice?: number;
 }): Promise<Product[]> {
-  const whereClause = buildSearchWhereClause({ query, availableOnly });
+  const whereClause = buildSearchWhereClause({
+    query,
+    availableOnly,
+    tag,
+    minPrice,
+    maxPrice,
+  });
+  const sanitizedQuery = query?.trim();
 
   let orderBy = desc(products.createdAt);
   if (sortKey === "CREATED_AT" || sortKey === "CREATED") {
@@ -269,13 +306,28 @@ export async function getProducts({
       WHERE ${productVariants.productId} = ${products.id}
     )`;
     orderBy = reverse ? desc(minVariantPrice) : asc(minVariantPrice);
+  } else if (sortKey === "RELEVANCE" && sanitizedQuery) {
+    const exactMatch = sanitizedQuery.toLowerCase();
+    const prefixMatch = `${sanitizedQuery}%`;
+    const partialMatch = `%${sanitizedQuery}%`;
+    const relevanceScore = sql<number>`(
+      CASE
+        WHEN lower(${products.title}) = ${exactMatch} THEN 400
+        WHEN ${products.title} ILIKE ${prefixMatch} THEN 300
+        WHEN ${products.title} ILIKE ${partialMatch} THEN 200
+        WHEN ${products.description} ILIKE ${partialMatch} THEN 120
+        WHEN ${products.tags}::text ILIKE ${partialMatch} THEN 80
+        ELSE 0
+      END
+    )`;
+    orderBy = reverse ? asc(relevanceScore) : desc(relevanceScore);
   }
 
   const dbProducts = await db
     .select()
     .from(products)
     .where(whereClause)
-    .orderBy(orderBy)
+    .orderBy(orderBy, desc(products.createdAt))
     .limit(limit)
     .offset(offset);
 
@@ -289,11 +341,23 @@ export async function getProducts({
 export async function getProductsCount({
   query,
   availableOnly,
+  tag,
+  minPrice,
+  maxPrice,
 }: {
   query?: string;
   availableOnly?: boolean;
+  tag?: string;
+  minPrice?: number;
+  maxPrice?: number;
 }): Promise<number> {
-  const whereClause = buildSearchWhereClause({ query, availableOnly });
+  const whereClause = buildSearchWhereClause({
+    query,
+    availableOnly,
+    tag,
+    minPrice,
+    maxPrice,
+  });
   const [result] = await db
     .select({ count: sql<number>`count(*)` })
     .from(products)

@@ -206,3 +206,42 @@ export const trackCustomOrderRequest = () => {
     content_name: "Custom Order Request",
   });
 };
+
+/**
+ * Track search results views with basic faceting context
+ */
+export const trackSearchResults = (payload: {
+  query?: string;
+  resultCount: number;
+  sort?: string;
+  page?: number;
+  availableOnly?: boolean;
+  tag?: string;
+  minPrice?: number;
+  maxPrice?: number;
+}) => {
+  const label = payload.query || "browse";
+
+  ga.event({
+    action: "search_results",
+    category: "search",
+    label,
+    value: payload.resultCount,
+  });
+
+  fbPixel.event("Search", {
+    search_string: label,
+    content_category: payload.tag || "all",
+    value: payload.resultCount,
+    currency: "NGN",
+  });
+
+  tiktok.event("Search", {
+    query: label,
+    value: payload.resultCount,
+    currency: "NGN",
+    contents: payload.tag
+      ? [{ content_id: payload.tag, content_type: "category" }]
+      : undefined,
+  });
+};
