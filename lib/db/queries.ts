@@ -23,15 +23,7 @@ import {
   products,
   reviews,
 } from "./schema";
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  inArray,
-  sql,
-  ilike,
-} from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql, ilike, or } from "drizzle-orm";
 import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "../image-constants";
 
 // Helper function to reshape database product to match Shopify Product type
@@ -56,7 +48,10 @@ export async function reshapeDbProduct(
       id: variant.id,
       title: variant.title,
       availableForSale: variant.availableForSale,
-      selectedOptions: variant.selectedOptions as { name: string; value: string }[],
+      selectedOptions: variant.selectedOptions as {
+        name: string;
+        value: string;
+      }[],
       price: {
         amount: String(variant.price),
         currencyCode: variant.currencyCode,
@@ -219,40 +214,156 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
   return reshapeDbProduct(dbProduct);
 }
 
+type SearchFilters = {
+  query?: string;
+  availableOnly?: boolean;
+  tag?: string;
+  minPrice?: number;
+  maxPrice?: number;
+};
+
+function buildSearchWhereClause({
+  query,
+  availableOnly,
+  tag,
+  minPrice,
+  maxPrice,
+}: SearchFilters) {
+  const conditions = [];
+  const sanitizedQuery = query?.trim();
+
+  if (sanitizedQuery) {
+    const pattern = `%${sanitizedQuery}%`;
+    conditions.push(
+      or(
+        ilike(products.title, pattern),
+        ilike(products.description, pattern),
+        sql`${products.tags}::text ILIKE ${pattern}`,
+      ),
+    );
+  }
+
+  if (availableOnly) {
+    conditions.push(eq(products.availableForSale, true));
+  }
+
+  if (tag) {
+    conditions.push(sql`${products.tags} @> ARRAY[${tag}]::text[]`);
+  }
+
+  if (typeof minPrice === "number" || typeof maxPrice === "number") {
+    const lowerBound = typeof minPrice === "number" ? minPrice : 0;
+    const upperBound = typeof maxPrice === "number" ? maxPrice : 999999999;
+    conditions.push(sql`EXISTS (
+      SELECT 1
+      FROM ${productVariants}
+      WHERE ${productVariants.productId} = ${products.id}
+      AND ${productVariants.price}::numeric >= ${lowerBound}
+      AND ${productVariants.price}::numeric <= ${upperBound}
+    )`);
+  }
+
+  return conditions.length ? and(...conditions) : undefined;
+}
+
 export async function getProducts({
   query,
   reverse,
   sortKey,
+  limit = 100,
+  offset = 0,
+  availableOnly,
+  tag,
+  minPrice,
+  maxPrice,
 }: {
   query?: string;
   reverse?: boolean;
   sortKey?: string;
+  limit?: number;
+  offset?: number;
+  availableOnly?: boolean;
+  tag?: string;
+  minPrice?: number;
+  maxPrice?: number;
 }): Promise<Product[]> {
-  const filters = [];
-
-  if (query) {
-    filters.push(ilike(products.title, `%${query}%`));
-  }
+  const whereClause = buildSearchWhereClause({
+    query,
+    availableOnly,
+    tag,
+    minPrice,
+    maxPrice,
+  });
+  const sanitizedQuery = query?.trim();
 
   let orderBy = desc(products.createdAt);
   if (sortKey === "CREATED_AT" || sortKey === "CREATED") {
     orderBy = reverse ? desc(products.createdAt) : asc(products.createdAt);
   } else if (sortKey === "PRICE") {
-    orderBy = reverse ? desc(products.title) : asc(products.title);
+    const minVariantPrice = sql<number>`(
+      SELECT COALESCE(MIN(${productVariants.price}), 0)
+      FROM ${productVariants}
+      WHERE ${productVariants.productId} = ${products.id}
+    )`;
+    orderBy = reverse ? desc(minVariantPrice) : asc(minVariantPrice);
+  } else if (sortKey === "RELEVANCE" && sanitizedQuery) {
+    const exactMatch = sanitizedQuery.toLowerCase();
+    const prefixMatch = `${sanitizedQuery}%`;
+    const partialMatch = `%${sanitizedQuery}%`;
+    const relevanceScore = sql<number>`(
+      CASE
+        WHEN lower(${products.title}) = ${exactMatch} THEN 400
+        WHEN ${products.title} ILIKE ${prefixMatch} THEN 300
+        WHEN ${products.title} ILIKE ${partialMatch} THEN 200
+        WHEN ${products.description} ILIKE ${partialMatch} THEN 120
+        WHEN ${products.tags}::text ILIKE ${partialMatch} THEN 80
+        ELSE 0
+      END
+    )`;
+    orderBy = reverse ? asc(relevanceScore) : desc(relevanceScore);
   }
 
   const dbProducts = await db
     .select()
     .from(products)
-    .where(filters.length ? and(...filters) : undefined)
-    .orderBy(orderBy)
-    .limit(100);
+    .where(whereClause)
+    .orderBy(orderBy, desc(products.createdAt))
+    .limit(limit)
+    .offset(offset);
 
   const productsWithDetails = await Promise.all(
     dbProducts.map((product) => reshapeDbProduct(product)),
   );
 
   return productsWithDetails.filter((p): p is Product => p !== undefined);
+}
+
+export async function getProductsCount({
+  query,
+  availableOnly,
+  tag,
+  minPrice,
+  maxPrice,
+}: {
+  query?: string;
+  availableOnly?: boolean;
+  tag?: string;
+  minPrice?: number;
+  maxPrice?: number;
+}): Promise<number> {
+  const whereClause = buildSearchWhereClause({
+    query,
+    availableOnly,
+    tag,
+    minPrice,
+    maxPrice,
+  });
+  const [result] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(products)
+    .where(whereClause);
+
+  return Number(result?.count ?? 0);
 }
 
 export async function getProductRecommendations(
@@ -305,7 +416,9 @@ export async function getProductReviewAggregate(productId: string): Promise<{
       reviewCount: sql<number>`count(${reviews.rating})`,
     })
     .from(reviews)
-    .where(and(eq(reviews.productId, productId), eq(reviews.status, "approved")));
+    .where(
+      and(eq(reviews.productId, productId), eq(reviews.status, "approved")),
+    );
 
   return {
     averageRating: stats?.averageRating ?? null,
@@ -330,7 +443,8 @@ export async function getCollection(
     description: dbCollection.description || "",
     seo: {
       title: dbCollection.seoTitle || dbCollection.title,
-      description: dbCollection.seoDescription || dbCollection.description || "",
+      description:
+        dbCollection.seoDescription || dbCollection.description || "",
     },
     updatedAt: dbCollection.updatedAt.toISOString(),
     path: `/search/${dbCollection.handle}`,

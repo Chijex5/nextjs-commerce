@@ -160,21 +160,69 @@ export async function getProducts({
   query,
   reverse,
   sortKey,
+  limit,
+  offset,
+  availableOnly,
+  tag,
+  minPrice,
+  maxPrice,
 }: {
   query?: string;
   reverse?: boolean;
   sortKey?: string;
+  limit?: number;
+  offset?: number;
+  availableOnly?: boolean;
+  tag?: string;
+  minPrice?: number;
+  maxPrice?: number;
 }): Promise<Product[]> {
   "use cache";
   cacheTag(TAGS.products);
   cacheLife("days");
 
-  const products = await dbQueries.getProducts({ query, reverse, sortKey });
+  const products = await dbQueries.getProducts({
+    query,
+    reverse,
+    sortKey,
+    limit,
+    offset,
+    availableOnly,
+    tag,
+    minPrice,
+    maxPrice,
+  });
 
   // Filter out hidden products
   return products.filter(
     (product) => !product.tags.includes(HIDDEN_PRODUCT_TAG),
   );
+}
+
+export async function getProductsCount({
+  query,
+  availableOnly,
+  tag,
+  minPrice,
+  maxPrice,
+}: {
+  query?: string;
+  availableOnly?: boolean;
+  tag?: string;
+  minPrice?: number;
+  maxPrice?: number;
+} = {}): Promise<number> {
+  "use cache";
+  cacheTag(TAGS.products);
+  cacheLife("hours");
+
+  return dbQueries.getProductsCount({
+    query,
+    availableOnly,
+    tag,
+    minPrice,
+    maxPrice,
+  });
 }
 
 // Menu operations

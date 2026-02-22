@@ -1,11 +1,30 @@
+import SearchViewAnalytics from "components/analytics/search-view";
 import Grid from "components/grid";
 import ProductGridItems from "components/layout/product-grid-items";
 import { defaultSort, sorting } from "lib/constants";
-import { getProducts } from "lib/database";
+import { getProducts, getProductsCount } from "lib/database";
 import { canonicalUrl, siteName } from "lib/seo";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 const description = "Search for products in the store.";
+const PRODUCTS_PER_PAGE = 12;
+
+const suggestedSearches = [
+  "new arrivals",
+  "best sellers",
+  "shirts",
+  "jackets",
+  "accessories",
+  "summer",
+];
+
+const priceRanges = [
+  { label: "Any price" },
+  { label: "Under ₦25,000", minPrice: 0, maxPrice: 25000 },
+  { label: "₦25,000 - ₦75,000", minPrice: 25000, maxPrice: 75000 },
+  { label: "₦75,000+", minPrice: 75000 },
+];
 
 export const metadata: Metadata = {
   title: "Search",
@@ -32,32 +51,313 @@ export const metadata: Metadata = {
   },
 };
 
+function buildSearchUrl({
+  q,
+  sort,
+  page,
+  availability,
+  tag,
+  minPrice,
+  maxPrice,
+}: {
+  q?: string;
+  sort?: string;
+  page?: number;
+  availability?: string;
+  tag?: string;
+  minPrice?: number;
+  maxPrice?: number;
+}) {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (sort) params.set("sort", sort);
+  if (availability === "in-stock") params.set("availability", availability);
+  if (tag) params.set("tag", tag);
+  if (typeof minPrice === "number") params.set("minPrice", String(minPrice));
+  if (typeof maxPrice === "number") params.set("maxPrice", String(maxPrice));
+  if (page && page > 1) params.set("page", String(page));
+  const query = params.toString();
+
+  return query ? `/search?${query}` : "/search";
+}
+
+function chipClass(active: boolean) {
+  return `rounded-full border px-4 py-2 text-sm transition ${
+    active
+      ? "border-neutral-900 bg-neutral-900 text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900"
+      : "border-neutral-300 text-neutral-700 hover:border-neutral-500 dark:border-neutral-700 dark:text-neutral-300"
+  }`;
+}
+
 export default async function SearchPage(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const searchParams = await props.searchParams;
-  const { sort, q: searchValue } = searchParams as { [key: string]: string };
-  const { sortKey, reverse } =
-    sorting.find((item) => item.slug === sort) || defaultSort;
+  const {
+    sort,
+    q: rawSearchValue,
+    page: rawPage,
+    availability,
+    tag,
+    minPrice: rawMinPrice,
+    maxPrice: rawMaxPrice,
+  } = searchParams as {
+    [key: string]: string;
+  };
+  const searchValue = rawSearchValue?.trim();
+  const hasQuery = Boolean(searchValue);
+  const page = Math.max(1, Number.parseInt(rawPage || "1", 10) || 1);
+  const availableOnly = availability === "in-stock";
+  const minPrice = rawMinPrice ? Number(rawMinPrice) : undefined;
+  const maxPrice = rawMaxPrice ? Number(rawMaxPrice) : undefined;
+  const {
+    sortKey,
+    reverse,
+    title: selectedSortTitle,
+  } = sorting.find((item) => item.slug === sort) || defaultSort;
 
-  const products = await getProducts({ sortKey, reverse, query: searchValue });
-  const resultsText = products.length > 1 ? "results" : "result";
+  const totalResults = await getProductsCount({
+    query: searchValue,
+    availableOnly,
+    tag,
+    minPrice,
+    maxPrice,
+  });
+  const totalPages = Math.max(1, Math.ceil(totalResults / PRODUCTS_PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const offset = (currentPage - 1) * PRODUCTS_PER_PAGE;
+  const products = await getProducts({
+    sortKey,
+    reverse,
+    query: searchValue,
+    limit: PRODUCTS_PER_PAGE,
+    offset,
+    availableOnly,
+    tag,
+    minPrice,
+    maxPrice,
+  });
+
+  const tagOptions = Array.from(
+    new Set(products.flatMap((product) => product.tags).filter(Boolean)),
+  )
+    .filter((t) => t !== "nextjs-frontend-hidden")
+    .slice(0, 8);
 
   return (
-    <>
-      {searchValue ? (
-        <p className="mb-4">
-          {products.length === 0
-            ? "There are no products that match "
-            : `Showing ${products.length} ${resultsText} for `}
-          <span className="font-bold">&quot;{searchValue}&quot;</span>
-        </p>
-      ) : null}
+    <section className="space-y-10">
+      <SearchViewAnalytics
+        query={searchValue}
+        resultCount={totalResults}
+        sort={sort ?? undefined}
+        page={currentPage}
+        availableOnly={availableOnly}
+        tag={tag}
+        minPrice={minPrice}
+        maxPrice={maxPrice}
+      />
+
+      <header className="space-y-6">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-100 sm:text-4xl">
+            {hasQuery ? `“${searchValue}”` : "Search"}
+          </h1>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+            {totalResults} result{totalResults === 1 ? "" : "s"} · Sorted by{" "}
+            {selectedSortTitle}
+          </p>
+        </div>
+
+        <form action="/search" className="flex flex-col gap-3 sm:flex-row">
+          <label htmlFor="search-query" className="sr-only">
+            Search products
+          </label>
+          <input
+            id="search-query"
+            name="q"
+            defaultValue={searchValue}
+            placeholder="Search products"
+            className="w-full rounded-2xl border border-neutral-300 bg-transparent px-5 py-3 text-base text-neutral-950 outline-none transition focus:border-neutral-500 dark:border-neutral-700 dark:text-neutral-100"
+          />
+          {sort ? <input type="hidden" name="sort" value={sort} /> : null}
+          {availableOnly ? (
+            <input type="hidden" name="availability" value="in-stock" />
+          ) : null}
+          {tag ? <input type="hidden" name="tag" value={tag} /> : null}
+          {typeof minPrice === "number" ? (
+            <input type="hidden" name="minPrice" value={minPrice} />
+          ) : null}
+          {typeof maxPrice === "number" ? (
+            <input type="hidden" name="maxPrice" value={maxPrice} />
+          ) : null}
+          <button
+            type="submit"
+            className="rounded-2xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+          >
+            Search
+          </button>
+        </form>
+
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={buildSearchUrl({
+                q: searchValue,
+                sort,
+                tag,
+                minPrice,
+                maxPrice,
+              })}
+              className={chipClass(!availableOnly)}
+            >
+              All products
+            </Link>
+            <Link
+              href={buildSearchUrl({
+                q: searchValue,
+                sort,
+                availability: "in-stock",
+                tag,
+                minPrice,
+                maxPrice,
+              })}
+              className={chipClass(availableOnly)}
+            >
+              In stock
+            </Link>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {priceRanges.map((range) => {
+              const active =
+                (range.minPrice ?? undefined) === minPrice &&
+                (range.maxPrice ?? undefined) === maxPrice;
+
+              return (
+                <Link
+                  key={range.label}
+                  href={buildSearchUrl({
+                    q: searchValue,
+                    sort,
+                    availability,
+                    tag,
+                    minPrice: range.minPrice,
+                    maxPrice: range.maxPrice,
+                  })}
+                  className={chipClass(active)}
+                >
+                  {range.label}
+                </Link>
+              );
+            })}
+          </div>
+
+          {tagOptions.length ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href={buildSearchUrl({
+                  q: searchValue,
+                  sort,
+                  availability,
+                  minPrice,
+                  maxPrice,
+                })}
+                className={chipClass(!tag)}
+              >
+                All tags
+              </Link>
+              {tagOptions.map((tagOption) => (
+                <Link
+                  key={tagOption}
+                  href={buildSearchUrl({
+                    q: searchValue,
+                    sort,
+                    availability,
+                    tag: tagOption,
+                    minPrice,
+                    maxPrice,
+                  })}
+                  className={chipClass(tag === tagOption)}
+                >
+                  {tagOption}
+                </Link>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </header>
+
       {products.length > 0 ? (
-        <Grid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <ProductGridItems products={products} />
-        </Grid>
-      ) : null}
-    </>
+        <>
+          <Grid className="grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            <ProductGridItems products={products} />
+          </Grid>
+
+          {totalPages > 1 ? (
+            <nav className="flex items-center justify-between border-t border-neutral-200 pt-6 dark:border-neutral-800">
+              <Link
+                href={buildSearchUrl({
+                  q: searchValue,
+                  sort,
+                  availability,
+                  tag,
+                  minPrice,
+                  maxPrice,
+                  page: currentPage > 1 ? currentPage - 1 : 1,
+                })}
+                className={`rounded-xl border px-4 py-2 text-sm transition ${
+                  currentPage === 1
+                    ? "pointer-events-none border-neutral-200 text-neutral-400 dark:border-neutral-800 dark:text-neutral-600"
+                    : "border-neutral-300 text-neutral-700 hover:border-neutral-500 dark:border-neutral-700 dark:text-neutral-300"
+                }`}
+              >
+                Previous
+              </Link>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Page {currentPage} of {totalPages}
+              </p>
+              <Link
+                href={buildSearchUrl({
+                  q: searchValue,
+                  sort,
+                  availability,
+                  tag,
+                  minPrice,
+                  maxPrice,
+                  page: currentPage < totalPages ? currentPage + 1 : totalPages,
+                })}
+                className={`rounded-xl border px-4 py-2 text-sm transition ${
+                  currentPage === totalPages
+                    ? "pointer-events-none border-neutral-200 text-neutral-400 dark:border-neutral-800 dark:text-neutral-600"
+                    : "border-neutral-300 text-neutral-700 hover:border-neutral-500 dark:border-neutral-700 dark:text-neutral-300"
+                }`}
+              >
+                Next
+              </Link>
+            </nav>
+          ) : null}
+        </>
+      ) : (
+        <div className="space-y-5 rounded-3xl border border-neutral-200 p-10 text-center dark:border-neutral-800">
+          <p className="text-xl font-medium text-neutral-950 dark:text-neutral-100">
+            No products found
+          </p>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+            Try a different term or start with one of these suggestions.
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {suggestedSearches.map((term) => (
+              <Link
+                key={term}
+                href={`/search?q=${encodeURIComponent(term)}`}
+                className="rounded-full border border-neutral-300 px-4 py-2 text-sm text-neutral-700 transition hover:border-neutral-400 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-600"
+              >
+                {term}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
