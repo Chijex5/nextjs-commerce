@@ -288,7 +288,12 @@ function OrderCard({ order }: { order: Order }) {
             </span>
             {order.estimatedArrival ? (
               <span className="text-xs text-neutral-600 dark:text-neutral-400">
-                ETA: {formatEstimatedArrival(order.estimatedArrival)}
+                ETA:{" "}
+                {formatEstimatedArrival(
+                  order.estimatedArrival
+                    ? new Date(order.estimatedArrival)
+                    : null,
+                )}
               </span>
             ) : null}
           </div>
