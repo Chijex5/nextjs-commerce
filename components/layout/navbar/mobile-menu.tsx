@@ -41,11 +41,7 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
 
       <Transition show={isOpen}>
         <Dialog onClose={() => setIsOpen(false)} className="relative z-50">
-<<<<<<< HEAD
           <TransitionChild
-=======
-          <Transition.Child
->>>>>>> f048c7eb9503111630607767c891548765c9af04
             as={Fragment}
             enter="transition-opacity duration-300"
             enterFrom="opacity-0"
@@ -55,15 +51,9 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
             leaveTo="opacity-0"
           >
             <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-<<<<<<< HEAD
           </TransitionChild>
 
           <TransitionChild
-=======
-          </Transition.Child>
-
-          <Transition.Child
->>>>>>> f048c7eb9503111630607767c891548765c9af04
             as={Fragment}
             enter="transition-transform duration-300"
             enterFrom="-translate-x-full"
@@ -72,11 +62,7 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
             leaveFrom="translate-x-0"
             leaveTo="-translate-x-full"
           >
-<<<<<<< HEAD
             <DialogPanel className="fixed inset-y-0 left-0 flex w-[86%] max-w-sm flex-col justify-between border-r border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
-=======
-            <Dialog.Panel className="fixed inset-y-0 left-0 flex w-[86%] max-w-sm flex-col justify-between border-r border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
->>>>>>> f048c7eb9503111630607767c891548765c9af04
               <div>
                 <div className="mb-8 flex items-center justify-between">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500 dark:text-neutral-400">
