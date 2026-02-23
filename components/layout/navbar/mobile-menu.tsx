@@ -93,6 +93,16 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                     ))}
                     <li>
                       <Link
+                        href="/orders"
+                        prefetch={true}
+                        onClick={() => setIsOpen(false)}
+                        className="block rounded-xl px-3 py-3 text-base font-medium text-neutral-900 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                      >
+                        Orders
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
                         href={session ? "/account" : "/auth/login"}
                         prefetch={true}
                         onClick={() => setIsOpen(false)}
@@ -100,16 +110,6 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                       >
                         <UserIcon className="h-5 w-5" />
                         {session ? "My Account" : "Login"}
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="/orders"
-                        prefetch={true}
-                        onClick={() => setIsOpen(false)}
-                        className="block rounded-xl px-3 py-3 text-base font-medium text-neutral-900 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
-                      >
-                        Orders
                       </Link>
                     </li>
                   </ul>
