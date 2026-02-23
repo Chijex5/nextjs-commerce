@@ -3,6 +3,7 @@ import { getUserSession } from "lib/user-session";
 import { db } from "lib/db";
 import { users } from "lib/db/schema";
 import { eq } from "drizzle-orm";
+import { connect } from "node:http2";
 
 export async function GET() {
   try {
@@ -50,7 +51,7 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
     const { type, address } = body;
-
+    
     if (!type || !address) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -68,9 +69,13 @@ export async function PUT(request: NextRequest) {
     const requiredFields = [
       "firstName",
       "lastName",
-      "address",
-      "city",
+      "streetAddress",
+      "nearestBusStop",
+      "landmark",
+      "lga",
       "state",
+      "phone1",
+      "phone2",
       "country",
     ];
     for (const field of requiredFields) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Dialog, Transition } from "@headlessui/react";
+import { Dialog, DialogPanel, TransitionChild, Transition } from "@headlessui/react";
 import { Bars3Icon, UserIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useUserSession } from "hooks/useUserSession";
 import { Menu } from "lib/shopify/types";
@@ -41,7 +41,7 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
 
       <Transition show={isOpen}>
         <Dialog onClose={() => setIsOpen(false)} className="relative z-50">
-          <Transition.Child
+          <TransitionChild
             as={Fragment}
             enter="transition-opacity duration-300"
             enterFrom="opacity-0"
@@ -51,9 +51,9 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
             leaveTo="opacity-0"
           >
             <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-          </Transition.Child>
+          </TransitionChild>
 
-          <Transition.Child
+          <TransitionChild
             as={Fragment}
             enter="transition-transform duration-300"
             enterFrom="-translate-x-full"
@@ -62,7 +62,7 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
             leaveFrom="translate-x-0"
             leaveTo="-translate-x-full"
           >
-            <Dialog.Panel className="fixed inset-y-0 left-0 flex w-[86%] max-w-sm flex-col justify-between border-r border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
+            <DialogPanel className="fixed inset-y-0 left-0 flex w-[86%] max-w-sm flex-col justify-between border-r border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
               <div>
                 <div className="mb-8 flex items-center justify-between">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500 dark:text-neutral-400">
@@ -93,6 +93,17 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                     ))}
                     <li>
                       <Link
+                        href={session ? "/account" : "/auth/login"}
+                        prefetch={true}
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-3 rounded-xl px-3 py-3 text-base font-medium text-neutral-900 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                      >
+                        <UserIcon className="h-5 w-5" />
+                        {session ? "My Account" : "Login"}
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
                         href="/orders"
                         prefetch={true}
                         onClick={() => setIsOpen(false)}
@@ -121,8 +132,8 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                   Handcrafted footwear from Lagos, Nigeria.
                 </p>
               </div>
-            </Dialog.Panel>
-          </Transition.Child>
+            </DialogPanel>
+          </TransitionChild>
         </Dialog>
       </Transition>
     </>
