@@ -12,5 +12,9 @@ export default function OrdersLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <div className="mx-auto w-full max-w-[1800px] px-4 pb-16 pt-8 md:px-6 md:pt-10 lg:px-8">
+      {children}
+    </div>
+  );
 }
