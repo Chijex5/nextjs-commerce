@@ -53,6 +53,7 @@ export default function ProductsFilterMenu({
               type="button"
               onClick={() => setIsOpen(false)}
               className="text-sm text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-100"
+              aria-label="Close filter menu"
             >
               Close
             </button>
