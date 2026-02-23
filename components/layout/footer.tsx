@@ -1,9 +1,8 @@
-import Link from "next/link";
-
 import FooterMenu from "components/layout/footer-menu";
 import LogoSquare from "components/logo-square";
 import NewsletterForm from "components/newsletter-form";
 import { getMenu } from "lib/database";
+import Link from "next/link";
 import { Suspense } from "react";
 
 const { COMPANY_NAME, SITE_NAME } = process.env;
@@ -12,27 +11,32 @@ export default async function Footer() {
   const currentYear = new Date().getFullYear();
   const copyrightDate = 2023 + (currentYear > 2023 ? `-${currentYear}` : "");
   const skeleton =
-    "w-full h-6 animate-pulse rounded-sm bg-neutral-200 dark:bg-neutral-700";
+    "h-4 w-full animate-pulse rounded bg-neutral-200 dark:bg-neutral-700";
   const menu = await getMenu("footer-menu");
   const copyrightName = COMPANY_NAME || SITE_NAME || "";
 
   return (
-    <footer className="text-sm text-neutral-500 dark:text-neutral-400">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 border-t border-neutral-200 px-6 py-12 text-sm md:flex-row md:gap-12 md:px-4 min-[1320px]:px-0 dark:border-neutral-700">
-        <div>
+    <footer className="border-t border-neutral-200 bg-white text-sm text-neutral-600 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-400">
+      <div className="mx-auto grid w-full max-w-[1800px] gap-10 px-4 py-12 md:grid-cols-[1.2fr_1fr_1.2fr] md:px-6 lg:px-8">
+        <div className="space-y-4">
           <Link
-            className="flex items-center gap-2 text-black md:pt-1 dark:text-white"
+            className="flex items-center gap-2 text-black dark:text-white"
             href="/"
           >
             <LogoSquare size="sm" />
-            <span className="uppercase">{SITE_NAME}</span>
+            <span className="text-sm font-semibold uppercase tracking-wide">
+              {SITE_NAME}
+            </span>
           </Link>
+          <p className="max-w-sm leading-6">
+            Handcrafted footwear made with care in Lagos, Nigeria. Built for
+            daily comfort and timeless style.
+          </p>
         </div>
+
         <Suspense
           fallback={
-            <div className="flex h-[188px] w-[200px] flex-col gap-2">
-              <div className={skeleton} />
-              <div className={skeleton} />
+            <div className="space-y-3">
               <div className={skeleton} />
               <div className={skeleton} />
               <div className={skeleton} />
@@ -42,30 +46,20 @@ export default async function Footer() {
         >
           <FooterMenu menu={menu} />
         </Suspense>
-        <div className="md:ml-auto">
-          <p className="text-sm">
-            Handcrafted footwear made with love in Lagos, Nigeria.
+
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-neutral-900 dark:text-neutral-100">
+            Newsletter
+          </h3>
+          <p className="leading-6">
+            Get product drops, restocks, and offers straight to your inbox.
           </p>
+          <NewsletterForm />
         </div>
       </div>
 
-      {/* Newsletter Section */}
-      <div className="border-t border-neutral-200 py-8 dark:border-neutral-700">
-        <div className="mx-auto max-w-7xl px-6 md:px-4 min-[1320px]:px-0">
-          <div className="mx-auto max-w-md">
-            <h3 className="mb-3 text-lg font-semibold text-black dark:text-white">
-              Stay Updated
-            </h3>
-            <p className="mb-4 text-sm">
-              Subscribe to get notified about new designs and special offers.
-            </p>
-            <NewsletterForm />
-          </div>
-        </div>
-      </div>
-
-      <div className="border-t border-neutral-200 py-6 text-sm dark:border-neutral-700">
-        <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-1 px-4 md:flex-row md:gap-0 md:px-4 min-[1320px]:px-0">
+      <div className="border-t border-neutral-200 dark:border-neutral-800">
+        <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-2 px-4 py-5 text-xs md:flex-row md:items-center md:justify-between md:px-6 lg:px-8">
           <p>
             &copy; {copyrightDate} {copyrightName}
             {copyrightName.length && !copyrightName.endsWith(".")
@@ -73,9 +67,7 @@ export default async function Footer() {
               : ""}{" "}
             All rights reserved.
           </p>
-          <p className="md:ml-auto">
-            Quality handmade footwear for every occasion.
-          </p>
+          <p>Quality handmade footwear for every occasion.</p>
         </div>
       </div>
     </footer>

@@ -1,21 +1,18 @@
 "use client";
 
 import { Dialog, Transition } from "@headlessui/react";
+import { Bars3Icon, UserIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useUserSession } from "hooks/useUserSession";
+import { Menu } from "lib/shopify/types";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
-import { useUserSession } from "hooks/useUserSession";
-
-import { Bars3Icon, XMarkIcon, UserIcon } from "@heroicons/react/24/outline";
-import { Menu } from "lib/shopify/types";
 
 export default function MobileMenu({ menu }: { menu: Menu[] }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const { data: session } = useUserSession();
-  const openMobileMenu = () => setIsOpen(true);
-  const closeMobileMenu = () => setIsOpen(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -23,9 +20,10 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
         setIsOpen(false);
       }
     };
+
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [isOpen]);
+  }, []);
 
   useEffect(() => {
     setIsOpen(false);
@@ -34,76 +32,82 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
   return (
     <>
       <button
-        onClick={openMobileMenu}
+        onClick={() => setIsOpen(true)}
         aria-label="Open mobile menu"
-        className="flex h-11 w-11 items-center justify-center rounded-md border border-neutral-200 text-black transition-colors md:hidden dark:border-neutral-700 dark:text-white"
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 bg-white text-black transition-colors md:hidden dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
       >
-        <Bars3Icon className="h-4" />
+        <Bars3Icon className="h-5 w-5" />
       </button>
+
       <Transition show={isOpen}>
-        <Dialog onClose={closeMobileMenu} className="relative z-50">
+        <Dialog onClose={() => setIsOpen(false)} className="relative z-50">
           <Transition.Child
             as={Fragment}
-            enter="transition-all ease-in-out duration-300"
-            enterFrom="opacity-0 backdrop-blur-none"
-            enterTo="opacity-100 backdrop-blur-[.5px]"
-            leave="transition-all ease-in-out duration-200"
-            leaveFrom="opacity-100 backdrop-blur-[.5px]"
-            leaveTo="opacity-0 backdrop-blur-none"
+            enter="transition-opacity duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="transition-opacity duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
           >
             <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
           </Transition.Child>
+
           <Transition.Child
             as={Fragment}
-            enter="transition-all ease-in-out duration-300"
-            enterFrom="translate-x-[-100%]"
+            enter="transition-transform duration-300"
+            enterFrom="-translate-x-full"
             enterTo="translate-x-0"
-            leave="transition-all ease-in-out duration-200"
+            leave="transition-transform duration-200"
             leaveFrom="translate-x-0"
-            leaveTo="translate-x-[-100%]"
+            leaveTo="-translate-x-full"
           >
-            <Dialog.Panel className="fixed bottom-0 left-0 right-0 top-0 flex h-full w-full flex-col justify-between bg-white dark:bg-black">
-              <div className="p-4">
-                <button
-                  className="mb-6 flex h-11 w-11 items-center justify-center rounded-md border border-neutral-200 text-black transition-colors dark:border-neutral-700 dark:text-white"
-                  onClick={closeMobileMenu}
-                  aria-label="Close mobile menu"
-                >
-                  <XMarkIcon className="h-6" />
-                </button>
+            <Dialog.Panel className="fixed inset-y-0 left-0 flex w-[86%] max-w-sm flex-col justify-between border-r border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
+              <div>
+                <div className="mb-8 flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500 dark:text-neutral-400">
+                    Menu
+                  </p>
+                  <button
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 bg-white text-black transition-colors dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                    onClick={() => setIsOpen(false)}
+                    aria-label="Close mobile menu"
+                  >
+                    <XMarkIcon className="h-5 w-5" />
+                  </button>
+                </div>
+
                 {menu.length ? (
-                  <ul className="flex w-full flex-col gap-2">
+                  <ul className="space-y-2">
                     {menu.map((item: Menu) => (
-                      <li
-                        className="border-b border-neutral-200 py-4 text-2xl font-medium text-black transition-colors hover:text-neutral-500 dark:border-neutral-700 dark:text-white"
-                        key={item.title}
-                      >
+                      <li key={item.title}>
                         <Link
                           href={item.path}
                           prefetch={true}
-                          onClick={closeMobileMenu}
+                          onClick={() => setIsOpen(false)}
+                          className="block rounded-xl px-3 py-3 text-base font-medium text-neutral-900 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
                         >
                           {item.title}
                         </Link>
                       </li>
                     ))}
-                    <li className="border-b border-neutral-200 py-4 dark:border-neutral-700">
+                    <li>
                       <Link
                         href={session ? "/account" : "/auth/login"}
                         prefetch={true}
-                        onClick={closeMobileMenu}
-                        className="flex items-center gap-3 text-2xl font-medium text-black transition-colors hover:text-neutral-500 dark:text-white"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-3 rounded-xl px-3 py-3 text-base font-medium text-neutral-900 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
                       >
-                        <UserIcon className="h-6 w-6" />
+                        <UserIcon className="h-5 w-5" />
                         {session ? "My Account" : "Login"}
                       </Link>
                     </li>
-                    <li className="border-b border-neutral-200 py-4 dark:border-neutral-700">
+                    <li>
                       <Link
                         href="/orders"
                         prefetch={true}
-                        onClick={closeMobileMenu}
-                        className="text-2xl font-medium text-black transition-colors hover:text-neutral-500 dark:text-white"
+                        onClick={() => setIsOpen(false)}
+                        className="block rounded-xl px-3 py-3 text-base font-medium text-neutral-900 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
                       >
                         Orders
                       </Link>
@@ -111,9 +115,10 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                   </ul>
                 ) : null}
               </div>
-              <div className="border-t border-neutral-200 p-4 dark:border-neutral-700">
+
+              <div className="border-t border-neutral-200 pt-4 dark:border-neutral-800">
                 <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                  Handcrafted footwear from Lagos, Nigeria
+                  Handcrafted footwear from Lagos, Nigeria.
                 </p>
               </div>
             </Dialog.Panel>
