@@ -9,6 +9,7 @@ import LoadingDots from "components/loading-dots";
 import PageLoader from "components/page-loader";
 import { useUserSession } from "hooks/useUserSession";
 import { identifyUser } from "lib/analytics/tiktok-pixel";
+import { getCouponCustomerKey, getStoredCoupon } from "lib/coupon-storage";
 
 const ORDER_NOTE_STORAGE_KEY = "orderNote";
 
@@ -164,7 +165,6 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     fetchCart();
-    loadCouponData();
     if (session) {
       fetchUserAddresses();
     }
@@ -196,15 +196,24 @@ export default function CheckoutPage() {
     });
   }, [formData.email, formData.phone]);
 
-  const loadCouponData = () => {
+  const loadCouponData = (cartId: string) => {
+    if (!cartId) {
+      setCouponData(null);
+      return;
+    }
+
     try {
-      const stored = localStorage.getItem("appliedCoupon");
-      if (stored) {
-        const coupon = JSON.parse(stored);
+      const customerKey = getCouponCustomerKey(session?.id);
+      const coupon = getStoredCoupon(cartId, customerKey);
+
+      if (coupon) {
         setCouponData({ code: coupon.code, amount: coupon.discountAmount });
+      } else {
+        setCouponData(null);
       }
     } catch (err) {
       console.error("Failed to load coupon data:", err);
+      setCouponData(null);
     }
   };
 
@@ -238,6 +247,11 @@ export default function CheckoutPage() {
           return;
         }
         setCart(data.cart);
+        if (data.cart?.id) {
+          loadCouponData(data.cart.id);
+        } else {
+          setCouponData(null);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch cart:", error);

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { trackPurchase } from "lib/analytics";
 import { useUserSession } from "hooks/useUserSession";
+import { COUPON_STORAGE_KEY } from "lib/coupon-storage";
 
 export default function CheckoutSuccess() {
   const searchParams = useSearchParams();
@@ -18,6 +19,13 @@ export default function CheckoutSuccess() {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    try {
+      localStorage.removeItem(COUPON_STORAGE_KEY);
+    } catch {
+      // Ignore storage errors.
+    }
+  }, []);
   useEffect(() => {
     if (!orderNumber || trackedOrderRef.current === orderNumber) return;
 

@@ -453,6 +453,7 @@ export default function CartModal() {
                     cartTotal={
                       cart ? parseFloat(cart.cost.subtotalAmount.amount) : 0
                     }
+                    cartId={cart?.id || ""}
                   />
                 )}
                 {activeSheet === "note" && (

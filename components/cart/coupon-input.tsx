@@ -3,18 +3,23 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useUserSession } from "hooks/useUserSession";
+import {
+  COUPON_STORAGE_KEY,
+  getCouponCustomerKey,
+  getStoredCoupon,
+} from "lib/coupon-storage";
 
 interface CouponInputProps {
   onApply: (discountAmount: number, couponCode: string) => void;
   cartTotal: number;
+  cartId: string;
   variant?: "card" | "compact";
 }
-
-const COUPON_STORAGE_KEY = "appliedCoupon";
 
 export default function CouponInput({
   onApply,
   cartTotal,
+  cartId,
   variant = "card",
 }: CouponInputProps) {
   const isCompact = variant === "compact";
@@ -26,11 +31,16 @@ export default function CouponInput({
   // Load coupon from localStorage on mount and revalidate
   useEffect(() => {
     const loadStoredCoupon = async () => {
-      try {
-        const stored = localStorage.getItem(COUPON_STORAGE_KEY);
-        if (stored) {
-          const couponData = JSON.parse(stored);
+      if (!cartId) {
+        setAppliedCoupon(null);
+        onApply(0, "");
+        return;
+      }
 
+      try {
+        const customerKey = getCouponCustomerKey(session?.id);
+        const couponData = getStoredCoupon(cartId, customerKey);
+        if (couponData) {
           // Revalidate the coupon
           const payload: {
             code: string;
@@ -42,7 +52,7 @@ export default function CouponInput({
           };
 
           if (!session?.id) {
-            payload.sessionId = getSessionId();
+            payload.sessionId = customerKey.replace("guest:", "");
           }
 
           const response = await fetch("/api/coupons/validate", {
@@ -66,10 +76,17 @@ export default function CouponInput({
     };
 
     loadStoredCoupon();
-  }, [cartTotal, session?.id]);
+  }, [cartId, cartTotal, onApply, session?.id]);
 
   const handleApply = async () => {
     const trimmedCode = code.trim().toUpperCase();
+
+    if (!cartId) {
+      toast.error(
+        "Unable to apply coupon right now. Please refresh and try again.",
+      );
+      return;
+    }
 
     if (!trimmedCode) {
       toast.error("Please enter a coupon code");
@@ -83,9 +100,10 @@ export default function CouponInput({
         code: trimmedCode,
         cartTotal,
       };
+      const customerKey = getCouponCustomerKey(session?.id);
 
       if (!session?.id) {
-        payload.sessionId = getSessionId();
+        payload.sessionId = customerKey.replace("guest:", "");
       }
 
       const response = await fetch("/api/coupons/validate", {
@@ -110,7 +128,16 @@ export default function CouponInput({
 
       // Store in localStorage for persistence
       try {
-        localStorage.setItem(COUPON_STORAGE_KEY, JSON.stringify(data.coupon));
+        localStorage.setItem(
+          COUPON_STORAGE_KEY,
+          JSON.stringify({
+            code: data.coupon.code,
+            discountAmount: data.coupon.discountAmount,
+            description: data.coupon.description,
+            cartId,
+            customerKey,
+          }),
+        );
       } catch (err) {
         console.error("Failed to save coupon to storage:", err);
       }
@@ -139,16 +166,6 @@ export default function CouponInput({
     if (e.key === "Enter") {
       handleApply();
     }
-  };
-
-  // Get or create a session ID for guest users
-  const getSessionId = () => {
-    let sessionId = localStorage.getItem("guestSessionId");
-    if (!sessionId) {
-      sessionId = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-      localStorage.setItem("guestSessionId", sessionId);
-    }
-    return sessionId;
   };
 
   if (appliedCoupon) {
