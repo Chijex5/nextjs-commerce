@@ -64,7 +64,7 @@ export default function SocialsPage() {
                 key={item.name}
                 href={item.href}
                 target="_blank"
-                rel="noreferrer"
+                rel="noreferrer noopener"
                 className="rounded-2xl border border-neutral-200 bg-white p-5 transition-colors hover:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-neutral-600"
               >
                 <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
