@@ -3,8 +3,8 @@ import Footer from "components/layout/footer";
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <div className="w-full">
-        <div className="mx-8 max-w-2xl py-20 sm:mx-auto">{children}</div>
+      <div className="mx-auto w-full max-w-[1800px] px-4 pb-16 pt-8 md:px-6 md:pt-10 lg:px-8">
+        <div className="mx-auto w-full max-w-4xl">{children}</div>
       </div>
       <Footer />
     </>
