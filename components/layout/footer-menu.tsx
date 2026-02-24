@@ -19,10 +19,10 @@ export function FooterMenuItem({ item }: { item: Menu }) {
       <Link
         href={item.path}
         className={clsx(
-          "block p-2 text-lg underline-offset-4 hover:text-black hover:underline md:inline-block md:text-sm dark:hover:text-neutral-300",
-          {
-            "text-black dark:text-neutral-300": active,
-          },
+          "block rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+          active
+            ? "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
+            : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100",
         )}
       >
         {item.title}
@@ -36,7 +36,10 @@ export default function FooterMenu({ menu }: { menu: Menu[] }) {
 
   return (
     <nav>
-      <ul>
+      <p className="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-neutral-900 dark:text-neutral-100">
+        Quick links
+      </p>
+      <ul className="space-y-1">
         {menu.map((item: Menu) => {
           return <FooterMenuItem key={item.title} item={item} />;
         })}

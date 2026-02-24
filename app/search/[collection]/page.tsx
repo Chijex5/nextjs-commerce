@@ -1,11 +1,15 @@
-import { getCollection, getCollectionProducts } from "lib/database";
-import { Metadata } from "next";
-import { notFound } from "next/navigation";
-
 import Grid from "components/grid";
 import ProductGridItems from "components/layout/product-grid-items";
 import { defaultSort, sorting } from "lib/constants";
+import {
+  getCollection,
+  getCollectionProducts,
+  getCollections,
+} from "lib/database";
 import { canonicalUrl, siteName } from "lib/seo";
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import SearchControlsMenu from "../search-controls-menu";
 
 export async function generateMetadata(props: {
   params: Promise<{ collection: string }>;
@@ -61,20 +65,59 @@ export default async function CategoryPage(props: {
   const searchParams = await props.searchParams;
   const params = await props.params;
   const { sort } = searchParams as { [key: string]: string };
-  const { sortKey, reverse } =
+
+  const collection = await getCollection(params.collection);
+  if (!collection) return notFound();
+
+  const selectedSort =
     sorting.find((item) => item.slug === sort) || defaultSort;
-  const products = await getCollectionProducts({
-    collection: params.collection,
-    sortKey,
-    reverse,
-  });
+  const { sortKey, reverse } = selectedSort;
+
+  const [products, collections] = await Promise.all([
+    getCollectionProducts({
+      collection: params.collection,
+      sortKey,
+      reverse,
+    }),
+    getCollections(),
+  ]);
 
   return (
-    <section>
+    <section className="space-y-8 md:space-y-10">
+      <header className="space-y-4 border-b border-neutral-200 pb-6 dark:border-neutral-800 md:pb-8">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-100 sm:text-4xl">
+              {collection.title}
+            </h1>
+            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+              {products.length} item{products.length === 1 ? "" : "s"} · Sort:{" "}
+              {selectedSort.title}
+            </p>
+          </div>
+
+          <SearchControlsMenu
+            collections={collections}
+            sorting={sorting}
+            pathname={collection.path}
+            activeSortSlug={selectedSort.slug ?? null}
+            activeCollectionPath={collection.path}
+          />
+        </div>
+
+        {collection.description ? (
+          <p className="max-w-3xl text-sm leading-7 text-neutral-600 dark:text-neutral-400">
+            {collection.description}
+          </p>
+        ) : null}
+      </header>
+
       {products.length === 0 ? (
-        <p className="py-3 text-lg">{`No products found in this collection`}</p>
+        <div className="rounded-2xl border border-dashed border-neutral-300 py-14 text-center text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
+          No products found in this collection.
+        </div>
       ) : (
-        <Grid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <Grid className="grid-cols-1 gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <ProductGridItems products={products} />
         </Grid>
       )}
