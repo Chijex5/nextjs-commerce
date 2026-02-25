@@ -3,7 +3,7 @@ import { canonicalUrl, siteName } from "lib/seo";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-const title = "About D'FOOTPRINT";
+const title = "About";
 const description =
   "Learn how D'FOOTPRINT designs handmade footwear in Lagos and delivers trusted quality nationwide across Nigeria.";
 

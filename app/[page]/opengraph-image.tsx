@@ -2,10 +2,24 @@ import OpengraphImage from "components/opengraph-image";
 import { getPage } from "lib/database";
 import { notFound } from "next/navigation";
 
-export default async function Image({ params }: { params: { page: string } }) {
-  const page = await getPage(params.page);
-  if (!page) return notFound();
-  const title = page.seo?.title || page.title;
+export const alt = "Page preview";
+export const size = {
+  width: 1200,
+  height: 630,
+};
+export const contentType = "image/png";
 
-  return await OpengraphImage({ title });
+export default async function Image({
+  params,
+}: {
+  params: Promise<{ page: string }>;
+}) {
+  const { page: handle } = await params;
+  const pageData = await getPage(handle);
+
+  if (!pageData) return notFound();
+
+  const title = pageData.seo?.title || pageData.title;
+
+  return OpengraphImage({ title });
 }

@@ -6,7 +6,11 @@ import {
   getCollectionProducts,
   getCollections,
 } from "lib/database";
-import { canonicalUrl, siteName } from "lib/seo";
+import {
+  canonicalUrl,
+  hasContentAffectingSearchParams,
+  siteName,
+} from "lib/seo";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import SearchControlsMenu from "../search-controls-menu";
@@ -21,7 +25,10 @@ export async function generateMetadata(props: {
 
   if (!collection) return notFound();
 
-  const hasSearchParams = searchParams && Object.keys(searchParams).length > 0;
+  const hasContentAffectingParams = hasContentAffectingSearchParams(
+    searchParams,
+    ["sort"],
+  );
   const title = collection.seo?.title || collection.title;
   const description =
     collection.seo?.description ||
@@ -39,7 +46,7 @@ export async function generateMetadata(props: {
       canonical: canonicalUrl(collection.path),
     },
     robots: {
-      index: !hasSearchParams && !isHiddenCollection,
+      index: !hasContentAffectingParams && !isHiddenCollection,
       follow: true,
     },
     openGraph: {

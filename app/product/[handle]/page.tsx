@@ -17,19 +17,14 @@ import { Suspense } from "react";
 
 export async function generateMetadata(props: {
   params: Promise<{ handle: string }>;
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }): Promise<Metadata> {
   const params = await props.params;
-  const searchParams = await props.searchParams;
   const product = await getProduct(params.handle);
 
   if (!product) return notFound();
-  console.log(product);
 
   const { url, width, height, altText: alt } = product.featuredImage || {};
-  const hasSearchParams = searchParams && Object.keys(searchParams).length > 0;
-  const indexable =
-    !product.tags.includes(HIDDEN_PRODUCT_TAG) && !hasSearchParams;
+  const indexable = !product.tags.includes(HIDDEN_PRODUCT_TAG);
   const title = product.seo.title || product.title;
   const description = product.seo.description || product.description;
   const canonicalPath = `/product/${product.handle}`;
