@@ -1,7 +1,11 @@
 import Price from "components/price";
 import { defaultSort, sorting } from "lib/constants";
 import { getProducts } from "lib/database";
-import { canonicalUrl, siteName } from "lib/seo";
+import {
+  canonicalUrl,
+  hasContentAffectingSearchParams,
+  siteName,
+} from "lib/seo";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,7 +17,10 @@ export async function generateMetadata(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }): Promise<Metadata> {
   const searchParams = await props.searchParams;
-  const hasSearchParams = searchParams && Object.keys(searchParams).length > 0;
+  const hasContentAffectingParams = hasContentAffectingSearchParams(
+    searchParams,
+    ["sort"],
+  );
 
   return {
     title: "All Products",
@@ -22,7 +29,7 @@ export async function generateMetadata(props: {
       canonical: canonicalUrl("/products"),
     },
     robots: {
-      index: !hasSearchParams,
+      index: !hasContentAffectingParams,
       follow: true,
     },
     openGraph: {

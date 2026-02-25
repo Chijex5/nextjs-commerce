@@ -18,6 +18,25 @@ export const canonicalUrl = (pathname: string) => {
   return `${baseUrl}${normalized}`;
 };
 
+const hasValue = (value: string | string[] | undefined) => {
+  if (Array.isArray(value)) {
+    return value.some((entry) => entry.trim().length > 0);
+  }
+
+  return (value ?? "").trim().length > 0;
+};
+
+export const hasContentAffectingSearchParams = (
+  searchParams: { [key: string]: string | string[] | undefined } | undefined,
+  paramKeys: string[],
+) => {
+  if (!searchParams || paramKeys.length === 0) {
+    return false;
+  }
+
+  return paramKeys.some((key) => hasValue(searchParams[key]));
+};
+
 export const canonicalHost = () => new URL(baseUrl).host;
 
 export const siteName =

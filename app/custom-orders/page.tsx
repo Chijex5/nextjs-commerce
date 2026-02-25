@@ -6,14 +6,14 @@ import { canonicalUrl, siteName } from "lib/seo";
 import { asc, desc, eq } from "drizzle-orm";
 
 export const metadata: Metadata = {
-  title: "Custom Orders Gallery - D'FOOTPRINT",
+  title: "Custom Orders Gallery",
   description:
     "See how we transform customer ideas into beautiful handmade footwear. Browse our gallery of custom orders and get inspired for your own design.",
   alternates: {
     canonical: canonicalUrl("/custom-orders"),
   },
   openGraph: {
-    title: "Custom Orders Gallery - D'FOOTPRINT",
+    title: "Custom Orders Gallery",
     description:
       "See how we transform customer ideas into beautiful handmade footwear.",
     url: canonicalUrl("/custom-orders"),

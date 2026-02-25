@@ -13,7 +13,6 @@ const description =
   "D'FOOTPRINT - Handcrafted footwear including slippers and slides. Premium handmade designs with custom order options. Nationwide delivery across Nigeria.";
 
 export const metadata: Metadata = {
-  title: siteName,
   description,
   alternates: {
     canonical: canonicalUrl("/"),
