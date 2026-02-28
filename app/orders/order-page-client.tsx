@@ -254,7 +254,7 @@ export default function OrdersPageClient() {
     trackedOrder ||
       trackedCustomRequest ||
       orderNumberParam ||
-      customRequestParam,
+      (customRequestParam && (customTrackEmail || emailParam)),
   );
 
   const openTrackingModal = (mode: "order" | "custom") => {
