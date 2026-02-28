@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { hash } from "bcryptjs";
 import { db } from "lib/db";
-import { magicLinkTokens, users } from "lib/db/schema";
+import { customOrderRequests, magicLinkTokens, orders, users } from "lib/db/schema";
 import { createUserSession, setUserSessionCookie } from "lib/user-session";
 import { deriveNameFromEmail } from "lib/user-utils";
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt, ilike, isNull } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
@@ -76,6 +76,22 @@ export async function GET(request: NextRequest) {
       .update(users)
       .set({ lastLoginAt: new Date() })
       .where(eq(users.id, user.id));
+
+    await Promise.all([
+      db
+        .update(orders)
+        .set({ userId: user.id })
+        .where(and(ilike(orders.email, user.email), isNull(orders.userId))),
+      db
+        .update(customOrderRequests)
+        .set({ userId: user.id, updatedAt: new Date() })
+        .where(
+          and(
+            ilike(customOrderRequests.email, user.email),
+            isNull(customOrderRequests.userId),
+          ),
+        ),
+    ]);
 
     const sessionToken = await createUserSession({
       id: user.id,

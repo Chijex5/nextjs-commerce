@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
-import { orderItems, orders, users } from "lib/db/schema";
+import { customOrderRequests, orderItems, orders, users } from "lib/db/schema";
 import {
   calculateEstimatedArrival,
   type DeliveryStatus,
@@ -55,10 +55,26 @@ export async function GET(
         )[0]
       : null;
 
+    const customRequest = order.customOrderRequestId
+      ? (
+          await db
+            .select({
+              id: customOrderRequests.id,
+              requestNumber: customOrderRequests.requestNumber,
+            })
+            .from(customOrderRequests)
+            .where(eq(customOrderRequests.id, order.customOrderRequestId))
+            .limit(1)
+        )[0]
+      : null;
+
     return NextResponse.json({
       order: {
         id: order.id,
         orderNumber: order.orderNumber,
+        orderType: order.orderType,
+        customOrderRequestId: order.customOrderRequestId,
+        customRequestNumber: customRequest?.requestNumber || null,
         customerName: order.customerName,
         email: order.email,
         phone: order.phone,

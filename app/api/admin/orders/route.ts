@@ -1,7 +1,7 @@
 import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
-import { orderItems, orders } from "lib/db/schema";
+import { customOrderRequests, orderItems, orders } from "lib/db/schema";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     const perPage = parseInt(searchParams.get("perPage") || "20");
     const status = searchParams.get("status");
     const deliveryStatus = searchParams.get("deliveryStatus");
+    const orderType = searchParams.get("orderType");
     const search = searchParams.get("search");
 
     const filters = [];
@@ -27,6 +28,10 @@ export async function GET(request: NextRequest) {
 
     if (deliveryStatus && deliveryStatus !== "all") {
       filters.push(eq(orders.deliveryStatus, deliveryStatus));
+    }
+
+    if (orderType && orderType !== "all") {
+      filters.push(eq(orders.orderType, orderType));
     }
 
     if (search) {
@@ -74,6 +79,21 @@ export async function GET(request: NextRequest) {
 
     const total = Number(totalResult[0]?.count ?? 0);
     const totalPages = Math.ceil(total / perPage);
+    const requestIds = orderRows
+      .map((order) => order.customOrderRequestId)
+      .filter((value): value is string => Boolean(value));
+    const requestRows = requestIds.length
+      ? await db
+          .select({
+            id: customOrderRequests.id,
+            requestNumber: customOrderRequests.requestNumber,
+          })
+          .from(customOrderRequests)
+          .where(inArray(customOrderRequests.id, requestIds))
+      : [];
+    const requestMap = new Map(
+      requestRows.map((requestRow) => [requestRow.id, requestRow.requestNumber]),
+    );
 
     return NextResponse.json({
       orders: orderRows.map((order) => {
@@ -81,6 +101,11 @@ export async function GET(request: NextRequest) {
         return {
           id: order.id,
           orderNumber: order.orderNumber,
+          orderType: order.orderType,
+          customOrderRequestId: order.customOrderRequestId,
+          customRequestNumber: order.customOrderRequestId
+            ? requestMap.get(order.customOrderRequestId) || null
+            : null,
           customerName: order.customerName,
           email: order.email,
           phone: order.phone,

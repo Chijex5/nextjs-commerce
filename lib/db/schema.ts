@@ -229,7 +229,7 @@ export const menuItems = pgTable(
 );
 
 // Custom order showcase entries
-export const customOrders = pgTable(
+export const customOrderShowcases = pgTable(
   "custom_orders",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -249,6 +249,116 @@ export const customOrders = pgTable(
       table.isPublished,
     ),
     positionIdx: index("custom_orders_position_idx").on(table.position),
+  }),
+);
+
+// Backward-compatible alias used across existing showcase pages/components.
+export const customOrders = customOrderShowcases;
+
+// Customer custom-order requests (quote-first workflow)
+export const customOrderRequests = pgTable(
+  "custom_order_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    requestNumber: varchar("request_number", { length: 50 }).notNull().unique(),
+    userId: uuid("user_id"),
+    email: varchar("email", { length: 255 }).notNull(),
+    phone: varchar("phone", { length: 50 }),
+    customerName: varchar("customer_name", { length: 255 }).notNull(),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description").notNull(),
+    sizeNotes: text("size_notes"),
+    colorPreferences: text("color_preferences"),
+    budgetMin: decimal("budget_min", { precision: 10, scale: 2 }),
+    budgetMax: decimal("budget_max", { precision: 10, scale: 2 }),
+    desiredDate: timestamp("desired_date"),
+    referenceImages: jsonb("reference_images").default([]).notNull(),
+    status: varchar("status", { length: 50 }).default("submitted").notNull(),
+    adminNotes: text("admin_notes"),
+    customerNotes: text("customer_notes"),
+    quotedAmount: decimal("quoted_amount", { precision: 10, scale: 2 }),
+    currencyCode: varchar("currency_code", { length: 3 })
+      .default("NGN")
+      .notNull(),
+    quoteExpiresAt: timestamp("quote_expires_at"),
+    paidAt: timestamp("paid_at"),
+    convertedOrderId: uuid("converted_order_id"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    requestNumberIdx: index("custom_order_requests_request_number_idx").on(
+      table.requestNumber,
+    ),
+    userIdIdx: index("custom_order_requests_user_id_idx").on(table.userId),
+    emailIdx: index("custom_order_requests_email_idx").on(table.email),
+    statusIdx: index("custom_order_requests_status_idx").on(table.status),
+    updatedAtIdx: index("custom_order_requests_updated_at_idx").on(
+      table.updatedAt,
+    ),
+    convertedOrderUniqueIdx: uniqueIndex(
+      "custom_order_requests_converted_order_unique",
+    ).on(table.convertedOrderId),
+  }),
+);
+
+// Quote history/versioning for custom-order requests
+export const customOrderQuotes = pgTable(
+  "custom_order_quotes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    requestId: uuid("request_id")
+      .references(() => customOrderRequests.id, { onDelete: "cascade" })
+      .notNull(),
+    version: integer("version").default(1).notNull(),
+    amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+    currencyCode: varchar("currency_code", { length: 3 })
+      .default("NGN")
+      .notNull(),
+    breakdown: jsonb("breakdown").default({}).notNull(),
+    note: text("note"),
+    status: varchar("status", { length: 50 }).default("sent").notNull(),
+    expiresAt: timestamp("expires_at"),
+    reminderCount: integer("reminder_count").default(0).notNull(),
+    lastReminderAt: timestamp("last_reminder_at"),
+    expiredNotificationSentAt: timestamp("expired_notification_sent_at"),
+    createdBy: varchar("created_by", { length: 255 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    requestIdIdx: index("custom_order_quotes_request_id_idx").on(table.requestId),
+    statusIdx: index("custom_order_quotes_status_idx").on(table.status),
+    expiresAtIdx: index("custom_order_quotes_expires_at_idx").on(table.expiresAt),
+    reminderCountIdx: index("custom_order_quotes_reminder_count_idx").on(
+      table.reminderCount,
+    ),
+    requestVersionUniqueIdx: uniqueIndex(
+      "custom_order_quotes_request_version_unique",
+    ).on(table.requestId, table.version),
+  }),
+);
+
+// Secure one-time quote-access tokens for guest/custom flows
+export const customOrderQuoteTokens = pgTable(
+  "custom_order_quote_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    quoteId: uuid("quote_id")
+      .references(() => customOrderQuotes.id, { onDelete: "cascade" })
+      .notNull(),
+    email: varchar("email", { length: 255 }).notNull(),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    usedAt: timestamp("used_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    quoteIdIdx: index("custom_order_quote_tokens_quote_id_idx").on(table.quoteId),
+    emailIdx: index("custom_order_quote_tokens_email_idx").on(table.email),
+    expiresAtIdx: index("custom_order_quote_tokens_expires_at_idx").on(
+      table.expiresAt,
+    ),
   }),
 );
 
@@ -330,6 +440,12 @@ export const orders = pgTable(
     trackingNumber: varchar("tracking_number", { length: 100 }),
     acknowledgedAt: timestamp("acknowledged_at"),
     acknowledgedBy: varchar("acknowledged_by", { length: 255 }),
+    orderType: varchar("order_type", { length: 20 })
+      .default("catalog")
+      .notNull(),
+    customOrderRequestId: uuid("custom_order_request_id").references(
+      () => customOrderRequests.id,
+    ),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -341,6 +457,13 @@ export const orders = pgTable(
     deliveryStatusIdx: index("orders_delivery_status_idx").on(
       table.deliveryStatus,
     ),
+    orderTypeIdx: index("orders_order_type_idx").on(table.orderType),
+    customOrderRequestIdIdx: index("orders_custom_order_request_id_idx").on(
+      table.customOrderRequestId,
+    ),
+    customOrderRequestUniqueIdx: uniqueIndex(
+      "orders_custom_order_request_unique",
+    ).on(table.customOrderRequestId),
   }),
 );
 
@@ -647,6 +770,7 @@ export const menuItemsRelations = relations(menuItems, ({ one }) => ({
 
 export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
+  customOrderRequests: many(customOrderRequests),
   abandonedCarts: many(abandonedCarts),
   reviews: many(reviews),
   reviewVotes: many(reviewVotes),
@@ -657,8 +781,45 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
     fields: [orders.userId],
     references: [users.id],
   }),
+  customOrderRequest: one(customOrderRequests, {
+    fields: [orders.customOrderRequestId],
+    references: [customOrderRequests.id],
+  }),
   items: many(orderItems),
 }));
+
+export const customOrderRequestsRelations = relations(
+  customOrderRequests,
+  ({ one, many }) => ({
+    user: one(users, {
+      fields: [customOrderRequests.userId],
+      references: [users.id],
+    }),
+    quotes: many(customOrderQuotes),
+    orders: many(orders),
+  }),
+);
+
+export const customOrderQuotesRelations = relations(
+  customOrderQuotes,
+  ({ one, many }) => ({
+    request: one(customOrderRequests, {
+      fields: [customOrderQuotes.requestId],
+      references: [customOrderRequests.id],
+    }),
+    tokens: many(customOrderQuoteTokens),
+  }),
+);
+
+export const customOrderQuoteTokensRelations = relations(
+  customOrderQuoteTokens,
+  ({ one }) => ({
+    quote: one(customOrderQuotes, {
+      fields: [customOrderQuoteTokens.quoteId],
+      references: [customOrderQuotes.id],
+    }),
+  }),
+);
 
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({
   order: one(orders, {

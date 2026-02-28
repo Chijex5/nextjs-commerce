@@ -15,6 +15,8 @@ interface OrderItem {
 interface Order {
   id: string;
   orderNumber: string;
+  orderType: string;
+  customRequestNumber?: string | null;
   customerName: string;
   email: string;
   phone: string | null;
@@ -40,6 +42,7 @@ interface OrdersTableProps {
     search?: string;
     status?: string;
     deliveryStatus?: string;
+    orderType?: string;
     perPage?: string;
   };
 }
@@ -86,6 +89,8 @@ export default function OrdersTable({
       params.set("status", searchParams.status);
     if (searchParams.deliveryStatus && searchParams.deliveryStatus !== "all")
       params.set("deliveryStatus", searchParams.deliveryStatus);
+    if (searchParams.orderType && searchParams.orderType !== "all")
+      params.set("orderType", searchParams.orderType);
     if (searchParams.perPage && searchParams.perPage !== "20")
       params.set("perPage", searchParams.perPage);
     params.set("page", page.toString());
@@ -166,12 +171,20 @@ export default function OrdersTable({
                       <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                         {order.orderNumber}
                       </div>
+                      <span className="inline-flex rounded-full border border-neutral-300 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
+                        {order.orderType}
+                      </span>
                       {!isAcknowledged && (
                         <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
                           New
                         </span>
                       )}
                     </div>
+                    {order.customRequestNumber ? (
+                      <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                        Request {order.customRequestNumber}
+                      </div>
+                    ) : null}
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-neutral-900 dark:text-neutral-100">
@@ -240,12 +253,20 @@ export default function OrdersTable({
                     <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                       {order.orderNumber}
                     </div>
+                    <span className="inline-flex rounded-full border border-neutral-300 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
+                      {order.orderType}
+                    </span>
                     {!isAcknowledged && (
                       <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
                         New
                       </span>
                     )}
                   </div>
+                  {order.customRequestNumber ? (
+                    <div className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                      Request {order.customRequestNumber}
+                    </div>
+                  ) : null}
                   <div className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
                     {new Date(order.createdAt).toLocaleDateString()}
                   </div>

@@ -14,8 +14,13 @@ export default function AdminNav({
     { href: "/admin/collections", label: "Collections", key: "collections" },
     { href: "/admin/content", label: "Content", key: "content" },
     {
+      href: "/admin/custom-order-requests",
+      label: "Custom Requests",
+      key: "custom-order-requests",
+    },
+    {
       href: "/admin/custom-orders",
-      label: "Custom Orders",
+      label: "Custom Showcase",
       key: "custom-orders",
     },
     { href: "/admin/orders", label: "Orders", key: "orders" },

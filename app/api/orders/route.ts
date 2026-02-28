@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserSession } from "lib/user-session";
 import { db } from "lib/db";
-import { orderItems, orders } from "lib/db/schema";
+import { customOrderRequests, orderItems, orders } from "lib/db/schema";
 import { desc, eq, inArray } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
@@ -36,10 +36,29 @@ export async function GET(request: NextRequest) {
       {},
     );
 
+    const customRequestIds = orderRows
+      .map((order) => order.customOrderRequestId)
+      .filter((value): value is string => Boolean(value));
+    const requestRows = customRequestIds.length
+      ? await db
+          .select({
+            id: customOrderRequests.id,
+            requestNumber: customOrderRequests.requestNumber,
+          })
+          .from(customOrderRequests)
+          .where(inArray(customOrderRequests.id, customRequestIds))
+      : [];
+    const requestMap = new Map(requestRows.map((row) => [row.id, row.requestNumber]));
+
     return NextResponse.json({
       orders: orderRows.map((order) => ({
         id: order.id,
         orderNumber: order.orderNumber,
+        orderType: order.orderType,
+        customOrderRequestId: order.customOrderRequestId,
+        customRequestNumber: order.customOrderRequestId
+          ? requestMap.get(order.customOrderRequestId) || null
+          : null,
         status: order.status,
         deliveryStatus: order.deliveryStatus,
         estimatedArrival: order.estimatedArrival?.toISOString() || null,

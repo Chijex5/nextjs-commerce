@@ -315,7 +315,7 @@ export default function CustomOrdersManagement({
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-              Custom Orders
+              Custom Showcase
             </h2>
             <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
               Curate the before-and-after stories shown on the Custom Orders

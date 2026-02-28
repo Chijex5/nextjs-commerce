@@ -4,7 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import AdminNav from "components/admin/AdminNav";
 import OrderDetailView from "components/admin/OrderDetailView";
 import { db } from "lib/db";
-import { orderItems, orders, users } from "lib/db/schema";
+import { customOrderRequests, orderItems, orders, users } from "lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export default async function AdminOrderDetailPage({
@@ -30,7 +30,7 @@ export default async function AdminOrderDetailPage({
     notFound();
   }
 
-  const [items, user] = await Promise.all([
+  const [items, user, customRequest] = await Promise.all([
     db.select().from(orderItems).where(eq(orderItems.orderId, id)),
     order.userId
       ? db
@@ -45,6 +45,14 @@ export default async function AdminOrderDetailPage({
           .limit(1)
           .then((rows) => rows[0] ?? null)
       : Promise.resolve(null),
+    order.customOrderRequestId
+      ? db
+          .select({ requestNumber: customOrderRequests.requestNumber })
+          .from(customOrderRequests)
+          .where(eq(customOrderRequests.id, order.customOrderRequestId))
+          .limit(1)
+          .then((rows) => rows[0] ?? null)
+      : Promise.resolve(null),
   ]);
 
   return (
@@ -53,7 +61,14 @@ export default async function AdminOrderDetailPage({
 
       <div className="py-6 sm:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <OrderDetailView order={{ ...order, items, user }} />
+          <OrderDetailView
+            order={{
+              ...order,
+              customRequestNumber: customRequest?.requestNumber || null,
+              items,
+              user,
+            }}
+          />
         </div>
       </div>
     </div>

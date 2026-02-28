@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "lib/db";
-import { orderItems, orders } from "lib/db/schema";
+import { customOrderRequests, orderItems, orders } from "lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
@@ -30,10 +30,23 @@ export async function GET(request: NextRequest) {
       .from(orderItems)
       .where(eq(orderItems.orderId, order.id));
 
+    const customRequest = order.customOrderRequestId
+      ? (
+          await db
+            .select({ requestNumber: customOrderRequests.requestNumber })
+            .from(customOrderRequests)
+            .where(eq(customOrderRequests.id, order.customOrderRequestId))
+            .limit(1)
+        )[0]
+      : null;
+
     return NextResponse.json({
       order: {
         id: order.id,
         orderNumber: order.orderNumber,
+        orderType: order.orderType,
+        customOrderRequestId: order.customOrderRequestId,
+        customRequestNumber: customRequest?.requestNumber || null,
         status: order.status,
         deliveryStatus: order.deliveryStatus,
         estimatedArrival: order.estimatedArrival?.toISOString() || null,

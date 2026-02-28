@@ -37,6 +37,9 @@ lib/db/migrations/
 # vercel
 .vercel
 
+/.venv
+
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
