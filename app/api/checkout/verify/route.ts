@@ -8,6 +8,7 @@ import {
 } from "lib/coupon-validation";
 import { db } from "lib/db";
 import {
+  abandonedCarts,
   adminUsers,
   cartLines,
   carts,
@@ -61,6 +62,18 @@ export async function GET(request: NextRequest) {
     const paystackCurrency = paystackData.currency;
     const metadata = paystackData.metadata || {};
     const cartIdFromMetadata = metadata.cart_id as string | undefined;
+
+    const [existingOrderByReference] = await db
+      .select({ orderNumber: orders.orderNumber })
+      .from(orders)
+      .where(ilike(orders.notes, `%Paystack Ref: ${reference}%`))
+      .limit(1);
+
+    if (existingOrderByReference?.orderNumber) {
+      return redirect(
+        `/checkout/success?order=${encodeURIComponent(existingOrderByReference.orderNumber)}`,
+      );
+    }
 
     if (!cartIdFromMetadata) {
       console.error("No cart_id in Paystack metadata");
@@ -189,6 +202,14 @@ export async function GET(request: NextRequest) {
       .toString(36)
       .substr(2, 9)
       .toUpperCase()}`;
+    const noteFromCustomer =
+      typeof checkoutSession.notes === "string" &&
+      checkoutSession.notes.trim().length > 0
+        ? checkoutSession.notes.trim()
+        : null;
+    const orderNotes = noteFromCustomer
+      ? `${noteFromCustomer}\n\nPaystack Ref: ${reference}`
+      : `Paystack Ref: ${reference}`;
 
     const orderItemsData = uniqueLines.map(
       ({ line, variant, product, image }) => ({
@@ -223,11 +244,7 @@ export async function GET(request: NextRequest) {
           couponCode: appliedCouponCode,
           totalAmount: String(totalAmount),
           currencyCode: "NGN",
-          notes:
-            typeof checkoutSession.notes === "string" &&
-            checkoutSession.notes.trim().length > 0
-              ? checkoutSession.notes.trim()
-              : null,
+          notes: orderNotes,
         })
         .returning();
 
@@ -373,6 +390,16 @@ export async function GET(request: NextRequest) {
         totalTaxAmount: "0",
       })
       .where(eq(carts.id, cart.id));
+
+    await db
+      .update(abandonedCarts)
+      .set({ recovered: true, recoveredAt: new Date() })
+      .where(
+        and(
+          eq(abandonedCarts.cartId, cart.id),
+          eq(abandonedCarts.recovered, false),
+        ),
+      );
 
     cookieStore.delete("checkout-session");
 

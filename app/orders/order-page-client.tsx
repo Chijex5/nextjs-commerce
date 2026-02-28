@@ -30,6 +30,8 @@ type OrderItem = {
 type Order = {
   id: string;
   orderNumber: string;
+  orderType?: "catalog" | "custom" | string;
+  customRequestNumber?: string | null;
   status: string;
   deliveryStatus?: DeliveryStatus;
   estimatedArrival?: string | null;
@@ -52,6 +54,28 @@ type Order = {
   items: OrderItem[];
 };
 
+type CustomRequest = {
+  id: string;
+  requestNumber: string;
+  title: string;
+  description: string;
+  status: string;
+  customerName: string;
+  email: string;
+  quotedAmount?: string | null;
+  currencyCode?: string;
+  quoteExpiresAt?: string | null;
+  createdAt: string;
+  latestQuote?: {
+    id: string;
+    version: number;
+    amount: string;
+    currencyCode?: string;
+    status: string;
+    expiresAt?: string | null;
+  } | null;
+};
+
 const deliveryStages: { status: DeliveryStatus; label: string }[] = [
   { status: "production", label: "Production" },
   { status: "sorting", label: "Packed" },
@@ -64,19 +88,38 @@ export default function OrdersPageClient() {
   const searchParams = useSearchParams();
 
   const [orders, setOrders] = useState<Order[]>([]);
+  const [customRequests, setCustomRequests] = useState<CustomRequest[]>([]);
   const [trackingInput, setTrackingInput] = useState("");
   const [trackedOrder, setTrackedOrder] = useState<Order | null>(null);
+  const [customTrackRequestNumber, setCustomTrackRequestNumber] = useState("");
+  const [customTrackEmail, setCustomTrackEmail] = useState("");
+  const [trackedCustomRequest, setTrackedCustomRequest] =
+    useState<CustomRequest | null>(null);
   const [isOrdersLoading, setIsOrdersLoading] = useState(false);
   const [isTrackingLoading, setIsTrackingLoading] = useState(false);
+  const [isCustomRequestsLoading, setIsCustomRequestsLoading] = useState(false);
+  const [isCustomTrackingLoading, setIsCustomTrackingLoading] = useState(false);
 
-  const autoTrackedRef = useRef<string | null>(null);
+  const autoTrackedOrderRef = useRef<string | null>(null);
+  const autoTrackedCustomRef = useRef<string | null>(null);
   const orderNumberParam = searchParams.get("orderNumber")?.trim() || "";
+  const customRequestParam = searchParams.get("customRequest")?.trim() || "";
+  const emailParam = searchParams.get("email")?.trim() || "";
 
   useEffect(() => {
     if (session) {
       void fetchOrders();
+      void fetchCustomRequests();
     }
   }, [session]);
+
+  useEffect(() => {
+    if (emailParam) {
+      setCustomTrackEmail(emailParam);
+    } else if (session?.email) {
+      setCustomTrackEmail(session.email);
+    }
+  }, [emailParam, session?.email]);
 
   const fetchOrders = async () => {
     setIsOrdersLoading(true);
@@ -90,6 +133,23 @@ export default function OrdersPageClient() {
       toast.error("Failed to load orders");
     } finally {
       setIsOrdersLoading(false);
+    }
+  };
+
+  const fetchCustomRequests = async () => {
+    setIsCustomRequestsLoading(true);
+    try {
+      const response = await fetch("/api/custom-order-requests");
+      if (response.ok) {
+        const data = await response.json();
+        setCustomRequests(data.requests || []);
+      } else if (response.status !== 404) {
+        toast.error("Failed to load custom requests");
+      }
+    } catch {
+      toast.error("Failed to load custom requests");
+    } finally {
+      setIsCustomRequestsLoading(false);
     }
   };
 
@@ -122,14 +182,68 @@ export default function OrdersPageClient() {
     }
   }, []);
 
+  const trackCustomRequest = useCallback(
+    async (requestNumber: string, email: string) => {
+      const trimmedRequestNumber = requestNumber.trim();
+      const trimmedEmail = email.trim();
+
+      if (!trimmedRequestNumber || !trimmedEmail) {
+        toast.error("Request number and email are required");
+        return;
+      }
+
+      setIsCustomTrackingLoading(true);
+      try {
+        const response = await fetch(
+          `/api/custom-order-requests/track?requestNumber=${encodeURIComponent(
+            trimmedRequestNumber,
+          )}&email=${encodeURIComponent(trimmedEmail)}`,
+        );
+
+        if (!response.ok) {
+          setTrackedCustomRequest(null);
+          toast.error("Custom request not found");
+          return;
+        }
+
+        const data = await response.json();
+        setTrackedCustomRequest(data.request || null);
+      } catch {
+        setTrackedCustomRequest(null);
+        toast.error("Failed to track custom request");
+      } finally {
+        setIsCustomTrackingLoading(false);
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     if (!orderNumberParam) return;
-    if (autoTrackedRef.current === orderNumberParam) return;
+    if (autoTrackedOrderRef.current === orderNumberParam) return;
 
-    autoTrackedRef.current = orderNumberParam;
+    autoTrackedOrderRef.current = orderNumberParam;
     setTrackingInput(orderNumberParam);
     void trackOrderByNumber(orderNumberParam);
   }, [orderNumberParam, trackOrderByNumber]);
+
+  useEffect(() => {
+    if (!customRequestParam) return;
+    if (autoTrackedCustomRef.current === customRequestParam) return;
+    if (!customTrackEmail && !emailParam) return;
+
+    autoTrackedCustomRef.current = customRequestParam;
+    setCustomTrackRequestNumber(customRequestParam);
+    void trackCustomRequest(
+      customRequestParam,
+      customTrackEmail || emailParam || "",
+    );
+  }, [
+    customRequestParam,
+    customTrackEmail,
+    emailParam,
+    trackCustomRequest,
+  ]);
 
   if (status === "loading") {
     return <PageLoader size="lg" message="Loading orders..." />;
@@ -139,12 +253,11 @@ export default function OrdersPageClient() {
     <div className="space-y-8 pb-10 md:space-y-10">
       <header className="space-y-4 border-b border-neutral-200 pb-6 dark:border-neutral-800 md:pb-8">
         <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100 md:text-4xl">
-          {orderNumberParam ? "Track order" : "Orders"}
+          {orderNumberParam || customRequestParam ? "Track order" : "Orders"}
         </h1>
         <p className="max-w-2xl text-sm text-neutral-600 dark:text-neutral-400">
-          {orderNumberParam
-            ? "Review delivery progress and order details for your order number."
-            : "View all your orders and track any order with a valid order number."}
+          Track paid orders or follow custom request progress with your request
+          number and email.
         </p>
       </header>
 
@@ -181,15 +294,65 @@ export default function OrdersPageClient() {
         </section>
       ) : null}
 
-      {trackedOrder ? (
-        <OrderCard order={trackedOrder} />
-      ) : orderNumberParam && !isTrackingLoading ? (
-        <section className="rounded-2xl border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-400">
-          We couldn&apos;t find an order with that number.
+      {!customRequestParam ? (
+        <section className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950 md:p-6">
+          <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+            Track a custom request
+          </h2>
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+            Use your custom request number and email.
+          </p>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              void trackCustomRequest(customTrackRequestNumber, customTrackEmail);
+            }}
+            className="mt-4 grid gap-3 sm:grid-cols-2"
+          >
+            <input
+              value={customTrackRequestNumber}
+              onChange={(event) => setCustomTrackRequestNumber(event.target.value)}
+              placeholder="Request number (e.g. COR-...)"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+            />
+            <div className="flex gap-3">
+              <input
+                type="email"
+                value={customTrackEmail}
+                onChange={(event) => setCustomTrackEmail(event.target.value)}
+                placeholder="Email"
+                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+              />
+              <button
+                type="submit"
+                disabled={isCustomTrackingLoading}
+                className="rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+              >
+                {isCustomTrackingLoading ? "Checking..." : "Track"}
+              </button>
+            </div>
+          </form>
         </section>
       ) : null}
 
-      {session && !orderNumberParam ? (
+      {trackedOrder ? <OrderCard order={trackedOrder} /> : null}
+      {orderNumberParam && !trackedOrder && !isTrackingLoading ? (
+        <section className="rounded-2xl border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-400">
+          We couldn&apos;t find an order with that number.
+        </section>
+      ) : null}
+      {trackedCustomRequest ? (
+        <CustomRequestCard request={trackedCustomRequest} />
+      ) : null}
+      {customRequestParam &&
+      !trackedCustomRequest &&
+      !isCustomTrackingLoading ? (
+        <section className="rounded-2xl border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-400">
+          We couldn&apos;t find a custom request with those details.
+        </section>
+      ) : null}
+
+      {session ? (
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
@@ -227,10 +390,48 @@ export default function OrdersPageClient() {
         </section>
       ) : null}
 
-      {!session && !orderNumberParam ? (
+      {session ? (
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+              My custom requests
+            </h2>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">
+              {customRequests.length} total
+            </span>
+          </div>
+
+          {isCustomRequestsLoading ? (
+            <div className="space-y-3">
+              <div className="h-32 animate-pulse rounded-2xl bg-neutral-200 dark:bg-neutral-800" />
+              <div className="h-32 animate-pulse rounded-2xl bg-neutral-200 dark:bg-neutral-800" />
+            </div>
+          ) : customRequests.length > 0 ? (
+            <div className="space-y-4">
+              {customRequests.map((request) => (
+                <CustomRequestCard key={request.id} request={request} />
+              ))}
+            </div>
+          ) : (
+            <section className="rounded-2xl border border-neutral-200 bg-white p-8 text-center dark:border-neutral-800 dark:bg-neutral-950">
+              <p className="text-neutral-600 dark:text-neutral-400">
+                No custom requests yet.
+              </p>
+              <Link
+                href="/custom-orders"
+                className="mt-4 inline-block rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-900 hover:border-neutral-500 dark:border-neutral-700 dark:text-neutral-100 dark:hover:border-neutral-500"
+              >
+                Start a custom order
+              </Link>
+            </section>
+          )}
+        </section>
+      ) : null}
+
+      {!session ? (
         <section className="rounded-2xl border border-neutral-200 bg-white p-6 text-center dark:border-neutral-800 dark:bg-neutral-950">
           <p className="text-sm text-neutral-600 dark:text-neutral-400">
-            Want to view all your past orders?
+            Login to see all your past orders and linked custom requests.
           </p>
           <Link
             href="/auth/login?callbackUrl=/orders"
@@ -260,9 +461,17 @@ function OrderCard({ order }: { order: Order }) {
           <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
             {order.orderNumber}
           </h3>
-          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-            Placed on {createdDate}
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
+            <span>Placed on {createdDate}</span>
+            {order.orderType ? (
+              <span className="rounded-full border border-neutral-300 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide dark:border-neutral-700">
+                {order.orderType}
+              </span>
+            ) : null}
+            {order.customRequestNumber ? (
+              <span>Request {order.customRequestNumber}</span>
+            ) : null}
+          </div>
         </div>
 
         <div className="text-right">
@@ -357,27 +566,52 @@ function OrderCard({ order }: { order: Order }) {
           );
         })}
       </div>
+    </article>
+  );
+}
 
-      {order.shippingAddress ? (
-        <div className="mt-5 rounded-xl border border-dashed border-neutral-300 p-4 text-sm dark:border-neutral-700">
-          <p className="font-medium text-neutral-900 dark:text-neutral-100">
-            Delivery address
+function CustomRequestCard({ request }: { request: CustomRequest }) {
+  const createdDate = new Date(request.createdAt).toLocaleDateString();
+  const quoteAmount = request.latestQuote?.amount || request.quotedAmount;
+  const currencyCode =
+    request.latestQuote?.currencyCode || request.currencyCode || "NGN";
+
+  return (
+    <article className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950 md:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
+            Custom request
           </p>
-          <p className="mt-1 text-neutral-600 dark:text-neutral-400">
-            {order.shippingAddress.firstName} {order.shippingAddress.lastName}
-          </p>
-          <p className="text-neutral-600 dark:text-neutral-400">
-            {order.shippingAddress.streetAddress}
-          </p>
-          <p className="text-neutral-600 dark:text-neutral-400">
-            {order.shippingAddress.lga}, {order.shippingAddress.state}
+          <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+            {request.requestNumber}
+          </h3>
+          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+            {request.title} · Submitted on {createdDate}
           </p>
         </div>
-      ) : null}
+        <div className="text-right">
+          <span className="inline-flex rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium uppercase tracking-wide text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
+            {request.status}
+          </span>
+          {quoteAmount ? (
+            <Price
+              amount={quoteAmount}
+              currencyCode={currencyCode}
+              currencyCodeClassName="hidden"
+              className="mt-2 text-base font-semibold text-neutral-900 dark:text-neutral-100"
+            />
+          ) : null}
+        </div>
+      </div>
 
-      {order.notes ? (
-        <p className="mt-4 text-sm text-neutral-600 dark:text-neutral-400">
-          Note: {order.notes}
+      <p className="mt-4 line-clamp-3 text-sm text-neutral-600 dark:text-neutral-400">
+        {request.description}
+      </p>
+
+      {request.quoteExpiresAt ? (
+        <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
+          Quote expires: {new Date(request.quoteExpiresAt).toLocaleString()}
         </p>
       ) : null}
     </article>

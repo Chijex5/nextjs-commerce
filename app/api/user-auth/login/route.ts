@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { compare } from "bcryptjs";
 import { db } from "lib/db";
-import { users } from "lib/db/schema";
+import { customOrderRequests, orders, users } from "lib/db/schema";
 import { createUserSession, setUserSessionCookie } from "lib/user-session";
-import { eq } from "drizzle-orm";
+import { and, eq, ilike, isNull } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,6 +42,23 @@ export async function POST(request: NextRequest) {
       .update(users)
       .set({ lastLoginAt: new Date() })
       .where(eq(users.id, user.id));
+
+    // Claim guest orders/requests that share this verified email.
+    await Promise.all([
+      db
+        .update(orders)
+        .set({ userId: user.id })
+        .where(and(ilike(orders.email, user.email), isNull(orders.userId))),
+      db
+        .update(customOrderRequests)
+        .set({ userId: user.id, updatedAt: new Date() })
+        .where(
+          and(
+            ilike(customOrderRequests.email, user.email),
+            isNull(customOrderRequests.userId),
+          ),
+        ),
+    ]);
 
     const token = await createUserSession({
       id: user.id,

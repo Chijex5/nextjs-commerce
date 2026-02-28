@@ -6,9 +6,16 @@ import { orderStatusUpdateTemplate } from "./templates/order-status-update";
 import { abandonedCartTemplate } from "./templates/abandoned-cart";
 import { getReviewApprovedEmailTemplate } from "./templates/review-approved";
 import { adminNewOrderTemplate } from "./templates/admin-new-order";
+import { customOrderRequestReceivedTemplate } from "./templates/custom-order-request-received";
+import { customOrderQuoteSentTemplate } from "./templates/custom-order-quote-sent";
+import { customOrderQuoteReminderTemplate } from "./templates/custom-order-quote-reminder";
+import { customOrderQuoteExpiredTemplate } from "./templates/custom-order-quote-expired";
+import { adminNewCustomOrderRequestTemplate } from "./templates/admin-new-custom-order-request";
 
 const ORDER_FROM_EMAIL = "order@dfootprint.me";
 const ORDER_REPLY_TO = "support@dfootprint.me";
+const CUSTOM_ORDER_FROM_EMAIL =
+  process.env.CUSTOM_ORDER_FROM_EMAIL || "custom-orders@dfootprint.me";
 
 interface OrderData {
   orderNumber: string;
@@ -216,6 +223,129 @@ export const sendAdminNewOrderNotification = async (data: {
       currencyCode: data.currencyCode,
       orderDate: data.orderDate,
       items: data.items,
+    }),
+  });
+};
+
+export const sendCustomOrderRequestReceived = async (data: {
+  to: string;
+  customerName: string;
+  requestNumber: string;
+  trackUrl: string;
+}) => {
+  return sendEmail({
+    to: data.to,
+    from: CUSTOM_ORDER_FROM_EMAIL,
+    replyTo: ORDER_REPLY_TO,
+    subject: `Custom Request Received: ${data.requestNumber} - D'FOOTPRINT`,
+    html: customOrderRequestReceivedTemplate({
+      customerName: data.customerName,
+      requestNumber: data.requestNumber,
+      trackUrl: data.trackUrl,
+    }),
+  });
+};
+
+export const sendCustomOrderQuoteSent = async (data: {
+  to: string;
+  customerName: string;
+  requestNumber: string;
+  amount: number;
+  currencyCode: string;
+  quoteUrl: string;
+  expiresAt?: string | null;
+  note?: string | null;
+}) => {
+  return sendEmail({
+    to: data.to,
+    from: CUSTOM_ORDER_FROM_EMAIL,
+    replyTo: ORDER_REPLY_TO,
+    subject: `Quote Ready: ${data.requestNumber} - D'FOOTPRINT`,
+    html: customOrderQuoteSentTemplate({
+      customerName: data.customerName,
+      requestNumber: data.requestNumber,
+      amount: data.amount,
+      currencyCode: data.currencyCode,
+      quoteUrl: data.quoteUrl,
+      expiresAt: data.expiresAt,
+      note: data.note,
+    }),
+  });
+};
+
+export const sendCustomOrderQuoteReminder = async (data: {
+  to: string;
+  customerName: string;
+  requestNumber: string;
+  amount: number;
+  currencyCode: string;
+  expiresAt: string;
+  quoteUrl: string;
+  reminderNumber: number;
+  totalReminders: number;
+}) => {
+  return sendEmail({
+    to: data.to,
+    from: CUSTOM_ORDER_FROM_EMAIL,
+    replyTo: ORDER_REPLY_TO,
+    subject: `Reminder ${data.reminderNumber}/${data.totalReminders}: Quote Pending - ${data.requestNumber}`,
+    html: customOrderQuoteReminderTemplate({
+      customerName: data.customerName,
+      requestNumber: data.requestNumber,
+      amount: data.amount,
+      currencyCode: data.currencyCode,
+      expiresAt: data.expiresAt,
+      quoteUrl: data.quoteUrl,
+      reminderNumber: data.reminderNumber,
+      totalReminders: data.totalReminders,
+    }),
+  });
+};
+
+export const sendCustomOrderQuoteExpiredNotice = async (data: {
+  to: string;
+  customerName: string;
+  requestNumber: string;
+  trackUrl: string;
+  cleanupAfterDays: number;
+}) => {
+  return sendEmail({
+    to: data.to,
+    from: CUSTOM_ORDER_FROM_EMAIL,
+    replyTo: ORDER_REPLY_TO,
+    subject: `Quote Expired: ${data.requestNumber} - D'FOOTPRINT`,
+    html: customOrderQuoteExpiredTemplate({
+      customerName: data.customerName,
+      requestNumber: data.requestNumber,
+      trackUrl: data.trackUrl,
+      cleanupAfterDays: data.cleanupAfterDays,
+    }),
+  });
+};
+
+export const sendAdminNewCustomOrderRequest = async (data: {
+  to: string | string[];
+  customerName: string;
+  email: string;
+  phone?: string | null;
+  requestNumber: string;
+  title: string;
+  description: string;
+  adminUrl: string;
+}) => {
+  return sendEmail({
+    to: data.to,
+    from: CUSTOM_ORDER_FROM_EMAIL,
+    replyTo: ORDER_REPLY_TO,
+    subject: `New Custom Request: ${data.requestNumber} - D'FOOTPRINT`,
+    html: adminNewCustomOrderRequestTemplate({
+      customerName: data.customerName,
+      email: data.email,
+      phone: data.phone,
+      requestNumber: data.requestNumber,
+      title: data.title,
+      description: data.description,
+      adminUrl: data.adminUrl,
     }),
   });
 };

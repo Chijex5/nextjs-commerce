@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import AdminNav from "components/admin/AdminNav";
 import OrdersTable from "components/admin/OrdersTable";
 import { db } from "lib/db";
-import { orderItems, orders } from "lib/db/schema";
+import { customOrderRequests, orderItems, orders } from "lib/db/schema";
 import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 
 export default async function AdminOrdersPage({
@@ -16,6 +16,7 @@ export default async function AdminOrdersPage({
     perPage?: string;
     status?: string;
     deliveryStatus?: string;
+    orderType?: string;
   }>;
 }) {
   const session = await getServerSession(authOptions);
@@ -30,6 +31,7 @@ export default async function AdminOrdersPage({
   const perPage = parseInt(params.perPage || "20");
   const statusFilter = params.status || "all";
   const deliveryStatusFilter = params.deliveryStatus || "all";
+  const orderTypeFilter = params.orderType || "all";
 
   const filters = [];
 
@@ -39,6 +41,10 @@ export default async function AdminOrdersPage({
 
   if (deliveryStatusFilter !== "all") {
     filters.push(eq(orders.deliveryStatus, deliveryStatusFilter));
+  }
+
+  if (orderTypeFilter !== "all") {
+    filters.push(eq(orders.orderType, orderTypeFilter));
   }
 
   if (search) {
@@ -76,9 +82,25 @@ export default async function AdminOrdersPage({
   const orderItemRows = orderIds.length
     ? await db
         .select({ orderId: orderItems.orderId, quantity: orderItems.quantity })
-        .from(orderItems)
-        .where(inArray(orderItems.orderId, orderIds))
+      .from(orderItems)
+      .where(inArray(orderItems.orderId, orderIds))
     : [];
+
+  const customRequestIds = orderRows
+    .map((order) => order.customOrderRequestId)
+    .filter((value): value is string => Boolean(value));
+  const customRequestRows = customRequestIds.length
+    ? await db
+        .select({
+          id: customOrderRequests.id,
+          requestNumber: customOrderRequests.requestNumber,
+        })
+        .from(customOrderRequests)
+        .where(inArray(customOrderRequests.id, customRequestIds))
+    : [];
+  const customRequestMap = new Map(
+    customRequestRows.map((row) => [row.id, row.requestNumber]),
+  );
 
   const itemsByOrder = orderItemRows.reduce<Record<string, { quantity: number }[]>>(
     (acc, item) => {
@@ -208,6 +230,15 @@ export default async function AdminOrdersPage({
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
               </select>
+              <select
+                name="orderType"
+                defaultValue={orderTypeFilter}
+                className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              >
+                <option value="all">All Order Types</option>
+                <option value="catalog">Catalog</option>
+                <option value="custom">Custom</option>
+              </select>
               <button
                 type="submit"
                 className="rounded-md bg-neutral-900 px-6 py-2 text-sm font-medium text-white hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
@@ -221,6 +252,9 @@ export default async function AdminOrdersPage({
           <OrdersTable
             orders={orderRows.map((order) => ({
               ...order,
+              customRequestNumber: order.customOrderRequestId
+                ? customRequestMap.get(order.customOrderRequestId) || null
+                : null,
               items: itemsByOrder[order.id] || [],
             }))}
             currentPage={page}

@@ -99,7 +99,7 @@ export default function CheckoutSuccess() {
               place.
             </p>
             <Link
-              href={`/auth/register?callbackUrl=${encodeURIComponent(`/orders?order=${orderNumber || ""}`)}`}
+              href={`/auth/register?callbackUrl=${encodeURIComponent(`/orders?orderNumber=${orderNumber || ""}`)}`}
               className="mt-2 inline-flex text-xs font-medium text-blue-700 hover:underline dark:text-blue-200"
             >
               Create account

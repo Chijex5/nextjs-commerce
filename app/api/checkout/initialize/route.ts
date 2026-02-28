@@ -142,6 +142,12 @@ export async function POST(request: NextRequest) {
             customer_name: `${body.shippingAddress.firstName} ${body.shippingAddress.lastName}`,
             phone: body.phone,
             cart_id: cart.id,
+            checkout_user_id: session?.id || null,
+            checkout_email: body.email,
+            checkout_shipping_address: body.shippingAddress,
+            checkout_billing_address: body.billingAddress,
+            checkout_save_address: Boolean(body.saveAddress),
+            checkout_notes: body.notes?.trim() || null,
             ...(appliedCouponCode
               ? {
                   coupon_code: appliedCouponCode,

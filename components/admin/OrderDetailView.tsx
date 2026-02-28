@@ -30,6 +30,8 @@ interface OrderItem {
 interface Order {
   id: string;
   orderNumber: string;
+  orderType: string;
+  customRequestNumber?: string | null;
   customerName: string;
   email: string;
   phone: string | null;
@@ -181,6 +183,12 @@ export default function OrderDetailView({ order }: { order: Order }) {
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-3xl">
             Order {order.orderNumber}
           </h1>
+          <p className="mt-1 text-xs uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
+            {order.orderType} order
+            {order.customRequestNumber
+              ? ` · Request ${order.customRequestNumber}`
+              : ""}
+          </p>
           <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
             Placed on{" "}
             {new Date(order.createdAt).toLocaleDateString("en-US", {

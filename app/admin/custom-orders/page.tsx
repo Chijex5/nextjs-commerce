@@ -37,10 +37,11 @@ export default async function AdminCustomOrdersPage() {
         <div className="mx-auto max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-3xl">
-              Custom Orders
+              Custom Showcase
             </h1>
             <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-              Manage the customer stories shown on the Custom Orders page.
+              Manage the before-and-after stories shown on the Custom Orders
+              gallery page.
             </p>
           </div>
 

@@ -1,0 +1,15 @@
+name: Custom order quote cron
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call custom-order quote cron endpoint
+        run: |
+          curl -sS -X GET "${{ secrets.APP_BASE_URL }}/api/custom-order-quotes/cron" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"
