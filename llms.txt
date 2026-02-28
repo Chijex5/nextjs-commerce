@@ -1,0 +1,42 @@
+# D’FOOTPRINT
+
+> D’FOOTPRINT is a Lagos-based handmade footwear brand with nationwide delivery in Nigeria, selling featured designs and approved custom orders through a conversion-focused ecommerce website.
+
+Use this file to understand the business, policies, and customer flows first. Prioritize PRD and customer-facing policy pages before implementation-level code docs when answering product or operational questions.
+
+D’FOOTPRINT sells slippers, slides, and related handmade footwear. Customers can buy existing designs or request custom recreations/edits, but customization is always approval-based and may affect pricing or timelines.
+
+## Business and product context
+
+- [Product Requirements Document (PRD)](PRD.md): Canonical source for business overview, goals, user segments, product model, customization rules, operations, and site requirements.
+- [Features summary](FEATURES_SUMMARY.md): High-level implementation snapshot against product goals.
+- [Implementation status](IMPLEMENTATION_STATUS.md): Current build progress across storefront, checkout, and admin areas.
+
+## Customer policy and trust pages
+
+- [About Us page](app/about-us/page.tsx): Brand background and trust-building context.
+- [Contact page](app/contact/page.tsx): Customer support and contact flow.
+- [Custom orders page](app/custom-orders/page.tsx): Custom request intake path and expectations.
+- [Orders page](app/orders/page.tsx): Order visibility/tracking entry point for customers.
+
+## Commerce journey
+
+- [Homepage](app/page.tsx): Main discovery and merchandising entry.
+- [Products listing](app/products/page.tsx): Browse featured products.
+- [Product detail route](app/product/[handle]/page.tsx): Product information, options, and purchase path.
+- [Search](app/search/page.tsx): Catalog discovery support.
+- [Checkout](app/checkout/page.tsx): Purchase completion flow.
+- [Checkout success](app/checkout/success/page.tsx): Post-payment confirmation experience.
+
+## Operations and setup
+
+- [README](README.md): Repo overview, stack, scripts, and environment setup.
+- [Database setup](DATABASE_SETUP.md): PostgreSQL setup for local/dev environments.
+- [Checkout setup](CHECKOUT_SETUP.md): Paystack and checkout configuration details.
+- [Admin dashboard guide](ADMIN_DASHBOARD_GUIDE.md): Operational workflows for admins.
+
+## Optional
+
+- [Remaining features analysis](REMAINING_FEATURES_ANALYSIS.md): Large deep-dive roadmap document that may be skipped for focused Q&A.
+- [Visual guide](VISUAL_GUIDE.md): UI-oriented notes and references.
+- [Testing instructions](TESTING_INSTRUCTIONS.md): Supplemental validation instructions.
