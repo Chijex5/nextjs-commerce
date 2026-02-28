@@ -33,7 +33,19 @@ export async function createCart(): Promise<Cart> {
 export async function addToCart(
   lines: { merchandiseId: string; quantity: number }[],
 ): Promise<Cart> {
-  const cartId = (await cookies()).get("cartId")?.value!;
+  const cookieStore = await cookies();
+  let cartId = cookieStore.get("cartId")?.value;
+
+  if (!cartId) {
+    const cart = await dbQueries.createCart();
+    if (!cart.id) {
+      throw new Error("Failed to create cart");
+    }
+
+    cartId = cart.id;
+    cookieStore.set("cartId", cartId);
+  }
+
   return dbQueries.addToCart(cartId, lines);
 }
 

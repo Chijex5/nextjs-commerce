@@ -3,13 +3,11 @@
 import { TAGS } from "lib/constants";
 import {
   addToCart,
-  createCart,
   getCart,
   removeFromCart,
   updateCart,
 } from "lib/database";
 import { updateTag } from "next/cache";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 export async function addItem(
@@ -103,9 +101,4 @@ export async function redirectToCheckout() {
   }
 
   redirect("/checkout");
-}
-
-export async function createCartAndSetCookie() {
-  let cart = await createCart();
-  (await cookies()).set("cartId", cart.id!);
 }
