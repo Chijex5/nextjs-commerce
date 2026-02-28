@@ -46,7 +46,12 @@ export async function POST(request: NextRequest) {
     const [existingReview] = await db
       .select({ id: reviews.id })
       .from(reviews)
-      .where(and(eq(reviews.productId, productId), eq(reviews.userId, session.user.id)))
+      .where(
+        and(
+          eq(reviews.productId, productId),
+          eq(reviews.userId, session.user.id),
+        ),
+      )
       .limit(1);
 
     if (existingReview) {
@@ -69,7 +74,10 @@ export async function POST(request: NextRequest) {
           .select({ id: orderItems.id })
           .from(orderItems)
           .where(
-            and(eq(orderItems.orderId, order.id), eq(orderItems.productId, productId)),
+            and(
+              eq(orderItems.orderId, order.id),
+              eq(orderItems.productId, productId),
+            ),
           )
           .limit(1);
         isVerified = !!item;
@@ -118,7 +126,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const productId = searchParams.get("productId");
-    const status = searchParams.get("status") || "approved";
+    const status = "approved";
     const sort = searchParams.get("sort") || "newest";
 
     if (!productId) {
@@ -150,7 +158,9 @@ export async function GET(request: NextRequest) {
         totalReviews: sql<number>`count(${reviews.id})`,
       })
       .from(reviews)
-      .where(and(eq(reviews.productId, productId), eq(reviews.status, "approved")));
+      .where(
+        and(eq(reviews.productId, productId), eq(reviews.status, "approved")),
+      );
 
     return NextResponse.json({
       reviews: reviewRows.map(({ review, user }) => ({

@@ -153,6 +153,9 @@ export async function getProducts({
     queryBuilder = queryBuilder.orderBy(desc(products.createdAt));
   }
 
+153
+ 
+        ? await (
   const dbProducts = await queryBuilder.limit(100);
 
   const productsWithDetails = await Promise.all(
@@ -222,7 +225,9 @@ export async function getProductReviewAggregate(productId: string): Promise<{
       reviewCount: sql<number>`count(${reviews.rating})`,
     })
     .from(reviews)
-    .where(and(eq(reviews.productId, productId), eq(reviews.status, "approved")));
+    .where(
+      and(eq(reviews.productId, productId), eq(reviews.status, "approved")),
+    );
 
   return {
     averageRating:
