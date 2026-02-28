@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import CustomOrderRequestSection from "components/custom-orders/custom-order-request-section";
 import { canonicalUrl, siteName } from "lib/seo";
 
@@ -61,7 +62,15 @@ export default function CustomOrderRequestPage() {
       </div>
 
       {customOrderFeatureEnabled ? (
-        <CustomOrderRequestSection />
+        <Suspense
+          fallback={
+            <div className="rounded-2xl border border-neutral-200 bg-white p-6 text-sm text-neutral-600 shadow-sm dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-400">
+              Loading request form...
+            </div>
+          }
+        >
+          <CustomOrderRequestSection />
+        </Suspense>
       ) : (
         <div className="rounded-2xl border border-neutral-200 bg-white p-6 text-sm text-neutral-600 shadow-sm dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-400">
           Custom requests are currently unavailable. Please contact support and we
