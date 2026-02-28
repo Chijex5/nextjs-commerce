@@ -2,6 +2,7 @@ import { CartProvider } from "components/cart/cart-context";
 import { Navbar } from "components/layout/navbar";
 import { WelcomeToast } from "components/welcome-toast";
 import AnalyticsPageView from "components/analytics/page-view";
+import { Analytics } from "@vercel/analytics/next"
 import AbandonedCartTracker from "components/cart/abandoned-cart-tracker";
 import TikTokIdentify from "components/analytics/tiktok-identify";
 import ExitIntentPopup from "components/exit-intent-popup";
@@ -70,6 +71,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className={inter.variable}>
+      <Analytics />
       <body className="bg-neutral-50 font-sans text-black selection:bg-teal-300 dark:bg-neutral-900 dark:text-white dark:selection:bg-pink-500 dark:selection:text-white">
         <script
           type="application/ld+json"
