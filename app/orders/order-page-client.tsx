@@ -99,6 +99,8 @@ export default function OrdersPageClient() {
   const [isTrackingLoading, setIsTrackingLoading] = useState(false);
   const [isCustomRequestsLoading, setIsCustomRequestsLoading] = useState(false);
   const [isCustomTrackingLoading, setIsCustomTrackingLoading] = useState(false);
+  const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
+  const [trackingMode, setTrackingMode] = useState<"order" | "custom">("order");
 
   const autoTrackedOrderRef = useRef<string | null>(null);
   const autoTrackedCustomRef = useRef<string | null>(null);
@@ -224,6 +226,8 @@ export default function OrdersPageClient() {
 
     autoTrackedOrderRef.current = orderNumberParam;
     setTrackingInput(orderNumberParam);
+    setTrackingMode("order");
+    setIsTrackingModalOpen(true);
     void trackOrderByNumber(orderNumberParam);
   }, [orderNumberParam, trackOrderByNumber]);
 
@@ -234,121 +238,96 @@ export default function OrdersPageClient() {
 
     autoTrackedCustomRef.current = customRequestParam;
     setCustomTrackRequestNumber(customRequestParam);
+    setTrackingMode("custom");
+    setIsTrackingModalOpen(true);
     void trackCustomRequest(
       customRequestParam,
       customTrackEmail || emailParam || "",
     );
-  }, [
-    customRequestParam,
-    customTrackEmail,
-    emailParam,
-    trackCustomRequest,
-  ]);
+  }, [customRequestParam, customTrackEmail, emailParam, trackCustomRequest]);
 
   if (status === "loading") {
     return <PageLoader size="lg" message="Loading orders..." />;
   }
 
+  const hasTrackingResults = Boolean(
+    trackedOrder ||
+      trackedCustomRequest ||
+      orderNumberParam ||
+      (customRequestParam && (customTrackEmail || emailParam)),
+  );
+
+  const openTrackingModal = (mode: "order" | "custom") => {
+    setTrackingMode(mode);
+    setIsTrackingModalOpen(true);
+  };
+
   return (
-    <div className="space-y-8 pb-10 md:space-y-10">
-      <header className="space-y-4 border-b border-neutral-200 pb-6 dark:border-neutral-800 md:pb-8">
-        <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100 md:text-4xl">
-          {orderNumberParam || customRequestParam ? "Track order" : "Orders"}
-        </h1>
-        <p className="max-w-2xl text-sm text-neutral-600 dark:text-neutral-400">
-          Track paid orders or follow custom request progress with your request
-          number and email.
+    <div className="space-y-10 pb-12">
+      <header className="space-y-4 border-b border-neutral-200 pb-8 dark:border-neutral-800">
+        <p className="text-xs uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
+          Account
         </p>
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100 md:text-4xl">
+              Orders
+            </h1>
+            <p className="max-w-2xl text-sm text-neutral-600 dark:text-neutral-400">
+              Keep your catalog purchases and custom request history organized
+              in dedicated sections. Open tracking only when you need it.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => openTrackingModal("order")}
+              className="rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+            >
+              Track order
+            </button>
+            <button
+              type="button"
+              onClick={() => openTrackingModal("custom")}
+              className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-500 dark:border-neutral-700 dark:text-neutral-200"
+            >
+              Track custom request
+            </button>
+          </div>
+        </div>
       </header>
 
-      {!orderNumberParam ? (
-        <section className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950 md:p-6">
-          <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-            Track an order
-          </h2>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-            Enter your order number (e.g. ORD-123456).
-          </p>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void trackOrderByNumber(trackingInput);
-            }}
-            className="mt-4 flex flex-col gap-3 sm:flex-row"
-          >
-            <input
-              value={trackingInput}
-              onChange={(e) => setTrackingInput(e.target.value)}
-              placeholder="Order number"
-              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-            />
+      {hasTrackingResults ? (
+        <section className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+              Tracking result
+            </h2>
             <button
-              type="submit"
-              disabled={isTrackingLoading}
-              className="rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+              type="button"
+              onClick={() => setIsTrackingModalOpen(true)}
+              className="text-sm font-medium text-neutral-600 underline-offset-4 hover:underline dark:text-neutral-400"
             >
-              {isTrackingLoading ? "Checking..." : "Track"}
+              Track another
             </button>
-          </form>
-        </section>
-      ) : null}
+          </div>
 
-      {!customRequestParam ? (
-        <section className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950 md:p-6">
-          <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-            Track a custom request
-          </h2>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-            Use your custom request number and email.
-          </p>
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              void trackCustomRequest(customTrackRequestNumber, customTrackEmail);
-            }}
-            className="mt-4 grid gap-3 sm:grid-cols-2"
-          >
-            <input
-              value={customTrackRequestNumber}
-              onChange={(event) => setCustomTrackRequestNumber(event.target.value)}
-              placeholder="Request number (e.g. COR-...)"
-              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-            />
-            <div className="flex gap-3">
-              <input
-                type="email"
-                value={customTrackEmail}
-                onChange={(event) => setCustomTrackEmail(event.target.value)}
-                placeholder="Email"
-                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-              />
-              <button
-                type="submit"
-                disabled={isCustomTrackingLoading}
-                className="rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-              >
-                {isCustomTrackingLoading ? "Checking..." : "Track"}
-              </button>
-            </div>
-          </form>
-        </section>
-      ) : null}
-
-      {trackedOrder ? <OrderCard order={trackedOrder} /> : null}
-      {orderNumberParam && !trackedOrder && !isTrackingLoading ? (
-        <section className="rounded-2xl border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-400">
-          We couldn&apos;t find an order with that number.
-        </section>
-      ) : null}
-      {trackedCustomRequest ? (
-        <CustomRequestCard request={trackedCustomRequest} />
-      ) : null}
-      {customRequestParam &&
-      !trackedCustomRequest &&
-      !isCustomTrackingLoading ? (
-        <section className="rounded-2xl border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-400">
-          We couldn&apos;t find a custom request with those details.
+          {trackedOrder ? <OrderCard order={trackedOrder} /> : null}
+          {orderNumberParam && !trackedOrder && !isTrackingLoading ? (
+            <section className="rounded-2xl border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-400">
+              We couldn&apos;t find an order with that number.
+            </section>
+          ) : null}
+          {trackedCustomRequest ? (
+            <CustomRequestCard request={trackedCustomRequest} />
+          ) : null}
+          {customRequestParam &&
+          !trackedCustomRequest &&
+          !isCustomTrackingLoading ? (
+            <section className="rounded-2xl border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-400">
+              We couldn&apos;t find a custom request with those details.
+            </section>
+          ) : null}
         </section>
       ) : null}
 
@@ -356,7 +335,7 @@ export default function OrdersPageClient() {
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-              My orders
+              Catalog orders
             </h2>
             <span className="text-sm text-neutral-500 dark:text-neutral-400">
               {orders.length} total
@@ -369,7 +348,7 @@ export default function OrdersPageClient() {
               <div className="h-40 animate-pulse rounded-2xl bg-neutral-200 dark:bg-neutral-800" />
             </div>
           ) : orders.length > 0 ? (
-            <div className="space-y-4">
+            <div className="grid gap-4 lg:grid-cols-2">
               {orders.map((order) => (
                 <OrderCard key={order.id} order={order} />
               ))}
@@ -394,7 +373,7 @@ export default function OrdersPageClient() {
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-              My custom requests
+              Custom requests
             </h2>
             <span className="text-sm text-neutral-500 dark:text-neutral-400">
               {customRequests.length} total
@@ -441,6 +420,163 @@ export default function OrdersPageClient() {
           </Link>
         </section>
       ) : null}
+
+      {isTrackingModalOpen ? (
+        <TrackingModal
+          trackingMode={trackingMode}
+          setTrackingMode={setTrackingMode}
+          trackingInput={trackingInput}
+          setTrackingInput={setTrackingInput}
+          isTrackingLoading={isTrackingLoading}
+          onTrackOrder={trackOrderByNumber}
+          customTrackRequestNumber={customTrackRequestNumber}
+          setCustomTrackRequestNumber={setCustomTrackRequestNumber}
+          customTrackEmail={customTrackEmail}
+          setCustomTrackEmail={setCustomTrackEmail}
+          isCustomTrackingLoading={isCustomTrackingLoading}
+          onTrackCustomRequest={trackCustomRequest}
+          onClose={() => setIsTrackingModalOpen(false)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+type TrackingModalProps = {
+  trackingMode: "order" | "custom";
+  setTrackingMode: (mode: "order" | "custom") => void;
+  trackingInput: string;
+  setTrackingInput: (value: string) => void;
+  isTrackingLoading: boolean;
+  onTrackOrder: (orderNumber: string) => Promise<void>;
+  customTrackRequestNumber: string;
+  setCustomTrackRequestNumber: (value: string) => void;
+  customTrackEmail: string;
+  setCustomTrackEmail: (value: string) => void;
+  isCustomTrackingLoading: boolean;
+  onTrackCustomRequest: (requestNumber: string, email: string) => Promise<void>;
+  onClose: () => void;
+};
+
+function TrackingModal({
+  trackingMode,
+  setTrackingMode,
+  trackingInput,
+  setTrackingInput,
+  isTrackingLoading,
+  onTrackOrder,
+  customTrackRequestNumber,
+  setCustomTrackRequestNumber,
+  customTrackEmail,
+  setCustomTrackEmail,
+  isCustomTrackingLoading,
+  onTrackCustomRequest,
+  onClose,
+}: TrackingModalProps) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-xl rounded-3xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-950 md:p-7">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+              Track shipment
+            </h2>
+            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+              Choose what you want to track and submit your details.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full border border-neutral-300 px-3 py-1 text-sm text-neutral-700 dark:border-neutral-700 dark:text-neutral-300"
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="mb-4 inline-flex rounded-full border border-neutral-300 p-1 dark:border-neutral-700">
+          <button
+            type="button"
+            onClick={() => setTrackingMode("order")}
+            className={`rounded-full px-3 py-1.5 text-sm font-medium ${
+              trackingMode === "order"
+                ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+                : "text-neutral-600 dark:text-neutral-400"
+            }`}
+          >
+            Order
+          </button>
+          <button
+            type="button"
+            onClick={() => setTrackingMode("custom")}
+            className={`rounded-full px-3 py-1.5 text-sm font-medium ${
+              trackingMode === "custom"
+                ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+                : "text-neutral-600 dark:text-neutral-400"
+            }`}
+          >
+            Custom request
+          </button>
+        </div>
+
+        {trackingMode === "order" ? (
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              void onTrackOrder(trackingInput);
+            }}
+            className="space-y-3"
+          >
+            <input
+              value={trackingInput}
+              onChange={(event) => setTrackingInput(event.target.value)}
+              placeholder="Order number (e.g. ORD-123456)"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+            />
+            <button
+              type="submit"
+              disabled={isTrackingLoading}
+              className="w-full rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+            >
+              {isTrackingLoading ? "Checking..." : "Track order"}
+            </button>
+          </form>
+        ) : (
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              void onTrackCustomRequest(
+                customTrackRequestNumber,
+                customTrackEmail,
+              );
+            }}
+            className="space-y-3"
+          >
+            <input
+              value={customTrackRequestNumber}
+              onChange={(event) =>
+                setCustomTrackRequestNumber(event.target.value)
+              }
+              placeholder="Request number (e.g. COR-123456)"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+            />
+            <input
+              type="email"
+              value={customTrackEmail}
+              onChange={(event) => setCustomTrackEmail(event.target.value)}
+              placeholder="Email address"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+            />
+            <button
+              type="submit"
+              disabled={isCustomTrackingLoading}
+              className="w-full rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+            >
+              {isCustomTrackingLoading ? "Checking..." : "Track custom request"}
+            </button>
+          </form>
+        )}
+      </div>
     </div>
   );
 }
@@ -529,15 +665,18 @@ function OrderCard({ order }: { order: Order }) {
         </div>
       ) : null}
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
         {order.items.map((item) => {
           const key =
             item.id ||
             `${order.id}-${item.productVariantId || item.productTitle}`;
 
           return (
-            <div key={key} className="flex items-center gap-3">
-              <div className="relative h-16 w-16 overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-900">
+            <div
+              key={key}
+              className="flex items-center gap-3 rounded-xl border border-neutral-200 p-3 dark:border-neutral-800"
+            >
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-900">
                 {item.productImage ? (
                   <Image
                     src={item.productImage}
