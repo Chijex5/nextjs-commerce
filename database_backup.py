@@ -13,19 +13,16 @@ from typing import Iterable
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from dotenv import load_dotenv
-from sqlalchemy import MetaData, create_engine, inspect, select, text
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import MetaData, create_engine, func, inspect, select, text
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-TARGET_DATABASE_URL = ""
+TARGET_DATABASE_URL = "postgresql://user:password@host:port/database?sslmode=require"
 SOURCE_ENV_KEYS = (
-    "SOURCE_DATABASE_URL",
-    "DIRECT_DATABASE_URL",
-    "DATABASE_URL",
-    "POSTGRES_URL",
     "AMAZON_DATABASE_URL",
 )
 SKIP_SCHEMAS = {"information_schema", "pg_catalog", "pg_toast"}
 CHUNK_SIZE = 2_000
+VERIFY_ROW_COUNTS = True
 
 
 def quote_ident(value: str) -> str:
@@ -104,10 +101,9 @@ def get_user_schemas(source_engine) -> list[str]:
     return schemas
 
 
-def create_missing_schemas(target_engine, schemas: Iterable[str]) -> None:
-    with target_engine.begin() as conn:
-        for schema in schemas:
-            conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {quote_ident(schema)}"))
+def create_missing_schemas(target_conn, schemas: Iterable[str]) -> None:
+    for schema in schemas:
+        target_conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {quote_ident(schema)}"))
 
 
 def reset_sequences(target_conn, table) -> None:
@@ -151,6 +147,18 @@ def reset_sequences(target_conn, table) -> None:
         )
 
 
+def table_label(table) -> str:
+    return f"{table.schema}.{table.name}" if table.schema else table.name
+
+
+def short_integrity_error(exc: IntegrityError) -> str:
+    diag = getattr(getattr(exc, "orig", None), "diag", None)
+    if diag and getattr(diag, "message_primary", None):
+        return str(diag.message_primary)
+    first_line = str(getattr(exc, "orig", exc)).splitlines()[0].strip()
+    return first_line or "integrity constraint violation"
+
+
 def copy_table_data(source_conn, target_conn, table) -> int:
     insert_columns = [col for col in table.columns if col.computed is None]
     insert_column_names = {col.name for col in insert_columns}
@@ -173,6 +181,73 @@ def copy_table_data(source_conn, target_conn, table) -> int:
         copied += len(batch)
 
     return copied
+
+
+def count_rows(conn, table) -> int:
+    return int(conn.execute(select(func.count()).select_from(table)).scalar_one())
+
+
+def copy_tables_with_retries(source_conn, target_conn, tables) -> int:
+    pending_tables = list(tables)
+    unresolved_errors: dict[str, str] = {}
+    total_rows = 0
+    copy_pass = 1
+    copied_tables = []
+
+    while pending_tables:
+        print(f"Pass {copy_pass}: attempting {len(pending_tables)} table(s)...")
+        deferred_tables = []
+        progressed = False
+
+        for table in pending_tables:
+            label = table_label(table)
+            savepoint = target_conn.begin_nested()
+            try:
+                row_count = copy_table_data(source_conn, target_conn, table)
+                with suppress(Exception):
+                    reset_sequences(target_conn, table)
+                savepoint.commit()
+                total_rows += row_count
+                copied_tables.append(table)
+                progressed = True
+                unresolved_errors.pop(label, None)
+                print(f"  - {label}: {row_count} row(s)")
+            except IntegrityError as exc:
+                savepoint.rollback()
+                deferred_tables.append(table)
+                unresolved_errors[label] = short_integrity_error(exc)
+                print(f"  - {label}: deferred ({unresolved_errors[label]})")
+            except SQLAlchemyError:
+                savepoint.rollback()
+                raise
+
+        if not progressed:
+            unresolved = [
+                f"{table_label(table)} -> {unresolved_errors.get(table_label(table), 'unknown error')}"
+                for table in deferred_tables
+            ]
+            raise RuntimeError(
+                "Unable to resolve table insert order due unresolved constraints:\n"
+                + "\n".join(unresolved)
+            )
+
+        pending_tables = deferred_tables
+        copy_pass += 1
+
+    if VERIFY_ROW_COUNTS:
+        print("Verifying row counts...")
+        for table in copied_tables:
+            label = table_label(table)
+            source_count = count_rows(source_conn, table)
+            target_count = count_rows(target_conn, table)
+            if source_count != target_count:
+                raise RuntimeError(
+                    f"Row count mismatch for {label}: "
+                    f"source={source_count}, target={target_count}"
+                )
+            print(f"  - {label}: verified ({target_count} row(s))")
+
+    return total_rows
 
 
 def run_backup() -> None:
@@ -200,27 +275,29 @@ def run_backup() -> None:
     if not source_metadata.tables:
         raise RuntimeError("No tables found in source metadata.")
 
-    print("Preparing target database...")
-    create_missing_schemas(target_engine, schemas)
+    tables = sorted(
+        source_metadata.tables.values(),
+        key=lambda table: ((table.schema or ""), table.name),
+    )
+    with (
+        source_engine.connect().execution_options(isolation_level="REPEATABLE READ") as source_conn,
+        target_engine.connect() as target_conn,
+    ):
+        with source_conn.begin():
+            source_conn.execute(text("SET TRANSACTION READ ONLY"))
+            with target_conn.begin():
+                print("Preparing target database...")
+                create_missing_schemas(target_conn, schemas)
 
-    target_metadata = MetaData()
-    for schema in schemas:
-        target_metadata.reflect(bind=target_engine, schema=schema)
+                target_metadata = MetaData()
+                for schema in schemas:
+                    target_metadata.reflect(bind=target_conn, schema=schema)
 
-    with target_engine.begin() as conn:
-        target_metadata.drop_all(bind=conn)
-        source_metadata.create_all(bind=conn)
+                target_metadata.drop_all(bind=target_conn)
+                source_metadata.create_all(bind=target_conn)
 
-    print(f"Copying data for {len(source_metadata.tables)} table(s)...")
-    total_rows = 0
-    with source_engine.connect() as source_conn, target_engine.begin() as target_conn:
-        for table in source_metadata.sorted_tables:
-            row_count = copy_table_data(source_conn, target_conn, table)
-            with suppress(Exception):
-                reset_sequences(target_conn, table)
-            total_rows += row_count
-            table_label = f"{table.schema}.{table.name}" if table.schema else table.name
-            print(f"  - {table_label}: {row_count} row(s)")
+                print(f"Copying data for {len(tables)} table(s)...")
+                total_rows = copy_tables_with_retries(source_conn, target_conn, tables)
 
     print(f"Backup complete. Total rows copied: {total_rows}")
 

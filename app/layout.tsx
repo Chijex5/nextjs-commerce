@@ -1,12 +1,12 @@
 import { CartProvider } from "components/cart/cart-context";
-import { Navbar } from "components/layout/navbar";
-import { WelcomeToast } from "components/welcome-toast";
-import AnalyticsPageView from "components/analytics/page-view";
 import { Analytics } from "@vercel/analytics/next"
-import AbandonedCartTracker from "components/cart/abandoned-cart-tracker";
+import AnalyticsPageView from "components/analytics/page-view";
 import TikTokIdentify from "components/analytics/tiktok-identify";
+import AbandonedCartTracker from "components/cart/abandoned-cart-tracker";
 import ExitIntentPopup from "components/exit-intent-popup";
+import { Navbar } from "components/layout/navbar";
 import FirstVisitSignupPopup from "components/onboarding/first-visit-signup";
+import { WelcomeToast } from "components/welcome-toast";
 import { getCart } from "lib/database";
 import {
   canonicalUrl,
@@ -17,10 +17,11 @@ import {
 import { baseUrl } from "lib/utils";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { headers } from "next/headers";
 import { ReactNode } from "react";
 import { Suspense } from "react";
-import { Toaster } from "sonner";
 import Script from "next/script";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
@@ -68,6 +69,8 @@ export default async function RootLayout({
 }) {
   // Don't await the fetch, pass the Promise to the context provider
   const cart = getCart();
+  const requestHeaders = await headers();
+  const isAdminRoute = requestHeaders.get("x-is-admin-route") === "1";
 
   return (
     <html lang="en" className={inter.variable}>
@@ -157,15 +160,15 @@ export default async function RootLayout({
           <Suspense fallback={null}>
             <AnalyticsPageView />
           </Suspense>
-          <AbandonedCartTracker />
-          <TikTokIdentify />
-          <Navbar />
-          <FirstVisitSignupPopup />
-          <ExitIntentPopup />
+          {!isAdminRoute ? <AbandonedCartTracker /> : null}
+          {!isAdminRoute ? <TikTokIdentify /> : null}
+          {!isAdminRoute ? <Navbar /> : null}
+          {!isAdminRoute ? <FirstVisitSignupPopup /> : null}
+          {!isAdminRoute ? <ExitIntentPopup /> : null}
           <main>
             {children}
             <Toaster closeButton />
-            <WelcomeToast />
+            {!isAdminRoute ? <WelcomeToast /> : null}
           </main>
         </CartProvider>
       </body>
