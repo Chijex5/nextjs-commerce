@@ -23,7 +23,17 @@ import {
   products,
   reviews,
 } from "./schema";
-import { and, asc, desc, eq, inArray, sql, ilike, or } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  inArray,
+  sql,
+  ilike,
+  or,
+  type SQL,
+} from "drizzle-orm";
 import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "../image-constants";
 
 // Helper function to reshape database product to match Shopify Product type
@@ -223,41 +233,322 @@ export async function getProducts({
   reverse?: boolean;
   sortKey?: string;
 }): Promise<Product[]> {
-  const filters = [];
+  const filters: SQL[] = [];
   const sanitizedQuery = query?.trim();
+  let relevanceScore = sql<number>`0`;
 
   if (sanitizedQuery) {
+    const normalizedQuery = sanitizedQuery.toLowerCase();
     const pattern = `%${sanitizedQuery}%`;
+
+    const coreSearchText = sql<string>`
+      trim(
+        concat_ws(
+          ' ',
+          coalesce(${products.title}, ''),
+          coalesce(${products.handle}, ''),
+          coalesce(array_to_string(${products.tags}, ' '), ''),
+          coalesce(${products.description}, ''),
+          coalesce(${products.seoTitle}, ''),
+          coalesce(${products.seoDescription}, '')
+        )
+      )
+    `;
+
+    const collectionSearchText = sql<string>`
+      coalesce(
+        (
+          select string_agg(
+            distinct concat_ws(
+              ' ',
+              ${collections.title},
+              ${collections.handle},
+              coalesce(${collections.description}, '')
+            ),
+            ' '
+          )
+          from ${productCollections}
+          inner join ${collections}
+            on ${productCollections.collectionId} = ${collections.id}
+          where ${productCollections.productId} = ${products.id}
+        ),
+        ''
+      )
+    `;
+
+    const optionSearchText = sql<string>`
+      coalesce(
+        (
+          select string_agg(
+            distinct concat_ws(
+              ' ',
+              ${productOptions.name},
+              coalesce(array_to_string(${productOptions.values}, ' '), '')
+            ),
+            ' '
+          )
+          from ${productOptions}
+          where ${productOptions.productId} = ${products.id}
+        ),
+        ''
+      )
+    `;
+
+    const variantSearchText = sql<string>`
+      coalesce(
+        (
+          select string_agg(
+            distinct concat_ws(
+              ' ',
+              ${productVariants.title},
+              ${productVariants.selectedOptions}::text
+            ),
+            ' '
+          )
+          from ${productVariants}
+          where ${productVariants.productId} = ${products.id}
+        ),
+        ''
+      )
+    `;
+
+    const customerIntentText = sql<string>`
+      trim(
+        concat_ws(
+          ' ',
+          ${coreSearchText},
+          ${collectionSearchText},
+          ${optionSearchText},
+          ${variantSearchText}
+        )
+      )
+    `;
+
+    const searchVector = sql`
+      (
+        setweight(to_tsvector('simple', coalesce(${products.title}, '')), 'A') ||
+        setweight(
+          to_tsvector('simple', coalesce(array_to_string(${products.tags}, ' '), '')),
+          'A'
+        ) ||
+        setweight(to_tsvector('simple', coalesce(${products.handle}, '')), 'B') ||
+        setweight(to_tsvector('simple', ${collectionSearchText}), 'B') ||
+        setweight(to_tsvector('simple', ${optionSearchText}), 'B') ||
+        setweight(to_tsvector('simple', ${variantSearchText}), 'B') ||
+        setweight(
+          to_tsvector(
+            'english',
+            coalesce(${products.seoTitle}, '') || ' ' || coalesce(${products.seoDescription}, '')
+          ),
+          'C'
+        ) ||
+        setweight(to_tsvector('english', coalesce(${products.description}, '')), 'C')
+      )
+    `;
+    const simpleTsQuery = sql`plainto_tsquery('simple', ${sanitizedQuery})`;
+    const englishTsQuery = sql`plainto_tsquery('english', ${sanitizedQuery})`;
+
+    const relatedFieldMatch = sql<boolean>`
+      (
+        exists (
+          select 1
+          from ${productVariants}
+          where ${productVariants.productId} = ${products.id}
+            and (
+              ${productVariants.title} ILIKE ${pattern}
+              or ${productVariants.selectedOptions}::text ILIKE ${pattern}
+              or lower(${productVariants.title}) % ${normalizedQuery}
+            )
+        )
+        or exists (
+          select 1
+          from ${productOptions}
+          where ${productOptions.productId} = ${products.id}
+            and (
+              ${productOptions.name} ILIKE ${pattern}
+              or array_to_string(${productOptions.values}, ' ') ILIKE ${pattern}
+              or lower(
+                trim(
+                  concat_ws(
+                    ' ',
+                    coalesce(${productOptions.name}, ''),
+                    coalesce(array_to_string(${productOptions.values}, ' '), '')
+                  )
+                )
+              ) % ${normalizedQuery}
+            )
+        )
+        or exists (
+          select 1
+          from ${productCollections}
+          inner join ${collections}
+            on ${productCollections.collectionId} = ${collections.id}
+          where ${productCollections.productId} = ${products.id}
+            and (
+              ${collections.title} ILIKE ${pattern}
+              or ${collections.handle} ILIKE ${pattern}
+              or lower(
+                trim(
+                  concat_ws(
+                    ' ',
+                    coalesce(${collections.title}, ''),
+                    coalesce(${collections.handle}, ''),
+                    coalesce(${collections.description}, '')
+                  )
+                )
+              ) % ${normalizedQuery}
+            )
+        )
+      )
+    `;
+
+    const fuzzyScore = sql<number>`
+      greatest(
+        similarity(lower(${products.title}), ${normalizedQuery}),
+        word_similarity(${normalizedQuery}, lower(${customerIntentText}))
+      )
+    `;
+
+    const exactTitleBoost = sql<number>`
+      case
+        when lower(${products.title}) = ${normalizedQuery} then 4.0
+        when lower(${products.title}) like ${`${normalizedQuery}%`} then 2.4
+        when lower(${products.title}) like ${`%${normalizedQuery}%`} then 1.1
+        else 0
+      end
+    `;
+
+    relevanceScore = sql<number>`
+      (
+        (
+          2.6 * greatest(
+            ts_rank_cd(${searchVector}, ${simpleTsQuery}, 32),
+            ts_rank_cd(${searchVector}, ${englishTsQuery}, 32)
+          )
+        )
+        + (1.35 * ${fuzzyScore})
+        + ${exactTitleBoost}
+        + (case when ${products.availableForSale} then 0.12 else 0 end)
+      )
+    `;
+
+    const fuzzyThreshold = normalizedQuery.length >= 10 ? 0.24 : 0.31;
+
     filters.push(
-      or(
-        ilike(products.title, pattern),
-        ilike(products.description, pattern),
-        sql`${products.tags}::text ILIKE ${pattern}`,
-      ),
+      sql<boolean>`
+        (
+          ${searchVector} @@ ${simpleTsQuery}
+          or ${searchVector} @@ ${englishTsQuery}
+          or lower(${coreSearchText}) % ${normalizedQuery}
+          or ${coreSearchText} ILIKE ${pattern}
+          or ${relatedFieldMatch}
+          or ${fuzzyScore} > ${fuzzyThreshold}
+        )
+      `,
     );
   }
 
-  let orderBy = desc(products.createdAt);
+  let primaryOrder: SQL = desc(products.createdAt);
   if (sortKey === "CREATED_AT" || sortKey === "CREATED") {
-    orderBy = reverse ? desc(products.createdAt) : asc(products.createdAt);
+    primaryOrder = reverse ? desc(products.createdAt) : asc(products.createdAt);
   } else if (sortKey === "PRICE") {
     const minVariantPrice = sql<number>`(
       SELECT COALESCE(MIN(${productVariants.price}), 0)
       FROM ${productVariants}
       WHERE ${productVariants.productId} = ${products.id}
     )`;
-    orderBy = reverse ? desc(minVariantPrice) : asc(minVariantPrice);
+    primaryOrder = reverse ? desc(minVariantPrice) : asc(minVariantPrice);
   }
 
-  const dbProducts = await db
-    .select()
-    .from(products)
-    .where(filters.length ? and(...filters) : undefined)
-    .orderBy(orderBy)
-    .limit(100);
+  const hasQuery = Boolean(sanitizedQuery);
+  const hasExplicitNonRelevanceSort =
+    sortKey === "PRICE" || sortKey === "CREATED_AT" || sortKey === "CREATED";
+
+  const orderByClauses: SQL[] = [];
+  if (hasQuery && !hasExplicitNonRelevanceSort) {
+    orderByClauses.push(desc(relevanceScore));
+  }
+
+  orderByClauses.push(primaryOrder);
+
+  if (hasQuery && hasExplicitNonRelevanceSort) {
+    orderByClauses.push(desc(relevanceScore));
+  }
+
+  orderByClauses.push(asc(products.id));
+
+  let dbProducts: Array<{ product: typeof products.$inferSelect }>;
+
+  try {
+    dbProducts = await db
+      .select({
+        product: products,
+      })
+      .from(products)
+      .where(filters.length ? and(...filters) : undefined)
+      .orderBy(...orderByClauses)
+      .limit(100);
+  } catch (error) {
+    if (!sanitizedQuery) {
+      throw error;
+    }
+
+    const fallbackPattern = `%${sanitizedQuery}%`;
+    dbProducts = await db
+      .select({
+        product: products,
+      })
+      .from(products)
+      .where(
+        or(
+          ilike(products.title, fallbackPattern),
+          ilike(products.handle, fallbackPattern),
+          ilike(products.description, fallbackPattern),
+          sql`${products.tags}::text ILIKE ${fallbackPattern}`,
+          sql<boolean>`
+            exists (
+              select 1
+              from ${productVariants}
+              where ${productVariants.productId} = ${products.id}
+                and (
+                  ${productVariants.title} ILIKE ${fallbackPattern}
+                  or ${productVariants.selectedOptions}::text ILIKE ${fallbackPattern}
+                )
+            )
+          `,
+          sql<boolean>`
+            exists (
+              select 1
+              from ${productOptions}
+              where ${productOptions.productId} = ${products.id}
+                and (
+                  ${productOptions.name} ILIKE ${fallbackPattern}
+                  or array_to_string(${productOptions.values}, ' ') ILIKE ${fallbackPattern}
+                )
+            )
+          `,
+          sql<boolean>`
+            exists (
+              select 1
+              from ${productCollections}
+              inner join ${collections}
+                on ${productCollections.collectionId} = ${collections.id}
+              where ${productCollections.productId} = ${products.id}
+                and (
+                  ${collections.title} ILIKE ${fallbackPattern}
+                  or ${collections.handle} ILIKE ${fallbackPattern}
+                  or ${collections.description} ILIKE ${fallbackPattern}
+                )
+            )
+          `,
+        ),
+      )
+      .orderBy(primaryOrder, asc(products.id))
+      .limit(100);
+  }
 
   const productsWithDetails = await Promise.all(
-    dbProducts.map((product) => reshapeDbProduct(product)),
+    dbProducts.map(({ product }) => reshapeDbProduct(product)),
   );
 
   return productsWithDetails.filter((p): p is Product => p !== undefined);

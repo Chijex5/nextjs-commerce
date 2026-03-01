@@ -166,8 +166,13 @@ export async function getProducts({
   sortKey?: string;
 }): Promise<Product[]> {
   "use cache";
-  cacheTag(TAGS.products);
-  cacheLife("days");
+  cacheTag(TAGS.products, TAGS.collections);
+
+  if (query?.trim()) {
+    cacheLife("minutes");
+  } else {
+    cacheLife("days");
+  }
 
   const products = await dbQueries.getProducts({ query, reverse, sortKey });
 
