@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -10,8 +10,6 @@ import PageLoader from "components/page-loader";
 import Price from "components/price";
 import { useUserSession } from "hooks/useUserSession";
 import {
-  formatEstimatedArrival,
-  getDeliveryStatusColor,
   getDeliveryStatusDescription,
   type DeliveryStatus,
 } from "lib/order-utils/delivery-tracking";
@@ -76,21 +74,14 @@ type CustomRequest = {
   } | null;
 };
 
-const deliveryStages: { status: DeliveryStatus; label: string }[] = [
-  { status: "production", label: "Production" },
-  { status: "sorting", label: "Packed" },
-  { status: "dispatch", label: "Dispatched" },
-  { status: "completed", label: "Delivered" },
-];
-
 export default function OrdersPageClient() {
   const { data: session, status } = useUserSession();
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [customRequests, setCustomRequests] = useState<CustomRequest[]>([]);
   const [trackingInput, setTrackingInput] = useState("");
-  const [trackedOrder, setTrackedOrder] = useState<Order | null>(null);
   const [customTrackRequestNumber, setCustomTrackRequestNumber] = useState("");
   const [customTrackEmail, setCustomTrackEmail] = useState("");
   const [trackedCustomRequest, setTrackedCustomRequest] =
@@ -155,34 +146,39 @@ export default function OrdersPageClient() {
     }
   };
 
-  const trackOrderByNumber = useCallback(async (orderNumber: string) => {
-    const trimmed = orderNumber.trim();
-    if (!trimmed) {
-      toast.error("Please enter an order number");
-      return;
-    }
-
-    setIsTrackingLoading(true);
-    try {
-      const response = await fetch(
-        `/api/orders/track?orderNumber=${encodeURIComponent(trimmed)}`,
-      );
-
-      if (!response.ok) {
-        setTrackedOrder(null);
-        toast.error("Order not found");
+  const trackOrderByNumber = useCallback(
+    async (orderNumber: string) => {
+      const trimmed = orderNumber.trim();
+      if (!trimmed) {
+        toast.error("Please enter an order number");
         return;
       }
 
-      const data = await response.json();
-      setTrackedOrder(data.order);
-    } catch {
-      setTrackedOrder(null);
-      toast.error("Failed to track order");
-    } finally {
-      setIsTrackingLoading(false);
-    }
-  }, []);
+      setIsTrackingLoading(true);
+      try {
+        const response = await fetch(
+          `/api/orders/track?orderNumber=${encodeURIComponent(trimmed)}`,
+        );
+
+        if (!response.ok) {
+          toast.error("Order not found");
+          return;
+        }
+
+        const data = await response.json();
+        const order = data.order as Order;
+        router.push(
+          `/order/${order.id}?orderNumber=${encodeURIComponent(order.orderNumber)}`,
+        );
+        setIsTrackingModalOpen(false);
+      } catch {
+        toast.error("Failed to track order");
+      } finally {
+        setIsTrackingLoading(false);
+      }
+    },
+    [router],
+  );
 
   const trackCustomRequest = useCallback(
     async (requestNumber: string, email: string) => {
@@ -251,9 +247,7 @@ export default function OrdersPageClient() {
   }
 
   const hasTrackingResults = Boolean(
-    trackedOrder ||
-      trackedCustomRequest ||
-      orderNumberParam ||
+    trackedCustomRequest ||
       (customRequestParam && (customTrackEmail || emailParam)),
   );
 
@@ -312,12 +306,6 @@ export default function OrdersPageClient() {
             </button>
           </div>
 
-          {trackedOrder ? <OrderCard order={trackedOrder} /> : null}
-          {orderNumberParam && !trackedOrder && !isTrackingLoading ? (
-            <section className="rounded-2xl border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-400">
-              We couldn&apos;t find an order with that number.
-            </section>
-          ) : null}
           {trackedCustomRequest ? (
             <CustomRequestCard request={trackedCustomRequest} />
           ) : null}
@@ -348,7 +336,7 @@ export default function OrdersPageClient() {
               <div className="h-40 animate-pulse rounded-2xl bg-neutral-200 dark:bg-neutral-800" />
             </div>
           ) : orders.length > 0 ? (
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {orders.map((order) => (
                 <OrderCard key={order.id} order={order} />
               ))}
@@ -583,129 +571,31 @@ function TrackingModal({
 
 function OrderCard({ order }: { order: Order }) {
   const createdDate = new Date(order.createdAt).toLocaleDateString();
-  const stageIndex = deliveryStages.findIndex(
-    (item) => item.status === order.deliveryStatus,
-  );
 
   return (
-    <article className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950 md:p-6">
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
-            Order number
-          </p>
-          <h3 className="text-lg font-semibold text-neutral-900 [overflow-wrap:anywhere] dark:text-neutral-100">
-            {order.orderNumber}
-          </h3>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
-            <span>Placed on {createdDate}</span>
-            {order.orderType ? (
-              <span className="rounded-full border border-neutral-300 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide dark:border-neutral-700">
-                {order.orderType}
-              </span>
-            ) : null}
-            {order.customRequestNumber ? (
-              <span className="min-w-0 [overflow-wrap:anywhere]">
-                Request {order.customRequestNumber}
-              </span>
-            ) : null}
-          </div>
-        </div>
+    <article className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
+      <p className="text-xs uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
+        Order
+      </p>
+      <h3 className="mt-1 text-lg font-semibold text-neutral-900 [overflow-wrap:anywhere] dark:text-neutral-100">
+        {order.orderNumber}
+      </h3>
+      <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+        Placed on {createdDate}
+      </p>
 
-        <div className="text-left sm:text-right">
-          <span className="inline-flex rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium uppercase tracking-wide text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
-            {order.status}
-          </span>
-          <Price
-            amount={order.totalAmount}
-            currencyCode={order.currencyCode}
-            currencyCodeClassName="hidden"
-            className="mt-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100"
-          />
-        </div>
-      </div>
-
-      {order.deliveryStatus ? (
-        <div className="mt-5 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-          <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={`rounded-full px-2.5 py-1 text-xs font-medium ${getDeliveryStatusColor(order.deliveryStatus)}`}
-            >
-              {getDeliveryStatusDescription(order.deliveryStatus)}
-            </span>
-            {order.estimatedArrival ? (
-              <span className="text-xs text-neutral-600 dark:text-neutral-400">
-                ETA:{" "}
-                {formatEstimatedArrival(
-                  order.estimatedArrival
-                    ? new Date(order.estimatedArrival)
-                    : null,
-                )}
-              </span>
-            ) : null}
-          </div>
-
-          <div className="mt-4 grid grid-cols-4 gap-2">
-            {deliveryStages.map((stage, index) => {
-              const isDone = stageIndex >= 0 && index <= stageIndex;
-              return (
-                <div key={stage.status} className="space-y-2 text-center">
-                  <div
-                    className={`mx-auto h-2.5 w-full rounded-full ${
-                      isDone
-                        ? "bg-neutral-900 dark:bg-neutral-100"
-                        : "bg-neutral-200 dark:bg-neutral-800"
-                    }`}
-                  />
-                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                    {stage.label}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
-
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        {order.items.map((item) => {
-          const key =
-            item.id ||
-            `${order.id}-${item.productVariantId || item.productTitle}`;
-
-          return (
-            <div
-              key={key}
-              className="flex items-center gap-3 rounded-xl border border-neutral-200 p-3 dark:border-neutral-800"
-            >
-              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-900">
-                {item.productImage ? (
-                  <Image
-                    src={item.productImage}
-                    alt={item.productTitle}
-                    fill
-                    sizes="64px"
-                    className="object-cover"
-                  />
-                ) : null}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                  {item.productTitle}
-                </p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  {item.variantTitle} · Qty {item.quantity}
-                </p>
-              </div>
-              <Price
-                amount={item.price}
-                currencyCode={order.currencyCode}
-                currencyCodeClassName="hidden"
-                className="text-sm font-medium text-neutral-700 dark:text-neutral-300"
-              />
-            </div>
-          );
-        })}
+      <div className="mt-4 flex items-center justify-between gap-2">
+        <span className="inline-flex rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium uppercase tracking-wide text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
+          {order.deliveryStatus
+            ? getDeliveryStatusDescription(order.deliveryStatus)
+            : order.status}
+        </span>
+        <Link
+          href={`/order/${order.id}`}
+          className="text-sm font-medium text-neutral-700 underline-offset-4 hover:underline dark:text-neutral-300"
+        >
+          View details
+        </Link>
       </div>
     </article>
   );
