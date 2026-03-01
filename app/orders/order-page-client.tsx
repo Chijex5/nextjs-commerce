@@ -589,12 +589,12 @@ function OrderCard({ order }: { order: Order }) {
 
   return (
     <article className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950 md:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
         <div className="min-w-0 flex-1">
           <p className="text-xs uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
             Order number
           </p>
-          <h3 className="break-all text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          <h3 className="text-lg font-semibold text-neutral-900 [overflow-wrap:anywhere] dark:text-neutral-100">
             {order.orderNumber}
           </h3>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
@@ -605,14 +605,14 @@ function OrderCard({ order }: { order: Order }) {
               </span>
             ) : null}
             {order.customRequestNumber ? (
-              <span className="break-all">
+              <span className="min-w-0 [overflow-wrap:anywhere]">
                 Request {order.customRequestNumber}
               </span>
             ) : null}
           </div>
         </div>
 
-        <div className="text-right">
+        <div className="text-left sm:text-right">
           <span className="inline-flex rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium uppercase tracking-wide text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
             {order.status}
           </span>
@@ -719,19 +719,19 @@ function CustomRequestCard({ request }: { request: CustomRequest }) {
 
   return (
     <article className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950 md:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
         <div className="min-w-0 flex-1">
           <p className="text-xs uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
             Custom request
           </p>
-          <h3 className="break-all text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          <h3 className="text-lg font-semibold text-neutral-900 [overflow-wrap:anywhere] dark:text-neutral-100">
             {request.requestNumber}
           </h3>
           <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
             {request.title} · Submitted on {createdDate}
           </p>
         </div>
-        <div className="text-right">
+        <div className="text-left sm:text-right">
           <span className="inline-flex rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium uppercase tracking-wide text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
             {request.status}
           </span>
