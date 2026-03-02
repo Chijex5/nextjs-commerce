@@ -67,8 +67,8 @@ export default async function RootLayout({
 }: {
   children: ReactNode;
 }) {
-  // Don't await the fetch, pass the Promise to the context provider
-  const cart = getCart();
+  // Resolve cart during render so Next.js can handle private-cache prerender bailouts.
+  const cart = Promise.resolve(await getCart());
   const requestHeaders = await headers();
   const isAdminRoute = requestHeaders.get("x-is-admin-route") === "1";
 
