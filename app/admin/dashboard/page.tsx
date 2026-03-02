@@ -5,7 +5,7 @@ import Link from "next/link";
 import { db } from "lib/db";
 import { collections, orders, products } from "lib/db/schema";
 import AdminNav from "../../../components/admin/AdminNav";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq, gte, sql } from "drizzle-orm";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -14,12 +14,18 @@ export default async function DashboardPage() {
     redirect("/admin/login");
   }
 
+  const last7DaysStart = new Date();
+  last7DaysStart.setHours(0, 0, 0, 0);
+  last7DaysStart.setDate(last7DaysStart.getDate() - 6);
+
   const [
     productsCountResult,
     collectionsCountResult,
     ordersCountResult,
     pendingOrdersCountResult,
     recentOrders,
+    last7DaysOrdersCountResult,
+    last7DaysRevenueResult,
   ] = await Promise.all([
     db.select({ count: sql<number>`count(*)` }).from(products),
     db.select({ count: sql<number>`count(*)` }).from(collections),
@@ -38,15 +44,27 @@ export default async function DashboardPage() {
         currencyCode: orders.currencyCode,
         createdAt: orders.createdAt,
       })
+        .from(orders)
+        .orderBy(desc(orders.createdAt))
+        .limit(5),
+    db
+      .select({ count: sql<number>`count(*)` })
       .from(orders)
-      .orderBy(desc(orders.createdAt))
-      .limit(5),
+      .where(gte(orders.createdAt, last7DaysStart)),
+    db
+      .select({ revenue: sql<string>`coalesce(sum(${orders.totalAmount}), 0)` })
+      .from(orders)
+      .where(gte(orders.createdAt, last7DaysStart)),
   ]);
 
   const productsCount = Number(productsCountResult[0]?.count ?? 0);
   const collectionsCount = Number(collectionsCountResult[0]?.count ?? 0);
   const ordersCount = Number(ordersCountResult[0]?.count ?? 0);
   const pendingOrdersCount = Number(pendingOrdersCountResult[0]?.count ?? 0);
+  const last7DaysOrdersCount = Number(last7DaysOrdersCountResult[0]?.count ?? 0);
+  const last7DaysRevenue = Number(last7DaysRevenueResult[0]?.revenue ?? 0);
+  const last7DaysAov =
+    last7DaysOrdersCount > 0 ? last7DaysRevenue / last7DaysOrdersCount : 0;
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
@@ -235,6 +253,51 @@ export default async function DashboardPage() {
                 >
                   View all →
                 </Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-8 rounded-lg border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="flex flex-col gap-4 border-b border-neutral-200 px-6 py-5 dark:border-neutral-800 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">
+                  Analytics Snapshot
+                </h2>
+                <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                  Last 7 days performance at a glance.
+                </p>
+              </div>
+              <Link
+                href="/admin/analytics?timeframe=30d"
+                className="inline-flex items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+              >
+                Open Analytics
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 gap-4 px-6 py-5 sm:grid-cols-3">
+              <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-800/70">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
+                  Revenue
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+                  ₦{last7DaysRevenue.toLocaleString()}
+                </p>
+              </div>
+              <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-800/70">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
+                  Orders
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+                  {last7DaysOrdersCount}
+                </p>
+              </div>
+              <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-800/70">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
+                  Avg Order Value
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+                  ₦{Math.round(last7DaysAov).toLocaleString()}
+                </p>
               </div>
             </div>
           </div>

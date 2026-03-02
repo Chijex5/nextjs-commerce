@@ -21,7 +21,10 @@ type NavGroup = {
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Overview",
-    items: [{ href: "/admin/dashboard", label: "Dashboard" }],
+    items: [
+      { href: "/admin/dashboard", label: "Dashboard" },
+      { href: "/admin/analytics", label: "Analytics" },
+    ],
   },
   {
     label: "Catalog",

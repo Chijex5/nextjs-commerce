@@ -53,6 +53,9 @@ export default function ContentManagement({
   const [isEditingMenu, setIsEditingMenu] = useState(false);
   const [isEditingMenuItem, setIsEditingMenuItem] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeSection, setActiveSection] = useState<"pages" | "menus">(
+    "pages",
+  );
 
   const [selectedPage, setSelectedPage] = useState<PageItem | null>(null);
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
@@ -83,6 +86,10 @@ export default function ContentManagement({
 
   const menuOptions = useMemo(
     () => menus.map((menu) => ({ id: menu.id, title: menu.title })),
+    [menus],
+  );
+  const totalMenuItems = useMemo(
+    () => menus.reduce((count, menu) => count + menu.items.length, 0),
     [menus],
   );
 
@@ -376,193 +383,298 @@ export default function ContentManagement({
   };
 
   return (
-    <div className="space-y-10">
-      <div className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-              Pages
-            </h2>
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              Manage the static pages that render from /[page].
-            </p>
-          </div>
-          <button
-            onClick={openCreatePage}
-            className="inline-flex items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
-          >
-            + Add Page
-          </button>
+    <div className="space-y-6 sm:space-y-8">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
+            Pages
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+            {pages.length}
+          </p>
         </div>
-
-        {pages.length === 0 ? (
-          <div className="rounded-md border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-            No pages yet. Create your first page.
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800">
-            <table className="min-w-full divide-y divide-neutral-200 text-sm dark:divide-neutral-800">
-              <thead className="bg-neutral-50 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium">Title</th>
-                  <th className="px-4 py-3 text-left font-medium">Handle</th>
-                  <th className="px-4 py-3 text-left font-medium">Updated</th>
-                  <th className="px-4 py-3 text-right font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
-                {pages.map((page) => (
-                  <tr key={page.id} className="bg-white dark:bg-neutral-900">
-                    <td className="px-4 py-3 font-medium text-neutral-900 dark:text-neutral-100">
-                      {page.title}
-                    </td>
-                    <td className="px-4 py-3 text-neutral-500 dark:text-neutral-400">
-                      /{page.handle}
-                    </td>
-                    <td className="px-4 py-3 text-neutral-500 dark:text-neutral-400">
-                      {new Date(page.updatedAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => openEditPage(page)}
-                          className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeletePage(page.id)}
-                          className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
+            Menus
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+            {menus.length}
+          </p>
+        </div>
+        <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
+            Menu Items
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+            {totalMenuItems}
+          </p>
+        </div>
       </div>
 
-      <div className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-              Menus
-            </h2>
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              Control the navigation menus and their items.
-            </p>
-          </div>
+      <div className="rounded-xl border border-neutral-200 bg-white p-1 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="grid grid-cols-2 gap-1">
           <button
-            onClick={openCreateMenu}
-            className="inline-flex items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+            type="button"
+            onClick={() => setActiveSection("pages")}
+            className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              activeSection === "pages"
+                ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
+                : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+            }`}
           >
-            + Add Menu
+            Pages ({pages.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSection("menus")}
+            className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              activeSection === "menus"
+                ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
+                : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+            }`}
+          >
+            Menus ({menus.length})
           </button>
         </div>
+      </div>
 
-        {menus.length === 0 ? (
-          <div className="rounded-md border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-            No menus yet. Create a menu to start.
+      {activeSection === "pages" ? (
+        <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-6">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                Pages
+              </h2>
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                Manage the static pages that render from /[page].
+              </p>
+            </div>
+            <button
+              onClick={openCreatePage}
+              className="inline-flex w-full items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-800 sm:w-auto dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+            >
+              + Add Page
+            </button>
           </div>
-        ) : (
-          <div className="grid gap-6 lg:grid-cols-2">
-            {menus.map((menu) => (
-              <div
-                key={menu.id}
-                className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-900"
-              >
-                <div className="mb-4 flex items-start justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                      {menu.title}
-                    </h3>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      {menu.handle}
+
+          {pages.length === 0 ? (
+            <div className="rounded-md border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
+              No pages yet. Create your first page.
+            </div>
+          ) : (
+            <>
+              <div className="space-y-3 md:hidden">
+                {pages.map((page) => (
+                  <article
+                    key={page.id}
+                    className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950"
+                  >
+                    <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                      {page.title}
                     </p>
+                    <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                      /{page.handle}
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                      Updated {new Date(page.updatedAt).toLocaleDateString()}
+                    </p>
+                    <div className="mt-4 flex gap-2">
+                      <button
+                        onClick={() => openEditPage(page)}
+                        className="flex-1 rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeletePage(page.id)}
+                        className="flex-1 rounded-md bg-red-600 px-3 py-2 text-xs font-medium text-white hover:bg-red-700"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              <div className="hidden overflow-hidden rounded-md border border-neutral-200 md:block dark:border-neutral-800">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-neutral-200 text-sm dark:divide-neutral-800">
+                    <thead className="bg-neutral-50 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-medium">Title</th>
+                        <th className="px-4 py-3 text-left font-medium">Handle</th>
+                        <th className="px-4 py-3 text-left font-medium">Updated</th>
+                        <th className="px-4 py-3 text-right font-medium">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
+                      {pages.map((page) => (
+                        <tr key={page.id} className="bg-white dark:bg-neutral-900">
+                          <td className="px-4 py-3 font-medium text-neutral-900 dark:text-neutral-100">
+                            {page.title}
+                          </td>
+                          <td className="px-4 py-3 text-neutral-500 dark:text-neutral-400">
+                            /{page.handle}
+                          </td>
+                          <td className="px-4 py-3 text-neutral-500 dark:text-neutral-400">
+                            {new Date(page.updatedAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => openEditPage(page)}
+                                className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeletePage(page.id)}
+                                className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-6">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                Menus
+              </h2>
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                Control the navigation menus and their items.
+              </p>
+            </div>
+            <button
+              onClick={openCreateMenu}
+              className="inline-flex w-full items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-800 sm:w-auto dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+            >
+              + Add Menu
+            </button>
+          </div>
+
+          {menus.length === 0 ? (
+            <div className="rounded-md border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
+              No menus yet. Create a menu to start.
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {menus.map((menu) => (
+                <article
+                  key={menu.id}
+                  className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                        {menu.title}
+                      </h3>
+                      <p className="mt-1 truncate text-sm text-neutral-500 dark:text-neutral-400">
+                        {menu.handle}
+                      </p>
+                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                        {menu.items.length} item{menu.items.length === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 sm:flex-col">
+                      <button
+                        onClick={() => openEditMenu(menu)}
+                        className="flex-1 rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50 sm:flex-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMenu(menu.id)}
+                        className="flex-1 rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 sm:flex-none"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
+
+                  <div className="mt-4 flex items-center justify-between">
+                    <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Menu Items
+                    </p>
                     <button
-                      onClick={() => openEditMenu(menu)}
+                      onClick={() => openCreateMenuItem(menu)}
                       className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
                     >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteMenu(menu.id)}
-                      className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
-                    >
-                      Delete
+                      + Add Item
                     </button>
                   </div>
-                </div>
 
-                <div className="mb-3 flex items-center justify-between">
-                  <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    Menu Items
-                  </p>
-                  <button
-                    onClick={() => openCreateMenuItem(menu)}
-                    className="rounded-md bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700"
-                  >
-                    + Add Item
-                  </button>
-                </div>
-
-                {menu.items.length === 0 ? (
-                  <div className="rounded-md border border-dashed border-neutral-300 p-4 text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-                    No items yet.
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {menu.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm dark:border-neutral-800 dark:bg-neutral-950"
-                      >
-                        <div>
-                          <div className="font-medium text-neutral-900 dark:text-neutral-100">
-                            {item.title}
-                          </div>
-                          <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                            {item.url} • Position {item.position}
+                  {menu.items.length === 0 ? (
+                    <div className="mt-3 rounded-md border border-dashed border-neutral-300 p-4 text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
+                      No items yet.
+                    </div>
+                  ) : (
+                    <div className="mt-3 space-y-2">
+                      {menu.items.map((item) => (
+                        <div
+                          key={item.id}
+                          className="rounded-md border border-neutral-200 bg-white p-3 text-sm dark:border-neutral-800 dark:bg-neutral-900"
+                        >
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-neutral-900 dark:text-neutral-100">
+                                {item.title}
+                              </p>
+                              <p className="truncate text-xs text-neutral-500 dark:text-neutral-400">
+                                {item.url}
+                              </p>
+                              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                Position {item.position}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => openEditMenuItem(menu, item)}
+                                className="flex-1 rounded-md border border-neutral-300 bg-white px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50 sm:flex-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteMenuItem(item.id)}
+                                className="flex-1 rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700 sm:flex-none"
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => openEditMenuItem(menu, item)}
-                            className="rounded-md border border-neutral-300 bg-white px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteMenuItem(item.id)}
-                            className="rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                      ))}
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {isPageModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex min-h-screen items-center justify-center p-4">
-            <div
-              className="fixed inset-0 bg-black/50"
-              onClick={() => setIsPageModalOpen(false)}
-            ></div>
-            <div className="relative w-full max-w-2xl rounded-lg border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6">
+          <button
+            type="button"
+            aria-label="Close page modal"
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setIsPageModalOpen(false)}
+          />
+          <div className="relative mx-auto w-full max-w-3xl rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="max-h-[calc(100vh-3rem)] overflow-y-auto p-5 sm:p-6">
               <h2 className="mb-4 text-xl font-bold text-neutral-900 dark:text-neutral-100">
                 {isEditingPage ? "Edit Page" : "Add New Page"}
               </h2>
@@ -753,18 +865,18 @@ export default function ContentManagement({
                     />
                   </div>
                 </div>
-                <div className="flex justify-end gap-3">
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                   <button
                     type="button"
                     onClick={() => setIsPageModalOpen(false)}
-                    className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                    className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 sm:w-auto dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="flex items-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+                    className="flex items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
                   >
                     {isSaving ? (
                       <LoadingDots className="bg-white" />
@@ -782,13 +894,15 @@ export default function ContentManagement({
       )}
 
       {isMenuModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex min-h-screen items-center justify-center p-4">
-            <div
-              className="fixed inset-0 bg-black/50"
-              onClick={() => setIsMenuModalOpen(false)}
-            ></div>
-            <div className="relative w-full max-w-lg rounded-lg border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6">
+          <button
+            type="button"
+            aria-label="Close menu modal"
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setIsMenuModalOpen(false)}
+          />
+          <div className="relative mx-auto w-full max-w-lg rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="max-h-[calc(100vh-3rem)] overflow-y-auto p-5 sm:p-6">
               <h2 className="mb-4 text-xl font-bold text-neutral-900 dark:text-neutral-100">
                 {isEditingMenu ? "Edit Menu" : "Add New Menu"}
               </h2>
@@ -822,7 +936,7 @@ export default function ContentManagement({
                     className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                   />
                 </div>
-                <div className="flex justify-end gap-3">
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                   <button
                     type="button"
                     onClick={() => setIsMenuModalOpen(false)}
@@ -833,7 +947,7 @@ export default function ContentManagement({
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="flex items-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+                    className="flex items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
                   >
                     {isSaving ? (
                       <LoadingDots className="bg-white" />
@@ -851,13 +965,15 @@ export default function ContentManagement({
       )}
 
       {isMenuItemModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex min-h-screen items-center justify-center p-4">
-            <div
-              className="fixed inset-0 bg-black/50"
-              onClick={() => setIsMenuItemModalOpen(false)}
-            ></div>
-            <div className="relative w-full max-w-lg rounded-lg border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6">
+          <button
+            type="button"
+            aria-label="Close menu item modal"
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setIsMenuItemModalOpen(false)}
+          />
+          <div className="relative mx-auto w-full max-w-lg rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="max-h-[calc(100vh-3rem)] overflow-y-auto p-5 sm:p-6">
               <h2 className="mb-4 text-xl font-bold text-neutral-900 dark:text-neutral-100">
                 {isEditingMenuItem ? "Edit Menu Item" : "Add Menu Item"}
               </h2>
@@ -939,7 +1055,7 @@ export default function ContentManagement({
                     Lower numbers show first in the menu.
                   </p>
                 </div>
-                <div className="flex justify-end gap-3">
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                   <button
                     type="button"
                     onClick={() => setIsMenuItemModalOpen(false)}
@@ -950,7 +1066,7 @@ export default function ContentManagement({
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="flex items-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+                    className="flex items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
                   >
                     {isSaving ? (
                       <LoadingDots className="bg-white" />
