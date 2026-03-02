@@ -122,7 +122,7 @@ function deltaToneClass(tone: DeltaTone): string {
 
 function toDayKey(value: string | Date): string {
   if (value instanceof Date) {
-    return value.toISOString().slice(0, 10);
+    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
   }
   return value.slice(0, 10);
 }
@@ -153,7 +153,7 @@ function buildChartSeries(
     const currentDate = new Date(periodStart);
     currentDate.setDate(periodStart.getDate() + i);
 
-    const key = currentDate.toISOString().slice(0, 10);
+    const key = toDayKey(currentDate);
     const values = trendMap.get(key);
     const label = currentDate.toLocaleDateString("en-NG", {
       month: "short",
@@ -729,38 +729,42 @@ export default async function AdminAnalyticsPage({
                 </p>
               </div>
 
-              <div className="flex h-56 items-end gap-1 overflow-x-auto rounded-lg border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-800/40 sm:h-64 sm:gap-2 sm:p-4">
+              <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-800/40 sm:p-4">
                 {chartSeries.length === 0 ? (
-                  <div className="flex h-full w-full items-center justify-center text-sm text-neutral-500 dark:text-neutral-400">
+                  <div className="flex h-56 w-full items-center justify-center text-sm text-neutral-500 dark:text-neutral-400 sm:h-64">
                     No sales data for this timeframe.
                   </div>
                 ) : (
-                  chartSeries.map((point) => {
-                    const heightPercent =
-                      (point.revenue / Math.max(maxRevenuePoint, 1)) * 100;
-                    return (
-                      <div
-                        key={point.tooltip}
-                        className="flex min-w-8 flex-1 flex-col items-center gap-2"
-                        title={`${point.tooltip}: ${formatCurrency(point.revenue)} from ${point.orders} orders`}
-                      >
-                        <div className="flex h-full w-full items-end">
+                  <div className="h-56 overflow-x-auto sm:h-64">
+                    <div className="flex h-full min-w-max items-end gap-2">
+                      {chartSeries.map((point) => {
+                        const heightPercent =
+                          (point.revenue / Math.max(maxRevenuePoint, 1)) * 100;
+                        return (
                           <div
-                            className="w-full rounded-t-md bg-neutral-900 transition-[height] duration-300 dark:bg-neutral-200"
-                            style={{ height: `${Math.max(6, heightPercent)}%` }}
-                          />
-                        </div>
-                        <div className="text-center">
-                          <p className="text-[11px] font-semibold text-neutral-700 dark:text-neutral-200">
-                            {point.label}
-                          </p>
-                          <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                            {point.orders}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })
+                            key={point.tooltip}
+                            className="flex h-full min-w-[2.5rem] flex-col justify-end"
+                            title={`${point.tooltip}: ${formatCurrency(point.revenue)} from ${point.orders} orders`}
+                          >
+                            <div className="flex flex-1 items-end rounded-md bg-neutral-100 px-0.5 dark:bg-neutral-800">
+                              <div
+                                className="w-full rounded-md bg-neutral-900 transition-[height] duration-300 dark:bg-neutral-200"
+                                style={{ height: `${Math.max(8, heightPercent)}%` }}
+                              />
+                            </div>
+                            <div className="mt-2 text-center">
+                              <p className="text-[11px] font-semibold text-neutral-700 dark:text-neutral-200">
+                                {point.label}
+                              </p>
+                              <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                                {point.orders}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
