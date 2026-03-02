@@ -132,15 +132,17 @@ export default function AdminLayoutShell({ children }: AdminLayoutShellProps) {
       <div className="lg:grid lg:min-h-screen lg:grid-cols-[17rem_minmax(0,1fr)]">
         <aside className="hidden border-r border-neutral-200 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col dark:border-neutral-800 dark:bg-neutral-900">
           <div className="border-b border-neutral-200 px-6 py-6 dark:border-neutral-800">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
-              D&apos;FOOTPRINT
-            </p>
-            <p className="mt-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+            <Link href="/" className="flex items-center gap-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100">
+                D&apos;FOOTPRINT
+              </p>
+            </Link>
+            {/* <p className="mt-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
               Admin Panel
-            </p>
+            </p> */}
           </div>
 
-          <div className="flex-1 overflow-y-auto px-4 py-6">
+          <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-6">
             <SidebarNav pathname={pathname || ""} />
           </div>
 
