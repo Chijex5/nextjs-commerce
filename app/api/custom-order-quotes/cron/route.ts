@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
     const cronSecret = process.env.CRON_SECRET;
     const requestSecret = request.headers.get("x-cron-secret");
     if (!cronSecret || requestSecret !== cronSecret) {
+      console.log("Unauthorized cron access attempt");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -140,7 +141,10 @@ export async function GET(request: NextRequest) {
       const reminderIndex = Math.max(0, row.reminderCount || 0);
       const latestForRequest = latestQuoteByRequest.get(row.requestId);
       const isLatestActiveQuote = latestForRequest?.quoteId === row.quoteId;
-
+      console.log(`Processing quote ${row.quoteId} for request ${row.requestNumber}: expires in ${Math.round(
+        msUntilExpiry / (60 * 60 * 1000),
+      )} hours, reminder count ${row.reminderCount}, is latest: ${isLatestActiveQuote}`,
+      );            
       if (!isLatestActiveQuote) {
         if (msUntilExpiry <= 0) {
           try {
