@@ -41,12 +41,17 @@ export async function POST(request: NextRequest) {
         and(
           eq(abandonedCarts.userId, user.id),
           eq(abandonedCarts.cartId, cartId),
-          eq(abandonedCarts.emailSent, false),
         ),
       )
       .limit(1);
 
     if (existing) {
+      // If an email was already sent for this cart, do not create a new
+      // tracking record — this prevents sending duplicate abandoned cart emails.
+      if (existing.emailSent) {
+        return NextResponse.json({ success: true, message: "Cart tracked" });
+      }
+
       await db
         .update(abandonedCarts)
         .set({
