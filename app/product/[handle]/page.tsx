@@ -2,6 +2,7 @@ import { GridTileImage } from "components/grid/tile";
 import Footer from "components/layout/footer";
 import { Gallery } from "components/product/gallery";
 import { ProductDescription } from "components/product/product-description";
+import { ProductReviewsSection } from "components/product/product-reviews-section";
 import { HIDDEN_PRODUCT_TAG } from "lib/constants";
 import {
   getProduct,
@@ -141,6 +142,10 @@ export default async function ProductPage(props: {
             </Suspense>
           </div>
         </div>
+        <ProductReviewsSection
+          productId={product.id}
+          productHandle={product.handle}
+        />
         <RelatedProducts id={product.id} />
       </div>
       <Footer />

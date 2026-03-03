@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { orderItems, orders, reviews } from "@/lib/db/schema";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { and, desc, eq } from "drizzle-orm";
+import { getUserSession } from "lib/user-session";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getUserSession();
 
-    if (!session || !session.user) {
+    if (!session?.id) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 },
@@ -31,7 +30,12 @@ export async function GET(request: NextRequest) {
       .from(orders)
       .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
       .where(
-        and(eq(orders.userId, session.user.id), eq(orderItems.productId, productId)),
+        and(
+          eq(orders.userId, session.id),
+          eq(orderItems.productId, productId),
+          eq(orders.status, "completed"),
+          eq(orders.orderType, "catalog"),
+        ),
       )
       .orderBy(desc(orders.createdAt));
 
@@ -45,7 +49,7 @@ export async function GET(request: NextRequest) {
     const [existingReview] = await db
       .select({ id: reviews.id })
       .from(reviews)
-      .where(and(eq(reviews.productId, productId), eq(reviews.userId, session.user.id)))
+      .where(and(eq(reviews.productId, productId), eq(reviews.userId, session.id)))
       .limit(1);
 
     return NextResponse.json({

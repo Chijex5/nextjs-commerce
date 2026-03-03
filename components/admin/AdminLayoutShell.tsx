@@ -38,6 +38,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Operations",
     items: [
       { href: "/admin/orders", label: "Orders" },
+      { href: "/admin/reviews", label: "Reviews" },
       { href: "/admin/custom-order-requests", label: "Custom Requests" },
       { href: "/admin/custom-orders", label: "Custom Showcase" },
       { href: "/admin/coupons", label: "Coupons" },

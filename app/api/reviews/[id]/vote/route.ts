@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { reviewVotes, reviews } from "@/lib/db/schema";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { and, eq, sql } from "drizzle-orm";
+import { getUserSession } from "lib/user-session";
 
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getUserSession();
 
-    if (!session || !session.user) {
+    if (!session?.id) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 },
@@ -43,7 +42,7 @@ export async function POST(
       .select()
       .from(reviewVotes)
       .where(
-        and(eq(reviewVotes.reviewId, id), eq(reviewVotes.userId, session.user.id)),
+        and(eq(reviewVotes.reviewId, id), eq(reviewVotes.userId, session.id)),
       )
       .limit(1);
 
@@ -55,7 +54,7 @@ export async function POST(
     } else {
       await db.insert(reviewVotes).values({
         reviewId: id,
-        userId: session.user.id,
+        userId: session.id,
         isHelpful,
       });
     }

@@ -30,12 +30,12 @@ export function StarSelector({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 sm:gap-1.5">
         {[1, 2, 3, 4, 5].map((star) => (
           <button
             key={star}
             type="button"
-            className={`${sizeClasses[size]} transition-colors focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2`}
+            className={`${sizeClasses[size]} rounded px-0.5 transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-neutral-500 dark:focus:ring-offset-neutral-950`}
             onClick={() => onChange(star)}
             onMouseEnter={() => setHoverValue(star)}
             onMouseLeave={() => setHoverValue(null)}
@@ -43,7 +43,9 @@ export function StarSelector({
           >
             <span
               className={
-                star <= displayValue ? "text-black" : "text-neutral-300"
+                star <= displayValue
+                  ? "text-amber-500"
+                  : "text-neutral-300 dark:text-neutral-700"
               }
             >
               ★
@@ -52,7 +54,7 @@ export function StarSelector({
         ))}
       </div>
       {displayValue > 0 && (
-        <p className="text-sm text-neutral-600">
+        <p className="text-sm text-neutral-600 dark:text-neutral-300">
           {getRatingText(displayValue)}
         </p>
       )}

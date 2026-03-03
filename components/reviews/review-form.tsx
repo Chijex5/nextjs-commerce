@@ -58,8 +58,8 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
       if (onSuccess) {
         onSuccess();
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to submit review");
     } finally {
       setLoading(false);
     }
@@ -67,9 +67,11 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
 
   if (success) {
     return (
-      <div className="rounded border border-neutral-200 bg-neutral-50 p-6 text-center">
-        <h3 className="mb-2 text-lg font-semibold text-black">Thank You!</h3>
-        <p className="text-sm text-neutral-600">
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-center dark:border-emerald-700/40 dark:bg-emerald-900/20">
+        <h3 className="mb-1 text-lg font-semibold text-emerald-900 dark:text-emerald-200">
+          Thank you
+        </h3>
+        <p className="text-sm text-emerald-800/90 dark:text-emerald-200/90">
           Your review has been submitted and will be visible once approved by
           our team.
         </p>
@@ -78,9 +80,12 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-5 rounded-2xl border border-neutral-200 bg-neutral-50/60 p-4 sm:p-6 dark:border-neutral-800 dark:bg-neutral-900/60"
+    >
       <div>
-        <label className="mb-2 block text-sm font-medium text-black">
+        <label className="mb-2 block text-sm font-medium text-neutral-900 dark:text-neutral-100">
           Your Rating <span className="text-red-500">*</span>
         </label>
         <StarSelector value={rating} onChange={setRating} />
@@ -89,7 +94,7 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
       <div>
         <label
           htmlFor="review-title"
-          className="mb-2 block text-sm font-medium text-black"
+          className="mb-2 block text-sm font-medium text-neutral-900 dark:text-neutral-100"
         >
           Review Title (Optional)
         </label>
@@ -100,14 +105,14 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Sum up your experience"
           maxLength={100}
-          className="w-full rounded border border-neutral-200 px-4 py-2 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+          className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-500 focus:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-200 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:placeholder:text-neutral-400 dark:focus:border-neutral-500 dark:focus:ring-neutral-700/50"
         />
       </div>
 
       <div>
         <label
           htmlFor="review-comment"
-          className="mb-2 block text-sm font-medium text-black"
+          className="mb-2 block text-sm font-medium text-neutral-900 dark:text-neutral-100"
         >
           Your Review (Optional)
         </label>
@@ -118,26 +123,31 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
           placeholder="Share your thoughts about this product..."
           rows={5}
           maxLength={1000}
-          className="w-full rounded border border-neutral-200 px-4 py-2 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+          className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-500 focus:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-200 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:placeholder:text-neutral-400 dark:focus:border-neutral-500 dark:focus:ring-neutral-700/50"
         />
-        <p className="mt-1 text-xs text-neutral-500">
+        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
           {comment.length}/1000 characters
         </p>
       </div>
 
       {error && (
-        <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-700/50 dark:bg-red-900/20 dark:text-red-300">
           {error}
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={loading || rating === 0}
-        className="w-full rounded bg-black px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800 disabled:bg-neutral-300 disabled:cursor-not-allowed"
-      >
-        {loading ? "Submitting..." : "Submit Review"}
-      </button>
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          Your review is moderated before appearing publicly.
+        </p>
+        <button
+          type="submit"
+          disabled={loading || rating === 0}
+          className="inline-flex items-center justify-center rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-700 disabled:cursor-not-allowed disabled:bg-neutral-300 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200 dark:disabled:bg-neutral-700 dark:disabled:text-neutral-400"
+        >
+          {loading ? "Submitting..." : "Submit review"}
+        </button>
+      </div>
     </form>
   );
 }

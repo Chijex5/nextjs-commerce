@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { orderItems, orders, products, reviews, users } from "@/lib/db/schema";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { getUserSession } from "lib/user-session";
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getUserSession();
 
-    if (!session || !session.user) {
+    if (!session?.id) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 },
@@ -46,7 +45,7 @@ export async function POST(request: NextRequest) {
     const [existingReview] = await db
       .select({ id: reviews.id })
       .from(reviews)
-      .where(and(eq(reviews.productId, productId), eq(reviews.userId, session.user.id)))
+      .where(and(eq(reviews.productId, productId), eq(reviews.userId, session.id)))
       .limit(1);
 
     if (existingReview) {
@@ -56,37 +55,62 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let isVerified = false;
-    if (orderId) {
-      const [order] = await db
-        .select({ id: orders.id })
-        .from(orders)
-        .where(and(eq(orders.id, orderId), eq(orders.userId, session.user.id)))
-        .limit(1);
-
-      if (order) {
-        const [item] = await db
-          .select({ id: orderItems.id })
-          .from(orderItems)
-          .where(
-            and(eq(orderItems.orderId, order.id), eq(orderItems.productId, productId)),
-          )
-          .limit(1);
-        isVerified = !!item;
-      }
+    if (orderId && typeof orderId !== "string") {
+      return NextResponse.json(
+        { error: "Invalid order ID format" },
+        { status: 400 },
+      );
     }
+
+    const orderRows = await db
+      .select({
+        id: orders.id,
+      })
+      .from(orders)
+      .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+      .where(
+        and(
+          eq(orders.userId, session.id),
+          eq(orderItems.productId, productId),
+          eq(orders.status, "completed"),
+          eq(orders.orderType, "catalog"),
+        ),
+      )
+      .orderBy(desc(orders.createdAt));
+
+    const orderMap = new Map(orderRows.map((order) => [order.id, order]));
+    const eligibleOrders = Array.from(orderMap.values());
+
+    if (!eligibleOrders.length) {
+      return NextResponse.json(
+        {
+          error:
+            "You can only review products from completed catalog orders.",
+        },
+        { status: 403 },
+      );
+    }
+
+    if (orderId && !orderMap.has(orderId)) {
+      return NextResponse.json(
+        { error: "Selected order is not eligible for this review" },
+        { status: 400 },
+      );
+    }
+
+    const selectedOrderId = orderId || eligibleOrders[0]!.id;
 
     const [createdReview] = await db
       .insert(reviews)
       .values({
         productId,
-        userId: session.user.id,
-        orderId: orderId || null,
+        userId: session.id,
+        orderId: selectedOrderId,
         rating,
         title: title || null,
         comment: comment || null,
         images: images || [],
-        isVerified,
+        isVerified: true,
         status: "pending",
       })
       .returning();
@@ -94,7 +118,7 @@ export async function POST(request: NextRequest) {
     const [user] = await db
       .select({ id: users.id, name: users.name, email: users.email })
       .from(users)
-      .where(eq(users.id, session.user.id))
+      .where(eq(users.id, session.id))
       .limit(1);
 
     return NextResponse.json({
