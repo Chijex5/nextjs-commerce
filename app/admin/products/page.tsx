@@ -11,6 +11,7 @@ import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AdminNav from "../../../components/admin/AdminNav";
+import GoogleMerchantSyncButton from "../../../components/admin/GoogleMerchantSyncButton";
 import ProductsListWithSelection from "../../../components/admin/ProductsListWithSelection";
 import { authOptions } from "../../../lib/auth";
 
@@ -184,6 +185,7 @@ export default async function ProductsPage({
               </p>
             </div>
             <div className="flex gap-2">
+              <GoogleMerchantSyncButton />
               <Link
                 href="/admin/products/bulk-import"
                 className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"

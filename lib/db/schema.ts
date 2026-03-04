@@ -769,6 +769,42 @@ export const couponUsages = pgTable(
   }),
 );
 
+// Google Merchant product sync tracking
+export const googleMerchantProductSyncs = pgTable(
+  "google_merchant_product_syncs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    productId: uuid("product_id")
+      .references(() => products.id, { onDelete: "cascade" })
+      .notNull(),
+    merchantId: varchar("merchant_id", { length: 64 }).notNull(),
+    offerId: varchar("offer_id", { length: 255 }).notNull(),
+    googleProductId: varchar("google_product_id", { length: 255 }),
+    syncStatus: varchar("sync_status", { length: 20 })
+      .default("pending")
+      .notNull(),
+    lastError: text("last_error"),
+    payload: jsonb("payload"),
+    lastSyncedAt: timestamp("last_synced_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    productMerchantUniqueIdx: uniqueIndex(
+      "google_merchant_product_sync_product_merchant_unique",
+    ).on(table.productId, table.merchantId),
+    merchantIdIdx: index("google_merchant_product_sync_merchant_id_idx").on(
+      table.merchantId,
+    ),
+    syncStatusIdx: index("google_merchant_product_sync_sync_status_idx").on(
+      table.syncStatus,
+    ),
+    lastSyncedAtIdx: index(
+      "google_merchant_product_sync_last_synced_at_idx",
+    ).on(table.lastSyncedAt),
+  }),
+);
+
 // Relations
 export const productsRelations = relations(products, ({ many }) => ({
   variants: many(productVariants),
@@ -776,6 +812,7 @@ export const productsRelations = relations(products, ({ many }) => ({
   options: many(productOptions),
   productCollections: many(productCollections),
   reviews: many(reviews),
+  googleMerchantSyncs: many(googleMerchantProductSyncs),
 }));
 
 export const productVariantsRelations = relations(
@@ -965,3 +1002,13 @@ export const couponUsagesRelations = relations(couponUsages, ({ one }) => ({
     references: [coupons.id],
   }),
 }));
+
+export const googleMerchantProductSyncsRelations = relations(
+  googleMerchantProductSyncs,
+  ({ one }) => ({
+    product: one(products, {
+      fields: [googleMerchantProductSyncs.productId],
+      references: [products.id],
+    }),
+  }),
+);
