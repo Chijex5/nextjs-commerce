@@ -7,6 +7,7 @@ import {
   customOrderQuotes,
   customOrderRequests,
 } from "lib/db/schema";
+import { registerInitializedPaymentTransaction } from "lib/payments/paystack-reconcile";
 import {
   buildQuotePaymentCallbackUrl,
   hashCustomOrderPublicToken,
@@ -134,6 +135,30 @@ export async function POST(
       );
     }
 
+    const reference =
+      typeof paystackData.data.reference === "string"
+        ? paystackData.data.reference
+        : null;
+    if (!reference) {
+      return NextResponse.json(
+        { error: "Invalid payment reference returned by gateway" },
+        { status: 500 },
+      );
+    }
+
+    await registerInitializedPaymentTransaction({
+      reference,
+      source: "custom_quote",
+      amount: Math.round(amount * 100),
+      currencyCode: quote.currencyCode || "NGN",
+      metadata: {
+        custom_quote_id: quote.id,
+        custom_request_id: requestRow.id,
+        custom_request_number: requestRow.requestNumber,
+      },
+      payload: paystackData.data,
+    });
+
     (await cookies()).set(
       "custom-quote-session",
       JSON.stringify({
@@ -167,7 +192,7 @@ export async function POST(
 
     return NextResponse.json({
       authorizationUrl: paystackData.data.authorization_url,
-      reference: paystackData.data.reference,
+      reference,
     });
   } catch (error) {
     console.error("Failed to initialize custom quote payment:", error);

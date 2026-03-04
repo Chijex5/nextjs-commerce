@@ -1,10 +1,16 @@
+import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "lib/auth";
 import { redirect } from "next/navigation";
 import AdminNav from "components/admin/AdminNav";
 import OrdersTable from "components/admin/OrdersTable";
 import { db } from "lib/db";
-import { customOrderRequests, orderItems, orders } from "lib/db/schema";
+import {
+  customOrderRequests,
+  orderItems,
+  orders,
+  paymentTransactions,
+} from "lib/db/schema";
 import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 
 export default async function AdminOrdersPage({
@@ -60,7 +66,7 @@ export default async function AdminOrdersPage({
 
   const whereClause = filters.length ? and(...filters) : undefined;
 
-  const [orderRows, totalResult, stats] = await Promise.all([
+  const [orderRows, totalResult, stats, conflictPayments] = await Promise.all([
     db
       .select()
       .from(orders)
@@ -76,6 +82,10 @@ export default async function AdminOrdersPage({
       .select({ deliveryStatus: orders.deliveryStatus, count: sql<number>`count(*)` })
       .from(orders)
       .groupBy(orders.deliveryStatus),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(paymentTransactions)
+      .where(eq(paymentTransactions.status, "conflict")),
   ]);
 
   const orderIds = orderRows.map((order) => order.id);
@@ -121,6 +131,7 @@ export default async function AdminOrdersPage({
 
   const total = Number(totalResult[0]?.count ?? 0);
   const totalPages = Math.ceil(total / perPage);
+  const paymentConflictCount = Number(conflictPayments[0]?.count ?? 0);
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
@@ -136,6 +147,14 @@ export default async function AdminOrdersPage({
             <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
               Manage customer orders and delivery status ({total} total)
             </p>
+            <div className="mt-3">
+              <Link
+                href="/admin/payments?status=conflict"
+                className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300 dark:hover:bg-amber-950/30"
+              >
+                Payment conflicts: {paymentConflictCount}
+              </Link>
+            </div>
           </div>
 
           {/* Stats Overview */}

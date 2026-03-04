@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCart } from "lib/database";
 import { getUserSession } from "lib/user-session";
 import { cookies } from "next/headers";
+import { registerInitializedPaymentTransaction } from "lib/payments/paystack-reconcile";
 import {
   CouponValidationError,
   validateCouponForCheckout,
@@ -169,9 +170,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const reference =
+      typeof paystackData.data.reference === "string"
+        ? paystackData.data.reference
+        : null;
+
+    if (!reference) {
+      return NextResponse.json(
+        { error: "Invalid payment reference returned by gateway" },
+        { status: 500 },
+      );
+    }
+
+    await registerInitializedPaymentTransaction({
+      reference,
+      source: "catalog_checkout",
+      amount: amountInKobo,
+      currencyCode: "NGN",
+      metadata: {
+        customer_name: `${body.shippingAddress.firstName} ${body.shippingAddress.lastName}`,
+        phone: body.phone,
+        cart_id: cart.id,
+        checkout_user_id: session?.id || null,
+        checkout_email: body.email,
+        checkout_shipping_address: body.shippingAddress,
+        checkout_billing_address: body.billingAddress,
+        checkout_save_address: Boolean(body.saveAddress),
+        checkout_notes: body.notes?.trim() || null,
+        ...(appliedCouponCode
+          ? {
+              coupon_code: appliedCouponCode,
+              discount_amount: discountAmount,
+            }
+          : {}),
+      },
+      payload: paystackData.data,
+    });
+
     return NextResponse.json({
       authorizationUrl: paystackData.data.authorization_url,
-      reference: paystackData.data.reference,
+      reference,
     });
   } catch (error) {
     console.error("Checkout initialization error:", error);

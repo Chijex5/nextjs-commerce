@@ -9,6 +9,7 @@ import {
   customOrderRequests,
   orderItems,
   orders,
+  paymentTransactions,
   productCollections,
   productImages,
   productVariants,
@@ -314,6 +315,7 @@ export default async function AdminAnalyticsPage({
   let orderStatusCounts: Record<string, number> = {};
   let previousOrderStatusCounts: Record<string, number> = {};
   let customRequestStatusCounts: Record<string, number> = {};
+  let paymentConflicts = 0;
   let recentOrders: Array<{
     id: string;
     orderNumber: string;
@@ -345,6 +347,7 @@ export default async function AdminAnalyticsPage({
       missingCollectionsResult,
       customRequestStatusRows,
       recentOrderRows,
+      paymentConflictRows,
     ] = await Promise.all([
       db
         .select({
@@ -469,6 +472,10 @@ export default async function AdminAnalyticsPage({
         .from(orders)
         .orderBy(desc(orders.createdAt))
         .limit(6),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(paymentTransactions)
+        .where(eq(paymentTransactions.status, "conflict")),
     ]);
 
     periodOrders = toNumber(periodSummaryRows[0]?.orderCount);
@@ -529,6 +536,7 @@ export default async function AdminAnalyticsPage({
     }, {});
 
     recentOrders = recentOrderRows;
+    paymentConflicts = toNumber(paymentConflictRows[0]?.count);
   } catch (error) {
     console.error("Failed to load admin analytics:", error);
     loadError = "Some analytics data could not be loaded. Showing available metrics.";
@@ -951,6 +959,14 @@ export default async function AdminAnalyticsPage({
                       </span>
                       <span className="font-medium text-neutral-900 dark:text-neutral-100">
                         {paystackConfigured ? "Configured" : "Missing config"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-neutral-200 px-3 py-2 dark:border-neutral-800">
+                      <span className="text-neutral-600 dark:text-neutral-400">
+                        Payment Conflicts
+                      </span>
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                        {paymentConflicts}
                       </span>
                     </div>
                     <div className="flex items-center justify-between rounded-lg border border-neutral-200 px-3 py-2 dark:border-neutral-800">

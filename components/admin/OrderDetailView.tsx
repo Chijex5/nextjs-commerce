@@ -59,6 +59,17 @@ interface Order {
     email: string;
     phone: string | null;
   } | null;
+  payment: {
+    id: string;
+    provider: string;
+    reference: string;
+    source: string;
+    status: string;
+    paystackStatus: string | null;
+    conflictCode: string | null;
+    conflictMessage: string | null;
+    updatedAt: Date;
+  } | null;
   items: OrderItem[];
 }
 
@@ -521,6 +532,63 @@ export default function OrderDetailView({ order }: { order: Order }) {
                 "Update Order"
               )}
             </button>
+          </div>
+
+          {/* Payment Details */}
+          <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <h2 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              Payment
+            </h2>
+            {order.payment ? (
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-neutral-600 dark:text-neutral-400">
+                    Provider
+                  </span>
+                  <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                    {order.payment.provider}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-neutral-600 dark:text-neutral-400">
+                    Status
+                  </span>
+                  <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                    {order.payment.status}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-neutral-600 dark:text-neutral-400">
+                    Paystack
+                  </span>
+                  <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                    {order.payment.paystackStatus || "-"}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-neutral-600 dark:text-neutral-400">Reference</p>
+                  <p className="mt-1 font-mono text-xs text-neutral-900 dark:text-neutral-100">
+                    {order.payment.reference}
+                  </p>
+                </div>
+                {order.payment.conflictCode ? (
+                  <div className="rounded-md border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300">
+                    <p className="font-semibold">{order.payment.conflictCode}</p>
+                    <p>{order.payment.conflictMessage || "Conflict detected"}</p>
+                  </div>
+                ) : null}
+                <Link
+                  href={`/admin/payments/${order.payment.id}`}
+                  className="inline-flex rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                >
+                  View Payment Record
+                </Link>
+              </div>
+            ) : (
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                No payment transaction linked yet.
+              </p>
+            )}
           </div>
 
           {/* Tracking & Notes */}

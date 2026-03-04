@@ -446,6 +446,11 @@ export const orders = pgTable(
     customOrderRequestId: uuid("custom_order_request_id").references(
       () => customOrderRequests.id,
     ),
+    paymentTransactionId: uuid("payment_transaction_id"),
+    paymentProvider: varchar("payment_provider", { length: 50 }).default(
+      "paystack",
+    ),
+    paymentReference: varchar("payment_reference", { length: 255 }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -461,9 +466,18 @@ export const orders = pgTable(
     customOrderRequestIdIdx: index("orders_custom_order_request_id_idx").on(
       table.customOrderRequestId,
     ),
+    paymentTransactionIdIdx: index("orders_payment_transaction_id_idx").on(
+      table.paymentTransactionId,
+    ),
+    paymentReferenceIdx: index("orders_payment_reference_idx").on(
+      table.paymentReference,
+    ),
     customOrderRequestUniqueIdx: uniqueIndex(
       "orders_custom_order_request_unique",
     ).on(table.customOrderRequestId),
+    paymentTransactionUniqueIdx: uniqueIndex(
+      "orders_payment_transaction_unique",
+    ).on(table.paymentTransactionId),
   }),
 );
 
@@ -490,6 +504,71 @@ export const orderItems = pgTable(
   },
   (table) => ({
     orderIdIdx: index("order_items_order_id_idx").on(table.orderId),
+  }),
+);
+
+export const paymentTransactions = pgTable(
+  "payment_transactions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    provider: varchar("provider", { length: 50 }).default("paystack").notNull(),
+    reference: varchar("reference", { length: 255 }).notNull(),
+    source: varchar("source", { length: 50 }).notNull(),
+    status: varchar("status", { length: 50 }).default("initialized").notNull(),
+    amount: integer("amount").notNull(),
+    currencyCode: varchar("currency_code", { length: 3 })
+      .default("NGN")
+      .notNull(),
+    metadata: jsonb("metadata").default({}).notNull(),
+    paystackStatus: varchar("paystack_status", { length: 50 }),
+    customer: jsonb("customer"),
+    payload: jsonb("payload"),
+    orderId: uuid("order_id").references(() => orders.id),
+    conflictCode: varchar("conflict_code", { length: 100 }),
+    conflictMessage: text("conflict_message"),
+    lastVerifiedAt: timestamp("last_verified_at"),
+    resolvedAt: timestamp("resolved_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    providerReferenceUniqueIdx: uniqueIndex(
+      "payment_transactions_provider_reference_unique",
+    ).on(table.provider, table.reference),
+    statusIdx: index("payment_transactions_status_idx").on(table.status),
+    sourceIdx: index("payment_transactions_source_idx").on(table.source),
+    createdAtIdx: index("payment_transactions_created_at_idx").on(
+      table.createdAt,
+    ),
+    orderIdIdx: index("payment_transactions_order_id_idx").on(table.orderId),
+    orderIdUniqueIdx: uniqueIndex("payment_transactions_order_id_unique").on(
+      table.orderId,
+    ),
+  }),
+);
+
+export const paymentEvents = pgTable(
+  "payment_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    paymentTransactionId: uuid("payment_transaction_id")
+      .references(() => paymentTransactions.id, { onDelete: "cascade" })
+      .notNull(),
+    provider: varchar("provider", { length: 50 }).default("paystack").notNull(),
+    reference: varchar("reference", { length: 255 }).notNull(),
+    source: varchar("source", { length: 50 }).notNull(),
+    eventType: varchar("event_type", { length: 100 }).notNull(),
+    status: varchar("status", { length: 50 }).notNull(),
+    message: text("message"),
+    payload: jsonb("payload"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    paymentTransactionIdIdx: index("payment_events_payment_transaction_id_idx").on(
+      table.paymentTransactionId,
+    ),
+    referenceIdx: index("payment_events_reference_idx").on(table.reference),
+    createdAtIdx: index("payment_events_created_at_idx").on(table.createdAt),
   }),
 );
 
@@ -785,7 +864,29 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
     fields: [orders.customOrderRequestId],
     references: [customOrderRequests.id],
   }),
+  paymentTransaction: one(paymentTransactions, {
+    fields: [orders.paymentTransactionId],
+    references: [paymentTransactions.id],
+  }),
   items: many(orderItems),
+}));
+
+export const paymentTransactionsRelations = relations(
+  paymentTransactions,
+  ({ one, many }) => ({
+    order: one(orders, {
+      fields: [paymentTransactions.orderId],
+      references: [orders.id],
+    }),
+    events: many(paymentEvents),
+  }),
+);
+
+export const paymentEventsRelations = relations(paymentEvents, ({ one }) => ({
+  paymentTransaction: one(paymentTransactions, {
+    fields: [paymentEvents.paymentTransactionId],
+    references: [paymentTransactions.id],
+  }),
 }));
 
 export const customOrderRequestsRelations = relations(

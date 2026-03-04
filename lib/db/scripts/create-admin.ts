@@ -4,7 +4,7 @@ import { adminUsers } from "../schema";
 import { eq } from "drizzle-orm";
 
 async function createAdmin() {
-  const email = "embroconnect3@gmail.com";
+  const email = "embroconnect9@gmail.com";
   const password = "08023029886";
   const name = "Chijioke Uzodinma";
 

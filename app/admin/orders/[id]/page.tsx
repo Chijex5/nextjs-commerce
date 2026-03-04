@@ -4,8 +4,14 @@ import { redirect, notFound } from "next/navigation";
 import AdminNav from "components/admin/AdminNav";
 import OrderDetailView from "components/admin/OrderDetailView";
 import { db } from "lib/db";
-import { customOrderRequests, orderItems, orders, users } from "lib/db/schema";
-import { eq } from "drizzle-orm";
+import {
+  customOrderRequests,
+  orderItems,
+  orders,
+  paymentTransactions,
+  users,
+} from "lib/db/schema";
+import { eq, or } from "drizzle-orm";
 
 export default async function AdminOrderDetailPage({
   params,
@@ -30,7 +36,7 @@ export default async function AdminOrderDetailPage({
     notFound();
   }
 
-  const [items, user, customRequest] = await Promise.all([
+  const [items, user, customRequest, payment] = await Promise.all([
     db.select().from(orderItems).where(eq(orderItems.orderId, id)),
     order.userId
       ? db
@@ -53,6 +59,29 @@ export default async function AdminOrderDetailPage({
           .limit(1)
           .then((rows) => rows[0] ?? null)
       : Promise.resolve(null),
+    db
+      .select({
+        id: paymentTransactions.id,
+        provider: paymentTransactions.provider,
+        reference: paymentTransactions.reference,
+        source: paymentTransactions.source,
+        status: paymentTransactions.status,
+        paystackStatus: paymentTransactions.paystackStatus,
+        conflictCode: paymentTransactions.conflictCode,
+        conflictMessage: paymentTransactions.conflictMessage,
+        updatedAt: paymentTransactions.updatedAt,
+      })
+      .from(paymentTransactions)
+      .where(
+        order.paymentTransactionId
+          ? or(
+              eq(paymentTransactions.id, order.paymentTransactionId),
+              eq(paymentTransactions.orderId, order.id),
+            )
+          : eq(paymentTransactions.orderId, order.id),
+      )
+      .limit(1)
+      .then((rows) => rows[0] ?? null),
   ]);
 
   return (
@@ -67,6 +96,7 @@ export default async function AdminOrderDetailPage({
               customRequestNumber: customRequest?.requestNumber || null,
               items,
               user,
+              payment,
             }}
           />
         </div>
