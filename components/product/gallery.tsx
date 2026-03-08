@@ -5,7 +5,7 @@ import { GridTileImage } from "components/grid/tile";
 import { PRODUCT_IMAGE_ASPECT } from "lib/image-constants";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 export function Gallery({
   images,
@@ -22,6 +22,7 @@ export function Gallery({
   }, [searchParams]);
 
   const [imageIndex, setImageIndex] = useState(urlImageIndex);
+  const [, startTransition] = useTransition();
 
   useEffect(() => {
     setImageIndex((current) =>
@@ -42,7 +43,9 @@ export function Gallery({
     const params = new URLSearchParams(searchParams.toString());
     params.set("image", index);
     setImageIndex(parseInt(index, 10));
-    router.replace(`?${params.toString()}`, { scroll: false });
+    startTransition(() => {
+      router.replace(`?${params.toString()}`, { scroll: false });
+    });
   };
 
   const nextImageIndex =

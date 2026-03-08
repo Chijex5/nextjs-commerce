@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import { ProductOption, ProductVariant } from "lib/shopify/types";
 import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 
 type Combination = {
   id: string;
@@ -22,6 +23,7 @@ export function VariantSelector({
   onOptionChange: (name: string, value: string) => void;
 }) {
   const router = useRouter();
+  const [, startTransition] = useTransition();
   const hasNoOptionsOrJustOneOption =
     !options.length ||
     (options.length === 1 && options[0]?.values.length === 1);
@@ -43,10 +45,12 @@ export function VariantSelector({
   }));
 
   const updateOption = (name: string, value: string) => {
-    const params = new URLSearchParams(selectedOptions);
-    params.set(name, value);
     onOptionChange(name, value);
-    router.replace(`?${params.toString()}`, { scroll: false });
+    startTransition(() => {
+      const params = new URLSearchParams(selectedOptions);
+      params.set(name, value);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    });
   };
 
   return options.map((option) => (
