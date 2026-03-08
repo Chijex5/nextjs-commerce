@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import { ProductOption, ProductVariant } from "lib/shopify/types";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 type Combination = {
   id: string;
@@ -13,12 +13,15 @@ type Combination = {
 export function VariantSelector({
   options,
   variants,
+  selectedOptions,
+  onOptionChange,
 }: {
   options: ProductOption[];
   variants: ProductVariant[];
+  selectedOptions: Record<string, string>;
+  onOptionChange: (name: string, value: string) => void;
 }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const hasNoOptionsOrJustOneOption =
     !options.length ||
     (options.length === 1 && options[0]?.values.length === 1);
@@ -40,8 +43,9 @@ export function VariantSelector({
   }));
 
   const updateOption = (name: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(selectedOptions);
     params.set(name, value);
+    onOptionChange(name, value);
     router.replace(`?${params.toString()}`, { scroll: false });
   };
 
@@ -55,7 +59,9 @@ export function VariantSelector({
 
             // Base option params on current searchParams so we can preserve any other param state.
             const optionParams: Record<string, string> = {};
-            searchParams.forEach((v, k) => (optionParams[k] = v));
+            Object.entries(selectedOptions).forEach(
+              ([key, currentValue]) => (optionParams[key] = currentValue),
+            );
             optionParams[optionNameLowerCase] = value;
 
             // Filter out invalid options and check if the option combination is available for sale.
@@ -75,7 +81,7 @@ export function VariantSelector({
             );
 
             // The option is active if it's in the selected options.
-            const isActive = searchParams.get(optionNameLowerCase) === value;
+            const isActive = selectedOptions[optionNameLowerCase] === value;
 
             return (
               <button
