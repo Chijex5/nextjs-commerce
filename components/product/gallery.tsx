@@ -5,6 +5,7 @@ import { GridTileImage } from "components/grid/tile";
 import { PRODUCT_IMAGE_ASPECT } from "lib/image-constants";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 export function Gallery({
   images,
@@ -13,10 +14,24 @@ export function Gallery({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const imageIndex = searchParams.has("image")
-    ? parseInt(searchParams.get("image")!)
-    : 0;
-  const activeImage = images[imageIndex];
+
+  const urlImageIndex = useMemo(() => {
+    if (!searchParams.has("image")) return 0;
+    const parsed = parseInt(searchParams.get("image")!, 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }, [searchParams]);
+
+  const [imageIndex, setImageIndex] = useState(urlImageIndex);
+
+  useEffect(() => {
+    setImageIndex((current) =>
+      current === urlImageIndex ? current : urlImageIndex,
+    );
+  }, [urlImageIndex]);
+
+  const safeImageIndex =
+    imageIndex >= 0 && imageIndex < images.length ? imageIndex : 0;
+  const activeImage = images[safeImageIndex];
   const activeAspect =
     activeImage && activeImage.width && activeImage.height
       ? activeImage.width / activeImage.height
@@ -26,12 +41,14 @@ export function Gallery({
   const updateImage = (index: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("image", index);
+    setImageIndex(parseInt(index, 10));
     router.replace(`?${params.toString()}`, { scroll: false });
   };
 
-  const nextImageIndex = imageIndex + 1 < images.length ? imageIndex + 1 : 0;
+  const nextImageIndex =
+    safeImageIndex + 1 < images.length ? safeImageIndex + 1 : 0;
   const previousImageIndex =
-    imageIndex === 0 ? images.length - 1 : imageIndex - 1;
+    safeImageIndex === 0 ? images.length - 1 : safeImageIndex - 1;
 
   const buttonClassName =
     "h-full px-6 transition-all ease-in-out hover:scale-110 hover:text-black dark:hover:text-white flex items-center justify-center";
@@ -53,7 +70,7 @@ export function Gallery({
             sizes="(min-width: 1280px) 58vw, (min-width: 1024px) 62vw, (min-width: 768px) 90vw, 100vw"
             alt={activeImage.altText as string}
             src={activeImage.src as string}
-            priority={imageIndex === 0}
+            priority={safeImageIndex === 0}
           />
         )}
 
@@ -121,7 +138,7 @@ export function Gallery({
       {images.length > 1 ? (
         <ul className="my-12 hidden flex-wrap items-center justify-center gap-2 overflow-auto py-1 sm:flex lg:mb-0">
           {images.map((image, index) => {
-            const isActive = index === imageIndex;
+            const isActive = index === safeImageIndex;
             const thumbAspect =
               image.width && image.height
                 ? image.width / image.height

@@ -7,7 +7,7 @@ import Prose from "components/prose";
 import { trackProductView } from "lib/analytics";
 import { Product, ProductVariant } from "lib/shopify/types";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { VariantSelector } from "./variant-selector";
 
@@ -16,14 +16,38 @@ export function ProductDescription({ product }: { product: Product }) {
   const [alertEmail, setAlertEmail] = useState("");
   const [alertLoading, setAlertLoading] = useState(false);
 
-  // Find the selected variant based on search params
+  const urlSelection = useMemo(() => {
+    const selection: Record<string, string> = {};
+    searchParams.forEach((value, key) => {
+      selection[key] = value;
+    });
+    return selection;
+  }, [searchParams]);
+
+  const [selectedOptions, setSelectedOptions] =
+    useState<Record<string, string>>(urlSelection);
+
+  useEffect(() => {
+    setSelectedOptions((current) => {
+      const keys = new Set([
+        ...Object.keys(current),
+        ...Object.keys(urlSelection),
+      ]);
+      for (const key of keys) {
+        if ((current[key] ?? "") !== (urlSelection[key] ?? "")) {
+          return urlSelection;
+        }
+      }
+      return current;
+    });
+  }, [urlSelection]);
+
   const selectedVariant = product.variants.find((variant: ProductVariant) =>
     variant.selectedOptions.every(
-      (option) => option.value === searchParams.get(option.name.toLowerCase()),
+      (option) => option.value === selectedOptions[option.name.toLowerCase()],
     ),
   );
 
-  // Use the selected variant's price, or fall back to the first variant or max price
   const displayVariant = selectedVariant || product.variants[0];
   const displayPrice = displayVariant
     ? displayVariant.price
@@ -79,14 +103,21 @@ export function ProductDescription({ product }: { product: Product }) {
           />
         </div>
       </div>
-      <VariantSelector options={product.options} variants={product.variants} />
+      <VariantSelector
+        options={product.options}
+        variants={product.variants}
+        selectedOptions={selectedOptions}
+        onOptionChange={(name, value) =>
+          setSelectedOptions((current) => ({ ...current, [name]: value }))
+        }
+      />
       {product.descriptionHtml ? (
         <Prose
           className="mb-6 text-sm leading-tight dark:text-white/[60%]"
           html={product.descriptionHtml}
         />
       ) : null}
-      <AddToCart product={product} />
+      <AddToCart product={product} selectedOptions={selectedOptions} />
       <form
         onSubmit={handleAlertSubmit}
         className="mt-4 rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm dark:border-neutral-700 dark:bg-neutral-900"

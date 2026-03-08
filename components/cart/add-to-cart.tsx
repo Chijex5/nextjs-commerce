@@ -5,7 +5,6 @@ import clsx from "clsx";
 import { addItem } from "components/cart/actions";
 import { Product, ProductVariant } from "lib/shopify/types";
 import { trackAddToCart } from "lib/analytics";
-import { useSearchParams } from "next/navigation";
 import { useActionState } from "react";
 import { useCart } from "./cart-context";
 import LoadingDots from "components/loading-dots";
@@ -75,15 +74,20 @@ function SubmitButton({
   );
 }
 
-export function AddToCart({ product }: { product: Product }) {
+export function AddToCart({
+  product,
+  selectedOptions,
+}: {
+  product: Product;
+  selectedOptions: Record<string, string>;
+}) {
   const { variants, availableForSale } = product;
   const { addCartItem } = useCart();
-  const searchParams = useSearchParams();
   const [message, formAction, pending] = useActionState(addItem, null);
 
   const variant = variants.find((variant: ProductVariant) =>
     variant.selectedOptions.every(
-      (option) => option.value === searchParams.get(option.name.toLowerCase()),
+      (option) => option.value === selectedOptions[option.name.toLowerCase()],
     ),
   );
   const defaultVariantId = variants.length === 1 ? variants[0]?.id : undefined;
