@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
         name: userName,
         email,
         passwordHash,
+        hasPassword: true,
       })
       .returning();
     

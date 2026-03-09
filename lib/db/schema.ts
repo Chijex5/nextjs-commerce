@@ -389,6 +389,7 @@ export const users = pgTable(
     email: varchar("email", { length: 255 }).notNull().unique(),
     name: varchar("name", { length: 255 }),
     passwordHash: text("password_hash").notNull(),
+    hasPassword: boolean("has_password").default(false).notNull(),
     phone: varchar("phone", { length: 50 }),
     shippingAddress: jsonb("shipping_address"),
     billingAddress: jsonb("billing_address"),
@@ -603,6 +604,25 @@ export const magicLinkTokens = pgTable(
   (table) => ({
     emailIdx: index("magic_link_tokens_email_idx").on(table.email),
     expiresAtIdx: index("magic_link_tokens_expires_at_idx").on(table.expiresAt),
+  }),
+);
+
+// Email OTPs for account actions (e.g. adding a password for magic-link users)
+export const emailOtps = pgTable(
+  "email_otps",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: varchar("email", { length: 255 }).notNull(),
+    otpHash: text("otp_hash").notNull(),
+    purpose: varchar("purpose", { length: 50 }).notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    usedAt: timestamp("used_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    emailIdx: index("email_otps_email_idx").on(table.email),
+    purposeIdx: index("email_otps_purpose_idx").on(table.purpose),
+    expiresAtIdx: index("email_otps_expires_at_idx").on(table.expiresAt),
   }),
 );
 

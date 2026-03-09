@@ -14,6 +14,7 @@ export interface UserSession {
   email: string;
   name: string | null;
   phone?: string | null;
+  hasPassword?: boolean;
 }
 
 interface TokenPayload {

@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     await db
       .update(users)
-      .set({ passwordHash: hashedPassword })
+      .set({ passwordHash: hashedPassword, hasPassword: true })
       .where(eq(users.id, session.id));
 
     return NextResponse.json({
