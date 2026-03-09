@@ -76,6 +76,12 @@ export default async function RootLayout({
     <html lang="en" className={inter.variable}>
       <Analytics />
       <body className="bg-neutral-50 font-sans text-black selection:bg-teal-300 dark:bg-neutral-900 dark:text-white dark:selection:bg-pink-500 dark:selection:text-white">
+        {/* Theme initialisation: runs synchronously before first paint to avoid flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');var d=document.documentElement;if(t==='dark'){d.classList.add('dark');d.style.colorScheme='dark';}else if(t==='light'){d.style.colorScheme='light';}else{if(window.matchMedia('(prefers-color-scheme:dark)').matches){d.classList.add('dark');d.style.colorScheme='dark';}}}catch(e){}})();`,
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
