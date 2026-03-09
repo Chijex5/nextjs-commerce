@@ -43,6 +43,13 @@
       "when": 1772901600000,
       "tag": "0005_google_merchant_product_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1773072000000,
+      "tag": "0006_account_customisation",
+      "breakpoints": true
     }
   ]
 }
