@@ -7,52 +7,17 @@ import { toast } from "sonner";
 import Price from "components/price";
 import LoadingDots from "components/loading-dots";
 import PageLoader from "components/page-loader";
+import {
+  LocationSelectGroup,
+  type LocationChangeSource,
+} from "components/locations/location-select-group";
 import { useUserSession } from "hooks/useUserSession";
 import { identifyUser } from "lib/analytics/tiktok-pixel";
 import { getCouponCustomerKey, getStoredCoupon } from "lib/coupon-storage";
+import { normalizeLocationName } from "lib/locations";
+import { calculateShippingAmount } from "lib/shipping";
 
 const ORDER_NOTE_STORAGE_KEY = "orderNote";
-
-// Nigerian States
-const NIGERIAN_STATES = [
-  "Abia",
-  "Adamawa",
-  "Akwa Ibom",
-  "Anambra",
-  "Bauchi",
-  "Bayelsa",
-  "Benue",
-  "Borno",
-  "Cross River",
-  "Delta",
-  "Ebonyi",
-  "Edo",
-  "Ekiti",
-  "Enugu",
-  "FCT",
-  "Gombe",
-  "Imo",
-  "Jigawa",
-  "Kaduna",
-  "Kano",
-  "Katsina",
-  "Kebbi",
-  "Kogi",
-  "Kwara",
-  "Lagos",
-  "Nasarawa",
-  "Niger",
-  "Ogun",
-  "Ondo",
-  "Osun",
-  "Oyo",
-  "Plateau",
-  "Rivers",
-  "Sokoto",
-  "Taraba",
-  "Yobe",
-  "Zamfara",
-];
 
 interface CartItem {
   id?: string;
@@ -104,6 +69,7 @@ interface Address {
   streetAddress: string;
   nearestBusStop: string;
   landmark: string;
+  ward: string;
   lga: string;
   state: string;
   phone1: string;
@@ -120,6 +86,20 @@ interface CheckoutFormData {
   useSameAddress: boolean;
 }
 
+const emptyAddress: Address = {
+  firstName: "",
+  lastName: "",
+  streetAddress: "",
+  nearestBusStop: "",
+  landmark: "",
+  ward: "",
+  lga: "",
+  state: "",
+  phone1: "",
+  phone2: "",
+  country: "Nigeria",
+};
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { data: session, status } = useUserSession();
@@ -135,30 +115,8 @@ export default function CheckoutPage() {
   const [formData, setFormData] = useState<CheckoutFormData>({
     email: "",
     phone: "",
-    shippingAddress: {
-      firstName: "",
-      lastName: "",
-      streetAddress: "",
-      nearestBusStop: "",
-      landmark: "",
-      lga: "",
-      state: "",
-      phone1: "",
-      phone2: "",
-      country: "Nigeria",
-    },
-    billingAddress: {
-      firstName: "",
-      lastName: "",
-      streetAddress: "",
-      nearestBusStop: "",
-      landmark: "",
-      lga: "",
-      state: "",
-      phone1: "",
-      phone2: "",
-      country: "Nigeria",
-    },
+    shippingAddress: { ...emptyAddress },
+    billingAddress: { ...emptyAddress },
     saveAddress: false,
     useSameAddress: true,
   });
@@ -222,13 +180,21 @@ export default function CheckoutPage() {
       const response = await fetch("/api/user-auth/addresses");
       if (response.ok) {
         const data = await response.json();
+        const normalizeAddress = (input?: Partial<Address>): Address => ({
+          ...emptyAddress,
+          ...(input || {}),
+        });
+
         setFormData((prev) => ({
           ...prev,
           email: session?.email || "",
           phone: session?.phone || prev.phone,
-          shippingAddress:
+          shippingAddress: normalizeAddress(
             data.addresses.shippingAddress || prev.shippingAddress,
-          billingAddress: data.addresses.billingAddress || prev.billingAddress,
+          ),
+          billingAddress: normalizeAddress(
+            data.addresses.billingAddress || prev.billingAddress,
+          ),
         }));
       }
     } catch (error) {
@@ -282,6 +248,30 @@ export default function CheckoutPage() {
     }
   };
 
+  const handleLocationChange = (
+    addressType: "shippingAddress" | "billingAddress",
+    field: "state" | "lga" | "ward",
+    value: string,
+    source: LocationChangeSource,
+  ) => {
+    const currentValue = formData[addressType][field] || "";
+    const changed =
+      normalizeLocationName(currentValue) !== normalizeLocationName(value);
+
+    handleInputChange(field, value, addressType);
+
+    if (source !== "select" || !changed) return;
+
+    if (field === "state") {
+      handleInputChange("lga", "", addressType);
+      handleInputChange("ward", "", addressType);
+    }
+
+    if (field === "lga") {
+      handleInputChange("ward", "", addressType);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -332,9 +322,20 @@ export default function CheckoutPage() {
     return null;
   }
 
-  const shippingCost = 0; // Shipping quoted after order is ready
-  const subtotal = parseFloat(cart.cost.totalAmount.amount);
+  const subtotal = parseFloat(cart.cost.subtotalAmount.amount);
   const discountAmount = couponData?.amount || 0;
+  const totalQuantity = cart.lines.reduce(
+    (sum, line) => sum + line.quantity,
+    0,
+  );
+  const hasShippingState = Boolean(formData.shippingAddress.state?.trim());
+  const shippingCost = hasShippingState
+    ? calculateShippingAmount({
+        address: formData.shippingAddress,
+        subtotalAmount: subtotal,
+        totalQuantity,
+      })
+    : 0;
   const totalDue = subtotal - discountAmount + shippingCost;
 
   return (
@@ -436,6 +437,40 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
+                <LocationSelectGroup
+                  stateValue={formData.shippingAddress.state}
+                  lgaValue={formData.shippingAddress.lga}
+                  wardValue={formData.shippingAddress.ward}
+                  onStateChange={(value, source) =>
+                    handleLocationChange(
+                      "shippingAddress",
+                      "state",
+                      value,
+                      source,
+                    )
+                  }
+                  onLgaChange={(value, source) =>
+                    handleLocationChange(
+                      "shippingAddress",
+                      "lga",
+                      value,
+                      source,
+                    )
+                  }
+                  onWardChange={(value, source) =>
+                    handleLocationChange(
+                      "shippingAddress",
+                      "ward",
+                      value,
+                      source,
+                    )
+                  }
+                  inputClassName="rounded-md border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                  menuClassName="rounded-lg"
+                  stateRequired
+                  lgaRequired
+                />
+
                 <div>
                   <label className="mb-1 block text-sm font-medium">
                     Street Address *
@@ -494,53 +529,6 @@ export default function CheckoutPage() {
                     className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
                     placeholder="e.g., Opposite First Bank, Beside Redeemed Church, Black Gate"
                   />
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">
-                      LGA (Local Government Area) *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.shippingAddress.lga}
-                      onChange={(e) =>
-                        handleInputChange(
-                          "lga",
-                          e.target.value,
-                          "shippingAddress",
-                        )
-                      }
-                      className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                      placeholder="e.g., Ikeja, Ikorodu"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">
-                      State *
-                    </label>
-                    <select
-                      title="state"
-                      required
-                      value={formData.shippingAddress.state}
-                      onChange={(e) =>
-                        handleInputChange(
-                          "state",
-                          e.target.value,
-                          "shippingAddress",
-                        )
-                      }
-                      className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                    >
-                      <option value="">Select State</option>
-                      {NIGERIAN_STATES.map((state) => (
-                        <option key={state} value={state}>
-                          {state}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -654,6 +642,40 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
+                  <LocationSelectGroup
+                    stateValue={formData.billingAddress.state}
+                    lgaValue={formData.billingAddress.lga}
+                    wardValue={formData.billingAddress.ward}
+                    onStateChange={(value, source) =>
+                      handleLocationChange(
+                        "billingAddress",
+                        "state",
+                        value,
+                        source,
+                      )
+                    }
+                    onLgaChange={(value, source) =>
+                      handleLocationChange(
+                        "billingAddress",
+                        "lga",
+                        value,
+                        source,
+                      )
+                    }
+                    onWardChange={(value, source) =>
+                      handleLocationChange(
+                        "billingAddress",
+                        "ward",
+                        value,
+                        source,
+                      )
+                    }
+                    inputClassName="rounded-md border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                    menuClassName="rounded-lg"
+                    stateRequired
+                    lgaRequired
+                  />
+
                   <div>
                     <label className="mb-1 block text-sm font-medium">
                       Street Address *
@@ -712,53 +734,6 @@ export default function CheckoutPage() {
                       className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
                       placeholder="e.g., Opposite First Bank, Beside Redeemed Church, Black Gate"
                     />
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-1 block text-sm font-medium">
-                        LGA (Local Government Area) *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.billingAddress.lga}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "lga",
-                            e.target.value,
-                            "billingAddress",
-                          )
-                        }
-                        className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                        placeholder="e.g., Ikeja, Ikorodu"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium">
-                        State *
-                      </label>
-                      <select
-                        title="state"
-                        required
-                        value={formData.billingAddress.state}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "state",
-                            e.target.value,
-                            "billingAddress",
-                          )
-                        }
-                        className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                      >
-                        <option value="">Select State</option>
-                        {NIGERIAN_STATES.map((state) => (
-                          <option key={state} value={state}>
-                            {state}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -893,9 +868,16 @@ export default function CheckoutPage() {
                 )}
                 <div className="flex justify-between text-sm">
                   <span>Shipping</span>
-                  <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                    Quoted after your order is ready
-                  </span>
+                  {hasShippingState ? (
+                    <Price
+                      amount={shippingCost.toString()}
+                      currencyCode={cart.cost.totalAmount.currencyCode}
+                    />
+                  ) : (
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                      Select state to see shipping
+                    </span>
+                  )}
                 </div>
                 <div className="flex justify-between border-t border-neutral-200 pt-2 text-lg font-bold dark:border-neutral-700">
                   <span>Total</span>
@@ -906,9 +888,9 @@ export default function CheckoutPage() {
                 </div>
               </div>
               <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
-                Shipping fees and delivery method are confirmed after your order
-                is ready. You can request a preferred courier; we&apos;ll
-                confirm availability and pricing.
+                Shipping is calculated from your location and item count. You
+                can still request a preferred courier; we&apos;ll confirm
+                availability after payment.
               </p>
 
               <button

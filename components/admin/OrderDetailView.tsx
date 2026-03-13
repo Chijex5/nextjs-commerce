@@ -384,7 +384,9 @@ export default function OrderDetailView({ order }: { order: Order }) {
                 </p>
               )}
               <p className="text-neutral-600 dark:text-neutral-400">
-                {shippingAddr.lga}, {shippingAddr.state}
+                {[shippingAddr.ward, shippingAddr.lga, shippingAddr.state]
+                  .filter(Boolean)
+                  .join(", ")}
               </p>
               <p className="text-neutral-600 dark:text-neutral-400">
                 {shippingAddr.country}

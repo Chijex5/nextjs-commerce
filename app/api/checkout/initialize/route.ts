@@ -7,32 +7,73 @@ import {
   CouponValidationError,
   validateCouponForCheckout,
 } from "lib/coupon-validation";
+import { calculateShippingAmount } from "lib/shipping";
+
+type LegacyCheckoutAddress = {
+  firstName?: string;
+  lastName?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  postcode?: string;
+  country?: string;
+};
+
+type CheckoutAddress = {
+  firstName?: string;
+  lastName?: string;
+  streetAddress?: string;
+  nearestBusStop?: string;
+  landmark?: string;
+  ward?: string;
+  lga?: string;
+  state?: string;
+  phone1?: string;
+  phone2?: string;
+  country?: string;
+};
 
 interface CheckoutData {
   email: string;
   phone: string;
-  shippingAddress: {
-    firstName: string;
-    lastName: string;
-    address: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-  };
-  billingAddress: {
-    firstName: string;
-    lastName: string;
-    address: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-  };
+  shippingAddress: CheckoutAddress | LegacyCheckoutAddress;
+  billingAddress?: CheckoutAddress | LegacyCheckoutAddress | null;
   saveAddress: boolean;
   couponCode?: string;
   notes?: string;
 }
+
+const normalizeCheckoutAddress = (
+  input: CheckoutAddress | LegacyCheckoutAddress | null | undefined,
+): CheckoutAddress => {
+  const safe = input || {};
+  if ("streetAddress" in safe || "lga" in safe || "ward" in safe) {
+    return {
+      firstName: safe.firstName,
+      lastName: safe.lastName,
+      streetAddress: (safe as CheckoutAddress).streetAddress,
+      nearestBusStop: (safe as CheckoutAddress).nearestBusStop,
+      landmark: (safe as CheckoutAddress).landmark,
+      ward: (safe as CheckoutAddress).ward,
+      lga: (safe as CheckoutAddress).lga,
+      state: safe.state,
+      phone1: (safe as CheckoutAddress).phone1,
+      phone2: (safe as CheckoutAddress).phone2,
+      country: safe.country,
+    };
+  }
+
+  const legacy = safe as LegacyCheckoutAddress;
+  return {
+    firstName: legacy.firstName,
+    lastName: legacy.lastName,
+    streetAddress: legacy.address,
+    lga: legacy.city,
+    state: legacy.state,
+    country: legacy.country,
+  };
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,6 +87,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const shippingAddress = normalizeCheckoutAddress(body.shippingAddress);
+    const billingAddress = body.billingAddress
+      ? normalizeCheckoutAddress(body.billingAddress)
+      : shippingAddress;
+
     // Get cart
     const cart = await getCart();
     if (!cart || cart.lines.length === 0) {
@@ -55,9 +101,17 @@ export async function POST(request: NextRequest) {
     // Get user session if available
     const session = await getUserSession();
 
-    // Calculate total amount (shipping quoted after order is ready)
-    const shippingCost = 0;
+    // Calculate total amount (shipping calculated from address and item count)
     const subtotal = parseFloat(cart.cost.subtotalAmount.amount);
+    const totalQuantity = cart.lines.reduce(
+      (sum, line) => sum + line.quantity,
+      0,
+    );
+    const shippingCost = calculateShippingAmount({
+      address: shippingAddress,
+      subtotalAmount: subtotal,
+      totalQuantity,
+    });
     let discountAmount = 0;
     let appliedCouponCode: string | null = null;
 
@@ -93,8 +147,8 @@ export async function POST(request: NextRequest) {
     const checkoutSession = {
       email: body.email,
       phone: body.phone,
-      shippingAddress: body.shippingAddress,
-      billingAddress: body.billingAddress,
+      shippingAddress,
+      billingAddress,
       saveAddress: body.saveAddress,
       userId: session?.id,
       cartId: cart.id,
@@ -140,13 +194,13 @@ export async function POST(request: NextRequest) {
           currency: "NGN",
           callback_url: callbackUrl,
           metadata: {
-            customer_name: `${body.shippingAddress.firstName} ${body.shippingAddress.lastName}`,
+            customer_name: `${shippingAddress.firstName || ""} ${shippingAddress.lastName || ""}`.trim(),
             phone: body.phone,
             cart_id: cart.id,
             checkout_user_id: session?.id || null,
             checkout_email: body.email,
-            checkout_shipping_address: body.shippingAddress,
-            checkout_billing_address: body.billingAddress,
+            checkout_shipping_address: shippingAddress,
+            checkout_billing_address: billingAddress,
             checkout_save_address: Boolean(body.saveAddress),
             checkout_notes: body.notes?.trim() || null,
             ...(appliedCouponCode
@@ -188,13 +242,13 @@ export async function POST(request: NextRequest) {
       amount: amountInKobo,
       currencyCode: "NGN",
       metadata: {
-        customer_name: `${body.shippingAddress.firstName} ${body.shippingAddress.lastName}`,
+        customer_name: `${shippingAddress.firstName || ""} ${shippingAddress.lastName || ""}`.trim(),
         phone: body.phone,
         cart_id: cart.id,
         checkout_user_id: session?.id || null,
         checkout_email: body.email,
-        checkout_shipping_address: body.shippingAddress,
-        checkout_billing_address: body.billingAddress,
+        checkout_shipping_address: shippingAddress,
+        checkout_billing_address: billingAddress,
         checkout_save_address: Boolean(body.saveAddress),
         checkout_notes: body.notes?.trim() || null,
         ...(appliedCouponCode

@@ -75,7 +75,13 @@ export const orderConfirmationWithMarkupTemplate = (
   const shippingAddress = order.shippingAddress || {};
   const streetAddress =
     shippingAddress.address || shippingAddress.streetAddress || "";
-  const addressLocality = shippingAddress.city || shippingAddress.lga || "";
+  const addressLocality = [
+    shippingAddress.ward,
+    shippingAddress.lga,
+    shippingAddress.city,
+  ]
+    .filter(Boolean)
+    .join(", ");
   const addressRegion = shippingAddress.state || "";
   const addressCountry = shippingAddress.country || "NG";
   const postalCode =
