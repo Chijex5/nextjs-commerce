@@ -44,6 +44,7 @@ type Order = {
     streetAddress?: string;
     nearestBusStop?: string;
     landmark?: string;
+    ward?: string;
     lga?: string;
     state?: string;
     phone1?: string;

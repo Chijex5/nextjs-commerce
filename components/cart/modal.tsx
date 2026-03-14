@@ -17,7 +17,7 @@ import { createUrl } from "lib/utils";
 import { trackInitiateCheckout } from "lib/analytics";
 import Image from "next/image";
 import Link from "next/link";
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { createCartAndSetCookie, redirectToCheckout } from "./actions";
 import { useCart } from "./cart-context";
@@ -26,6 +26,7 @@ import { EditItemQuantityButton } from "./edit-item-quantity-button";
 import OpenCart from "./open-cart";
 import CouponInput from "./coupon-input";
 import { useUserSession } from "hooks/useUserSession";
+import { calculateShippingAmount } from "lib/shipping";
 
 type MerchandiseSearchParams = {
   [key: string]: string;
@@ -45,15 +46,39 @@ export default function CartModal() {
   const [couponCode, setCouponCode] = useState("");
   const [orderNote, setOrderNote] = useState("");
   const [noteDraft, setNoteDraft] = useState("");
+  const [shippingAddress, setShippingAddress] = useState<{
+    state?: string;
+    lga?: string;
+    ward?: string;
+  } | null>(null);
+  const [shippingLoading, setShippingLoading] = useState(false);
   const quantityRef = useRef(cart?.totalQuantity);
   const openCart = () => setIsOpen(true);
   const closeCart = () => {
     setIsOpen(false);
     setActiveSheet(null);
   };
-  const summaryTotal = cart
+  const baseSummaryTotal = cart
     ? Math.max(parseFloat(cart.cost.totalAmount.amount) - discountAmount, 0)
     : 0;
+  const shippingPreview = useMemo(() => {
+    if (!cart || !shippingAddress?.state) return null;
+    const subtotal = parseFloat(cart.cost.subtotalAmount.amount);
+    const totalQuantity = cart.lines.reduce(
+      (sum, line) => sum + line.quantity,
+      0,
+    );
+    return calculateShippingAmount({
+      address: shippingAddress,
+      subtotalAmount: subtotal,
+      totalQuantity,
+    });
+  }, [cart, shippingAddress]);
+
+  const summaryTotal =
+    shippingPreview !== null
+      ? Math.max(baseSummaryTotal + shippingPreview, 0)
+      : baseSummaryTotal;
   const summaryCurrency = cart?.cost.totalAmount.currencyCode ?? "USD";
   const formattedSummaryTotal = new Intl.NumberFormat(undefined, {
     style: "currency",
@@ -74,6 +99,45 @@ export default function CartModal() {
       createCartAndSetCookie();
     }
   }, [cart]);
+
+  useEffect(() => {
+    if (status !== "authenticated") {
+      setShippingAddress(null);
+      return;
+    }
+
+    let isMounted = true;
+    const fetchAddress = async () => {
+      setShippingLoading(true);
+      try {
+        const response = await fetch("/api/user-auth/addresses");
+        if (!response.ok) {
+          if (isMounted) {
+            setShippingAddress(null);
+          }
+          return;
+        }
+        const data = await response.json();
+        const address = data?.addresses?.shippingAddress || null;
+        if (isMounted) {
+          setShippingAddress(address);
+        }
+      } catch {
+        if (isMounted) {
+          setShippingAddress(null);
+        }
+      } finally {
+        if (isMounted) {
+          setShippingLoading(false);
+        }
+      }
+    };
+
+    void fetchAddress();
+    return () => {
+      isMounted = false;
+    };
+  }, [status]);
 
   useEffect(() => {
     if (
@@ -290,7 +354,11 @@ export default function CartModal() {
                           <span>Shipping</span>
                         </div>
                         <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                          Quoted later
+                          {shippingLoading
+                            ? "Loading"
+                            : shippingPreview !== null
+                              ? `₦${shippingPreview.toLocaleString()}`
+                              : "Calculated at checkout"}
                         </span>
                       </button>
                       <button
@@ -375,9 +443,15 @@ export default function CartModal() {
                             </div>
                             <div className="flex items-center justify-between px-4 py-2.5">
                               <p>Shipping</p>
-                              <p className="text-right text-xs text-neutral-500 dark:text-neutral-400">
-                                Quoted after your order is ready
-                              </p>
+                              {shippingPreview !== null ? (
+                                <p className="text-right text-sm font-medium text-neutral-900 dark:text-white">
+                                  ₦{shippingPreview.toLocaleString()}
+                                </p>
+                              ) : (
+                                <p className="text-right text-xs text-neutral-500 dark:text-neutral-400">
+                                  Calculated at checkout
+                                </p>
+                              )}
                             </div>
                             <div className="flex items-center justify-between px-4 py-3 text-base font-semibold text-neutral-900 dark:text-white">
                               <p>Total</p>
@@ -385,7 +459,8 @@ export default function CartModal() {
                                 className="text-right text-base font-semibold text-neutral-900 dark:text-white"
                                 amount={Math.max(
                                   parseFloat(cart.cost.totalAmount.amount) -
-                                    discountAmount,
+                                    discountAmount +
+                                    (shippingPreview ?? 0),
                                   0,
                                 ).toString()}
                                 currencyCode={
@@ -420,7 +495,10 @@ export default function CartModal() {
                     onSubmit={() => {
                       const total = parseFloat(cart.cost.totalAmount.amount);
                       const trackedTotal = Number.isFinite(total)
-                        ? Math.max(total - discountAmount, 0)
+                        ? Math.max(
+                            total - discountAmount + (shippingPreview ?? 0),
+                            0,
+                          )
                         : 0;
                       trackInitiateCheckout(
                         trackedTotal,
@@ -490,12 +568,14 @@ export default function CartModal() {
                 {activeSheet === "shipping" && (
                   <div className="space-y-3 text-sm text-neutral-700 dark:text-neutral-200">
                     <p className="font-medium text-neutral-900 dark:text-neutral-100">
-                      Shipping is confirmed after your order is ready.
+                      {shippingPreview !== null
+                        ? "Shipping preview from your saved address."
+                        : "Shipping is calculated at checkout."}
                     </p>
                     <p>
-                      We&apos;ll contact you with available delivery options and
-                      pricing. You can request a preferred courier or method,
-                      and we&apos;ll confirm what&apos;s possible.
+                      {shippingPreview !== null
+                        ? `Estimated shipping: ₦${shippingPreview.toLocaleString()}. Final pricing is confirmed after payment.`
+                        : "Select your delivery address during checkout to see your shipping fee."}
                     </p>
                   </div>
                 )}

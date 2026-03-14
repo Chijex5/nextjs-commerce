@@ -2,50 +2,15 @@
 
 import LoadingDots from "components/loading-dots";
 import PageLoader from "components/page-loader";
+import {
+  LocationSelectGroup,
+  type LocationChangeSource,
+} from "components/locations/location-select-group";
 import { useUserSession } from "hooks/useUserSession";
+import { normalizeLocationName } from "lib/locations";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
-const NIGERIAN_STATES = [
-  "Abia",
-  "Adamawa",
-  "Akwa Ibom",
-  "Anambra",
-  "Bauchi",
-  "Bayelsa",
-  "Benue",
-  "Borno",
-  "Cross River",
-  "Delta",
-  "Ebonyi",
-  "Edo",
-  "Ekiti",
-  "Enugu",
-  "FCT",
-  "Gombe",
-  "Imo",
-  "Jigawa",
-  "Kaduna",
-  "Kano",
-  "Katsina",
-  "Kebbi",
-  "Kogi",
-  "Kwara",
-  "Lagos",
-  "Nasarawa",
-  "Niger",
-  "Ogun",
-  "Ondo",
-  "Osun",
-  "Oyo",
-  "Plateau",
-  "Rivers",
-  "Sokoto",
-  "Taraba",
-  "Yobe",
-  "Zamfara",
-];
 
 interface Address {
   firstName: string;
@@ -53,6 +18,7 @@ interface Address {
   streetAddress: string;
   nearestBusStop: string;
   landmark: string;
+  ward: string;
   lga: string;
   state: string;
   phone1: string;
@@ -71,6 +37,7 @@ const emptyAddress: Address = {
   streetAddress: "",
   nearestBusStop: "",
   landmark: "",
+  ward: "",
   lga: "",
   state: "",
   phone1: "",
@@ -119,7 +86,7 @@ export default function AddressesPage() {
         ? addresses.shippingAddress
         : addresses.billingAddress;
 
-    setFormData(selectedAddress || emptyAddress);
+    setFormData({ ...emptyAddress, ...(selectedAddress || {}) });
     setEditMode(type);
   };
 
@@ -154,6 +121,29 @@ export default function AddressesPage() {
 
   const handleInputChange = (field: keyof Address, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleLocationChange = (
+    field: "state" | "lga" | "ward",
+    value: string,
+    source: LocationChangeSource,
+  ) => {
+    const currentValue = formData[field] || "";
+    const changed =
+      normalizeLocationName(currentValue) !== normalizeLocationName(value);
+
+    handleInputChange(field, value);
+
+    if (source !== "select" || !changed) return;
+
+    if (field === "state") {
+      handleInputChange("lga", "");
+      handleInputChange("ward", "");
+    }
+
+    if (field === "lga") {
+      handleInputChange("ward", "");
+    }
   };
 
   if (status === "loading" || loading) {
@@ -193,6 +183,23 @@ export default function AddressesPage() {
           </div>
 
           <div className="mt-4 space-y-4">
+            <LocationSelectGroup
+              stateValue={formData.state}
+              lgaValue={formData.lga}
+              wardValue={formData.ward}
+              onStateChange={(value, source) =>
+                handleLocationChange("state", value, source)
+              }
+              onLgaChange={(value, source) =>
+                handleLocationChange("lga", value, source)
+              }
+              onWardChange={(value, source) =>
+                handleLocationChange("ward", value, source)
+              }
+              inputClassName="rounded-xl border-neutral-300 bg-white px-4 py-2.5 text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+              menuClassName="rounded-2xl"
+            />
+
             <Field
               label="Street address"
               value={formData.streetAddress}
@@ -208,29 +215,6 @@ export default function AddressesPage() {
               value={formData.landmark}
               onChange={(v) => handleInputChange("landmark", v)}
             />
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field
-                label="LGA"
-                value={formData.lga}
-                onChange={(v) => handleInputChange("lga", v)}
-              />
-              <div>
-                <label className="mb-1 block text-sm font-medium">State</label>
-                <select
-                  value={formData.state}
-                  onChange={(e) => handleInputChange("state", e.target.value)}
-                  className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 dark:border-neutral-700 dark:bg-neutral-900"
-                >
-                  <option value="">Select state</option>
-                  {NIGERIAN_STATES.map((state) => (
-                    <option key={state} value={state}>
-                      {state}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <PhoneField
@@ -365,7 +349,9 @@ function AddressCard({
           <p>{address.nearestBusStop}</p>
           <p>{address.landmark}</p>
           <p>
-            {address.lga}, {address.state}
+            {[address.ward, address.lga, address.state]
+              .filter(Boolean)
+              .join(", ")}
           </p>
           <p>+234 {address.phone1}</p>
           <p>+234 {address.phone2}</p>

@@ -28,6 +28,7 @@ import {
   type PaymentEventType,
   type PaymentSource,
 } from "types/payments";
+import { calculateShippingAmount } from "lib/shipping";
 
 type PaystackCustomer = {
   email?: string;
@@ -933,7 +934,21 @@ export async function reconcilePaystackPayment(
         subtotalAmount,
         Math.max(0, toNumberOrZero(metadata.discount_amount)),
       );
-      const shippingAmount = 0;
+      const shippingAddress = isRecord(metadata.checkout_shipping_address)
+        ? metadata.checkout_shipping_address
+        : {};
+      const billingAddress = isRecord(metadata.checkout_billing_address)
+        ? metadata.checkout_billing_address
+        : null;
+      const totalQuantity = uniqueLines.reduce(
+        (sum, { line }) => sum + line.quantity,
+        0,
+      );
+      const shippingAmount = calculateShippingAmount({
+        address: shippingAddress,
+        subtotalAmount,
+        totalQuantity,
+      });
       const totalAmount = subtotalAmount - discountAmount + shippingAmount;
       const expectedAmountInKobo = Math.round(totalAmount * 100);
       const currencyCode = toStringOrNull(input.currencyCode) || "NGN";
@@ -976,12 +991,6 @@ export async function reconcilePaystackPayment(
         };
       }
 
-      const shippingAddress = isRecord(metadata.checkout_shipping_address)
-        ? metadata.checkout_shipping_address
-        : {};
-      const billingAddress = isRecord(metadata.checkout_billing_address)
-        ? metadata.checkout_billing_address
-        : null;
       const email =
         toStringOrNull(metadata.checkout_email) ||
         toStringOrNull(input.customer?.email);
