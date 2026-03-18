@@ -1,3 +1,6 @@
+import { Carousel } from "components/carousel";
+import { ThreeItemGrid } from "components/grid/three-items";
+import HeroCarousel from "components/home/hero-carousel";
 import Footer from "components/layout/footer";
 import Price from "components/price";
 import { db } from "lib/db";
@@ -32,6 +35,21 @@ export const metadata: Metadata = {
   },
 };
 
+const offerCopy = [
+  {
+    label: "Featured drop",
+    description: "Handcrafted pairs ready for quick checkout.",
+  },
+  {
+    label: "Everyday staples",
+    description: "Slides and slippers built for daily comfort.",
+  },
+  {
+    label: "Signature style",
+    description: "Distinctive details, made by hand.",
+  },
+];
+
 export default async function HomePage() {
   const [
     latestProducts,
@@ -55,24 +73,33 @@ export default async function HomePage() {
   const visibleCollections = collectionsWithProducts
     .filter((item) => item.products.length > 0)
     .slice(0, 6);
+  const heroProducts = latestProducts
+    .filter((product) => product.featuredImage?.url)
+    .slice(0, 5);
+  const heroPicks = featuredProducts
+    .filter((product) => product.featuredImage?.url)
+    .slice(0, 2);
+  const offerProducts = trendingProducts
+    .filter((product) => product.featuredImage?.url)
+    .slice(0, 3);
 
   return (
     <>
-      <div className="mx-auto w-full max-w-[1800px] space-y-14 px-4 pb-16 pt-8 md:space-y-20 md:px-6 md:pt-12 lg:px-8">
-        <section className="space-y-8 border-b border-neutral-200 pb-10 dark:border-neutral-800 md:pb-12">
-          <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:items-end">
-            <div className="space-y-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500 dark:text-neutral-400">
+      <div className="mx-auto w-full max-w-[1800px] space-y-12 px-4 pb-8 pt-8 md:space-y-16 md:px-6 md:pt-12 lg:px-8">
+        <section className="rounded-[32px] border border-neutral-200 bg-white/80 p-6 shadow-sm backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-950/80 md:p-10">
+          <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+            <div className="space-y-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-neutral-500 dark:text-neutral-400">
                 D&apos;FOOTPRINT
               </p>
-              <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-neutral-900 md:text-5xl lg:text-6xl dark:text-neutral-100">
-                Handcrafted footwear made for everyday wear.
+              <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-neutral-900 md:text-5xl lg:text-6xl dark:text-neutral-100">
+                Handcrafted footwear for every step and every style.
               </h1>
               <p className="max-w-2xl text-sm leading-7 text-neutral-600 md:text-base dark:text-neutral-300">
-                Explore new arrivals, best sellers, and custom creations in one
-                clean storefront built for easy browsing.
+                Discover new arrivals, best sellers, and custom creations in one
+                storefront built to showcase every product drop.
               </p>
-              <div className="flex flex-wrap gap-3 pt-2">
+              <div className="flex flex-wrap gap-3">
                 <Link
                   href="/products"
                   className="rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-700 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
@@ -86,37 +113,105 @@ export default async function HomePage() {
                   Custom orders
                 </Link>
               </div>
+
+              {heroPicks.length > 0 ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {heroPicks.map((product) => (
+                    <Link
+                      key={product.id}
+                      href={`/product/${product.handle}`}
+                      className="group flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-3 transition-colors hover:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-neutral-600"
+                    >
+                      <div className="relative h-20 w-20 flex-none overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-900">
+                        {product.featuredImage?.url ? (
+                          <Image
+                            src={product.featuredImage.url}
+                            alt={product.featuredImage.altText || product.title}
+                            fill
+                            sizes="80px"
+                            className="object-cover transition-transform duration-300 group-hover:scale-[1.05]"
+                          />
+                        ) : null}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="line-clamp-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                          {product.title}
+                        </p>
+                        <Price
+                          amount={product.priceRange.maxVariantPrice.amount}
+                          currencyCode={
+                            product.priceRange.maxVariantPrice.currencyCode
+                          }
+                          currencyCodeClassName="hidden"
+                          className="mt-1 text-sm text-neutral-600 dark:text-neutral-300"
+                        />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
-                <p className="text-xs uppercase tracking-[0.15em] text-neutral-500 dark:text-neutral-400">
-                  Products
-                </p>
-                <p className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-                  {latestProducts.length}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
-                <p className="text-xs uppercase tracking-[0.15em] text-neutral-500 dark:text-neutral-400">
-                  Collections
-                </p>
-                <p className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-                  {visibleCollections.length}
-                </p>
-              </div>
-              <div className="col-span-2 rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
-                <p className="text-xs uppercase tracking-[0.15em] text-neutral-500 dark:text-neutral-400">
-                  Fresh this week
-                </p>
-                <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-300">
-                  New products are added regularly with nationwide delivery.
-                </p>
-              </div>
-            </div>
+            <HeroCarousel products={heroProducts} />
           </div>
         </section>
 
+        {offerProducts.length > 0 ? (
+          <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {offerProducts.map((product, index) => {
+              const offer = offerCopy[index % offerCopy.length];
+              return offer ? (
+                <Link
+                  key={product.id}
+                  href={`/product/${product.handle}`}
+                  className="group relative overflow-hidden rounded-[28px] border border-neutral-200 bg-neutral-100 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+                >
+                  <div className="relative aspect-[16/10]">
+                    {product.featuredImage?.url ? (
+                      <Image
+                        src={product.featuredImage.url}
+                        alt={product.featuredImage.altText || product.title}
+                        fill
+                        sizes="(min-width: 1280px) 28vw, (min-width: 768px) 40vw, 90vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                      />
+                    ) : null}
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/35 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 space-y-2 p-5 text-white">
+                      <p className="text-xs font-semibold uppercase tracking-[0.26em] text-white/70">
+                        {offer.label}
+                      </p>
+                      <h3 className="text-lg font-semibold">
+                        {product.title}
+                      </h3>
+                      <p className="text-sm text-white/80">
+                        {offer.description}
+                      </p>
+                      <Price
+                        amount={product.priceRange.maxVariantPrice.amount}
+                        currencyCode={
+                          product.priceRange.maxVariantPrice.currencyCode
+                        }
+                        currencyCodeClassName="hidden"
+                        className="text-sm font-semibold text-white"
+                      />
+                    </div>
+                  </div>
+                </Link>
+              ) : null;
+            })}
+          </section>
+        ) : null}
+      </div>
+
+      <div className="space-y-10">
+        <div className="mt-6">
+          <ThreeItemGrid />
+        </div>
+        <Carousel />
+      </div>
+
+      <div className="mx-auto w-full max-w-[1800px] space-y-12 px-4 pb-16 pt-6 md:space-y-16 md:px-6 lg:px-8">
         <section className="space-y-6">
           <div className="flex items-end justify-between gap-3">
             <h2 className="text-2xl font-semibold text-neutral-900 md:text-3xl dark:text-neutral-100">
@@ -166,6 +261,56 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {bestSellers.length > 0 ? (
+          <section className="space-y-6">
+            <div className="flex items-end justify-between gap-3">
+              <h2 className="text-2xl font-semibold text-neutral-900 md:text-3xl dark:text-neutral-100">
+                Best sellers
+              </h2>
+              <Link
+                href="/products?sort=best-selling"
+                className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
+              >
+                Shop best sellers
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {bestSellers.map((product) => (
+                <Link
+                  key={product.id}
+                  href={`/product/${product.handle}`}
+                  className="group rounded-2xl border border-neutral-200 bg-white p-4 transition-colors hover:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-neutral-600"
+                >
+                  <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-900">
+                    {product.featuredImage?.url ? (
+                      <Image
+                        src={product.featuredImage.url}
+                        alt={product.featuredImage.altText || product.title}
+                        fill
+                        sizes="(min-width: 1024px) 18vw, (min-width: 640px) 40vw, 80vw"
+                        className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+                      />
+                    ) : null}
+                  </div>
+                  <div className="mt-3 space-y-1">
+                    <p className="line-clamp-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                      {product.title}
+                    </p>
+                    <Price
+                      amount={product.priceRange.maxVariantPrice.amount}
+                      currencyCode={
+                        product.priceRange.maxVariantPrice.currencyCode
+                      }
+                      currencyCodeClassName="hidden"
+                      className="text-sm text-neutral-600 dark:text-neutral-300"
+                    />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
         <section className="space-y-6">
           <div className="flex items-end justify-between gap-3">
             <h2 className="text-2xl font-semibold text-neutral-900 md:text-3xl dark:text-neutral-100">
@@ -180,69 +325,46 @@ export default async function HomePage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {visibleCollections.map(({ collection, products }) => (
-              <Link
-                key={collection.handle}
-                href={collection.path}
-                className="rounded-2xl border border-neutral-200 bg-white p-6 transition-colors hover:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-neutral-600"
-              >
-                <p className="text-xs uppercase tracking-[0.15em] text-neutral-500 dark:text-neutral-400">
-                  {products.length} items
-                </p>
-                <h3 className="mt-2 text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-                  {collection.title}
-                </h3>
-                {collection.description ? (
-                  <p className="mt-2 line-clamp-2 text-sm text-neutral-600 dark:text-neutral-300">
-                    {collection.description}
-                  </p>
-                ) : null}
-              </Link>
-            ))}
-          </div>
-        </section>
+            {visibleCollections.map(({ collection, products }) => {
+              const preview = products.find(
+                (product) => product.featuredImage?.url,
+              );
 
-        {bestSellers.length > 0 ? (
-          <section className="space-y-6">
-            <h2 className="text-2xl font-semibold text-neutral-900 md:text-3xl dark:text-neutral-100">
-              Best sellers
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {bestSellers.map((product) => (
+              return (
                 <Link
-                  key={product.id}
-                  href={`/product/${product.handle}`}
-                  className="flex items-center gap-4 rounded-2xl border border-neutral-200 bg-white p-4 transition-colors hover:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-neutral-600"
+                  key={collection.handle}
+                  href={collection.path}
+                  className="group rounded-2xl border border-neutral-200 bg-white p-5 transition-colors hover:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-neutral-600"
                 >
-                  <div className="relative h-20 w-20 flex-none overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-900">
-                    {product.featuredImage?.url ? (
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-900">
+                    {preview?.featuredImage?.url ? (
                       <Image
-                        src={product.featuredImage.url}
-                        alt={product.featuredImage.altText || product.title}
+                        src={preview.featuredImage.url}
+                        alt={preview.featuredImage.altText || collection.title}
                         fill
-                        sizes="80px"
-                        className="object-cover"
+                        sizes="(min-width: 1024px) 26vw, (min-width: 640px) 40vw, 90vw"
+                        className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
                       />
                     ) : null}
                   </div>
-                  <div className="min-w-0">
-                    <p className="line-clamp-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                      {product.title}
+                  <div className="mt-4 space-y-2">
+                    <p className="text-xs uppercase tracking-[0.15em] text-neutral-500 dark:text-neutral-400">
+                      {products.length} items
                     </p>
-                    <Price
-                      amount={product.priceRange.maxVariantPrice.amount}
-                      currencyCode={
-                        product.priceRange.maxVariantPrice.currencyCode
-                      }
-                      currencyCodeClassName="hidden"
-                      className="mt-1 text-sm text-neutral-600 dark:text-neutral-300"
-                    />
+                    <h3 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                      {collection.title}
+                    </h3>
+                    {collection.description ? (
+                      <p className="line-clamp-2 text-sm text-neutral-600 dark:text-neutral-300">
+                        {collection.description}
+                      </p>
+                    ) : null}
                   </div>
                 </Link>
-              ))}
-            </div>
-          </section>
-        ) : null}
+              );
+            })}
+          </div>
+        </section>
 
         {customOrderRows.length > 0 ? (
           <section className="space-y-6 border-t border-neutral-200 pt-10 dark:border-neutral-800 md:pt-12">

@@ -55,6 +55,7 @@ export async function Carousel() {
                   <div className="h-full overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-neutral-200/50 transition-all duration-300 group-hover:shadow-xl group-hover:ring-neutral-300 dark:bg-neutral-900 dark:ring-neutral-800/50 dark:group-hover:ring-neutral-700">
                     <GridTileImage
                       alt={product.title}
+                      fit="cover"
                       label={{
                         title: product.title,
                         amount: product.priceRange.maxVariantPrice.amount,

@@ -33,6 +33,7 @@ function ThreeItemGridItem({
           <GridTileImage
             src={item.featuredImage.url}
             fill
+            fit="cover"
             sizes={
               size === "full"
                 ? "(min-width: 768px) 66vw, 100vw"
