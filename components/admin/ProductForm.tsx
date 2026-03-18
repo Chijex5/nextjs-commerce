@@ -1136,8 +1136,8 @@ export default function ProductForm({
             ? `Crop image ${cropIndex + 1} of ${cropQueue.length}`
             : "Crop Image"
         }
-        onCancel={handleCropCancel}
-        onConfirm={handleCropConfirm}
+        onCancelAction={handleCropCancel}
+        onConfirmAction={handleCropConfirm}
       />
     </form>
   );

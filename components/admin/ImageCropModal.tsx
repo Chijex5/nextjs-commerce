@@ -11,8 +11,8 @@ type ImageCropModalProps = {
   outputWidth: number;
   outputHeight: number;
   title?: string;
-  onCancel: () => void;
-  onConfirm: (blob: Blob) => Promise<void> | void;
+  onCancelAction: () => void;
+  onConfirmAction: (blob: Blob) => Promise<void> | void;
 };
 
 export default function ImageCropModal({
@@ -22,8 +22,8 @@ export default function ImageCropModal({
   outputWidth,
   outputHeight,
   title = "Crop Image",
-  onCancel,
-  onConfirm,
+  onCancelAction,
+  onConfirmAction,
 }: ImageCropModalProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -48,7 +48,7 @@ export default function ImageCropModal({
         outputWidth,
         outputHeight,
       );
-      await onConfirm(blob);
+      await onConfirmAction(blob);
     } finally {
       setProcessing(false);
     }
@@ -66,7 +66,7 @@ export default function ImageCropModal({
             </h3>
             <button
               type="button"
-              onClick={onCancel}
+              onClick={onCancelAction}
               className="rounded-md px-3 py-1 text-sm text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
             >
               Cancel
@@ -121,7 +121,7 @@ export default function ImageCropModal({
               <div className="flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={onCancel}
+                  onClick={onCancelAction}
                   className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
                 >
                   Back
