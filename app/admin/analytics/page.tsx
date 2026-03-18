@@ -1,4 +1,5 @@
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
@@ -27,6 +28,7 @@ type TimeframeOption = {
 type DeltaTone = "positive" | "negative" | "neutral";
 
 type ChartPoint = {
+  time: string;
   label: string;
   tooltip: string;
   revenue: number;
@@ -172,6 +174,7 @@ function buildChartSeries(
 
   if (days <= 31) {
     return fullSeries.map((point) => ({
+      time: point.key,
       label: point.label,
       tooltip: point.label,
       revenue: point.revenue,
@@ -190,8 +193,10 @@ function buildChartSeries(
       const startLabel = chunk[0]?.label ?? "";
       const endLabel = chunk[chunk.length - 1]?.label ?? startLabel;
       const weekLabel = `W${Math.floor(index / 7) + 1}`;
+      const timeKey = chunk[0] ? toDayKey(chunk[0].date) : "";
 
       buckets.push({
+        time: timeKey,
         label: weekLabel,
         tooltip: `${startLabel} - ${endLabel}`,
         revenue: chunkRevenue,
@@ -239,6 +244,7 @@ function buildChartSeries(
       });
 
       return {
+        time: toDayKey(bucket.firstDate),
         label: monthLabel,
         tooltip,
         revenue: bucket.revenue,
@@ -556,12 +562,8 @@ export default async function AdminAnalyticsPage({
     previousCompletionRate,
   );
 
-  const maxRevenuePoint = Math.max(
-    ...chartSeries.map((point) => point.revenue),
-    1,
-  );
-  const useBarChart = days <= 30;
-  const labelStep = Math.max(1, Math.ceil(chartSeries.length / 6));
+  const currencyCode =
+    recentOrders.find((order) => order.currencyCode)?.currencyCode ?? "NGN";
   const maxProductUnits = Math.max(
     ...topProducts.map((product) => product.unitsSold),
     1,
@@ -588,6 +590,10 @@ export default async function AdminAnalyticsPage({
     process.env.RESEND_API_KEY && process.env.SMTP_FROM_EMAIL,
   );
   const uptimeLabel = formatUptime(process.uptime());
+  const SalesTrendChart = dynamic(
+    () => import("components/admin/SalesTrendChart"),
+    { ssr: false },
+  );
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
@@ -731,7 +737,7 @@ export default async function AdminAnalyticsPage({
                     Sales Trend
                   </h2>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Revenue bars with order count labels for the selected period.
+                    Time series view of revenue with order activity overlays.
                   </p>
                 </div>
                 <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
@@ -745,129 +751,10 @@ export default async function AdminAnalyticsPage({
                     No sales data for this timeframe.
                   </div>
                 ) : (
-                  <>
-                    {useBarChart ? (
-                      <div className="h-56 overflow-x-auto sm:h-64">
-                        <div className="flex h-full min-w-max items-end gap-2">
-                          {chartSeries.map((point) => {
-                            const heightPercent =
-                              (point.revenue / Math.max(maxRevenuePoint, 1)) * 100;
-                            return (
-                              <div
-                                key={point.tooltip}
-                                className="flex h-full min-w-[2.5rem] flex-col justify-end"
-                                title={`${point.tooltip}: ${formatCurrency(point.revenue)} from ${point.orders} orders`}
-                              >
-                                <div className="flex flex-1 items-end rounded-md bg-neutral-100 px-0.5 dark:bg-neutral-800">
-                                  <div
-                                    className="w-full rounded-md bg-neutral-900 transition-[height] duration-300 dark:bg-neutral-200"
-                                    style={{
-                                      height: `${Math.max(8, heightPercent)}%`,
-                                    }}
-                                  />
-                                </div>
-                                <div className="mt-2 text-center">
-                                  <p className="text-[11px] font-semibold text-neutral-700 dark:text-neutral-200">
-                                    {point.label}
-                                  </p>
-                                  <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                                    {point.orders}
-                                  </p>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="h-56 sm:h-64">
-                        <svg
-                          viewBox="0 0 100 100"
-                          className="h-full w-full"
-                          preserveAspectRatio="none"
-                          role="img"
-                          aria-label="Sales trend line chart"
-                        >
-                          {[25, 50, 75].map((grid) => (
-                            <line
-                              key={grid}
-                              x1="0"
-                              y1={100 - grid}
-                              x2="100"
-                              y2={100 - grid}
-                              className="stroke-neutral-300 dark:stroke-neutral-700"
-                              strokeWidth="0.4"
-                            />
-                          ))}
-                          <polygon
-                            points={`0,100 ${chartSeries
-                              .map((point, index) => {
-                                const x =
-                                  chartSeries.length === 1
-                                    ? 50
-                                    : (index / (chartSeries.length - 1)) * 100;
-                                const y =
-                                  100 - (point.revenue / maxRevenuePoint) * 100;
-                                return `${x},${Math.max(0, Math.min(100, y))}`;
-                              })
-                              .join(" ")} 100,100`}
-                            className="fill-neutral-300/50 dark:fill-neutral-600/30"
-                          />
-                          <polyline
-                            points={chartSeries
-                              .map((point, index) => {
-                                const x =
-                                  chartSeries.length === 1
-                                    ? 50
-                                    : (index / (chartSeries.length - 1)) * 100;
-                                const y =
-                                  100 - (point.revenue / maxRevenuePoint) * 100;
-                                return `${x},${Math.max(0, Math.min(100, y))}`;
-                              })
-                              .join(" ")}
-                            fill="none"
-                            className="stroke-neutral-900 dark:stroke-neutral-100"
-                            strokeWidth="1.2"
-                            strokeLinejoin="round"
-                            strokeLinecap="round"
-                          />
-                          {chartSeries.map((point, index) => {
-                            const x =
-                              chartSeries.length === 1
-                                ? 50
-                                : (index / (chartSeries.length - 1)) * 100;
-                            const y =
-                              100 - (point.revenue / maxRevenuePoint) * 100;
-                            return (
-                              <circle
-                                key={`${point.tooltip}-dot`}
-                                cx={x}
-                                cy={Math.max(0, Math.min(100, y))}
-                                r="1.1"
-                                className="fill-neutral-900 dark:fill-neutral-100"
-                              >
-                                <title>
-                                  {`${point.tooltip}: ${formatCurrency(point.revenue)} from ${point.orders} orders`}
-                                </title>
-                              </circle>
-                            );
-                          })}
-                        </svg>
-                        <div className="mt-3 grid grid-cols-6 gap-1 text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
-                          {chartSeries.map((point, index) =>
-                            index % labelStep === 0 ||
-                            index === chartSeries.length - 1 ? (
-                              <p key={`${point.tooltip}-label`} className="truncate">
-                                {point.label}
-                              </p>
-                            ) : (
-                              <p key={`${point.tooltip}-spacer`} />
-                            ),
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </>
+                  <SalesTrendChart
+                    data={chartSeries}
+                    currencyCode={currencyCode}
+                  />
                 )}
               </div>
             </div>

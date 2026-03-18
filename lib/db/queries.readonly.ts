@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "../image-constants";
 import type {
   Collection,
@@ -165,48 +165,51 @@ export async function getProducts({
 export async function getProductRecommendations(
   productId: string,
 ): Promise<Product[]> {
+  const TARGET_RELATED = 4;
   const productCols = await db
     .select({ collectionId: productCollections.collectionId })
     .from(productCollections)
     .where(eq(productCollections.productId, productId));
 
-  if (productCols.length === 0) {
-    const dbProducts = await db
+  const collectionIds = productCols.map((pc) => pc.collectionId);
+  let relatedProducts: typeof products.$inferSelect[] = [];
+
+  if (collectionIds.length) {
+    const sharedCount =
+      sql<number>`count(${productCollections.collectionId})`.as(
+        "shared_count",
+      );
+    const related = await db
+      .select({ product: products, sharedCount })
+      .from(productCollections)
+      .innerJoin(products, eq(productCollections.productId, products.id))
+      .where(
+        and(
+          inArray(productCollections.collectionId, collectionIds),
+          sql`${productCollections.productId} != ${productId}`,
+        ),
+      )
+      .groupBy(products.id)
+      .orderBy(desc(sharedCount), desc(products.updatedAt), asc(products.id))
+      .limit(TARGET_RELATED);
+
+    relatedProducts = related.map((rp) => rp.product);
+  }
+
+  if (relatedProducts.length < TARGET_RELATED) {
+    const remaining = TARGET_RELATED - relatedProducts.length;
+    const excludeIds = [productId, ...relatedProducts.map((p) => p.id)];
+    const fallback = await db
       .select()
       .from(products)
-      .where(sql`${products.id} != ${productId}`)
-      .limit(4);
-    const productsWithDetails = await Promise.all(
-      dbProducts.map((p) => reshapeDbProduct(p)),
-    );
-    return productsWithDetails.filter((p): p is Product => p !== undefined);
+      .where(notInArray(products.id, excludeIds))
+      .orderBy(desc(products.updatedAt), asc(products.id))
+      .limit(remaining);
+    relatedProducts = [...relatedProducts, ...fallback];
   }
-
-  const collectionIds = productCols.map((pc) => pc.collectionId);
-  const relatedProductIds = await db
-    .select({ productId: productCollections.productId })
-    .from(productCollections)
-    .where(
-      and(
-        inArray(productCollections.collectionId, collectionIds),
-        sql`${productCollections.productId} != ${productId}`,
-      ),
-    )
-    .limit(4);
-
-  const productIds = relatedProductIds.map((rp) => rp.productId);
-
-  if (productIds.length === 0) {
-    return [];
-  }
-
-  const dbProducts = await db
-    .select()
-    .from(products)
-    .where(inArray(products.id, productIds));
 
   const productsWithDetails = await Promise.all(
-    dbProducts.map((p) => reshapeDbProduct(p)),
+    relatedProducts.map((p) => reshapeDbProduct(p)),
   );
 
   return productsWithDetails.filter((p): p is Product => p !== undefined);

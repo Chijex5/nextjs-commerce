@@ -29,6 +29,7 @@ import {
   desc,
   eq,
   inArray,
+  notInArray,
   sql,
   ilike,
   or,
@@ -557,38 +558,51 @@ export async function getProducts({
 export async function getProductRecommendations(
   productId: string,
 ): Promise<Product[]> {
+  const TARGET_RELATED = 4;
   const productCols = await db
     .select({ collectionId: productCollections.collectionId })
     .from(productCollections)
     .where(eq(productCollections.productId, productId));
 
-  if (!productCols.length) {
-    const dbProducts = await db
-      .select()
-      .from(products)
-      .where(sql`${products.id} <> ${productId}`)
-      .limit(4);
-    const productsWithDetails = await Promise.all(
-      dbProducts.map((product) => reshapeDbProduct(product)),
-    );
-    return productsWithDetails.filter((p): p is Product => p !== undefined);
+  const collectionIds = productCols.map((pc) => pc.collectionId);
+  let relatedProducts: typeof products.$inferSelect[] = [];
+
+  if (collectionIds.length) {
+    const sharedCount =
+      sql<number>`count(${productCollections.collectionId})`.as(
+        "shared_count",
+      );
+    const related = await db
+      .select({ product: products, sharedCount })
+      .from(productCollections)
+      .innerJoin(products, eq(productCollections.productId, products.id))
+      .where(
+        and(
+          inArray(productCollections.collectionId, collectionIds),
+          sql`${productCollections.productId} <> ${productId}`,
+        ),
+      )
+      .groupBy(products.id)
+      .orderBy(desc(sharedCount), desc(products.updatedAt), asc(products.id))
+      .limit(TARGET_RELATED);
+
+    relatedProducts = related.map((rp) => rp.product);
   }
 
-  const collectionIds = productCols.map((pc) => pc.collectionId);
-  const related = await db
-    .select({ product: products })
-    .from(productCollections)
-    .innerJoin(products, eq(productCollections.productId, products.id))
-    .where(
-      and(
-        inArray(productCollections.collectionId, collectionIds),
-        sql`${productCollections.productId} <> ${productId}`,
-      ),
-    )
-    .limit(4);
+  if (relatedProducts.length < TARGET_RELATED) {
+    const remaining = TARGET_RELATED - relatedProducts.length;
+    const excludeIds = [productId, ...relatedProducts.map((p) => p.id)];
+    const fallback = await db
+      .select()
+      .from(products)
+      .where(notInArray(products.id, excludeIds))
+      .orderBy(desc(products.updatedAt), asc(products.id))
+      .limit(remaining);
+    relatedProducts = [...relatedProducts, ...fallback];
+  }
 
   const productsWithDetails = await Promise.all(
-    related.map((rp) => reshapeDbProduct(rp.product)),
+    relatedProducts.map((product) => reshapeDbProduct(product)),
   );
 
   return productsWithDetails.filter((p): p is Product => p !== undefined);

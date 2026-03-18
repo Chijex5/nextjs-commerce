@@ -1,5 +1,5 @@
-import { GridTileImage } from "components/grid/tile";
 import Footer from "components/layout/footer";
+import Price from "components/price";
 import { Gallery } from "components/product/gallery";
 import { ProductDescription } from "components/product/product-description";
 import { ProductReviewsSection } from "components/product/product-reviews-section";
@@ -10,8 +10,9 @@ import {
   getProductReviewAggregate,
 } from "lib/database";
 import { canonicalUrl, siteName } from "lib/seo";
-import type { Image } from "lib/database";
+import type { Image as ProductImage } from "lib/database";
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -117,31 +118,62 @@ export default async function ProductPage(props: {
           __html: JSON.stringify(productJsonLd),
         }}
       />
-      <div className="mx-auto max-w-(--breakpoint-2xl) px-4">
-        <div className="flex flex-col rounded-lg border border-neutral-200 bg-white p-8 md:p-12 lg:flex-row lg:gap-8 dark:border-neutral-800 dark:bg-black">
-          <div className="h-full w-full basis-full lg:basis-4/6">
-            <Suspense
-              fallback={
-                <div className="relative aspect-[3/4] h-full max-h-[700px] w-full overflow-hidden" />
-              }
-            >
-              <Gallery
-                images={product.images.slice(0, 5).map((image: Image) => ({
-                  src: image.url,
-                  altText: image.altText,
-                  width: image.width,
-                  height: image.height,
-                }))}
-              />
-            </Suspense>
-          </div>
+      <div className="mx-auto w-full max-w-[1800px] px-4 pb-16 pt-6 md:px-6 lg:px-8">
+        <nav
+          aria-label="Breadcrumb"
+          className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400"
+        >
+          <Link
+            href="/"
+            className="transition-colors hover:text-neutral-900 dark:hover:text-neutral-100"
+          >
+            Home
+          </Link>
+          <span aria-hidden="true">/</span>
+          <Link
+            href="/products"
+            className="transition-colors hover:text-neutral-900 dark:hover:text-neutral-100"
+          >
+            Shop
+          </Link>
+          <span aria-hidden="true">/</span>
+          <span className="text-neutral-700 dark:text-neutral-200">
+            {product.title}
+          </span>
+        </nav>
 
-          <div className="basis-full lg:basis-2/6">
-            <Suspense fallback={null}>
-              <ProductDescription product={product} />
-            </Suspense>
+        <section className="mt-6 rounded-[32px] border border-neutral-200 bg-white/90 p-6 shadow-sm backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-950/90 md:p-10">
+          <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
+            <div className="h-full w-full">
+              <Suspense
+                fallback={
+                  <div className="relative aspect-[3/4] h-full max-h-[700px] w-full overflow-hidden rounded-2xl bg-neutral-100 dark:bg-neutral-900" />
+                }
+              >
+                <Gallery
+                  images={product.images
+                    .slice(0, 5)
+                    .map((image: ProductImage) => ({
+                    src: image.url,
+                    altText: image.altText,
+                    width: image.width,
+                    height: image.height,
+                  }))}
+                />
+              </Suspense>
+            </div>
+
+            <div className="lg:sticky lg:top-24">
+              <Suspense fallback={null}>
+                <ProductDescription
+                  product={product}
+                  reviewAggregate={reviewAggregate}
+                />
+              </Suspense>
+            </div>
           </div>
-        </div>
+        </section>
+
         <ProductReviewsSection
           productId={product.id}
           productHandle={product.handle}
@@ -159,49 +191,62 @@ async function RelatedProducts({ id }: { id: string }) {
   if (!relatedProducts.length) return null;
 
   return (
-    <div className="py-8">
-      <h2 className="mb-4 text-2xl font-bold">Related Products</h2>
-      <ul className="flex w-full gap-4 overflow-x-auto pt-1">
-        {relatedProducts.map((product, index) => {
-          const minPrice = parseFloat(
-            product.priceRange.minVariantPrice.amount,
-          );
-          const maxPrice = parseFloat(
-            product.priceRange.maxVariantPrice.amount,
-          );
-          const hasVariedPricing = minPrice !== maxPrice;
-
-          return (
-            <li
-              key={`${product.handle}-${index}`}
-              className="aspect-[3/4] w-full flex-none min-[475px]:w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5"
+    <section className="mt-12 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-black sm:p-8">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+            You may also like
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+            Related products
+          </h2>
+        </div>
+        <Link
+          href="/products"
+          className="text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
+        >
+          Shop all products
+        </Link>
+      </div>
+      <ul className="no-scrollbar mt-6 flex w-full gap-4 overflow-x-auto pb-4 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {relatedProducts.map((product, index) => (
+          <li
+            key={`${product.handle}-${index}`}
+            className="w-[70%] flex-none sm:w-auto"
+          >
+            <Link
+              className="group flex h-full flex-col rounded-2xl border border-neutral-200 bg-white p-3 transition-all hover:-translate-y-1 hover:border-neutral-300 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-neutral-700"
+              href={`/product/${product.handle}`}
+              prefetch={true}
             >
-              <Link
-                className="relative h-full w-full"
-                href={`/product/${product.handle}`}
-                prefetch={true}
-              >
-                <GridTileImage
-                  alt={product.title}
-                  fit="cover"
-                  label={{
-                    title: product.title,
-                    amount: product.priceRange.maxVariantPrice.amount,
-                    currencyCode:
-                      product.priceRange.maxVariantPrice.currencyCode,
-                    minAmount: hasVariedPricing
-                      ? product.priceRange.minVariantPrice.amount
-                      : undefined,
-                  }}
-                  src={product.featuredImage?.url}
-                  fill
-                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, (min-width: 475px) 50vw, 100vw"
+              <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-900">
+                {product.featuredImage?.url ? (
+                  <Image
+                    src={product.featuredImage.url}
+                    alt={product.featuredImage.altText || product.title}
+                    fill
+                    sizes="(min-width: 1280px) 18vw, (min-width: 1024px) 22vw, (min-width: 640px) 35vw, 70vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                  />
+                ) : null}
+              </div>
+              <div className="mt-4 space-y-1 px-1 pb-2">
+                <p className="line-clamp-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                  {product.title}
+                </p>
+                <Price
+                  amount={product.priceRange.maxVariantPrice.amount}
+                  currencyCode={
+                    product.priceRange.maxVariantPrice.currencyCode
+                  }
+                  currencyCodeClassName="hidden"
+                  className="text-sm text-neutral-600 dark:text-neutral-300"
                 />
-              </Link>
-            </li>
-          );
-        })}
+              </div>
+            </Link>
+          </li>
+        ))}
       </ul>
-    </div>
+    </section>
   );
 }

@@ -10,7 +10,9 @@ export default function UserAccountIcon() {
   const { data: session, status, signOut } = useUserSession();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const menuId = "user-account-menu";
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -25,6 +27,31 @@ export default function UserAccountIcon() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const focusable = menuRef.current?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    const first = focusable?.[0];
+    if (!first) return;
+
+    const frameId = window.requestAnimationFrame(() => {
+      first.focus();
+    });
+    return () => window.cancelAnimationFrame(frameId);
+  }, [isOpen, session]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -47,12 +74,40 @@ export default function UserAccountIcon() {
         onClick={() => setIsOpen(!isOpen)}
         className="relative flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 bg-white text-black transition-colors hover:border-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:hover:border-neutral-500"
         aria-label="User account"
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        aria-controls={menuId}
       >
         <UserIcon className="h-5 w-5" />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-2 w-56 rounded-2xl border border-neutral-200 bg-white p-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
+        <div
+          id={menuId}
+          role="menu"
+          aria-label="User menu"
+          ref={menuRef}
+          onKeyDown={(event) => {
+            if (event.key !== "Tab") return;
+            const focusable = menuRef.current?.querySelectorAll<HTMLElement>(
+              'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+            );
+            if (!focusable?.length) return;
+
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            const current = document.activeElement as HTMLElement | null;
+
+            if (event.shiftKey && current === first) {
+              event.preventDefault();
+              last?.focus();
+            } else if (!event.shiftKey && current === last) {
+              event.preventDefault();
+              first?.focus();
+            }
+          }}
+          className="absolute right-0 z-50 mt-2 w-56 rounded-2xl border border-neutral-200 bg-white p-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
+        >
           {session ? (
             <>
               <div className="border-b border-neutral-200 px-3 py-3 dark:border-neutral-700">
@@ -64,6 +119,7 @@ export default function UserAccountIcon() {
               <div className="py-1">
                 <Link
                   href="/account"
+                  role="menuitem"
                   className="block rounded-xl px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   onClick={() => setIsOpen(false)}
                 >
@@ -71,6 +127,7 @@ export default function UserAccountIcon() {
                 </Link>
                 <Link
                   href="/orders"
+                  role="menuitem"
                   className="block rounded-xl px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   onClick={() => setIsOpen(false)}
                 >
@@ -78,6 +135,7 @@ export default function UserAccountIcon() {
                 </Link>
                 <button
                   onClick={handleSignOut}
+                  role="menuitem"
                   className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
                 >
                   Logout
@@ -88,6 +146,7 @@ export default function UserAccountIcon() {
             <div className="py-1">
               <Link
                 href="/auth/login"
+                role="menuitem"
                 className="block rounded-xl px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
                 onClick={() => setIsOpen(false)}
               >
@@ -95,6 +154,7 @@ export default function UserAccountIcon() {
               </Link>
               <Link
                 href="/auth/register"
+                role="menuitem"
                 className="block rounded-xl px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
                 onClick={() => setIsOpen(false)}
               >
@@ -102,6 +162,7 @@ export default function UserAccountIcon() {
               </Link>
               <Link
                 href="/orders"
+                role="menuitem"
                 className="block rounded-xl px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
                 onClick={() => setIsOpen(false)}
               >

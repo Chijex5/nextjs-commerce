@@ -13,6 +13,15 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const { data: session } = useUserSession();
+  const fallbackMenu: Menu[] = [
+    { title: "Shop", path: "/products" },
+    { title: "Custom Orders", path: "/custom-orders" },
+  ];
+  const menuItems = menu.length ? menu : fallbackMenu;
+  const isActivePath = (path: string) =>
+    path === "/"
+      ? pathname === "/"
+      : pathname === path || pathname.startsWith(`${path}/`);
 
   useEffect(() => {
     const handleResize = () => {
@@ -32,6 +41,7 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
   return (
     <>
       <button
+        type="button"
         onClick={() => setIsOpen(true)}
         aria-label="Open mobile menu"
         className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 bg-white text-black transition-colors md:hidden dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
@@ -69,6 +79,7 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                     Menu
                   </p>
                   <button
+                    type="button"
                     className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 bg-white text-black transition-colors dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
                     onClick={() => setIsOpen(false)}
                     aria-label="Close mobile menu"
@@ -77,43 +88,63 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                   </button>
                 </div>
 
-                {menu.length ? (
-                  <ul className="space-y-2">
-                    {menu.map((item: Menu) => (
+                <ul className="space-y-2">
+                  {menuItems.map((item: Menu) => {
+                    const isActive = isActivePath(item.path);
+                    return (
                       <li key={item.title}>
                         <Link
                           href={item.path}
                           prefetch={true}
                           onClick={() => setIsOpen(false)}
-                          className="block rounded-xl px-3 py-3 text-base font-medium text-neutral-900 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                          aria-current={isActive ? "page" : undefined}
+                          className={`block rounded-xl px-3 py-3 text-base font-medium transition-colors ${
+                            isActive
+                              ? "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
+                              : "text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                          }`}
                         >
                           {item.title}
                         </Link>
                       </li>
-                    ))}
-                    <li>
-                      <Link
-                        href="/orders"
-                        prefetch={true}
-                        onClick={() => setIsOpen(false)}
-                        className="block rounded-xl px-3 py-3 text-base font-medium text-neutral-900 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
-                      >
-                        Orders
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href={session ? "/account" : "/auth/login"}
-                        prefetch={true}
-                        onClick={() => setIsOpen(false)}
-                        className="flex items-center gap-3 rounded-xl px-3 py-3 text-base font-medium text-neutral-900 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
-                      >
-                        <UserIcon className="h-5 w-5" />
-                        {session ? "My Account" : "Login"}
-                      </Link>
-                    </li>
-                  </ul>
-                ) : null}
+                    );
+                  })}
+                  <li>
+                    <Link
+                      href="/orders"
+                      prefetch={true}
+                      onClick={() => setIsOpen(false)}
+                      aria-current={isActivePath("/orders") ? "page" : undefined}
+                      className={`block rounded-xl px-3 py-3 text-base font-medium transition-colors ${
+                        isActivePath("/orders")
+                          ? "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
+                          : "text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                      }`}
+                    >
+                      Orders
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href={session ? "/account" : "/auth/login"}
+                      prefetch={true}
+                      onClick={() => setIsOpen(false)}
+                      aria-current={
+                        isActivePath(session ? "/account" : "/auth/login")
+                          ? "page"
+                          : undefined
+                      }
+                      className={`flex items-center gap-3 rounded-xl px-3 py-3 text-base font-medium transition-colors ${
+                        isActivePath(session ? "/account" : "/auth/login")
+                          ? "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
+                          : "text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                      }`}
+                    >
+                      <UserIcon className="h-5 w-5" />
+                      {session ? "My Account" : "Login"}
+                    </Link>
+                  </li>
+                </ul>
               </div>
 
               <div className="border-t border-neutral-200 pt-4 dark:border-neutral-800">
