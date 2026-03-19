@@ -15,7 +15,6 @@ export default function HeroCarousel({ products }: { products: Product[] }) {
     [products],
   );
   const [activeIndex, setActiveIndex] = useState(0);
-  console.log(products)
 
   useEffect(() => {
     if (activeIndex >= items.length) {
