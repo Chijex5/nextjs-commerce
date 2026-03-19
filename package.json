@@ -33,6 +33,7 @@
     "next-cloudinary": "^6.16.0",
     "pnpm": "^10.28.0",
     "postgres": "^3.4.8",
+    "lightweight-charts": "^4.2.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-easy-crop": "^5.4.2",

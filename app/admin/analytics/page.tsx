@@ -1,9 +1,5 @@
-import Link from "next/link";
-import dynamic from "next/dynamic";
-import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
-import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import AdminNav from "components/admin/AdminNav";
+import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import { authOptions } from "lib/auth";
 import { db } from "lib/db";
 import {
@@ -16,6 +12,10 @@ import {
   productVariants,
   products,
 } from "lib/db/schema";
+import { getServerSession } from "next-auth";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import SalesTrendChart from "../../../components/admin/SalesTrendChartClient";
 
 type TimeframeKey = "7d" | "30d" | "90d" | "365d";
 
@@ -492,21 +492,25 @@ export default async function AdminAnalyticsPage({
     previousRevenue = toNumber(previousSummaryRows[0]?.revenue);
     previousAov = toNumber(previousSummaryRows[0]?.averageOrderValue);
 
-    orderStatusCounts = statusRows.reduce<Record<string, number>>((acc, row) => {
-      acc[row.status] = toNumber(row.count);
-      return acc;
-    }, {});
-    previousOrderStatusCounts = previousStatusRows.reduce<Record<string, number>>(
+    orderStatusCounts = statusRows.reduce<Record<string, number>>(
       (acc, row) => {
         acc[row.status] = toNumber(row.count);
         return acc;
       },
       {},
     );
+    previousOrderStatusCounts = previousStatusRows.reduce<
+      Record<string, number>
+    >((acc, row) => {
+      acc[row.status] = toNumber(row.count);
+      return acc;
+    }, {});
 
     const completedOrders = orderStatusCounts.completed ?? 0;
     completionRate =
-      periodOrders > 0 ? (completedOrders / Math.max(periodOrders, 1)) * 100 : 0;
+      periodOrders > 0
+        ? (completedOrders / Math.max(periodOrders, 1)) * 100
+        : 0;
 
     chartSeries = buildChartSeries(days, periodStart, trendRows);
 
@@ -545,7 +549,8 @@ export default async function AdminAnalyticsPage({
     paymentConflicts = toNumber(paymentConflictRows[0]?.count);
   } catch (error) {
     console.error("Failed to load admin analytics:", error);
-    loadError = "Some analytics data could not be loaded. Showing available metrics.";
+    loadError =
+      "Some analytics data could not be loaded. Showing available metrics.";
   }
 
   const revenueDelta = formatDelta(periodRevenue, previousRevenue);
@@ -557,10 +562,7 @@ export default async function AdminAnalyticsPage({
           Math.max(previousOrders, 1)) *
         100
       : 0;
-  const completionDelta = formatDelta(
-    completionRate,
-    previousCompletionRate,
-  );
+  const completionDelta = formatDelta(completionRate, previousCompletionRate);
 
   const currencyCode =
     recentOrders.find((order) => order.currencyCode)?.currencyCode ?? "NGN";
@@ -590,10 +592,6 @@ export default async function AdminAnalyticsPage({
     process.env.RESEND_API_KEY && process.env.SMTP_FROM_EMAIL,
   );
   const uptimeLabel = formatUptime(process.uptime());
-  const SalesTrendChart = dynamic(
-    () => import("components/admin/SalesTrendChart"),
-    { ssr: false },
-  );
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
@@ -687,7 +685,9 @@ export default async function AdminAnalyticsPage({
               <p className="mt-3 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
                 {formatCurrency(periodRevenue)}
               </p>
-              <p className={`mt-2 text-sm ${deltaToneClass(revenueDelta.tone)}`}>
+              <p
+                className={`mt-2 text-sm ${deltaToneClass(revenueDelta.tone)}`}
+              >
                 {revenueDelta.label}
               </p>
             </div>
@@ -723,7 +723,9 @@ export default async function AdminAnalyticsPage({
               <p className="mt-3 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
                 {formatPercent(completionRate)}
               </p>
-              <p className={`mt-2 text-sm ${deltaToneClass(completionDelta.tone)}`}>
+              <p
+                className={`mt-2 text-sm ${deltaToneClass(completionDelta.tone)}`}
+              >
                 {completionDelta.label}
               </p>
             </div>
