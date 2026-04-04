@@ -10,6 +10,15 @@ import {
   products,
 } from "lib/db/schema";
 
+type ProductImageInput = {
+  url: string;
+  altText?: string;
+  width?: number;
+  height?: number;
+  position?: number;
+  isFeatured?: boolean;
+};
+
 export async function POST(request: Request) {
   try {
     const session = await requireAdminSession();
@@ -50,7 +59,7 @@ export async function POST(request: Request) {
           );
         }
         await tx.insert(productImages).values(
-          imagesToInsert.map((img: any) => ({
+          imagesToInsert.map((img: ProductImageInput) => ({
             productId: createdProduct.id,
             url: img.url,
             altText: createdProduct.title,
