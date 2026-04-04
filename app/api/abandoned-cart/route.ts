@@ -150,15 +150,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Purge expired ghost carts (empty carts whose expiry has passed)
-    const { rowCount: deletedCarts } = await db
-      .delete(carts)
-      .where(
-        and(
-          isNotNull(carts.expiresAt),
-          lt(carts.expiresAt, new Date()),
-          eq(carts.totalQuantity, 0),
-        ),
-      );
+    const deleteResult = await db.delete(carts).where(
+      and(
+        isNotNull(carts.expiresAt),
+        lt(carts.expiresAt, new Date()),
+        eq(carts.totalQuantity, 0),
+      ),
+    );
+    const deletedCarts =
+      "rowsAffected" in deleteResult ? deleteResult.rowsAffected : 0;
 
     return NextResponse.json({
       success: true,

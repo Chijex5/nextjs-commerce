@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
 import { pages } from "lib/db/schema";
+import { revalidatePages } from "lib/database";
 import { and, eq, ne } from "drizzle-orm";
 
 export async function GET(
@@ -108,6 +109,8 @@ export async function PUT(
       return NextResponse.json({ error: "Page not found" }, { status: 404 });
     }
 
+    revalidatePages();
+
     return NextResponse.json({
       success: true,
       page: {
@@ -144,6 +147,8 @@ export async function DELETE(
     const { id } = await params;
 
     await db.delete(pages).where(eq(pages.id, id));
+
+    revalidatePages();
 
     return NextResponse.json({
       success: true,

@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { desc, eq, ilike, or } from "drizzle-orm";
 import { requireAdminSession } from "lib/admin-auth";
+import { revalidatePages } from "lib/database";
 import { db } from "lib/db";
 import { pages } from "lib/db/schema";
-import { desc, eq, ilike, or } from "drizzle-orm";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -106,6 +107,8 @@ export async function POST(request: NextRequest) {
         { status: 500 },
       );
     }
+
+    revalidatePages();
 
     return NextResponse.json({
       success: true,
