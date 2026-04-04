@@ -37,6 +37,11 @@ import {
 } from "drizzle-orm";
 import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "../image-constants";
 
+const CART_EXPIRY_MS = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+function getCartExpiryDate(): Date {
+  return new Date(Date.now() + CART_EXPIRY_MS);
+}
+
 // Helper function to reshape a single database product to match Shopify Product type.
 // When reshaping multiple products, prefer reshapeDbProducts() to avoid N+1 queries.
 export async function reshapeDbProduct(
@@ -806,7 +811,7 @@ export async function getCollectionsWithProducts(): Promise<
 }
 
 export async function createCart(): Promise<Cart> {
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+  const expiresAt = getCartExpiryDate(); // 30 days
   const [dbCart] = await db
     .insert(carts)
     .values({
@@ -941,7 +946,7 @@ async function recalculateCartTotals(cartId: string): Promise<void> {
     0,
   );
 
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // refresh 30-day window on activity
+  const expiresAt = getCartExpiryDate(); // refresh 30-day window on activity
 
   await db
     .update(carts)

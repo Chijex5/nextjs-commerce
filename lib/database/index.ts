@@ -194,7 +194,7 @@ export async function getMenu(handle: string): Promise<Menu[]> {
 // Page operations
 export async function getPage(handle: string): Promise<Page | undefined> {
   "use cache";
-  cacheTag(TAGS.collections);
+  cacheTag(TAGS.pages);
   cacheLife("days");
 
   return dbQueries.getPage(handle);
@@ -202,7 +202,7 @@ export async function getPage(handle: string): Promise<Page | undefined> {
 
 export async function getPages(): Promise<Page[]> {
   "use cache";
-  cacheTag(TAGS.collections);
+  cacheTag(TAGS.pages);
   cacheLife("days");
 
   return dbQueries.getPages();
