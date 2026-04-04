@@ -52,7 +52,7 @@ export async function updateCart(
 export async function getCart(): Promise<Cart | undefined> {
   "use cache: private";
   cacheTag(TAGS.cart);
-  cacheLife("seconds");
+  cacheLife("minutes");
 
   const cartId = (await cookies()).get("cartId")?.value;
 
@@ -169,7 +169,7 @@ export async function getProducts({
   cacheTag(TAGS.products, TAGS.collections);
 
   if (query?.trim()) {
-    cacheLife("minutes");
+    cacheLife("hours");
   } else {
     cacheLife("days");
   }
@@ -193,10 +193,18 @@ export async function getMenu(handle: string): Promise<Menu[]> {
 
 // Page operations
 export async function getPage(handle: string): Promise<Page | undefined> {
+  "use cache";
+  cacheTag(TAGS.collections);
+  cacheLife("days");
+
   return dbQueries.getPage(handle);
 }
 
 export async function getPages(): Promise<Page[]> {
+  "use cache";
+  cacheTag(TAGS.collections);
+  cacheLife("days");
+
   return dbQueries.getPages();
 }
 

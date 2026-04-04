@@ -37,103 +37,127 @@ import {
 } from "drizzle-orm";
 import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "../image-constants";
 
-// Helper function to reshape database product to match Shopify Product type
+// Helper function to reshape a single database product to match Shopify Product type.
+// When reshaping multiple products, prefer reshapeDbProducts() to avoid N+1 queries.
 export async function reshapeDbProduct(
   dbProduct: typeof products.$inferSelect | undefined,
   includeRelations: boolean = true,
 ): Promise<Product | undefined> {
   if (!dbProduct) return undefined;
+  const [result] = await reshapeDbProducts(
+    [dbProduct],
+    includeRelations,
+  );
+  return result;
+}
 
-  let variants: ProductVariant[] = [];
-  let images: Image[] = [];
-  let options: ProductOption[] = [];
-  let featuredImage: Image | undefined;
+// Batch helper: load relations for all products in 3 bulk queries instead of 3N queries.
+export async function reshapeDbProducts(
+  dbProductList: typeof products.$inferSelect[],
+  includeRelations: boolean = true,
+): Promise<Product[]> {
+  if (!dbProductList.length) return [];
+
+  const productIds = dbProductList.map((p) => p.id);
+
+  let variantsByProductId = new Map<string, typeof productVariants.$inferSelect[]>();
+  let imagesByProductId = new Map<string, typeof productImages.$inferSelect[]>();
+  let optionsByProductId = new Map<string, typeof productOptions.$inferSelect[]>();
 
   if (includeRelations) {
-    const dbVariants = await db
-      .select()
-      .from(productVariants)
-      .where(eq(productVariants.productId, dbProduct.id));
+    const [allVariants, allImages, allOptions] = await Promise.all([
+      db.select().from(productVariants).where(inArray(productVariants.productId, productIds)),
+      db.select().from(productImages).where(inArray(productImages.productId, productIds)).orderBy(asc(productImages.position)),
+      db.select().from(productOptions).where(inArray(productOptions.productId, productIds)),
+    ]);
 
-    variants = dbVariants.map((variant) => ({
+    for (const v of allVariants) {
+      const list = variantsByProductId.get(v.productId) ?? [];
+      list.push(v);
+      variantsByProductId.set(v.productId, list);
+    }
+    for (const img of allImages) {
+      const list = imagesByProductId.get(img.productId) ?? [];
+      list.push(img);
+      imagesByProductId.set(img.productId, list);
+    }
+    for (const opt of allOptions) {
+      const list = optionsByProductId.get(opt.productId) ?? [];
+      list.push(opt);
+      optionsByProductId.set(opt.productId, list);
+    }
+  }
+
+  return dbProductList.map((dbProduct) => {
+    const dbVariants = variantsByProductId.get(dbProduct.id) ?? [];
+    const dbImages = imagesByProductId.get(dbProduct.id) ?? [];
+    const dbOpts = optionsByProductId.get(dbProduct.id) ?? [];
+
+    const variants: ProductVariant[] = dbVariants.map((variant) => ({
       id: variant.id,
       title: variant.title,
       availableForSale: variant.availableForSale,
-      selectedOptions: variant.selectedOptions as {
-        name: string;
-        value: string;
-      }[],
+      selectedOptions: variant.selectedOptions as { name: string; value: string }[],
       price: {
         amount: String(variant.price),
         currencyCode: variant.currencyCode,
       },
     }));
 
-    const dbImages = await db
-      .select()
-      .from(productImages)
-      .where(eq(productImages.productId, dbProduct.id))
-      .orderBy(asc(productImages.position));
-
-    images = dbImages.map((img) => ({
+    const images: Image[] = dbImages.map((img) => ({
       url: img.url,
       altText: img.altText || "",
       width: img.width || PRODUCT_IMAGE_WIDTH,
       height: img.height || PRODUCT_IMAGE_HEIGHT,
     }));
 
-    featuredImage =
+    const featuredImage =
       images.find((_, idx) => dbImages[idx]?.isFeatured) || images[0];
 
-    const dbOptions = await db
-      .select()
-      .from(productOptions)
-      .where(eq(productOptions.productId, dbProduct.id));
-
-    options = dbOptions.map((opt) => ({
+    const options: ProductOption[] = dbOpts.map((opt) => ({
       id: opt.id,
       name: opt.name,
       values: opt.values,
     }));
-  }
 
-  const prices = variants.map((variant) => Number(variant.price.amount));
-  const minPrice = prices.length ? Math.min(...prices) : 0;
-  const maxPrice = prices.length ? Math.max(...prices) : 0;
+    const prices = variants.map((variant) => Number(variant.price.amount));
+    const minPrice = prices.length ? Math.min(...prices) : 0;
+    const maxPrice = prices.length ? Math.max(...prices) : 0;
 
-  return {
-    id: dbProduct.id,
-    handle: dbProduct.handle,
-    availableForSale: dbProduct.availableForSale,
-    title: dbProduct.title,
-    description: dbProduct.description || "",
-    descriptionHtml: dbProduct.descriptionHtml || "",
-    options,
-    priceRange: {
-      maxVariantPrice: {
-        amount: maxPrice.toString(),
-        currencyCode: "NGN",
+    return {
+      id: dbProduct.id,
+      handle: dbProduct.handle,
+      availableForSale: dbProduct.availableForSale,
+      title: dbProduct.title,
+      description: dbProduct.description || "",
+      descriptionHtml: dbProduct.descriptionHtml || "",
+      options,
+      priceRange: {
+        maxVariantPrice: {
+          amount: maxPrice.toString(),
+          currencyCode: "NGN",
+        },
+        minVariantPrice: {
+          amount: minPrice.toString(),
+          currencyCode: "NGN",
+        },
       },
-      minVariantPrice: {
-        amount: minPrice.toString(),
-        currencyCode: "NGN",
+      variants,
+      featuredImage: featuredImage || {
+        url: "",
+        altText: "",
+        width: PRODUCT_IMAGE_WIDTH,
+        height: PRODUCT_IMAGE_HEIGHT,
       },
-    },
-    variants,
-    featuredImage: featuredImage || {
-      url: "",
-      altText: "",
-      width: PRODUCT_IMAGE_WIDTH,
-      height: PRODUCT_IMAGE_HEIGHT,
-    },
-    images,
-    seo: {
-      title: dbProduct.seoTitle || dbProduct.title,
-      description: dbProduct.seoDescription || dbProduct.description || "",
-    },
-    tags: dbProduct.tags || [],
-    updatedAt: dbProduct.updatedAt.toISOString(),
-  };
+      images,
+      seo: {
+        title: dbProduct.seoTitle || dbProduct.title,
+        description: dbProduct.seoDescription || dbProduct.description || "",
+      },
+      tags: dbProduct.tags || [],
+      updatedAt: dbProduct.updatedAt.toISOString(),
+    };
+  });
 }
 
 async function reshapeDbCart(
@@ -548,11 +572,7 @@ export async function getProducts({
       .limit(100);
   }
 
-  const productsWithDetails = await Promise.all(
-    dbProducts.map(({ product }) => reshapeDbProduct(product)),
-  );
-
-  return productsWithDetails.filter((p): p is Product => p !== undefined);
+  return reshapeDbProducts(dbProducts.map(({ product }) => product));
 }
 
 export async function getProductRecommendations(
@@ -601,11 +621,7 @@ export async function getProductRecommendations(
     relatedProducts = [...relatedProducts, ...fallback];
   }
 
-  const productsWithDetails = await Promise.all(
-    relatedProducts.map((product) => reshapeDbProduct(product)),
-  );
-
-  return productsWithDetails.filter((p): p is Product => p !== undefined);
+  return reshapeDbProducts(relatedProducts);
 }
 
 export async function getProductReviewAggregate(productId: string): Promise<{
@@ -715,11 +731,7 @@ export async function getCollectionProducts({
     return [];
   }
 
-  const productsWithDetails = await Promise.all(
-    productCollectionRows.map((pc) => reshapeDbProduct(pc.product)),
-  );
-
-  return productsWithDetails.filter((p): p is Product => p !== undefined);
+  return reshapeDbProducts(productCollectionRows.map((pc) => pc.product));
 }
 
 export async function getCollectionsWithProducts(): Promise<
@@ -736,44 +748,65 @@ export async function getCollectionsWithProducts(): Promise<
     )
     .orderBy(asc(collections.createdAt));
 
-  const collectionsWithProducts = await Promise.all(
-    dbCollections.map(async (dbCollection) => {
-      const productCollectionRows = await db
-        .select({ product: products })
-        .from(productCollections)
-        .innerJoin(products, eq(productCollections.productId, products.id))
-        .where(eq(productCollections.collectionId, dbCollection.id))
-        .orderBy(asc(productCollections.position))
-        .limit(8);
+  if (!dbCollections.length) return [];
 
-      const productsWithDetails = await Promise.all(
-        productCollectionRows.map((pc) => reshapeDbProduct(pc.product)),
-      );
+  const collectionIds = dbCollections.map((c) => c.id);
 
-      return {
-        collection: {
-          handle: dbCollection.handle,
-          title: dbCollection.title,
-          description: dbCollection.description || "",
-          seo: {
-            title: dbCollection.seoTitle || dbCollection.title,
-            description:
-              dbCollection.seoDescription || dbCollection.description || "",
-          },
-          updatedAt: dbCollection.updatedAt.toISOString(),
-          path: `/search/${dbCollection.handle}`,
+  // Fetch all collection→product mappings in one query (with position for ordering)
+  const allProductCollectionRows = await db
+    .select({ product: products, collectionId: productCollections.collectionId, position: productCollections.position })
+    .from(productCollections)
+    .innerJoin(products, eq(productCollections.productId, products.id))
+    .where(inArray(productCollections.collectionId, collectionIds))
+    .orderBy(asc(productCollections.position));
+
+  // Group raw product rows by collectionId, keeping max 8 per collection
+  const productRowsByCollection = new Map<string, typeof products.$inferSelect[]>();
+  for (const row of allProductCollectionRows) {
+    const list = productRowsByCollection.get(row.collectionId) ?? [];
+    if (list.length < 8) {
+      list.push(row.product);
+      productRowsByCollection.set(row.collectionId, list);
+    }
+  }
+
+  // Collect all unique product rows that need reshaping
+  const allProductRows = [...new Map(
+    [...productRowsByCollection.values()].flat().map((p) => [p.id, p]),
+  ).values()];
+
+  // Single batch reshape for all products across all collections
+  const shapedProducts = await reshapeDbProducts(allProductRows);
+  const shapedById = new Map(shapedProducts.map((p) => [p.id, p]));
+
+  const collectionsWithProducts = dbCollections.map((dbCollection) => {
+    const rawRows = productRowsByCollection.get(dbCollection.id) ?? [];
+    const shaped = rawRows
+      .map((p) => shapedById.get(p.id))
+      .filter((p): p is Product => p !== undefined);
+
+    return {
+      collection: {
+        handle: dbCollection.handle,
+        title: dbCollection.title,
+        description: dbCollection.description || "",
+        seo: {
+          title: dbCollection.seoTitle || dbCollection.title,
+          description:
+            dbCollection.seoDescription || dbCollection.description || "",
         },
-        products: productsWithDetails.filter(
-          (p): p is Product => p !== undefined,
-        ),
-      };
-    }),
-  );
+        updatedAt: dbCollection.updatedAt.toISOString(),
+        path: `/search/${dbCollection.handle}`,
+      },
+      products: shaped,
+    };
+  });
 
   return collectionsWithProducts.filter((c) => c.products.length > 0);
 }
 
 export async function createCart(): Promise<Cart> {
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
   const [dbCart] = await db
     .insert(carts)
     .values({
@@ -782,6 +815,7 @@ export async function createCart(): Promise<Cart> {
       totalAmount: "0.00",
       totalTaxAmount: "0.00",
       currencyCode: "NGN",
+      expiresAt,
     })
     .returning();
 
@@ -907,6 +941,8 @@ async function recalculateCartTotals(cartId: string): Promise<void> {
     0,
   );
 
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // refresh 30-day window on activity
+
   await db
     .update(carts)
     .set({
@@ -915,6 +951,7 @@ async function recalculateCartTotals(cartId: string): Promise<void> {
       totalAmount: String(subtotalAmount),
       totalTaxAmount: "0.00",
       updatedAt: new Date(),
+      expiresAt,
     })
     .where(eq(carts.id, cartId));
 }
@@ -964,21 +1001,17 @@ export async function getPages(): Promise<Page[]> {
 }
 
 export async function getMenu(handle: string): Promise<Menu[]> {
-  const [dbMenu] = await db
-    .select()
+  const rows = await db
+    .select({
+      title: menuItems.title,
+      url: menuItems.url,
+    })
     .from(menus)
+    .innerJoin(menuItems, eq(menuItems.menuId, menus.id))
     .where(eq(menus.handle, handle))
-    .limit(1);
-
-  if (!dbMenu) return [];
-
-  const items = await db
-    .select()
-    .from(menuItems)
-    .where(eq(menuItems.menuId, dbMenu.id))
     .orderBy(asc(menuItems.position));
 
-  return items.map((item) => ({
+  return rows.map((item) => ({
     title: item.title,
     path: item.url,
   }));
