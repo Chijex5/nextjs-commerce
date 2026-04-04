@@ -13,10 +13,19 @@ from typing import Iterable
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from dotenv import load_dotenv
-from sqlalchemy import MetaData, create_engine, func, inspect, select, text
+from sqlalchemy import (
+    ForeignKeyConstraint,
+    MetaData,
+    bindparam,
+    create_engine,
+    func,
+    inspect,
+    select,
+    text,
+)
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-TARGET_DATABASE_URL = "postgresql://user:password@host:port/database?sslmode=require"
+TARGET_DATABASE_URL = "postgresql://user:password@host:port/dbname?sslmode=require"
 SOURCE_ENV_KEYS = (
     "AMAZON_DATABASE_URL",
 )
@@ -104,6 +113,147 @@ def get_user_schemas(source_engine) -> list[str]:
 def create_missing_schemas(target_conn, schemas: Iterable[str]) -> None:
     for schema in schemas:
         target_conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {quote_ident(schema)}"))
+
+
+def detach_reflected_indexes(metadata: MetaData) -> None:
+    for table in metadata.tables.values():
+        table.indexes.clear()
+
+
+def detach_reflected_foreign_keys(metadata: MetaData) -> None:
+    for table in metadata.tables.values():
+        fk_constraints = [
+            constraint
+            for constraint in list(table.constraints)
+            if isinstance(constraint, ForeignKeyConstraint)
+        ]
+        for constraint in fk_constraints:
+            table.constraints.discard(constraint)
+
+        for column in table.columns:
+            for foreign_key in list(column.foreign_keys):
+                column.foreign_keys.discard(foreign_key)
+
+
+def fetch_foreign_key_drop_statements(target_conn, schemas: list[str]) -> list[str]:
+    if not schemas:
+        return []
+
+    query = text(
+        """
+        SELECT format(
+            'ALTER TABLE %I.%I DROP CONSTRAINT %I',
+            ns.nspname,
+            table_rel.relname,
+            con.conname
+        ) AS fk_drop_ddl
+        FROM pg_constraint AS con
+        JOIN pg_class AS table_rel ON table_rel.oid = con.conrelid
+        JOIN pg_namespace AS ns ON ns.oid = table_rel.relnamespace
+        WHERE con.contype = 'f'
+          AND ns.nspname IN :schemas
+        ORDER BY ns.nspname, table_rel.relname, con.conname
+        """
+    ).bindparams(bindparam("schemas", expanding=True))
+
+    rows = target_conn.execute(query, {"schemas": schemas})
+    return [str(row.fk_drop_ddl) for row in rows if row.fk_drop_ddl]
+
+
+def drop_foreign_keys_on_target(target_conn, schemas: list[str]) -> None:
+    drop_statements = fetch_foreign_key_drop_statements(target_conn, schemas)
+    if not drop_statements:
+        print("No foreign keys to drop before data copy.")
+        return
+
+    print(f"Dropping {len(drop_statements)} foreign key constraint(s) before data copy...")
+    for drop_ddl in drop_statements:
+        target_conn.execute(text(drop_ddl))
+
+
+def ensure_required_extensions_for_indexes(target_conn, index_definitions: list[str]) -> None:
+    required_extensions: set[str] = set()
+    for index_ddl in index_definitions:
+        ddl_lower = index_ddl.lower()
+        if "gin_trgm_ops" in ddl_lower:
+            required_extensions.add("pg_trgm")
+
+    for extension in sorted(required_extensions):
+        target_conn.execute(
+            text(f"CREATE EXTENSION IF NOT EXISTS {quote_ident(extension)}")
+        )
+
+
+def fetch_user_index_definitions(source_conn, schemas: list[str]) -> list[str]:
+    if not schemas:
+        return []
+
+    query = text(
+        """
+        SELECT pg_get_indexdef(index_rel.oid) AS index_ddl
+        FROM pg_class AS index_rel
+        JOIN pg_index AS idx ON idx.indexrelid = index_rel.oid
+        JOIN pg_class AS table_rel ON table_rel.oid = idx.indrelid
+        JOIN pg_namespace AS ns ON ns.oid = table_rel.relnamespace
+        LEFT JOIN pg_constraint AS con ON con.conindid = index_rel.oid
+        WHERE ns.nspname IN :schemas
+          AND con.oid IS NULL
+        ORDER BY ns.nspname, table_rel.relname, index_rel.relname
+        """
+    ).bindparams(bindparam("schemas", expanding=True))
+
+    rows = source_conn.execute(query, {"schemas": schemas})
+    return [str(row.index_ddl) for row in rows if row.index_ddl]
+
+
+def recreate_indexes_from_source(source_conn, target_conn, schemas: list[str]) -> None:
+    index_definitions = fetch_user_index_definitions(source_conn, schemas)
+    if not index_definitions:
+        print("No secondary indexes to recreate.")
+        return
+
+    ensure_required_extensions_for_indexes(target_conn, index_definitions)
+
+    print(f"Recreating {len(index_definitions)} index(es)...")
+    for index_ddl in index_definitions:
+        target_conn.execute(text(index_ddl))
+
+
+def fetch_foreign_key_definitions(source_conn, schemas: list[str]) -> list[str]:
+    if not schemas:
+        return []
+
+    query = text(
+        """
+        SELECT format(
+            'ALTER TABLE %I.%I ADD CONSTRAINT %I %s',
+            ns.nspname,
+            table_rel.relname,
+            con.conname,
+            pg_get_constraintdef(con.oid, true)
+        ) AS fk_ddl
+        FROM pg_constraint AS con
+        JOIN pg_class AS table_rel ON table_rel.oid = con.conrelid
+        JOIN pg_namespace AS ns ON ns.oid = table_rel.relnamespace
+        WHERE con.contype = 'f'
+          AND ns.nspname IN :schemas
+        ORDER BY ns.nspname, table_rel.relname, con.conname
+        """
+    ).bindparams(bindparam("schemas", expanding=True))
+
+    rows = source_conn.execute(query, {"schemas": schemas})
+    return [str(row.fk_ddl) for row in rows if row.fk_ddl]
+
+
+def recreate_foreign_keys_from_source(source_conn, target_conn, schemas: list[str]) -> None:
+    fk_definitions = fetch_foreign_key_definitions(source_conn, schemas)
+    if not fk_definitions:
+        print("No foreign keys to recreate.")
+        return
+
+    print(f"Recreating {len(fk_definitions)} foreign key constraint(s)...")
+    for fk_ddl in fk_definitions:
+        target_conn.execute(text(fk_ddl))
 
 
 def reset_sequences(target_conn, table) -> None:
@@ -294,10 +444,15 @@ def run_backup() -> None:
                     target_metadata.reflect(bind=target_conn, schema=schema)
 
                 target_metadata.drop_all(bind=target_conn)
+                detach_reflected_indexes(source_metadata)
+                detach_reflected_foreign_keys(source_metadata)
                 source_metadata.create_all(bind=target_conn)
+                drop_foreign_keys_on_target(target_conn, schemas)
 
                 print(f"Copying data for {len(tables)} table(s)...")
                 total_rows = copy_tables_with_retries(source_conn, target_conn, tables)
+                recreate_foreign_keys_from_source(source_conn, target_conn, schemas)
+                recreate_indexes_from_source(source_conn, target_conn, schemas)
 
     print(f"Backup complete. Total rows copied: {total_rows}")
 

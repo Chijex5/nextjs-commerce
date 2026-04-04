@@ -50,4 +50,9 @@ next-env.d.ts
 /app/generated/prisma
 
 # Sentry Config File
-.env.sentry-build-plugin
+.env.sentry-build-pluginv
+
+# vscode config files
+/.vscode/*
+/.vscode/launch.json
+/.vscode/settings.json
