@@ -21,8 +21,8 @@ export async function GET(request: NextRequest) {
     const rating = searchParams.get("rating")
       ? parseInt(searchParams.get("rating")!)
       : undefined;
-    const page = parseInt(searchParams.get("page") || "1");
-    const perPage = parseInt(searchParams.get("perPage") || "20");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const perPage = Math.min(100, Math.max(1, parseInt(searchParams.get("perPage") || "20")));
     const skip = (page - 1) * perPage;
 
     const filters = [];

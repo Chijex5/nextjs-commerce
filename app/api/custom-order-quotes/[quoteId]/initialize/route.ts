@@ -105,27 +105,48 @@ export async function POST(
     }
 
     const callbackUrl = buildQuotePaymentCallbackUrl();
-    const paystackResponse = await fetch(
-      "https://api.paystack.co/transaction/initialize",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${paystackSecretKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: requestRow.email,
-          amount: Math.round(amount * 100),
-          currency: quote.currencyCode || "NGN",
-          callback_url: callbackUrl,
-          metadata: {
-            custom_quote_id: quote.id,
-            custom_request_id: requestRow.id,
-            custom_request_number: requestRow.requestNumber,
+
+    const paystackController = new AbortController();
+    const paystackTimeout = setTimeout(() => paystackController.abort(), 10000);
+
+    let paystackResponse: Response;
+    try {
+      paystackResponse = await fetch(
+        "https://api.paystack.co/transaction/initialize",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${paystackSecretKey}`,
+            "Content-Type": "application/json",
           },
-        }),
-      },
-    );
+          body: JSON.stringify({
+            email: requestRow.email,
+            amount: Math.round(amount * 100),
+            currency: quote.currencyCode || "NGN",
+            callback_url: callbackUrl,
+            metadata: {
+              custom_quote_id: quote.id,
+              custom_request_id: requestRow.id,
+              custom_request_number: requestRow.requestNumber,
+            },
+          }),
+          signal: paystackController.signal,
+        },
+      );
+    } catch (fetchError: unknown) {
+      if (
+        fetchError instanceof Error &&
+        fetchError.name === "AbortError"
+      ) {
+        return NextResponse.json(
+          { error: "Payment gateway timed out. Please try again." },
+          { status: 504 },
+        );
+      }
+      throw fetchError;
+    } finally {
+      clearTimeout(paystackTimeout);
+    }
 
     const paystackData = await paystackResponse.json();
     if (!paystackData.status || !paystackData.data) {

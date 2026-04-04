@@ -39,9 +39,13 @@ export async function POST(request: Request) {
         throw new Error("Failed to create product");
       }
 
+      const MAX_IMAGES = 20;
+      const MAX_OPTIONS = 50;
+
       if (body.images && Array.isArray(body.images) && body.images.length > 0) {
+        const imagesToInsert = body.images.slice(0, MAX_IMAGES);
         await tx.insert(productImages).values(
-          body.images.map((img: any) => ({
+          imagesToInsert.map((img: any) => ({
             productId: createdProduct.id,
             url: img.url,
             altText: createdProduct.title,
@@ -53,8 +57,12 @@ export async function POST(request: Request) {
         );
       }
 
-      const sizes = body.sizes || [];
-      const colors = body.colors || [];
+      const sizes = Array.isArray(body.sizes)
+        ? body.sizes.slice(0, MAX_OPTIONS)
+        : [];
+      const colors = Array.isArray(body.colors)
+        ? body.colors.slice(0, MAX_OPTIONS)
+        : [];
 
       if (sizes.length > 0) {
         await tx.insert(productOptions).values({
