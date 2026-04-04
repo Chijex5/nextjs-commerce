@@ -55,7 +55,7 @@ export async function POST(request: Request) {
         const imagesToInsert = body.images.slice(0, MAX_IMAGES);
         if (body.images.length > MAX_IMAGES) {
           console.warn(
-            `Product creation: ${body.images.length} images provided but only ${MAX_IMAGES} will be saved (limit enforced).`,
+            `Product "${createdProduct.id}" (${body.title}): ${body.images.length} images provided but only ${MAX_IMAGES} will be saved (limit enforced).`,
           );
         }
         await tx.insert(productImages).values(
@@ -79,12 +79,12 @@ export async function POST(request: Request) {
         : [];
       if (Array.isArray(body.sizes) && body.sizes.length > MAX_OPTIONS) {
         console.warn(
-          `Product creation: ${body.sizes.length} sizes provided but only ${MAX_OPTIONS} will be saved (limit enforced).`,
+          `Product "${createdProduct.id}" (${body.title}): ${body.sizes.length} sizes provided but only ${MAX_OPTIONS} will be saved (limit enforced).`,
         );
       }
       if (Array.isArray(body.colors) && body.colors.length > MAX_OPTIONS) {
         console.warn(
-          `Product creation: ${body.colors.length} colors provided but only ${MAX_OPTIONS} will be saved (limit enforced).`,
+          `Product "${createdProduct.id}" (${body.title}): ${body.colors.length} colors provided but only ${MAX_OPTIONS} will be saved (limit enforced).`,
         );
       }
 
