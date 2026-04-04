@@ -44,6 +44,11 @@ export async function POST(request: Request) {
 
       if (body.images && Array.isArray(body.images) && body.images.length > 0) {
         const imagesToInsert = body.images.slice(0, MAX_IMAGES);
+        if (body.images.length > MAX_IMAGES) {
+          console.warn(
+            `Product creation: ${body.images.length} images provided but only ${MAX_IMAGES} will be saved (limit enforced).`,
+          );
+        }
         await tx.insert(productImages).values(
           imagesToInsert.map((img: any) => ({
             productId: createdProduct.id,
@@ -63,6 +68,16 @@ export async function POST(request: Request) {
       const colors = Array.isArray(body.colors)
         ? body.colors.slice(0, MAX_OPTIONS)
         : [];
+      if (Array.isArray(body.sizes) && body.sizes.length > MAX_OPTIONS) {
+        console.warn(
+          `Product creation: ${body.sizes.length} sizes provided but only ${MAX_OPTIONS} will be saved (limit enforced).`,
+        );
+      }
+      if (Array.isArray(body.colors) && body.colors.length > MAX_OPTIONS) {
+        console.warn(
+          `Product creation: ${body.colors.length} colors provided but only ${MAX_OPTIONS} will be saved (limit enforced).`,
+        );
+      }
 
       if (sizes.length > 0) {
         await tx.insert(productOptions).values({
