@@ -62,7 +62,7 @@ export async function POST(request: Request) {
           imagesToInsert.map((img: ProductImageInput) => ({
             productId: createdProduct.id,
             url: img.url,
-            altText: createdProduct.title,
+            altText: img.altText ?? createdProduct.title,
             width: img.width ?? PRODUCT_IMAGE_WIDTH,
             height: img.height ?? PRODUCT_IMAGE_HEIGHT,
             position: img.position || 0,
