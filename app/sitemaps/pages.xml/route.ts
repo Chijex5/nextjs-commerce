@@ -4,7 +4,7 @@ import { canonicalUrl } from "lib/seo";
 import { buildSitemapXml } from "lib/sitemap";
 import { desc } from "drizzle-orm";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 86400;
 
 export async function GET() {
   const pageRows = await db

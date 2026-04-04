@@ -152,6 +152,7 @@ export const carts = pgTable("carts", {
     .notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"),
 });
 
 // Cart lines (items in cart)

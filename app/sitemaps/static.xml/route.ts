@@ -1,7 +1,7 @@
 import { canonicalUrl } from "lib/seo";
 import { buildSitemapXml } from "lib/sitemap";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 86400;
 
 export async function GET() {
   const now = new Date().toISOString();

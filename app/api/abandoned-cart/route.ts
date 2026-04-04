@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "lib/db";
-import { abandonedCarts, users } from "lib/db/schema";
+import { abandonedCarts, carts, users } from "lib/db/schema";
 import { sendAbandonedCartEmail } from "@/lib/email/order-emails";
-import { and, eq, lte } from "drizzle-orm";
+import { and, eq, isNotNull, lt, lte } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
@@ -149,10 +149,22 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Purge expired ghost carts (empty carts whose expiry has passed)
+    const deleteResult = await db.delete(carts).where(
+      and(
+        isNotNull(carts.expiresAt),
+        lt(carts.expiresAt, new Date()),
+        eq(carts.totalQuantity, 0),
+      ),
+    );
+    const deletedCarts =
+      "rowsAffected" in deleteResult ? deleteResult.rowsAffected : 0;
+
     return NextResponse.json({
       success: true,
       message: `Sent ${emailsSent} abandoned cart emails`,
       sent: emailsSent,
+      deletedGhostCarts: deletedCarts ?? 0,
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error) {

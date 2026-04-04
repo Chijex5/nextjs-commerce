@@ -52,7 +52,7 @@ export async function updateCart(
 export async function getCart(): Promise<Cart | undefined> {
   "use cache: private";
   cacheTag(TAGS.cart);
-  cacheLife("seconds");
+  cacheLife("minutes");
 
   const cartId = (await cookies()).get("cartId")?.value;
 
@@ -169,7 +169,7 @@ export async function getProducts({
   cacheTag(TAGS.products, TAGS.collections);
 
   if (query?.trim()) {
-    cacheLife("minutes");
+    cacheLife("hours");
   } else {
     cacheLife("days");
   }
@@ -193,10 +193,26 @@ export async function getMenu(handle: string): Promise<Menu[]> {
 
 // Page operations
 export async function getPage(handle: string): Promise<Page | undefined> {
+  "use cache";
+  cacheTag(TAGS.pages);
+  cacheLife("days");
+
   return dbQueries.getPage(handle);
 }
 
+/**
+ * Call this after any page create/update/delete mutation.
+ * Example: admin page routes should invoke this once mutation succeeds.
+ */
+export function revalidatePages(): void {
+  revalidateTag(TAGS.pages, "seconds");
+}
+
 export async function getPages(): Promise<Page[]> {
+  "use cache";
+  cacheTag(TAGS.pages);
+  cacheLife("days");
+
   return dbQueries.getPages();
 }
 
@@ -212,17 +228,19 @@ export async function revalidate(req: NextRequest): Promise<NextResponse> {
     "products/delete",
     "products/update",
   ];
+  const pageWebhooks = ["pages/create", "pages/delete", "pages/update"];
   const topic = req.headers.get("x-webhook-topic") || "unknown";
   const secret = req.nextUrl.searchParams.get("secret");
   const isCollectionUpdate = collectionWebhooks.includes(topic);
   const isProductUpdate = productWebhooks.includes(topic);
+  const isPageUpdate = pageWebhooks.includes(topic);
 
   if (!secret || secret !== process.env.REVALIDATION_SECRET) {
     console.error("Invalid revalidation secret.");
     return NextResponse.json({ status: 401 });
   }
 
-  if (!isCollectionUpdate && !isProductUpdate) {
+  if (!isCollectionUpdate && !isProductUpdate && !isPageUpdate) {
     return NextResponse.json({ status: 200 });
   }
 
@@ -232,6 +250,10 @@ export async function revalidate(req: NextRequest): Promise<NextResponse> {
 
   if (isProductUpdate) {
     revalidateTag(TAGS.products, "seconds");
+  }
+
+  if (isPageUpdate) {
+    revalidateTag(TAGS.pages, "seconds");
   }
 
   return NextResponse.json({ status: 200, revalidated: true, now: Date.now() });
