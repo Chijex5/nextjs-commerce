@@ -8,7 +8,7 @@ import {
   removeFromCart,
   updateCart,
 } from "lib/database";
-import { updateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -28,7 +28,7 @@ export async function addItem(
     }
 
     await addToCart([{ merchandiseId: selectedVariantId, quantity: 1 }]);
-    updateTag(TAGS.cart);
+    revalidateTag(TAGS.cart, "seconds");
   } catch (e) {
     return "Error adding item to cart";
   }
@@ -48,7 +48,7 @@ export async function removeItem(prevState: any, merchandiseId: string) {
 
     if (lineItem && lineItem.id) {
       await removeFromCart([lineItem.id]);
-      updateTag(TAGS.cart);
+      revalidateTag(TAGS.cart, "seconds");
     } else {
       return "Item not found in cart";
     }
@@ -94,7 +94,7 @@ export async function updateItemQuantity(
       await addToCart([{ merchandiseId, quantity }]);
     }
 
-    updateTag(TAGS.cart);
+    revalidateTag(TAGS.cart, "seconds");
   } catch (e) {
     console.error(e);
     return "Error updating item quantity";
