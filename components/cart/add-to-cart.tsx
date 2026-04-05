@@ -2,22 +2,17 @@
 
 import { PlusIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
-import { addItem } from "components/cart/actions";
-import { Product, ProductVariant } from "lib/shopify/types";
-import { trackAddToCart } from "lib/analytics";
 import { motion } from "framer-motion";
-import { useActionState } from "react";
+import { trackAddToCart } from "lib/analytics";
+import { Product, ProductVariant } from "lib/shopify/types";
 import { useCart } from "./cart-context";
-import LoadingDots from "components/loading-dots";
 
 function SubmitButton({
   availableForSale,
   selectedVariantId,
-  pending,
 }: {
   availableForSale: boolean;
   selectedVariantId: string | undefined;
-  pending: boolean;
 }) {
   const baseClasses =
     "relative flex w-full items-center justify-center gap-2 rounded-full px-6 py-4 text-sm font-semibold tracking-wide transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-neutral-900";
@@ -53,26 +48,14 @@ function SubmitButton({
 
   return (
     <motion.button
+      type="submit"
       aria-label="Add to cart"
-      disabled={pending}
-      whileTap={!pending ? { scale: 0.97 } : undefined}
+      whileTap={{ scale: 0.97 }}
       transition={{ duration: 0.15 }}
-      className={clsx(baseClasses, activeClasses, {
-        "hover:brightness-110": !pending,
-        "cursor-not-allowed opacity-70": pending,
-      })}
+      className={clsx(baseClasses, activeClasses, "hover:brightness-110")}
     >
-      {pending ? (
-        <>
-          <LoadingDots className="bg-white/90" />
-          <span className="text-sm font-medium">Adding</span>
-        </>
-      ) : (
-        <>
-          <PlusIcon className="h-5" />
-          Add To Cart
-        </>
-      )}
+      <PlusIcon className="h-5" />
+      Add To Cart
     </motion.button>
   );
 }
@@ -85,8 +68,7 @@ export function AddToCart({
   selectedOptions: Record<string, string>;
 }) {
   const { variants, availableForSale } = product;
-  const { addCartItem } = useCart();
-  const [message, formAction, pending] = useActionState(addItem, null);
+  const { addCartItem, syncPendingCount } = useCart();
 
   const variant = variants.find((variant: ProductVariant) =>
     variant.selectedOptions.every(
@@ -95,31 +77,30 @@ export function AddToCart({
   );
   const defaultVariantId = variants.length === 1 ? variants[0]?.id : undefined;
   const selectedVariantId = variant?.id || defaultVariantId;
-  const addItemAction = formAction.bind(null, selectedVariantId);
-  const finalVariant = variants.find(
-    (variant) => variant.id === selectedVariantId,
-  )!;
+  const selectedVariant = variants.find((v) => v.id === selectedVariantId);
 
   return (
     <form
-      action={async () => {
-        addCartItem(finalVariant, product);
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!selectedVariant) return;
+
+        addCartItem(selectedVariant, product);
+
         trackAddToCart({
-          id: finalVariant.id,
+          id: selectedVariant.id,
           name: product.title,
-          price: parseFloat(finalVariant.price.amount),
+          price: parseFloat(selectedVariant.price.amount),
           quantity: 1,
         });
-        await addItemAction();
       }}
     >
       <SubmitButton
         availableForSale={availableForSale}
         selectedVariantId={selectedVariantId}
-        pending={pending}
       />
       <p aria-live="polite" className="sr-only" role="status">
-        {message}
+        {syncPendingCount > 0 ? "Syncing cart" : "Cart updated"}
       </p>
     </form>
   );

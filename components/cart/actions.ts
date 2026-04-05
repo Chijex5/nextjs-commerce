@@ -14,8 +14,10 @@ import { redirect } from "next/navigation";
 
 export async function addItem(
   prevState: any,
-  selectedVariantId: string | undefined,
+  formData: FormData,
 ) {
+  const selectedVariantId = formData.get("variantId")?.toString();
+
   if (!selectedVariantId) {
     return "Error adding item to cart";
   }
@@ -23,13 +25,14 @@ export async function addItem(
   try {
     // Lazily create a cart the first time an item is added
     const cookieStore = await cookies();
+
     if (!cookieStore.get("cartId")?.value) {
       await createCartAndSetCookie();
     }
 
     await addToCart([{ merchandiseId: selectedVariantId, quantity: 1 }]);
     revalidateTag(TAGS.cart, "seconds");
-  } catch (e) {
+  } catch {
     return "Error adding item to cart";
   }
 }
@@ -52,7 +55,7 @@ export async function removeItem(prevState: any, merchandiseId: string) {
     } else {
       return "Item not found in cart";
     }
-  } catch (e) {
+  } catch {
     return "Error removing item from cart";
   }
 }
@@ -95,8 +98,7 @@ export async function updateItemQuantity(
     }
 
     revalidateTag(TAGS.cart, "seconds");
-  } catch (e) {
-    console.error(e);
+  } catch {
     return "Error updating item quantity";
   }
 }

@@ -1,32 +1,39 @@
 "use client";
 
-import clsx from "clsx";
 import { Dialog, Transition } from "@headlessui/react";
 import {
-  ChevronDownIcon,
-  PencilSquareIcon,
-  ShoppingCartIcon,
-  TagIcon,
-  TruckIcon,
-  XMarkIcon,
+    ChevronDownIcon,
+    PencilSquareIcon,
+    ShoppingCartIcon,
+    TagIcon,
+    TruckIcon,
+    XMarkIcon,
 } from "@heroicons/react/24/outline";
+import clsx from "clsx";
 import LoadingDots from "components/loading-dots";
 import Price from "components/price";
-import { DEFAULT_OPTION } from "lib/constants";
-import { createUrl } from "lib/utils";
+import { useUserSession } from "hooks/useUserSession";
 import { trackInitiateCheckout } from "lib/analytics";
+import { DEFAULT_OPTION } from "lib/constants";
+import { calculateShippingAmount } from "lib/shipping";
+import { createUrl } from "lib/utils";
 import Image from "next/image";
 import Link from "next/link";
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+    Fragment,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type ReactNode,
+} from "react";
 import { useFormStatus } from "react-dom";
 import { redirectToCheckout } from "./actions";
 import { useCart } from "./cart-context";
+import CouponInput from "./coupon-input";
 import { DeleteItemButton } from "./delete-item-button";
 import { EditItemQuantityButton } from "./edit-item-quantity-button";
 import OpenCart from "./open-cart";
-import CouponInput from "./coupon-input";
-import { useUserSession } from "hooks/useUserSession";
-import { calculateShippingAmount } from "lib/shipping";
 
 type MerchandiseSearchParams = {
   [key: string]: string;
@@ -35,7 +42,7 @@ type MerchandiseSearchParams = {
 const ORDER_NOTE_STORAGE_KEY = "orderNote";
 
 export default function CartModal() {
-  const { cart, updateCartItem } = useCart();
+  const { cart } = useCart();
   const { status } = useUserSession();
   const [isOpen, setIsOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -228,7 +235,7 @@ export default function CartModal() {
                           b.merchandise.product.title,
                         ),
                       )
-                      .map((item, i) => {
+                      .map((item) => {
                         const merchandiseSearchParams =
                           {} as MerchandiseSearchParams;
 
@@ -248,15 +255,12 @@ export default function CartModal() {
 
                         return (
                           <li
-                            key={i}
+                            key={item.id ?? item.merchandise.id}
                             className="flex w-full flex-col border-b border-neutral-300 dark:border-neutral-700"
                           >
                             <div className="relative flex w-full flex-row justify-between px-1 py-4">
                               <div className="absolute z-40 -ml-1 -mt-2">
-                                <DeleteItemButton
-                                  item={item}
-                                  optimisticUpdate={updateCartItem}
-                                />
+                                <DeleteItemButton item={item} />
                               </div>
                               <div className="flex flex-row">
                                 <div className="relative h-16 w-16 overflow-hidden rounded-md border border-neutral-300 bg-neutral-300 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:bg-neutral-800">
@@ -304,7 +308,6 @@ export default function CartModal() {
                                   <EditItemQuantityButton
                                     item={item}
                                     type="minus"
-                                    optimisticUpdate={updateCartItem}
                                   />
                                   <p className="w-6 text-center">
                                     <span className="w-full text-sm">
@@ -314,7 +317,6 @@ export default function CartModal() {
                                   <EditItemQuantityButton
                                     item={item}
                                     type="plus"
-                                    optimisticUpdate={updateCartItem}
                                   />
                                 </div>
                               </div>

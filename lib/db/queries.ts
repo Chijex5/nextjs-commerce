@@ -1,41 +1,41 @@
+import {
+    and,
+    asc,
+    desc,
+    eq,
+    ilike,
+    inArray,
+    notInArray,
+    or,
+    sql,
+    type SQL,
+} from "drizzle-orm";
+import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "../image-constants";
 import type {
-  Product,
-  Collection,
-  Cart,
-  Page,
-  Menu,
-  Image,
-  ProductVariant,
-  ProductOption,
+    Cart,
+    Collection,
+    Image,
+    Menu,
+    Page,
+    Product,
+    ProductOption,
+    ProductVariant,
 } from "../shopify/types";
 import { db } from "./client";
 import {
-  carts,
-  cartLines,
-  collections,
-  menus,
-  menuItems,
-  pages,
-  productCollections,
-  productImages,
-  productOptions,
-  productVariants,
-  products,
-  reviews,
+    cartLines,
+    carts,
+    collections,
+    menuItems,
+    menus,
+    pages,
+    productCollections,
+    productImages,
+    productOptions,
+    productVariants,
+    products,
+    reviews,
 } from "./schema";
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  inArray,
-  notInArray,
-  sql,
-  ilike,
-  or,
-  type SQL,
-} from "drizzle-orm";
-import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "../image-constants";
 
 const CART_EXPIRY_MS = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 function getCartExpiryDate(): Date {

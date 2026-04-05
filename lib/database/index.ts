@@ -1,31 +1,24 @@
-import { TAGS, HIDDEN_PRODUCT_TAG } from "lib/constants";
+import { asc, desc, eq } from "drizzle-orm";
+import { HIDDEN_PRODUCT_TAG, TAGS } from "lib/constants";
 import {
-  unstable_cacheLife as cacheLife,
-  unstable_cacheTag as cacheTag,
-  revalidateTag,
+    unstable_cacheLife as cacheLife,
+    unstable_cacheTag as cacheTag,
+    revalidateTag,
 } from "next/cache";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-import { asc, desc, eq } from "drizzle-orm";
 import { db } from "../db/client";
-import { customOrders } from "../db/schema";
 import * as dbQueries from "../db/queries";
+import { customOrders } from "../db/schema";
 import type { Cart, Collection, Menu, Page, Product } from "../shopify/types";
 
 // Re-export types from shopify for compatibility
 export type {
-  Cart,
-  Collection,
-  Menu,
-  Page,
-  Product,
-  ProductOption,
-  ProductVariant,
-  Image,
-  Money,
-  SEO,
-  CartItem,
-  CartProduct,
+    Cart, CartItem,
+    CartProduct, Collection, Image, Menu, Money, Page,
+    Product,
+    ProductOption,
+    ProductVariant, SEO
 } from "../shopify/types";
 
 // Cart operations
@@ -53,10 +46,6 @@ export async function updateCart(
 }
 
 export async function getCart(): Promise<Cart | undefined> {
-  "use cache: private";
-  cacheTag(TAGS.cart);
-  cacheLife("minutes");
-
   const cartId = (await cookies()).get("cartId")?.value;
 
   if (!cartId) {

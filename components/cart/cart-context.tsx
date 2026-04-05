@@ -1,192 +1,104 @@
 "use client";
 
 import type {
-  Cart,
-  CartItem,
-  Product,
-  ProductVariant,
+    Cart,
+    CartItem,
+    Product,
+    ProductVariant,
 } from "lib/shopify/types";
 import React, {
-  createContext,
-  use,
-  useContext,
-  useMemo,
-  useOptimistic,
+    createContext,
+    use,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
 
 type UpdateType = "plus" | "minus" | "delete";
 
-type CartAction =
-  | {
-      type: "UPDATE_ITEM";
-      payload: { merchandiseId: string; updateType: UpdateType };
-    }
-  | {
-      type: "ADD_ITEM";
-      payload: { variant: ProductVariant; product: Product };
-    };
-
 type CartContextType = {
-  cartPromise: Promise<Cart | undefined>;
+  cart: Cart | undefined;
+  addCartItem: (variant: ProductVariant, product: Product) => void;
+  updateCartItem: (merchandiseId: string, updateType: UpdateType) => void;
+  setCartItemQuantity: (merchandiseId: string, quantity: number) => void;
+  syncPendingCount: number;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-function calculateItemCost(quantity: number, price: string): string {
-  return (Number(price) * quantity).toString();
-}
+const LOCAL_CART_STORAGE_KEY = "local-first-cart";
 
-function updateCartItem(
-  item: CartItem,
-  updateType: UpdateType,
-): CartItem | null {
-  if (updateType === "delete") return null;
-
-  const newQuantity =
-    updateType === "plus" ? item.quantity + 1 : item.quantity - 1;
-  if (newQuantity === 0) return null;
-
-  const singleItemAmount = Number(item.cost.totalAmount.amount) / item.quantity;
-  const newTotalAmount = calculateItemCost(
-    newQuantity,
-    singleItemAmount.toString(),
-  );
-
-  return {
-    ...item,
-    quantity: newQuantity,
-    cost: {
-      ...item.cost,
-      totalAmount: {
-        ...item.cost.totalAmount,
-        amount: newTotalAmount,
-      },
-    },
-  };
-}
-
-function createOrUpdateCartItem(
-  existingItem: CartItem | undefined,
-  variant: ProductVariant,
-  product: Product,
-): CartItem {
-  const quantity = existingItem ? existingItem.quantity + 1 : 1;
-  const totalAmount = calculateItemCost(quantity, variant.price.amount);
-
-  return {
-    id: existingItem?.id,
-    quantity,
-    cost: {
-      totalAmount: {
-        amount: totalAmount,
-        currencyCode: variant.price.currencyCode,
-      },
-    },
-    merchandise: {
-      id: variant.id,
-      title: variant.title,
-      selectedOptions: variant.selectedOptions,
-      product: {
-        id: product.id,
-        handle: product.handle,
-        title: product.title,
-        featuredImage: product.featuredImage,
-      },
-    },
-  };
-}
-
-function updateCartTotals(
-  lines: CartItem[],
-): Pick<Cart, "totalQuantity" | "cost"> {
-  const totalQuantity = lines.reduce((sum, item) => sum + item.quantity, 0);
-  const totalAmount = lines.reduce(
-    (sum, item) => sum + Number(item.cost.totalAmount.amount),
-    0,
-  );
-  const currencyCode = lines[0]?.cost.totalAmount.currencyCode ?? "USD";
-
-  return {
-    totalQuantity,
-    cost: {
-      subtotalAmount: { amount: totalAmount.toString(), currencyCode },
-      totalAmount: { amount: totalAmount.toString(), currencyCode },
-      totalTaxAmount: { amount: "0", currencyCode },
-    },
-  };
-}
-
-function createEmptyCart(): Cart {
+function createEmptyCart(currencyCode: string = "NGN"): Cart {
   return {
     id: undefined,
     checkoutUrl: "",
     totalQuantity: 0,
     lines: [],
     cost: {
-      subtotalAmount: { amount: "0", currencyCode: "USD" },
-      totalAmount: { amount: "0", currencyCode: "USD" },
-      totalTaxAmount: { amount: "0", currencyCode: "USD" },
+      subtotalAmount: { amount: "0", currencyCode },
+      totalAmount: { amount: "0", currencyCode },
+      totalTaxAmount: { amount: "0", currencyCode },
     },
   };
 }
 
-function cartReducer(state: Cart | undefined, action: CartAction): Cart {
-  const currentCart = state || createEmptyCart();
+function calculateItemCost(quantity: number, unitPrice: string): string {
+  return (Number(unitPrice) * quantity).toString();
+}
 
-  switch (action.type) {
-    case "UPDATE_ITEM": {
-      const { merchandiseId, updateType } = action.payload;
-      const updatedLines = currentCart.lines
-        .map((item) =>
-          item.merchandise.id === merchandiseId
-            ? updateCartItem(item, updateType)
-            : item,
-        )
-        .filter(Boolean) as CartItem[];
+function computeCartTotals(
+  lines: CartItem[],
+  currencyCode: string,
+): Pick<Cart, "totalQuantity" | "cost"> {
+  const totalQuantity = lines.reduce((sum, item) => sum + item.quantity, 0);
+  const subtotal = lines.reduce(
+    (sum, item) => sum + Number(item.cost.totalAmount.amount),
+    0,
+  );
 
-      if (updatedLines.length === 0) {
-        return {
-          ...currentCart,
-          lines: [],
-          totalQuantity: 0,
-          cost: {
-            ...currentCart.cost,
-            totalAmount: { ...currentCart.cost.totalAmount, amount: "0" },
-          },
-        };
-      }
+  return {
+    totalQuantity,
+    cost: {
+      subtotalAmount: { amount: String(subtotal), currencyCode },
+      totalAmount: { amount: String(subtotal), currencyCode },
+      totalTaxAmount: { amount: "0", currencyCode },
+    },
+  };
+}
 
-      return {
-        ...currentCart,
-        ...updateCartTotals(updatedLines),
-        lines: updatedLines,
-      };
+function normalizeCart(cart: Cart | undefined): Cart {
+  if (!cart) return createEmptyCart();
+  const currencyCode = cart.cost?.totalAmount?.currencyCode || "NGN";
+  return {
+    ...cart,
+    lines: cart.lines || [],
+    ...computeCartTotals(cart.lines || [], currencyCode),
+  };
+}
+
+function safeReadLocalCart(): Cart | undefined {
+  try {
+    const raw = localStorage.getItem(LOCAL_CART_STORAGE_KEY);
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as Cart;
+    return normalizeCart(parsed);
+  } catch {
+    return undefined;
+  }
+}
+
+function safeWriteLocalCart(cart: Cart | undefined): void {
+  try {
+    if (!cart) {
+      localStorage.removeItem(LOCAL_CART_STORAGE_KEY);
+      return;
     }
-    case "ADD_ITEM": {
-      const { variant, product } = action.payload;
-      const existingItem = currentCart.lines.find(
-        (item) => item.merchandise.id === variant.id,
-      );
-      const updatedItem = createOrUpdateCartItem(
-        existingItem,
-        variant,
-        product,
-      );
-
-      const updatedLines = existingItem
-        ? currentCart.lines.map((item) =>
-            item.merchandise.id === variant.id ? updatedItem : item,
-          )
-        : [...currentCart.lines, updatedItem];
-
-      return {
-        ...currentCart,
-        ...updateCartTotals(updatedLines),
-        lines: updatedLines,
-      };
-    }
-    default:
-      return currentCart;
+    localStorage.setItem(LOCAL_CART_STORAGE_KEY, JSON.stringify(cart));
+  } catch {
+    // Ignore storage errors.
   }
 }
 
@@ -197,8 +109,284 @@ export function CartProvider({
   children: React.ReactNode;
   cartPromise: Promise<Cart | undefined>;
 }) {
+  const serverCart = use(cartPromise);
+  const [cart, setCart] = useState<Cart | undefined>(() =>
+    normalizeCart(serverCart),
+  );
+  const [syncPendingCount, setSyncPendingCount] = useState(0);
+  const pendingQuantitiesRef = useRef<Map<string, number>>(new Map());
+  const isSyncingRef = useRef(false);
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flushSyncQueue = useCallback(async () => {
+    if (isSyncingRef.current) return;
+    if (pendingQuantitiesRef.current.size === 0) return;
+
+    isSyncingRef.current = true;
+
+    const payload = Array.from(pendingQuantitiesRef.current.entries()).map(
+      ([merchandiseId, quantity]) => ({ merchandiseId, quantity }),
+    );
+    pendingQuantitiesRef.current.clear();
+    setSyncPendingCount(0);
+
+    try {
+      const response = await fetch("/api/cart/sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ items: payload }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Cart sync failed with status ${response.status}`);
+      }
+
+      const result = (await response.json()) as { cart?: Cart | null };
+      if (result.cart) {
+        const normalized = normalizeCart(result.cart);
+        setCart(normalized);
+        safeWriteLocalCart(normalized);
+      }
+    } catch (error) {
+      for (const item of payload) {
+        pendingQuantitiesRef.current.set(item.merchandiseId, item.quantity);
+      }
+      setSyncPendingCount(pendingQuantitiesRef.current.size);
+    } finally {
+      isSyncingRef.current = false;
+      if (pendingQuantitiesRef.current.size > 0) {
+        syncTimerRef.current = setTimeout(() => {
+          void flushSyncQueue();
+        }, 500);
+      }
+    }
+  }, []);
+
+  const queueQuantitySync = useCallback(
+    (merchandiseId: string, quantity: number) => {
+      pendingQuantitiesRef.current.set(merchandiseId, Math.max(0, quantity));
+      setSyncPendingCount(pendingQuantitiesRef.current.size);
+
+      if (syncTimerRef.current) {
+        clearTimeout(syncTimerRef.current);
+      }
+
+      syncTimerRef.current = setTimeout(() => {
+        void flushSyncQueue();
+      }, 120);
+    },
+    [flushSyncQueue],
+  );
+
+  const setCartItemQuantity = useCallback(
+    (merchandiseId: string, quantity: number) => {
+      const nextQuantityForQueue = Math.max(0, quantity);
+      setCart((prev) => {
+        const current = normalizeCart(prev);
+        const currencyCode = current.cost.totalAmount.currencyCode || "NGN";
+        const existing = current.lines.find(
+          (line) => line.merchandise.id === merchandiseId,
+        );
+
+        if (!existing) return current;
+
+        const nextQuantity = Math.max(0, quantity);
+        const unitPrice = String(
+          Number(existing.cost.totalAmount.amount) / existing.quantity,
+        );
+
+        const nextLines =
+          nextQuantity === 0
+            ? current.lines.filter(
+                (line) => line.merchandise.id !== merchandiseId,
+              )
+            : current.lines.map((line) =>
+                line.merchandise.id === merchandiseId
+                  ? {
+                      ...line,
+                      quantity: nextQuantity,
+                      cost: {
+                        ...line.cost,
+                        totalAmount: {
+                          ...line.cost.totalAmount,
+                          amount: calculateItemCost(nextQuantity, unitPrice),
+                        },
+                      },
+                    }
+                  : line,
+              );
+
+        const nextCart = {
+          ...current,
+          lines: nextLines,
+          ...computeCartTotals(nextLines, currencyCode),
+        };
+
+        safeWriteLocalCart(nextCart);
+        return nextCart;
+      });
+
+      queueQuantitySync(merchandiseId, nextQuantityForQueue);
+    },
+    [queueQuantitySync],
+  );
+
+  const updateCartItem = useCallback(
+    (merchandiseId: string, updateType: UpdateType) => {
+      let queuedQuantity = 0;
+
+      setCart((prev) => {
+        const current = normalizeCart(prev);
+        const target = current.lines.find(
+          (line) => line.merchandise.id === merchandiseId,
+        );
+        if (!target) return current;
+
+        const nextQuantity =
+          updateType === "plus"
+            ? target.quantity + 1
+            : updateType === "minus"
+              ? target.quantity - 1
+              : 0;
+
+        const currencyCode = current.cost.totalAmount.currencyCode || "NGN";
+        const unitPrice = String(
+          Number(target.cost.totalAmount.amount) / target.quantity,
+        );
+
+        const nextLines =
+          nextQuantity <= 0
+            ? current.lines.filter(
+                (line) => line.merchandise.id !== merchandiseId,
+              )
+            : current.lines.map((line) =>
+                line.merchandise.id === merchandiseId
+                  ? {
+                      ...line,
+                      quantity: nextQuantity,
+                      cost: {
+                        ...line.cost,
+                        totalAmount: {
+                          ...line.cost.totalAmount,
+                          amount: calculateItemCost(nextQuantity, unitPrice),
+                        },
+                      },
+                    }
+                  : line,
+              );
+
+        const nextCart = {
+          ...current,
+          lines: nextLines,
+          ...computeCartTotals(nextLines, currencyCode),
+        };
+
+        queuedQuantity = Math.max(0, nextQuantity);
+
+        safeWriteLocalCart(nextCart);
+        return nextCart;
+      });
+
+      queueQuantitySync(merchandiseId, queuedQuantity);
+    },
+    [queueQuantitySync],
+  );
+
+  const addCartItem = useCallback(
+    (variant: ProductVariant, product: Product) => {
+      let queuedQuantity = 1;
+
+      setCart((prev) => {
+        const current = normalizeCart(prev);
+        const currencyCode =
+          variant.price.currencyCode ||
+          current.cost.totalAmount.currencyCode ||
+          "NGN";
+        const existing = current.lines.find(
+          (line) => line.merchandise.id === variant.id,
+        );
+        const nextQuantity = (existing?.quantity ?? 0) + 1;
+
+        const updatedLine: CartItem = {
+          id: existing?.id,
+          quantity: nextQuantity,
+          cost: {
+            totalAmount: {
+              amount: calculateItemCost(nextQuantity, variant.price.amount),
+              currencyCode,
+            },
+          },
+          merchandise: {
+            id: variant.id,
+            title: variant.title,
+            selectedOptions: variant.selectedOptions,
+            product: {
+              id: product.id,
+              handle: product.handle,
+              title: product.title,
+              featuredImage: product.featuredImage,
+            },
+          },
+        };
+
+        const nextLines = existing
+          ? current.lines.map((line) =>
+              line.merchandise.id === variant.id ? updatedLine : line,
+            )
+          : [...current.lines, updatedLine];
+
+        const nextCart = {
+          ...current,
+          lines: nextLines,
+          ...computeCartTotals(nextLines, currencyCode),
+        };
+
+        queuedQuantity = nextQuantity;
+
+        safeWriteLocalCart(nextCart);
+        return nextCart;
+      });
+
+      queueQuantitySync(variant.id, queuedQuantity);
+    },
+    [queueQuantitySync],
+  );
+
+  useEffect(() => {
+    const localCart = safeReadLocalCart();
+    if (localCart) {
+      setCart(localCart);
+      for (const line of localCart.lines) {
+        queueQuantitySync(line.merchandise.id, line.quantity);
+      }
+      return;
+    }
+
+    if (serverCart) {
+      safeWriteLocalCart(normalizeCart(serverCart));
+    }
+  }, [queueQuantitySync, serverCart]);
+
+  useEffect(() => {
+    return () => {
+      if (syncTimerRef.current) {
+        clearTimeout(syncTimerRef.current);
+      }
+    };
+  }, []);
+
   return (
-    <CartContext.Provider value={{ cartPromise }}>
+    <CartContext.Provider
+      value={{
+        cart,
+        addCartItem,
+        updateCartItem,
+        setCartItemQuantity,
+        syncPendingCount,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );
@@ -210,29 +398,5 @@ export function useCart() {
     throw new Error("useCart must be used within a CartProvider");
   }
 
-  const initialCart = use(context.cartPromise);
-  const [optimisticCart, updateOptimisticCart] = useOptimistic(
-    initialCart,
-    cartReducer,
-  );
-
-  const updateCartItem = (merchandiseId: string, updateType: UpdateType) => {
-    updateOptimisticCart({
-      type: "UPDATE_ITEM",
-      payload: { merchandiseId, updateType },
-    });
-  };
-
-  const addCartItem = (variant: ProductVariant, product: Product) => {
-    updateOptimisticCart({ type: "ADD_ITEM", payload: { variant, product } });
-  };
-
-  return useMemo(
-    () => ({
-      cart: optimisticCart,
-      updateCartItem,
-      addCartItem,
-    }),
-    [optimisticCart],
-  );
+  return useMemo(() => context, [context]);
 }
