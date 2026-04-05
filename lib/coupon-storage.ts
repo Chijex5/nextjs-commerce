@@ -3,7 +3,10 @@ export const GUEST_SESSION_STORAGE_KEY = "guestSessionId";
 
 export interface StoredCoupon {
   code: string;
+  discountType: string;
+  discountValue: number;
   discountAmount: number;
+  includesShipping: boolean;
   cartId: string;
   customerKey: string;
   description?: string;
@@ -46,7 +49,13 @@ export const getStoredCoupon = (
       return null;
     }
 
-    return coupon as StoredCoupon;
+    // Backfill defaults for older stored coupons that predate these fields
+    return {
+      ...coupon,
+      discountType: coupon.discountType ?? "percentage",
+      discountValue: coupon.discountValue ?? coupon.discountAmount,
+      includesShipping: coupon.includesShipping ?? false,
+    } as StoredCoupon;
   } catch {
     localStorage.removeItem(COUPON_STORAGE_KEY);
     return null;

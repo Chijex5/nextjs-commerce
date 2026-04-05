@@ -122,9 +122,19 @@ export default function CouponInput({
 
       setAppliedCoupon(data.coupon);
       setCode("");
-      toast.success(
-        `Coupon applied! You saved ₦${data.coupon.discountAmount.toFixed(2)}`,
-      );
+
+      const isFreeShipping = data.coupon.discountType === "free_shipping";
+      if (isFreeShipping) {
+        toast.success("Free shipping coupon applied!");
+      } else if (data.coupon.includesShipping) {
+        toast.success(
+          `Coupon applied! Save ₦${data.coupon.discountAmount.toFixed(2)} on products (+ shipping discount at checkout)`,
+        );
+      } else {
+        toast.success(
+          `Coupon applied! You saved ₦${data.coupon.discountAmount.toFixed(2)}`,
+        );
+      }
       onApply(data.coupon.discountAmount, data.coupon.code);
 
       // Store in localStorage for persistence
@@ -133,7 +143,10 @@ export default function CouponInput({
           COUPON_STORAGE_KEY,
           JSON.stringify({
             code: data.coupon.code,
+            discountType: data.coupon.discountType,
+            discountValue: Number(data.coupon.discountValue),
             discountAmount: data.coupon.discountAmount,
+            includesShipping: data.coupon.includesShipping ?? false,
             description: data.coupon.description,
             cartId,
             customerKey,
@@ -170,6 +183,9 @@ export default function CouponInput({
   };
 
   if (appliedCoupon) {
+    const isFreeShipping = appliedCoupon.discountType === "free_shipping";
+    const includesShipping = appliedCoupon.includesShipping;
+
     if (isCompact) {
       return (
         <div className="flex flex-col gap-2 text-sm">
@@ -203,12 +219,29 @@ export default function CouponInput({
               Remove
             </button>
           </div>
-          <div className="flex items-center justify-between text-[13px] text-green-700 dark:text-green-300">
-            <span>Savings</span>
-            <span className="font-semibold">
-              -₦{appliedCoupon.discountAmount.toFixed(2)}
-            </span>
-          </div>
+          {isFreeShipping ? (
+            <div className="flex items-center justify-between text-[13px] text-green-700 dark:text-green-300">
+              <span>Savings</span>
+              <span className="font-semibold">Free Shipping</span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between text-[13px] text-green-700 dark:text-green-300">
+              <span>Savings</span>
+              <span className="font-semibold">
+                -₦{appliedCoupon.discountAmount.toFixed(2)}
+                {includesShipping && (
+                  <span className="ml-1 text-[11px] font-normal opacity-80">
+                    + shipping
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
+          {(isFreeShipping || includesShipping) && (
+            <p className="text-[11px] text-green-700/80 dark:text-green-300/80">
+              Shipping discount applied at checkout
+            </p>
+          )}
           {appliedCoupon.description && (
             <p className="text-[11px] text-green-700/80 dark:text-green-300/80">
               {appliedCoupon.description}
@@ -241,9 +274,20 @@ export default function CouponInput({
                 <span className="font-bold">{appliedCoupon.code}</span>
               </p>
             </div>
-            <p className="mt-1 text-sm text-green-700 dark:text-green-300">
-              Discount: -₦{appliedCoupon.discountAmount.toFixed(2)}
-            </p>
+            {isFreeShipping ? (
+              <p className="mt-1 text-sm text-green-700 dark:text-green-300">
+                Free Shipping applied at checkout
+              </p>
+            ) : (
+              <p className="mt-1 text-sm text-green-700 dark:text-green-300">
+                Discount: -₦{appliedCoupon.discountAmount.toFixed(2)}
+                {includesShipping && (
+                  <span className="ml-1 text-xs opacity-80">
+                    (+ shipping discount at checkout)
+                  </span>
+                )}
+              </p>
+            )}
             {appliedCoupon.description && (
               <p className="mt-0.5 text-xs text-green-600 dark:text-green-400">
                 {appliedCoupon.description}
@@ -409,3 +453,4 @@ export default function CouponInput({
     </div>
   );
 }
+

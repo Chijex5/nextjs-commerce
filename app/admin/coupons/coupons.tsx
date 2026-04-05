@@ -16,6 +16,7 @@ interface Coupon {
   usedCount: number;
   maxUsesPerUser: number | null;
   requiresLogin: boolean;
+  includesShipping: boolean;
   isActive: boolean;
   startDate: string | null;
   expiryDate: string | null;
@@ -33,6 +34,7 @@ const EMPTY_FORM = {
   maxUses: "",
   maxUsesPerUser: "",
   requiresLogin: false,
+  includesShipping: false,
   startDate: "",
   expiryDate: "",
   isActive: true,
@@ -57,11 +59,11 @@ function formatDate(value: string | null, withTime = false) {
 
 function formatDiscount(coupon: Coupon) {
   if (coupon.discountType === "percentage") {
-    return `${coupon.discountValue}% off`;
+    return `${coupon.discountValue}% off${coupon.includesShipping ? " (incl. shipping)" : ""}`;
   }
 
   if (coupon.discountType === "fixed") {
-    return `${formatCurrency(coupon.discountValue)} off`;
+    return `${formatCurrency(coupon.discountValue)} off${coupon.includesShipping ? " (incl. shipping)" : ""}`;
   }
 
   return "Free shipping";
@@ -241,6 +243,7 @@ export default function CouponsPageClient() {
             ? Number(formData.maxUsesPerUser)
             : null,
           requiresLogin: formData.requiresLogin,
+          includesShipping: formData.includesShipping,
           startDate: formData.startDate || null,
           expiryDate: formData.expiryDate || null,
           isActive: formData.isActive,
@@ -597,6 +600,25 @@ export default function CouponsPageClient() {
                     Require customer login/signup to use
                   </span>
                 </label>
+
+                {formData.discountType !== "free_shipping" && (
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.includesShipping}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          includesShipping: e.target.checked,
+                        }))
+                      }
+                      className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-500"
+                    />
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300">
+                      Apply discount to shipping cost too
+                    </span>
+                  </label>
+                )}
 
                 <label className="flex items-center gap-2">
                   <input

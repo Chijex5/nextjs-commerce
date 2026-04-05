@@ -16,6 +16,7 @@ import { identifyUser } from "lib/analytics/tiktok-pixel";
 import { getCouponCustomerKey, getStoredCoupon } from "lib/coupon-storage";
 import { normalizeLocationName } from "lib/locations";
 import { calculateShippingAmount } from "lib/shipping";
+import { computeCouponDiscount } from "lib/coupon-calc";
 
 const ORDER_NOTE_STORAGE_KEY = "orderNote";
 
@@ -109,6 +110,9 @@ export default function CheckoutPage() {
   const [couponData, setCouponData] = useState<{
     code: string;
     amount: number;
+    discountValue: number;
+    discountType: string;
+    includesShipping: boolean;
   } | null>(null);
   const [orderNote, setOrderNote] = useState("");
   const tiktokIdentifyKeyRef = useRef<string | null>(null);
@@ -165,7 +169,13 @@ export default function CheckoutPage() {
       const coupon = getStoredCoupon(cartId, customerKey);
 
       if (coupon) {
-        setCouponData({ code: coupon.code, amount: coupon.discountAmount });
+        setCouponData({
+          code: coupon.code,
+          amount: coupon.discountAmount,
+          discountValue: coupon.discountValue,
+          discountType: coupon.discountType,
+          includesShipping: coupon.includesShipping,
+        });
       } else {
         setCouponData(null);
       }
@@ -323,20 +333,40 @@ export default function CheckoutPage() {
   }
 
   const subtotal = parseFloat(cart.cost.subtotalAmount.amount);
-  const discountAmount = couponData?.amount || 0;
+  const isFreeShippingCoupon = couponData?.discountType === "free_shipping";
   const totalQuantity = cart.lines.reduce(
     (sum, line) => sum + line.quantity,
     0,
   );
   const hasShippingState = Boolean(formData.shippingAddress.state?.trim());
-  const shippingCost = hasShippingState
+  const rawShippingCost = hasShippingState
     ? calculateShippingAmount({
         address: formData.shippingAddress,
         subtotalAmount: subtotal,
         totalQuantity,
       })
     : 0;
-  const totalDue = subtotal - discountAmount + shippingCost;
+
+  // Recalculate discount with current shipping so the displayed total matches
+  // what the server will charge.
+  let productDiscount = 0;
+  let shippingDiscount = 0;
+  if (couponData && couponData.discountType) {
+    const result = computeCouponDiscount(
+      {
+        discountType: couponData.discountType,
+        discountValue: couponData.discountValue,
+        includesShipping: couponData.includesShipping,
+      },
+      subtotal,
+      rawShippingCost,
+    );
+    productDiscount = result.productDiscount;
+    shippingDiscount = result.shippingDiscount;
+  }
+
+  const effectiveShippingCost = Math.max(0, rawShippingCost - shippingDiscount);
+  const totalDue = subtotal - productDiscount + effectiveShippingCost;
 
   return (
     <div className="mx-auto mt-20 max-w-7xl px-4 pb-20">
@@ -860,25 +890,46 @@ export default function CheckoutPage() {
                     currencyCode={cart.cost.subtotalAmount.currencyCode}
                   />
                 </div>
-                {couponData && (
+                {couponData && productDiscount > 0 && (
                   <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
                     <span>Discount ({couponData.code})</span>
-                    <span>-₦{discountAmount.toFixed(2)}</span>
+                    <span>-₦{productDiscount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
                   <span>Shipping</span>
                   {hasShippingState ? (
-                    <Price
-                      amount={shippingCost.toString()}
-                      currencyCode={cart.cost.totalAmount.currencyCode}
-                    />
+                    isFreeShippingCoupon || shippingDiscount >= rawShippingCost ? (
+                      <span className="font-medium text-green-600 dark:text-green-400">
+                        FREE
+                      </span>
+                    ) : shippingDiscount > 0 ? (
+                      <span className="text-sm">
+                        <span className="mr-1 line-through text-neutral-400">
+                          ₦{rawShippingCost.toLocaleString()}
+                        </span>
+                        <span className="text-green-600 dark:text-green-400">
+                          ₦{effectiveShippingCost.toLocaleString()}
+                        </span>
+                      </span>
+                    ) : (
+                      <Price
+                        amount={effectiveShippingCost.toString()}
+                        currencyCode={cart.cost.totalAmount.currencyCode}
+                      />
+                    )
                   ) : (
                     <span className="text-xs text-neutral-500 dark:text-neutral-400">
                       Select state to see shipping
                     </span>
                   )}
                 </div>
+                {couponData && isFreeShippingCoupon && (
+                  <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+                    <span>Shipping discount ({couponData.code})</span>
+                    <span>FREE</span>
+                  </div>
+                )}
                 <div className="flex justify-between border-t border-neutral-200 pt-2 text-lg font-bold dark:border-neutral-700">
                   <span>Total</span>
                   <Price

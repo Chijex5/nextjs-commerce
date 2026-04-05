@@ -2,6 +2,8 @@ import { eq, ilike } from "drizzle-orm";
 import { db } from "./db";
 import { coupons, couponUsages } from "./db/schema";
 import { AppError, ErrorCode, ErrorType } from "./errors";
+import { computeCouponDiscount } from "./coupon-calc";
+export { computeCouponDiscount } from "./coupon-calc";
 
 /**
  * Thrown when coupon validation fails with a user-displayable message.
@@ -18,11 +20,13 @@ export class CouponValidationError extends AppError {
 export async function validateCouponForCheckout({
   code,
   cartTotal,
+  shippingAmount,
   userId,
   sessionId,
 }: {
   code: string;
   cartTotal: number;
+  shippingAmount?: number;
   userId?: string | null;
   sessionId?: string | null;
 }) {
@@ -133,15 +137,18 @@ export async function validateCouponForCheckout({
     );
   }
 
-  let discountAmount = 0;
-  if (coupon.discountType === "percentage") {
-    discountAmount = (cartTotal * Number(coupon.discountValue)) / 100;
-  } else if (coupon.discountType === "fixed") {
-    discountAmount = Math.min(Number(coupon.discountValue), cartTotal);
-  }
+  const shipping = Number.isFinite(shippingAmount) ? (shippingAmount ?? 0) : 0;
+  const { productDiscount, shippingDiscount } = computeCouponDiscount(
+    coupon,
+    cartTotal,
+    shipping,
+  );
+  const discountAmount = productDiscount + shippingDiscount;
 
   return {
     coupon,
     discountAmount,
+    productDiscount,
+    shippingDiscount,
   };
 }

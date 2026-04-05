@@ -105,25 +105,40 @@ export async function POST(request: NextRequest) {
       (sum, line) => sum + line.quantity,
       0,
     );
-    const shippingCost = calculateShippingAmount({
+    let shippingCost = calculateShippingAmount({
       address: shippingAddress,
       subtotalAmount: subtotal,
       totalQuantity,
     });
     let discountAmount = 0;
     let appliedCouponCode: string | null = null;
+    let appliedCouponType: string | null = null;
+    let appliedCouponIncludesShipping = false;
 
     if (body.couponCode) {
-      const { coupon, discountAmount: computedDiscount } =
+      const { coupon, productDiscount, shippingDiscount } =
         await validateCouponForCheckout({
           code: body.couponCode,
           cartTotal: subtotal,
+          shippingAmount: shippingCost,
           userId: session?.id,
           sessionId: session?.id ? undefined : cart.id,
         });
 
-      discountAmount = computedDiscount;
+      // For free_shipping coupons the shippingDiscount equals the full shipping
+      // cost, so set shippingCost to 0 when recording the totals.
+      if (coupon.discountType === "free_shipping") {
+        shippingCost = 0;
+        discountAmount = 0;
+      } else {
+        // Only track the product portion in discountAmount; the shipping
+        // portion is reflected in the reduced shippingCost.
+        discountAmount = productDiscount;
+        shippingCost = Math.max(0, shippingCost - shippingDiscount);
+      }
       appliedCouponCode = coupon.code;
+      appliedCouponType = coupon.discountType;
+      appliedCouponIncludesShipping = coupon.includesShipping;
     }
 
     const totalAmount = subtotal - discountAmount + shippingCost;
@@ -199,7 +214,9 @@ export async function POST(request: NextRequest) {
               ...(appliedCouponCode
                 ? {
                     coupon_code: appliedCouponCode,
+                    coupon_type: appliedCouponType,
                     discount_amount: discountAmount,
+                    coupon_includes_shipping: appliedCouponIncludesShipping,
                   }
                 : {}),
             },
@@ -262,7 +279,9 @@ export async function POST(request: NextRequest) {
         ...(appliedCouponCode
           ? {
               coupon_code: appliedCouponCode,
+              coupon_type: appliedCouponType,
               discount_amount: discountAmount,
+              coupon_includes_shipping: appliedCouponIncludesShipping,
             }
           : {}),
       },

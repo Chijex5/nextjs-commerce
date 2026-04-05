@@ -4,6 +4,7 @@ import { couponUsages, coupons } from "lib/db/schema";
 import { getUserSession } from "lib/user-session";
 import { eq, ilike } from "drizzle-orm";
 import { handleApiError } from "lib/errors";
+import { computeCouponDiscount } from "lib/coupon-calc";
 
 export async function POST(request: NextRequest) {
   try {
@@ -109,12 +110,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let discountAmount = 0;
-    if (coupon.discountType === "percentage") {
-      discountAmount = (cartTotal * Number(coupon.discountValue)) / 100;
-    } else if (coupon.discountType === "fixed") {
-      discountAmount = Math.min(Number(coupon.discountValue), cartTotal);
-    }
+    // Cart-time validation: no shipping amount known yet.
+    // For free_shipping and includesShipping coupons the real discount is
+    // calculated at checkout; here we just return the product-only discount so
+    // the cart can display the saved amount.
+    const { productDiscount: discountAmount } = computeCouponDiscount(
+      coupon,
+      cartTotal,
+      0,
+    );
 
     return NextResponse.json({
       success: true,
@@ -124,6 +128,7 @@ export async function POST(request: NextRequest) {
         discountType: coupon.discountType,
         discountValue: coupon.discountValue,
         discountAmount,
+        includesShipping: coupon.includesShipping,
         description: coupon.description,
         requiresLogin: coupon.requiresLogin,
       },

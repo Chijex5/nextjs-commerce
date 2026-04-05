@@ -29,6 +29,7 @@ import {
   type PaymentSource,
 } from "types/payments";
 import { calculateShippingAmount } from "lib/shipping";
+import { computeCouponDiscount } from "lib/coupon-calc";
 
 type PaystackCustomer = {
   email?: string;
@@ -930,10 +931,9 @@ export async function reconcilePaystackPayment(
       }
 
       const subtotalAmount = Number(cart.subtotalAmount);
-      const discountAmount = Math.min(
-        subtotalAmount,
-        Math.max(0, toNumberOrZero(metadata.discount_amount)),
-      );
+      const couponCode = toStringOrNull(metadata.coupon_code);
+      const couponType = toStringOrNull(metadata.coupon_type);
+      const couponIncludesShipping = toBoolean(metadata.coupon_includes_shipping);
       const shippingAddress = isRecord(metadata.checkout_shipping_address)
         ? metadata.checkout_shipping_address
         : {};
@@ -944,11 +944,47 @@ export async function reconcilePaystackPayment(
         (sum, { line }) => sum + line.quantity,
         0,
       );
-      const shippingAmount = calculateShippingAmount({
+      const rawShippingAmount = calculateShippingAmount({
         address: shippingAddress,
         subtotalAmount,
         totalQuantity,
       });
+
+      // Re-derive discount/shipping using coupon type stored in metadata.
+      // This is the authoritative server-side calculation used for amount
+      // verification – it must match what checkout/initialize computed.
+      let productDiscount = 0;
+      let shippingDiscount = 0;
+
+      if (couponCode) {
+        // Fetch the live coupon to get current discountValue + includesShipping.
+        const [liveCoupon] = await tx
+          .select()
+          .from(coupons)
+          .where(ilike(coupons.code, couponCode))
+          .limit(1);
+
+        if (liveCoupon) {
+          const result = computeCouponDiscount(
+            liveCoupon,
+            subtotalAmount,
+            rawShippingAmount,
+          );
+          productDiscount = result.productDiscount;
+          shippingDiscount = result.shippingDiscount;
+        } else {
+          // Coupon deleted after payment was initiated – honour metadata amounts.
+          const metaDiscount = Math.max(0, toNumberOrZero(metadata.discount_amount));
+          if (couponType === "free_shipping") {
+            shippingDiscount = rawShippingAmount;
+          } else {
+            productDiscount = Math.min(subtotalAmount, metaDiscount);
+          }
+        }
+      }
+
+      const discountAmount = productDiscount;
+      const shippingAmount = Math.max(0, rawShippingAmount - shippingDiscount);
       const totalAmount = subtotalAmount - discountAmount + shippingAmount;
       const expectedAmountInKobo = Math.round(totalAmount * 100);
       const currencyCode = toStringOrNull(input.currencyCode) || "NGN";
@@ -1015,7 +1051,6 @@ export async function reconcilePaystackPayment(
       }
 
       const phone = toStringOrNull(metadata.phone) || toStringOrNull(input.customer?.phone);
-      const couponCode = toStringOrNull(metadata.coupon_code);
       const userId = toStringOrNull(metadata.checkout_user_id);
       const shouldSaveAddress = toBoolean(metadata.checkout_save_address);
       const customerName =
@@ -1051,7 +1086,11 @@ export async function reconcilePaystackPayment(
           status: "processing",
           subtotalAmount: String(subtotalAmount),
           shippingAmount: String(shippingAmount),
-          discountAmount: String(discountAmount),
+          // Store only the product portion of the discount.
+          // shippingAmount already reflects the reduced cost after any shipping
+          // discount, so including shippingDiscount here would cause the email
+          // template (subtotal - discount + shipping) to show the wrong total.
+          discountAmount: String(productDiscount),
           couponCode,
           totalAmount: String(totalAmount),
           currencyCode: "NGN",
@@ -1082,22 +1121,23 @@ export async function reconcilePaystackPayment(
       );
 
       if (couponCode) {
-        const [coupon] = await tx
+        // liveCoupon was fetched earlier during the discount calculation
+        const [freshCoupon] = await tx
           .select()
           .from(coupons)
           .where(ilike(coupons.code, couponCode))
           .limit(1);
 
-        if (coupon) {
+        if (freshCoupon) {
           await tx.insert(couponUsages).values({
-            couponId: coupon.id,
+            couponId: freshCoupon.id,
             userId: userId || null,
             sessionId: null,
           });
           await tx
             .update(coupons)
             .set({ usedCount: sql`${coupons.usedCount} + 1` })
-            .where(eq(coupons.id, coupon.id));
+            .where(eq(coupons.id, freshCoupon.id));
         }
       }
 

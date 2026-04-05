@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
       maxUses,
       maxUsesPerUser,
       requiresLogin,
+      includesShipping,
       startDate,
       expiryDate,
       isActive,
@@ -144,6 +145,8 @@ export async function POST(request: NextRequest) {
         maxUses: maxUses || null,
         maxUsesPerUser: maxUsesPerUser || null,
         requiresLogin: requiresLogin || false,
+        includesShipping:
+          discountType !== "free_shipping" ? Boolean(includesShipping) : false,
         startDate: startDate ? new Date(startDate) : null,
         expiryDate: expiryDate ? new Date(expiryDate) : null,
         isActive: isActive !== undefined ? isActive : true,

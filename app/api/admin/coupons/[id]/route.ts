@@ -323,6 +323,13 @@ export async function PATCH(
       updateData.requiresLogin = Boolean(body.requiresLogin);
     }
 
+    if (body.includesShipping !== undefined) {
+      // includesShipping only applies to percentage/fixed discount types
+      const discountType = updateData.discountType ?? existing.discountType;
+      updateData.includesShipping =
+        discountType !== "free_shipping" ? Boolean(body.includesShipping) : false;
+    }
+
     if (body.isActive !== undefined) updateData.isActive = body.isActive;
 
     const nextStartDate =
