@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "lib/email/resend";
 import { contactConfirmationTemplate } from "lib/email/templates/contact-confirmation";
 import { contactNotificationTemplate } from "lib/email/templates/contact-notification";
+import { handleApiError } from "lib/errors";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const maxMessageLength = 2000;
@@ -80,10 +81,6 @@ export async function POST(request: NextRequest) {
       { status: 200 },
     );
   } catch (error) {
-    console.error("Contact form error:", error);
-    return NextResponse.json(
-      { error: "Failed to send message. Please try again." },
-      { status: 500 },
-    );
+    return handleApiError(error, "Contact form");
   }
 }

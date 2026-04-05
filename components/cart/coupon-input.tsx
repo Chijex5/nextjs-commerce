@@ -8,6 +8,7 @@ import {
   getCouponCustomerKey,
   getStoredCoupon,
 } from "lib/coupon-storage";
+import { getErrorMessage, parseApiError } from "lib/client-error";
 
 interface CouponInputProps {
   onApply: (discountAmount: number, couponCode: string) => void;
@@ -115,7 +116,7 @@ export default function CouponInput({
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.error || "Invalid coupon code");
+        toast.error(parseApiError(response, data));
         return;
       }
 
@@ -142,7 +143,7 @@ export default function CouponInput({
         console.error("Failed to save coupon to storage:", err);
       }
     } catch (err) {
-      toast.error("Failed to apply coupon. Please try again.");
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

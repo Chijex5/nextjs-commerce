@@ -3,6 +3,7 @@ import { db } from "lib/db";
 import { couponUsages, coupons } from "lib/db/schema";
 import { getUserSession } from "lib/user-session";
 import { eq, ilike } from "drizzle-orm";
+import { handleApiError } from "lib/errors";
 
 export async function POST(request: NextRequest) {
   try {
@@ -128,10 +129,6 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Coupon validation error:", error);
-    return NextResponse.json(
-      { error: "Failed to validate coupon" },
-      { status: 500 },
-    );
+    return handleApiError(error, "Coupon validation");
   }
 }

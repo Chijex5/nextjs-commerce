@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import LoadingDots from "components/loading-dots";
+import { getErrorMessage, parseApiError } from "lib/client-error";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -50,7 +51,7 @@ export default function ContactForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.error || "Unable to send your message right now.");
+        toast.error(parseApiError(response, data));
         return;
       }
 
@@ -59,7 +60,7 @@ export default function ContactForm() {
       );
       setFormValues({ name: "", email: "", message: "" });
     } catch (error) {
-      toast.error("Something went wrong. Please try again.");
+      toast.error(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }

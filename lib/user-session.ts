@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import crypto from "crypto";
+import { authError, ErrorCode } from "./errors";
 
 const JWT_SECRET = process.env.NEXTAUTH_SECRET;
 
@@ -112,7 +113,7 @@ export async function clearUserSessionCookie() {
 export async function requireUserAuth(): Promise<UserSession> {
   const session = await getUserSession();
   if (!session) {
-    throw new Error("Unauthorized");
+    throw authError("Unauthorized", ErrorCode.UNAUTHENTICATED);
   }
   return session;
 }

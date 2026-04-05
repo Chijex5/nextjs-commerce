@@ -3,11 +3,9 @@ import { getCart } from "lib/database";
 import { getUserSession } from "lib/user-session";
 import { cookies } from "next/headers";
 import { registerInitializedPaymentTransaction } from "lib/payments/paystack-reconcile";
-import {
-  CouponValidationError,
-  validateCouponForCheckout,
-} from "lib/coupon-validation";
+import { validateCouponForCheckout } from "lib/coupon-validation";
 import { calculateShippingAmount } from "lib/shipping";
+import { handleApiError } from "lib/errors";
 
 type LegacyCheckoutAddress = {
   firstName?: string;
@@ -116,26 +114,16 @@ export async function POST(request: NextRequest) {
     let appliedCouponCode: string | null = null;
 
     if (body.couponCode) {
-      try {
-        const { coupon, discountAmount: computedDiscount } =
-          await validateCouponForCheckout({
-            code: body.couponCode,
-            cartTotal: subtotal,
-            userId: session?.id,
-            sessionId: session?.id ? undefined : cart.id,
-          });
+      const { coupon, discountAmount: computedDiscount } =
+        await validateCouponForCheckout({
+          code: body.couponCode,
+          cartTotal: subtotal,
+          userId: session?.id,
+          sessionId: session?.id ? undefined : cart.id,
+        });
 
-        discountAmount = computedDiscount;
-        appliedCouponCode = coupon.code;
-      } catch (error) {
-        if (error instanceof CouponValidationError) {
-          return NextResponse.json(
-            { error: error.message },
-            { status: error.status },
-          );
-        }
-        throw error;
-      }
+      discountAmount = computedDiscount;
+      appliedCouponCode = coupon.code;
     }
 
     const totalAmount = subtotal - discountAmount + shippingCost;
@@ -286,10 +274,6 @@ export async function POST(request: NextRequest) {
       reference,
     });
   } catch (error) {
-    console.error("Checkout initialization error:", error);
-    return NextResponse.json(
-      { error: "An error occurred during checkout" },
-      { status: 500 },
-    );
+    return handleApiError(error, "Checkout initialization");
   }
 }
