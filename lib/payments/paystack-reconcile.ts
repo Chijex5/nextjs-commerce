@@ -29,6 +29,7 @@ import {
   type PaymentSource,
 } from "types/payments";
 import { calculateShippingAmount } from "lib/shipping";
+import { validateCouponForCheckout } from "lib/coupon-validation";
 
 type PaystackCustomer = {
   email?: string;
@@ -930,10 +931,7 @@ export async function reconcilePaystackPayment(
       }
 
       const subtotalAmount = Number(cart.subtotalAmount);
-      const discountAmount = Math.min(
-        subtotalAmount,
-        Math.max(0, toNumberOrZero(metadata.discount_amount)),
-      );
+      const couponCode = toStringOrNull(metadata.coupon_code);
       const shippingAddress = isRecord(metadata.checkout_shipping_address)
         ? metadata.checkout_shipping_address
         : {};
@@ -949,6 +947,36 @@ export async function reconcilePaystackPayment(
         subtotalAmount,
         totalQuantity,
       });
+      let discountAmount = 0;
+      if (couponCode) {
+        try {
+          const validated = await validateCouponForCheckout({
+            code: couponCode,
+            cartTotal: subtotalAmount,
+            shippingAmount,
+            userId: toStringOrNull(metadata.checkout_user_id),
+          });
+          discountAmount = validated.discountAmount;
+        } catch {
+          const message = "Coupon is no longer valid for this checkout";
+          await setConflict(tx, {
+            paymentTransactionId: upserted.id,
+            reference,
+            source,
+            eventType: input.eventType,
+            conflictCode: "invalid_status",
+            message,
+            payload: input.payload,
+            paystackStatus: input.paystackStatus,
+          });
+          return {
+            status: "conflict" as const,
+            conflictCode: "invalid_status" as const,
+            message,
+          };
+        }
+      }
+
       const totalAmount = subtotalAmount - discountAmount + shippingAmount;
       const expectedAmountInKobo = Math.round(totalAmount * 100);
       const currencyCode = toStringOrNull(input.currencyCode) || "NGN";
@@ -1015,7 +1043,6 @@ export async function reconcilePaystackPayment(
       }
 
       const phone = toStringOrNull(metadata.phone) || toStringOrNull(input.customer?.phone);
-      const couponCode = toStringOrNull(metadata.coupon_code);
       const userId = toStringOrNull(metadata.checkout_user_id);
       const shouldSaveAddress = toBoolean(metadata.checkout_save_address);
       const customerName =

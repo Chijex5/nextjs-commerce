@@ -16,6 +16,8 @@ interface Coupon {
   usedCount: number;
   maxUsesPerUser: number | null;
   requiresLogin: boolean;
+  grantsFreeShipping: boolean;
+  includeShippingInDiscount: boolean;
   isActive: boolean;
   startDate: string | null;
   expiryDate: string | null;
@@ -33,6 +35,8 @@ const EMPTY_FORM = {
   maxUses: "",
   maxUsesPerUser: "",
   requiresLogin: false,
+  grantsFreeShipping: false,
+  includeShippingInDiscount: false,
   startDate: "",
   expiryDate: "",
   isActive: true,
@@ -56,15 +60,25 @@ function formatDate(value: string | null, withTime = false) {
 }
 
 function formatDiscount(coupon: Coupon) {
+  const shippingFlags: string[] = [];
+  if (coupon.grantsFreeShipping || coupon.discountType === "free_shipping") {
+    shippingFlags.push("free shipping");
+  } else if (
+    coupon.discountType === "percentage" &&
+    coupon.includeShippingInDiscount
+  ) {
+    shippingFlags.push("% also applies to shipping");
+  }
+
   if (coupon.discountType === "percentage") {
-    return `${coupon.discountValue}% off`;
+    return `${coupon.discountValue}% off${shippingFlags.length ? ` + ${shippingFlags.join(", ")}` : ""}`;
   }
 
   if (coupon.discountType === "fixed") {
-    return `${formatCurrency(coupon.discountValue)} off`;
+    return `${formatCurrency(coupon.discountValue)} off${shippingFlags.length ? ` + ${shippingFlags.join(", ")}` : ""}`;
   }
 
-  return "Free shipping";
+  return shippingFlags.length ? shippingFlags.join(", ") : "Free shipping";
 }
 
 function getCouponState(coupon: Coupon) {
@@ -214,6 +228,15 @@ export default function CouponsPageClient() {
     }
 
     if (
+      formData.discountType === "percentage" &&
+      Number(formData.discountValue) > 100
+    ) {
+      toast.error("Percentage discount cannot exceed 100%");
+      setCreateCouponLoading(false);
+      return;
+    }
+
+    if (
       formData.startDate &&
       formData.expiryDate &&
       new Date(formData.expiryDate).getTime() <=
@@ -241,6 +264,8 @@ export default function CouponsPageClient() {
             ? Number(formData.maxUsesPerUser)
             : null,
           requiresLogin: formData.requiresLogin,
+          grantsFreeShipping: formData.grantsFreeShipping,
+          includeShippingInDiscount: formData.includeShippingInDiscount,
           startDate: formData.startDate || null,
           expiryDate: formData.expiryDate || null,
           isActive: formData.isActive,
@@ -453,6 +478,14 @@ export default function CouponsPageClient() {
                           | "percentage"
                           | "fixed"
                           | "free_shipping",
+                        grantsFreeShipping:
+                          e.target.value === "free_shipping"
+                            ? true
+                            : prev.grantsFreeShipping,
+                        includeShippingInDiscount:
+                          e.target.value === "percentage"
+                            ? prev.includeShippingInDiscount
+                            : false,
                       }))
                     }
                     className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
@@ -482,6 +515,7 @@ export default function CouponsPageClient() {
                         placeholder={formData.discountType === "percentage" ? "20" : "1000"}
                         required
                         min="0"
+                        max={formData.discountType === "percentage" ? "100" : undefined}
                         step="0.01"
                         className="w-full rounded-md border border-neutral-300 px-3 py-2 pr-10 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                       />
@@ -490,6 +524,43 @@ export default function CouponsPageClient() {
                       </span>
                     </div>
                   </div>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.grantsFreeShipping}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        grantsFreeShipping: e.target.checked,
+                      }))
+                    }
+                    className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-500"
+                  />
+                  <span className="text-sm text-neutral-700 dark:text-neutral-300">
+                    Include free shipping
+                  </span>
+                </label>
+                {formData.discountType === "percentage" && (
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.includeShippingInDiscount}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          includeShippingInDiscount: e.target.checked,
+                        }))
+                      }
+                      className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-500"
+                    />
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300">
+                      Apply percentage discount to shipping too
+                    </span>
+                  </label>
                 )}
               </div>
 

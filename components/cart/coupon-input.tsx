@@ -11,7 +11,16 @@ import {
 import { getErrorMessage, parseApiError } from "lib/client-error";
 
 interface CouponInputProps {
-  onApply: (discountAmount: number, couponCode: string) => void;
+  onApply: (
+    discountAmount: number,
+    couponCode: string,
+    couponMeta?: {
+      shippingDiscountAmount?: number;
+      productDiscountAmount?: number;
+      grantsFreeShipping?: boolean;
+      includeShippingInDiscount?: boolean;
+    },
+  ) => void;
   cartTotal: number;
   cartId: string;
   variant?: "card" | "compact";
@@ -65,7 +74,7 @@ export default function CouponInput({
           if (response.ok) {
             const data = await response.json();
             setAppliedCoupon(data.coupon);
-            onApply(data.coupon.discountAmount, data.coupon.code);
+            onApply(data.coupon.discountAmount, data.coupon.code, data.coupon);
           } else {
             // Coupon no longer valid, remove it
             localStorage.removeItem(COUPON_STORAGE_KEY);
@@ -125,7 +134,7 @@ export default function CouponInput({
       toast.success(
         `Coupon applied! You saved ₦${data.coupon.discountAmount.toFixed(2)}`,
       );
-      onApply(data.coupon.discountAmount, data.coupon.code);
+      onApply(data.coupon.discountAmount, data.coupon.code, data.coupon);
 
       // Store in localStorage for persistence
       try {
@@ -134,6 +143,12 @@ export default function CouponInput({
           JSON.stringify({
             code: data.coupon.code,
             discountAmount: data.coupon.discountAmount,
+            shippingDiscountAmount: data.coupon.shippingDiscountAmount || 0,
+            productDiscountAmount: data.coupon.productDiscountAmount || 0,
+            grantsFreeShipping: Boolean(data.coupon.grantsFreeShipping),
+            includeShippingInDiscount: Boolean(
+              data.coupon.includeShippingInDiscount,
+            ),
             description: data.coupon.description,
             cartId,
             customerKey,
