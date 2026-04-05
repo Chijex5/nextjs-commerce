@@ -110,7 +110,7 @@ export function AddToCart({
           price: parseFloat(finalVariant.price.amount),
           quantity: 1,
         });
-        addItemAction();
+        await addItemAction();
       }}
     >
       <SubmitButton
