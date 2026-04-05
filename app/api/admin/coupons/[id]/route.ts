@@ -323,6 +323,13 @@ export async function PATCH(
       updateData.requiresLogin = Boolean(body.requiresLogin);
     }
 
+    if (body.includesShipping !== undefined) {
+      // Only percentage coupons can include shipping
+      const effectiveType = updateData.discountType ?? existing.discountType;
+      updateData.includesShipping =
+        effectiveType === "percentage" ? Boolean(body.includesShipping) : false;
+    }
+
     if (body.isActive !== undefined) updateData.isActive = body.isActive;
 
     const nextStartDate =

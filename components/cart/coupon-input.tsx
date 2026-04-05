@@ -11,9 +11,14 @@ import {
 import { getErrorMessage, parseApiError } from "lib/client-error";
 
 interface CouponInputProps {
-  onApply: (discountAmount: number, couponCode: string) => void;
+  onApply: (
+    discountAmount: number,
+    couponCode: string,
+    meta?: { coversShipping?: boolean; includesShipping?: boolean; discountType?: string },
+  ) => void;
   cartTotal: number;
   cartId: string;
+  shippingCost?: number;
   variant?: "card" | "compact";
 }
 
@@ -21,6 +26,7 @@ export default function CouponInput({
   onApply,
   cartTotal,
   cartId,
+  shippingCost = 0,
   variant = "card",
 }: CouponInputProps) {
   const isCompact = variant === "compact";
@@ -46,10 +52,12 @@ export default function CouponInput({
           const payload: {
             code: string;
             cartTotal: number;
+            shippingCost?: number;
             sessionId?: string;
           } = {
             code: couponData.code,
             cartTotal,
+            shippingCost,
           };
 
           if (!session?.id) {
@@ -65,7 +73,29 @@ export default function CouponInput({
           if (response.ok) {
             const data = await response.json();
             setAppliedCoupon(data.coupon);
-            onApply(data.coupon.discountAmount, data.coupon.code);
+            onApply(data.coupon.discountAmount, data.coupon.code, {
+              coversShipping: data.coupon.coversShipping,
+              includesShipping: data.coupon.includesShipping,
+              discountType: data.coupon.discountType,
+            });
+            // Refresh localStorage with updated discountAmount (e.g. if cart changed)
+            try {
+              localStorage.setItem(
+                COUPON_STORAGE_KEY,
+                JSON.stringify({
+                  code: data.coupon.code,
+                  discountAmount: data.coupon.discountAmount,
+                  discountType: data.coupon.discountType,
+                  coversShipping: data.coupon.coversShipping,
+                  includesShipping: data.coupon.includesShipping,
+                  description: data.coupon.description,
+                  cartId,
+                  customerKey,
+                }),
+              );
+            } catch {
+              // ignore storage errors
+            }
           } else {
             // Coupon no longer valid, remove it
             localStorage.removeItem(COUPON_STORAGE_KEY);
@@ -97,9 +127,10 @@ export default function CouponInput({
     setLoading(true);
 
     try {
-      const payload: { code: string; cartTotal: number; sessionId?: string } = {
+      const payload: { code: string; cartTotal: number; shippingCost?: number; sessionId?: string } = {
         code: trimmedCode,
         cartTotal,
+        shippingCost,
       };
       const customerKey = getCouponCustomerKey(session?.id);
 
@@ -122,10 +153,19 @@ export default function CouponInput({
 
       setAppliedCoupon(data.coupon);
       setCode("");
-      toast.success(
-        `Coupon applied! You saved ₦${data.coupon.discountAmount.toFixed(2)}`,
-      );
-      onApply(data.coupon.discountAmount, data.coupon.code);
+      const isFreeShipping = data.coupon.coversShipping;
+      if (isFreeShipping) {
+        toast.success("Coupon applied! Free shipping on this order 🎉");
+      } else {
+        toast.success(
+          `Coupon applied! You saved ₦${data.coupon.discountAmount.toFixed(2)}`,
+        );
+      }
+      onApply(data.coupon.discountAmount, data.coupon.code, {
+        coversShipping: data.coupon.coversShipping,
+        includesShipping: data.coupon.includesShipping,
+        discountType: data.coupon.discountType,
+      });
 
       // Store in localStorage for persistence
       try {
@@ -134,6 +174,9 @@ export default function CouponInput({
           JSON.stringify({
             code: data.coupon.code,
             discountAmount: data.coupon.discountAmount,
+            discountType: data.coupon.discountType,
+            coversShipping: data.coupon.coversShipping,
+            includesShipping: data.coupon.includesShipping,
             description: data.coupon.description,
             cartId,
             customerKey,
@@ -170,6 +213,11 @@ export default function CouponInput({
   };
 
   if (appliedCoupon) {
+    const isFreeShipping = appliedCoupon.coversShipping;
+    const savingsLabel = isFreeShipping
+      ? "Free shipping!"
+      : `-₦${appliedCoupon.discountAmount.toFixed(2)}`;
+
     if (isCompact) {
       return (
         <div className="flex flex-col gap-2 text-sm">
@@ -205,9 +253,7 @@ export default function CouponInput({
           </div>
           <div className="flex items-center justify-between text-[13px] text-green-700 dark:text-green-300">
             <span>Savings</span>
-            <span className="font-semibold">
-              -₦{appliedCoupon.discountAmount.toFixed(2)}
-            </span>
+            <span className="font-semibold">{savingsLabel}</span>
           </div>
           {appliedCoupon.description && (
             <p className="text-[11px] text-green-700/80 dark:text-green-300/80">
@@ -242,7 +288,7 @@ export default function CouponInput({
               </p>
             </div>
             <p className="mt-1 text-sm text-green-700 dark:text-green-300">
-              Discount: -₦{appliedCoupon.discountAmount.toFixed(2)}
+              {isFreeShipping ? "Free shipping on this order!" : `Discount: -₦${appliedCoupon.discountAmount.toFixed(2)}`}
             </p>
             {appliedCoupon.description && (
               <p className="mt-0.5 text-xs text-green-600 dark:text-green-400">

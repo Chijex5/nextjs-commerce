@@ -18,11 +18,13 @@ export class CouponValidationError extends AppError {
 export async function validateCouponForCheckout({
   code,
   cartTotal,
+  shippingCost = 0,
   userId,
   sessionId,
 }: {
   code: string;
   cartTotal: number;
+  shippingCost?: number;
   userId?: string | null;
   sessionId?: string | null;
 }) {
@@ -134,14 +136,24 @@ export async function validateCouponForCheckout({
   }
 
   let discountAmount = 0;
+  let coversShipping = false;
+
   if (coupon.discountType === "percentage") {
-    discountAmount = (cartTotal * Number(coupon.discountValue)) / 100;
+    const base = coupon.includesShipping
+      ? cartTotal + Math.max(0, shippingCost)
+      : cartTotal;
+    discountAmount = (base * Number(coupon.discountValue)) / 100;
+    // Cap at the full chargeable amount (subtotal + shipping)
+    discountAmount = Math.min(discountAmount, cartTotal + Math.max(0, shippingCost));
   } else if (coupon.discountType === "fixed") {
     discountAmount = Math.min(Number(coupon.discountValue), cartTotal);
+  } else if (coupon.discountType === "free_shipping") {
+    coversShipping = true;
   }
 
   return {
     coupon,
     discountAmount,
+    coversShipping,
   };
 }

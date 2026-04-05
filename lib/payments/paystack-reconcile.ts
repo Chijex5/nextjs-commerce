@@ -930,10 +930,11 @@ export async function reconcilePaystackPayment(
       }
 
       const subtotalAmount = Number(cart.subtotalAmount);
-      const discountAmount = Math.min(
-        subtotalAmount,
-        Math.max(0, toNumberOrZero(metadata.discount_amount)),
-      );
+      const couponCode = toStringOrNull(metadata.coupon_code);
+      const rawDiscountAmount = toNumberOrZero(metadata.discount_amount);
+      const couponType = toStringOrNull(metadata.coupon_type);
+      const couponIncludesShipping = toBoolean(metadata.coupon_includes_shipping);
+
       const shippingAddress = isRecord(metadata.checkout_shipping_address)
         ? metadata.checkout_shipping_address
         : {};
@@ -944,12 +945,24 @@ export async function reconcilePaystackPayment(
         (sum, { line }) => sum + line.quantity,
         0,
       );
-      const shippingAmount = calculateShippingAmount({
+
+      // Calculate shipping; free_shipping coupons zero this out
+      let shippingAmount = calculateShippingAmount({
         address: shippingAddress,
         subtotalAmount,
         totalQuantity,
       });
-      const totalAmount = subtotalAmount - discountAmount + shippingAmount;
+      if (couponType === "free_shipping") {
+        shippingAmount = 0;
+      }
+
+      // Cap discount to subtotal (+ shipping for includesShipping coupons)
+      const maxDiscount = couponIncludesShipping
+        ? subtotalAmount + shippingAmount
+        : subtotalAmount;
+      const discountAmount = Math.min(maxDiscount, Math.max(0, rawDiscountAmount));
+
+      const totalAmount = Math.max(subtotalAmount - discountAmount + shippingAmount, 0);
       const expectedAmountInKobo = Math.round(totalAmount * 100);
       const currencyCode = toStringOrNull(input.currencyCode) || "NGN";
 
@@ -1015,7 +1028,6 @@ export async function reconcilePaystackPayment(
       }
 
       const phone = toStringOrNull(metadata.phone) || toStringOrNull(input.customer?.phone);
-      const couponCode = toStringOrNull(metadata.coupon_code);
       const userId = toStringOrNull(metadata.checkout_user_id);
       const shouldSaveAddress = toBoolean(metadata.checkout_save_address);
       const customerName =

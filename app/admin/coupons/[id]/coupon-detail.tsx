@@ -15,6 +15,7 @@ interface Coupon {
   usedCount: number;
   maxUsesPerUser: number | null;
   requiresLogin: boolean;
+  includesShipping: boolean;
   isActive: boolean;
   startDate: string | null;
   expiryDate: string | null;
@@ -85,6 +86,7 @@ interface CouponFormData {
   maxUses: string;
   maxUsesPerUser: string;
   requiresLogin: boolean;
+  includesShipping: boolean;
   isActive: boolean;
   startDate: string;
   expiryDate: string;
@@ -183,6 +185,7 @@ export default function CouponDetailClient({ couponId }: CouponDetailClientProps
     maxUses: "",
     maxUsesPerUser: "",
     requiresLogin: false,
+    includesShipping: false,
     isActive: true,
     startDate: "",
     expiryDate: "",
@@ -203,6 +206,7 @@ export default function CouponDetailClient({ couponId }: CouponDetailClientProps
       maxUsesPerUser:
         coupon.maxUsesPerUser === null ? "" : String(coupon.maxUsesPerUser),
       requiresLogin: coupon.requiresLogin,
+      includesShipping: coupon.includesShipping ?? false,
       isActive: coupon.isActive,
       startDate: toDateTimeInputValue(coupon.startDate),
       expiryDate: toDateTimeInputValue(coupon.expiryDate),
@@ -297,6 +301,7 @@ export default function CouponDetailClient({ couponId }: CouponDetailClientProps
             ? Number(formData.maxUsesPerUser)
             : null,
           requiresLogin: formData.requiresLogin,
+          includesShipping: formData.includesShipping,
           isActive: formData.isActive,
           startDate: formData.startDate || null,
           expiryDate: formData.expiryDate || null,
@@ -663,6 +668,25 @@ export default function CouponDetailClient({ couponId }: CouponDetailClientProps
                 Require customer login/signup to use
               </span>
             </label>
+
+            {formData.discountType === "percentage" && (
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.includesShipping}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      includesShipping: e.target.checked,
+                    }))
+                  }
+                  className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-500"
+                />
+                <span className="text-sm text-neutral-700 dark:text-neutral-300">
+                  Apply discount to shipping too (percentage covers subtotal + shipping)
+                </span>
+              </label>
+            )}
 
             <label className="flex items-center gap-2">
               <input

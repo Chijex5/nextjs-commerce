@@ -105,28 +105,37 @@ export async function POST(request: NextRequest) {
       (sum, line) => sum + line.quantity,
       0,
     );
-    const shippingCost = calculateShippingAmount({
+    let shippingCost = calculateShippingAmount({
       address: shippingAddress,
       subtotalAmount: subtotal,
       totalQuantity,
     });
     let discountAmount = 0;
     let appliedCouponCode: string | null = null;
+    let couponType: string | null = null;
+    let couponIncludesShipping = false;
 
     if (body.couponCode) {
-      const { coupon, discountAmount: computedDiscount } =
+      const { coupon, discountAmount: computedDiscount, coversShipping } =
         await validateCouponForCheckout({
           code: body.couponCode,
           cartTotal: subtotal,
+          shippingCost,
           userId: session?.id,
           sessionId: session?.id ? undefined : cart.id,
         });
 
+      if (coversShipping) {
+        shippingCost = 0;
+      }
+
       discountAmount = computedDiscount;
       appliedCouponCode = coupon.code;
+      couponType = coupon.discountType;
+      couponIncludesShipping = coupon.includesShipping;
     }
 
-    const totalAmount = subtotal - discountAmount + shippingCost;
+    const totalAmount = Math.max(subtotal - discountAmount + shippingCost, 0);
 
     // Convert amount to kobo (Paystack uses kobo for NGN)
     const amountInKobo = Math.round(totalAmount * 100);
@@ -200,6 +209,8 @@ export async function POST(request: NextRequest) {
                 ? {
                     coupon_code: appliedCouponCode,
                     discount_amount: discountAmount,
+                    coupon_type: couponType,
+                    coupon_includes_shipping: couponIncludesShipping,
                   }
                 : {}),
             },
@@ -263,6 +274,8 @@ export async function POST(request: NextRequest) {
           ? {
               coupon_code: appliedCouponCode,
               discount_amount: discountAmount,
+              coupon_type: couponType,
+              coupon_includes_shipping: couponIncludesShipping,
             }
           : {}),
       },

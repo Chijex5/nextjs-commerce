@@ -33,6 +33,10 @@ type Order = {
   status: string;
   deliveryStatus?: DeliveryStatus;
   estimatedArrival?: string | null;
+  subtotalAmount?: string | null;
+  shippingAmount?: string | null;
+  discountAmount?: string | null;
+  couponCode?: string | null;
   totalAmount: string;
   currencyCode: string;
   createdAt: string;
@@ -251,6 +255,57 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           ))}
         </div>
       </section>
+
+      {/* Price breakdown */}
+      {(order.subtotalAmount || order.shippingAmount || order.discountAmount) ? (
+        <section className="rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950 md:p-8">
+          <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+            Price breakdown
+          </h2>
+          <div className="mt-4 space-y-2 text-sm">
+            {order.subtotalAmount ? (
+              <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
+                <span>Subtotal</span>
+                <Price
+                  amount={order.subtotalAmount}
+                  currencyCode={order.currencyCode}
+                  currencyCodeClassName="hidden"
+                />
+              </div>
+            ) : null}
+            {order.discountAmount && Number(order.discountAmount) > 0 ? (
+              <div className="flex justify-between text-green-600 dark:text-green-400">
+                <span>
+                  Discount{order.couponCode ? ` (${order.couponCode})` : ""}
+                </span>
+                <span>-₦{Number(order.discountAmount).toLocaleString()}</span>
+              </div>
+            ) : null}
+            {order.shippingAmount !== undefined && order.shippingAmount !== null ? (
+              <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
+                <span>Shipping</span>
+                {Number(order.shippingAmount) === 0 ? (
+                  <span className="font-medium text-green-600 dark:text-green-400">Free</span>
+                ) : (
+                  <Price
+                    amount={order.shippingAmount}
+                    currencyCode={order.currencyCode}
+                    currencyCodeClassName="hidden"
+                  />
+                )}
+              </div>
+            ) : null}
+            <div className="flex justify-between border-t border-neutral-200 pt-2 font-semibold text-neutral-900 dark:border-neutral-700 dark:text-neutral-100">
+              <span>Total</span>
+              <Price
+                amount={order.totalAmount}
+                currencyCode={order.currencyCode}
+                currencyCodeClassName="hidden"
+              />
+            </div>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

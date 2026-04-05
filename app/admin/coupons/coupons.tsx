@@ -16,6 +16,7 @@ interface Coupon {
   usedCount: number;
   maxUsesPerUser: number | null;
   requiresLogin: boolean;
+  includesShipping: boolean;
   isActive: boolean;
   startDate: string | null;
   expiryDate: string | null;
@@ -33,6 +34,7 @@ const EMPTY_FORM = {
   maxUses: "",
   maxUsesPerUser: "",
   requiresLogin: false,
+  includesShipping: false,
   startDate: "",
   expiryDate: "",
   isActive: true,
@@ -241,6 +243,7 @@ export default function CouponsPageClient() {
             ? Number(formData.maxUsesPerUser)
             : null,
           requiresLogin: formData.requiresLogin,
+          includesShipping: formData.includesShipping,
           startDate: formData.startDate || null,
           expiryDate: formData.expiryDate || null,
           isActive: formData.isActive,
@@ -492,6 +495,25 @@ export default function CouponsPageClient() {
                   </div>
                 )}
               </div>
+
+              {formData.discountType === "percentage" && (
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+                  <input
+                    type="checkbox"
+                    checked={formData.includesShipping}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        includesShipping: e.target.checked,
+                      }))
+                    }
+                    className="rounded border-neutral-300"
+                  />
+                  <span>
+                    Apply discount to shipping too (percentage applies to subtotal + shipping)
+                  </span>
+                </label>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">

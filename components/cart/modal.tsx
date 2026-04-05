@@ -51,6 +51,7 @@ export default function CartModal() {
   >(null);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [couponCode, setCouponCode] = useState("");
+  const [couponCoversShipping, setCouponCoversShipping] = useState(false);
   const [orderNote, setOrderNote] = useState("");
   const [noteDraft, setNoteDraft] = useState("");
   const [shippingAddress, setShippingAddress] = useState<{
@@ -82,9 +83,12 @@ export default function CartModal() {
     });
   }, [cart, shippingAddress]);
 
+  const effectiveShipping =
+    couponCoversShipping ? 0 : (shippingPreview ?? null);
+
   const summaryTotal =
-    shippingPreview !== null
-      ? Math.max(baseSummaryTotal + shippingPreview, 0)
+    effectiveShipping !== null
+      ? Math.max(baseSummaryTotal + effectiveShipping, 0)
       : baseSummaryTotal;
   const summaryCurrency = cart?.cost.totalAmount.currencyCode ?? "USD";
   const formattedSummaryTotal = new Intl.NumberFormat(undefined, {
@@ -93,10 +97,15 @@ export default function CartModal() {
     currencyDisplay: "narrowSymbol",
   }).format(summaryTotal);
 
-  const handleCouponApply = (amount: number, code: string) => {
+  const handleCouponApply = (
+    amount: number,
+    code: string,
+    meta?: { coversShipping?: boolean; includesShipping?: boolean; discountType?: string },
+  ) => {
     setDiscountAmount(amount);
     setCouponCode(code);
-    if (activeSheet === "coupon" && amount > 0) {
+    setCouponCoversShipping(meta?.coversShipping ?? false);
+    if (activeSheet === "coupon" && (amount > 0 || meta?.coversShipping)) {
       setActiveSheet(null);
     }
   };
@@ -352,9 +361,11 @@ export default function CartModal() {
                         <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
                           {shippingLoading
                             ? "Loading"
-                            : shippingPreview !== null
-                              ? `₦${shippingPreview.toLocaleString()}`
-                              : "Calculated at checkout"}
+                            : couponCoversShipping
+                              ? "Free 🎉"
+                              : shippingPreview !== null
+                                ? `₦${shippingPreview.toLocaleString()}`
+                                : "Calculated at checkout"}
                         </span>
                       </button>
                       <button
@@ -439,7 +450,11 @@ export default function CartModal() {
                             </div>
                             <div className="flex items-center justify-between px-4 py-2.5">
                               <p>Shipping</p>
-                              {shippingPreview !== null ? (
+                              {couponCoversShipping ? (
+                                <p className="text-right text-sm font-medium text-green-600 dark:text-green-400">
+                                  Free 🎉
+                                </p>
+                              ) : shippingPreview !== null ? (
                                 <p className="text-right text-sm font-medium text-neutral-900 dark:text-white">
                                   ₦{shippingPreview.toLocaleString()}
                                 </p>
@@ -456,7 +471,7 @@ export default function CartModal() {
                                 amount={Math.max(
                                   parseFloat(cart.cost.totalAmount.amount) -
                                     discountAmount +
-                                    (shippingPreview ?? 0),
+                                    (couponCoversShipping ? 0 : (shippingPreview ?? 0)),
                                   0,
                                 ).toString()}
                                 currencyCode={
@@ -492,7 +507,7 @@ export default function CartModal() {
                       const total = parseFloat(cart.cost.totalAmount.amount);
                       const trackedTotal = Number.isFinite(total)
                         ? Math.max(
-                            total - discountAmount + (shippingPreview ?? 0),
+                            total - discountAmount + (couponCoversShipping ? 0 : (shippingPreview ?? 0)),
                             0,
                           )
                         : 0;

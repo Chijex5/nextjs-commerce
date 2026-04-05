@@ -13,7 +13,8 @@ import {
 } from "components/locations/location-select-group";
 import { useUserSession } from "hooks/useUserSession";
 import { identifyUser } from "lib/analytics/tiktok-pixel";
-import { getCouponCustomerKey, getStoredCoupon } from "lib/coupon-storage";
+import { getCouponCustomerKey, getStoredCoupon, COUPON_STORAGE_KEY } from "lib/coupon-storage";
+import CouponInput from "components/cart/coupon-input";
 import { normalizeLocationName } from "lib/locations";
 import { calculateShippingAmount } from "lib/shipping";
 
@@ -109,6 +110,8 @@ export default function CheckoutPage() {
   const [couponData, setCouponData] = useState<{
     code: string;
     amount: number;
+    coversShipping: boolean;
+    includesShipping: boolean;
   } | null>(null);
   const [orderNote, setOrderNote] = useState("");
   const tiktokIdentifyKeyRef = useRef<string | null>(null);
@@ -154,7 +157,76 @@ export default function CheckoutPage() {
     });
   }, [formData.email, formData.phone]);
 
-  const loadCouponData = (cartId: string) => {
+  // Re-validate the coupon when shipping address changes (for includesShipping coupons)
+  useEffect(() => {
+    if (!couponData?.code || !couponData.includesShipping || !cart?.id) return;
+    const state = formData.shippingAddress.state?.trim();
+    if (!state) return;
+
+    const currentSubtotal = parseFloat(cart.cost.subtotalAmount.amount);
+    const totalQuantity = cart.lines.reduce((s, l) => s + l.quantity, 0);
+    const currentShipping = calculateShippingAmount({
+      address: formData.shippingAddress,
+      subtotalAmount: currentSubtotal,
+      totalQuantity,
+    });
+
+    const customerKey = getCouponCustomerKey(session?.id);
+    const payload: Record<string, unknown> = {
+      code: couponData.code,
+      cartTotal: currentSubtotal,
+      shippingCost: currentShipping,
+    };
+    if (!session?.id) {
+      payload.sessionId = customerKey.replace("guest:", "");
+    }
+
+    fetch("/api/coupons/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.coupon) {
+          const c = data.coupon;
+          setCouponData({
+            code: c.code,
+            amount: c.discountAmount,
+            coversShipping: c.coversShipping,
+            includesShipping: c.includesShipping,
+          });
+          try {
+            localStorage.setItem(
+              COUPON_STORAGE_KEY,
+              JSON.stringify({
+                code: c.code,
+                discountAmount: c.discountAmount,
+                discountType: c.discountType,
+                coversShipping: c.coversShipping,
+                includesShipping: c.includesShipping,
+                description: c.description,
+                cartId: cart.id,
+                customerKey,
+              }),
+            );
+          } catch {
+            // ignore
+          }
+        }
+      })
+      .catch(() => {
+        // silent — don't clear coupon on network error
+      });
+  }, [
+    formData.shippingAddress.state,
+    formData.shippingAddress.lga,
+    formData.shippingAddress.ward,
+    couponData?.code,
+    couponData?.includesShipping,
+  ]);
+
+
     if (!cartId) {
       setCouponData(null);
       return;
@@ -165,7 +237,12 @@ export default function CheckoutPage() {
       const coupon = getStoredCoupon(cartId, customerKey);
 
       if (coupon) {
-        setCouponData({ code: coupon.code, amount: coupon.discountAmount });
+        setCouponData({
+          code: coupon.code,
+          amount: coupon.discountAmount,
+          coversShipping: coupon.coversShipping,
+          includesShipping: coupon.includesShipping,
+        });
       } else {
         setCouponData(null);
       }
@@ -287,7 +364,6 @@ export default function CheckoutPage() {
           : formData.billingAddress,
         saveAddress: formData.saveAddress,
         couponCode: couponData?.code,
-        discountAmount: couponData?.amount,
         notes: orderNote.trim() || undefined,
       };
 
@@ -329,14 +405,15 @@ export default function CheckoutPage() {
     0,
   );
   const hasShippingState = Boolean(formData.shippingAddress.state?.trim());
-  const shippingCost = hasShippingState
+  const rawShippingCost = hasShippingState
     ? calculateShippingAmount({
         address: formData.shippingAddress,
         subtotalAmount: subtotal,
         totalQuantity,
       })
     : 0;
-  const totalDue = subtotal - discountAmount + shippingCost;
+  const shippingCost = couponData?.coversShipping ? 0 : rawShippingCost;
+  const totalDue = Math.max(subtotal - discountAmount + shippingCost, 0);
 
   return (
     <div className="mx-auto mt-20 max-w-7xl px-4 pb-20">
@@ -860,7 +937,7 @@ export default function CheckoutPage() {
                     currencyCode={cart.cost.subtotalAmount.currencyCode}
                   />
                 </div>
-                {couponData && (
+                {couponData && discountAmount > 0 && (
                   <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
                     <span>Discount ({couponData.code})</span>
                     <span>-₦{discountAmount.toFixed(2)}</span>
@@ -868,9 +945,13 @@ export default function CheckoutPage() {
                 )}
                 <div className="flex justify-between text-sm">
                   <span>Shipping</span>
-                  {hasShippingState ? (
+                  {couponData?.coversShipping ? (
+                    <span className="font-medium text-green-600 dark:text-green-400">
+                      Free 🎉
+                    </span>
+                  ) : hasShippingState ? (
                     <Price
-                      amount={shippingCost.toString()}
+                      amount={rawShippingCost.toString()}
                       currencyCode={cart.cost.totalAmount.currencyCode}
                     />
                   ) : (
@@ -892,6 +973,28 @@ export default function CheckoutPage() {
                 can still request a preferred courier; we&apos;ll confirm
                 availability after payment.
               </p>
+
+              {/* Coupon input at checkout — allows applying/changing coupon */}
+              <div className="mt-4 border-t border-neutral-200 pt-4 dark:border-neutral-700">
+                <CouponInput
+                  variant="compact"
+                  cartTotal={subtotal}
+                  cartId={cart.id || ""}
+                  shippingCost={rawShippingCost}
+                  onApply={(amount, code, meta) => {
+                    if (!code) {
+                      setCouponData(null);
+                    } else {
+                      setCouponData({
+                        code,
+                        amount,
+                        coversShipping: meta?.coversShipping ?? false,
+                        includesShipping: meta?.includesShipping ?? false,
+                      });
+                    }
+                  }}
+                />
+              </div>
 
               <button
                 type="submit"
