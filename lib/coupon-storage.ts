@@ -55,8 +55,8 @@ export const getStoredCoupon = (
       discountType: coupon.discountType ?? "percentage",
       coversShipping: coupon.coversShipping ?? false,
       includesShipping: coupon.includesShipping ?? false,
-      cartId: coupon.cartId!,
-      customerKey: coupon.customerKey!,
+      cartId,
+      customerKey,
       description: coupon.description,
     };
   } catch {
