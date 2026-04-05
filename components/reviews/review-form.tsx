@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { StarSelector } from "./star-selector";
+import { slideUp } from "lib/motion";
 
 interface ReviewFormProps {
   productId: string;
@@ -67,7 +69,12 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
 
   if (success) {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-center dark:border-emerald-700/40 dark:bg-emerald-900/20">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={slideUp}
+        className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-center dark:border-emerald-700/40 dark:bg-emerald-900/20"
+      >
         <h3 className="mb-1 text-lg font-semibold text-emerald-900 dark:text-emerald-200">
           Thank you
         </h3>
@@ -75,7 +82,7 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
           Your review has been submitted and will be visible once approved by
           our team.
         </p>
-      </div>
+      </motion.div>
     );
   }
 
@@ -131,9 +138,18 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
       </div>
 
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-700/50 dark:bg-red-900/20 dark:text-red-300">
-          {error}
-        </div>
+        <AnimatePresence>
+          <motion.div
+            key="review-error"
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            variants={slideUp}
+            className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-700/50 dark:bg-red-900/20 dark:text-red-300"
+          >
+            {error}
+          </motion.div>
+        </AnimatePresence>
       )}
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">

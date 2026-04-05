@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { addItem } from "components/cart/actions";
 import { Product, ProductVariant } from "lib/shopify/types";
 import { trackAddToCart } from "lib/analytics";
+import { motion } from "framer-motion";
 import { useActionState } from "react";
 import { useCart } from "./cart-context";
 import LoadingDots from "components/loading-dots";
@@ -51,11 +52,13 @@ function SubmitButton({
   }
 
   return (
-    <button
+    <motion.button
       aria-label="Add to cart"
       disabled={pending}
+      whileTap={!pending ? { scale: 0.97 } : undefined}
+      transition={{ duration: 0.15 }}
       className={clsx(baseClasses, activeClasses, {
-        "hover:brightness-110 active:translate-y-px": !pending,
+        "hover:brightness-110": !pending,
         "cursor-not-allowed opacity-70": pending,
       })}
     >
@@ -70,7 +73,7 @@ function SubmitButton({
           Add To Cart
         </>
       )}
-    </button>
+    </motion.button>
   );
 }
 

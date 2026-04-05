@@ -1,6 +1,7 @@
 "use client";
 
 import clsx from "clsx";
+import { motion, AnimatePresence } from "framer-motion";
 import Price from "components/price";
 import type { Product } from "lib/database";
 import Image from "next/image";
@@ -72,22 +73,39 @@ export default function HeroCarousel({ products }: { products: Product[] }) {
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/70">
                 Featured product
               </p>
-              <h3 className="mt-2 text-xl font-semibold text-white sm:text-2xl">
-                {activeProduct.title}
-              </h3>
-              <div className="mt-3 flex flex-wrap items-center gap-3 text-white">
-                <Price
-                  amount={activeProduct.priceRange.maxVariantPrice.amount}
-                  currencyCode={
-                    activeProduct.priceRange.maxVariantPrice.currencyCode
-                  }
-                  currencyCodeClassName="hidden"
-                  className="text-base font-semibold text-white"
-                />
-                <span className="rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white backdrop-blur">
-                  Shop now
-                </span>
-              </div>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={activeProduct.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    transition: { duration: 0.3, ease: [0, 0, 0.2, 1] },
+                  }}
+                  exit={{
+                    opacity: 0,
+                    y: -4,
+                    transition: { duration: 0.15, ease: [0.4, 0, 1, 1] },
+                  }}
+                >
+                  <h3 className="mt-2 text-xl font-semibold text-white sm:text-2xl">
+                    {activeProduct.title}
+                  </h3>
+                  <div className="mt-3 flex flex-wrap items-center gap-3 text-white">
+                    <Price
+                      amount={activeProduct.priceRange.maxVariantPrice.amount}
+                      currencyCode={
+                        activeProduct.priceRange.maxVariantPrice.currencyCode
+                      }
+                      currencyCodeClassName="hidden"
+                      className="text-base font-semibold text-white"
+                    />
+                    <span className="rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white backdrop-blur">
+                      Shop now
+                    </span>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
         </div>

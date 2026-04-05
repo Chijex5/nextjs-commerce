@@ -1,10 +1,11 @@
 import { CartProvider } from "components/cart/cart-context";
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/next";
 import AnalyticsPageView from "components/analytics/page-view";
 import TikTokIdentify from "components/analytics/tiktok-identify";
 import AbandonedCartTracker from "components/cart/abandoned-cart-tracker";
 import ExitIntentPopup from "components/exit-intent-popup";
 import { Navbar } from "components/layout/navbar";
+import PageTransition from "components/layout/page-transition";
 import FirstVisitSignupPopup from "components/onboarding/first-visit-signup";
 import { WelcomeToast } from "components/welcome-toast";
 import { getCart } from "lib/database";
@@ -172,7 +173,7 @@ export default async function RootLayout({
           {!isAdminRoute ? <FirstVisitSignupPopup /> : null}
           {!isAdminRoute ? <ExitIntentPopup /> : null}
           <main>
-            {children}
+            <PageTransition>{children}</PageTransition>
             <Toaster closeButton />
             {!isAdminRoute ? <WelcomeToast /> : null}
           </main>
