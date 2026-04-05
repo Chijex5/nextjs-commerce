@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
+import { revalidateCustomOrders } from "lib/database";
 import { db } from "lib/db";
 import { customOrders } from "lib/db/schema";
 import { asc, desc, ilike } from "drizzle-orm";
@@ -91,6 +92,8 @@ export async function POST(request: NextRequest) {
         isPublished: isPublished === undefined ? true : Boolean(isPublished),
       })
       .returning();
+
+    revalidateCustomOrders();
 
     return NextResponse.json({
       success: true,

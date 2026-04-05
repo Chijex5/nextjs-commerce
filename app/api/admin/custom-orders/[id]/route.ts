@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
+import { revalidateCustomOrders } from "lib/database";
 import { db } from "lib/db";
 import { customOrders } from "lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -98,6 +99,8 @@ export async function PUT(
       .where(eq(customOrders.id, params.id))
       .returning();
 
+    revalidateCustomOrders();
+
     return NextResponse.json({
       success: true,
       customOrder: {
@@ -135,6 +138,8 @@ export async function DELETE(
     }
 
     await db.delete(customOrders).where(eq(customOrders.id, params.id));
+
+    revalidateCustomOrders();
 
     return NextResponse.json({ success: true });
   } catch (error) {

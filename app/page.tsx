@@ -3,11 +3,12 @@ import { ThreeItemGrid } from "components/grid/three-items";
 import HeroCarousel from "components/home/hero-carousel";
 import Footer from "components/layout/footer";
 import Price from "components/price";
-import { db } from "lib/db";
-import { customOrders } from "lib/db/schema";
-import { getCollectionsWithProducts, getProducts } from "lib/database";
+import {
+  getCollectionsWithProducts,
+  getProducts,
+  getPublishedCustomOrders,
+} from "lib/database";
 import { canonicalUrl, siteName } from "lib/seo";
-import { asc, desc, eq } from "drizzle-orm";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -60,12 +61,7 @@ export default async function HomePage() {
     getProducts({ sortKey: "CREATED_AT", reverse: true }),
     getProducts({ sortKey: "BEST_SELLING", reverse: false }),
     getCollectionsWithProducts(),
-    db
-      .select()
-      .from(customOrders)
-      .where(eq(customOrders.isPublished, true))
-      .orderBy(asc(customOrders.position), desc(customOrders.updatedAt))
-      .limit(3),
+    getPublishedCustomOrders(3),
   ]);
 
   const featuredProducts = latestProducts.slice(0, 10);
