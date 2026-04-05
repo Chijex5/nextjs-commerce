@@ -18,11 +18,13 @@ export class CouponValidationError extends AppError {
 export async function validateCouponForCheckout({
   code,
   cartTotal,
+  shippingAmount = 0,
   userId,
   sessionId,
 }: {
   code: string;
   cartTotal: number;
+  shippingAmount?: number;
   userId?: string | null;
   sessionId?: string | null;
 }) {
@@ -133,15 +135,45 @@ export async function validateCouponForCheckout({
     );
   }
 
-  let discountAmount = 0;
+  const normalizedShippingAmount = Number.isFinite(shippingAmount)
+    ? Math.max(0, shippingAmount)
+    : 0;
+  const rawDiscountValue = Number(coupon.discountValue);
+  const discountValue =
+    coupon.discountType === "percentage"
+      ? Math.min(Math.max(rawDiscountValue, 0), 100)
+      : Math.max(rawDiscountValue, 0);
+  const discountRate = discountValue / 100;
+  const includeShippingInDiscount = Boolean(coupon.includeShippingInDiscount);
+  const grantsFreeShipping =
+    coupon.discountType === "free_shipping" || Boolean(coupon.grantsFreeShipping);
+
+  let productDiscountAmount = 0;
   if (coupon.discountType === "percentage") {
-    discountAmount = (cartTotal * Number(coupon.discountValue)) / 100;
+    productDiscountAmount = (cartTotal * discountValue) / 100;
   } else if (coupon.discountType === "fixed") {
-    discountAmount = Math.min(Number(coupon.discountValue), cartTotal);
+    productDiscountAmount = Math.min(discountValue, cartTotal);
   }
+
+  let shippingDiscountAmount = 0;
+  if (grantsFreeShipping) {
+    shippingDiscountAmount = normalizedShippingAmount;
+  } else if (coupon.discountType === "percentage" && includeShippingInDiscount) {
+    shippingDiscountAmount = normalizedShippingAmount * discountRate;
+  }
+
+  const maxDiscount = cartTotal + normalizedShippingAmount;
+  const discountAmount = Math.min(
+    maxDiscount,
+    Math.max(0, productDiscountAmount + shippingDiscountAmount),
+  );
 
   return {
     coupon,
     discountAmount,
+    productDiscountAmount,
+    shippingDiscountAmount,
+    includeShippingInDiscount,
+    grantsFreeShipping,
   };
 }

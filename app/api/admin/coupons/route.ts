@@ -63,6 +63,8 @@ export async function POST(request: NextRequest) {
       expiryDate,
       isActive,
       autoGenerate,
+      grantsFreeShipping,
+      includeShippingInDiscount,
     } = body;
 
     if (autoGenerate || !code || code.trim() === "") {
@@ -119,6 +121,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (discountType === "percentage" && Number(discountValue) > 100) {
+      return NextResponse.json(
+        { error: "Percentage discount cannot exceed 100%" },
+        { status: 400 },
+      );
+    }
+
+    const normalizedGrantsFreeShipping =
+      discountType === "free_shipping" || Boolean(grantsFreeShipping);
+    const normalizedIncludeShippingInDiscount =
+      discountType === "percentage" && Boolean(includeShippingInDiscount);
+
     const [existing] = await db
       .select({ id: coupons.id })
       .from(coupons)
@@ -144,6 +158,8 @@ export async function POST(request: NextRequest) {
         maxUses: maxUses || null,
         maxUsesPerUser: maxUsesPerUser || null,
         requiresLogin: requiresLogin || false,
+        grantsFreeShipping: normalizedGrantsFreeShipping,
+        includeShippingInDiscount: normalizedIncludeShippingInDiscount,
         startDate: startDate ? new Date(startDate) : null,
         expiryDate: expiryDate ? new Date(expiryDate) : null,
         isActive: isActive !== undefined ? isActive : true,

@@ -264,6 +264,13 @@ export async function PATCH(
         );
       }
 
+      if (nextDiscountType === "percentage" && resolvedDiscountValue > 100) {
+        return NextResponse.json(
+          { error: "Percentage discount cannot exceed 100%" },
+          { status: 400 },
+        );
+      }
+
       updateData.discountValue =
         nextDiscountType === "free_shipping" ? "0" : String(resolvedDiscountValue);
     }
@@ -321,6 +328,33 @@ export async function PATCH(
 
     if (body.requiresLogin !== undefined) {
       updateData.requiresLogin = Boolean(body.requiresLogin);
+    }
+
+    const nextGrantsFreeShipping =
+      nextDiscountType === "free_shipping"
+        ? true
+        : body.grantsFreeShipping !== undefined
+          ? Boolean(body.grantsFreeShipping)
+          : existing.grantsFreeShipping;
+    const nextIncludeShippingInDiscount =
+      nextDiscountType === "percentage"
+        ? body.includeShippingInDiscount !== undefined
+          ? Boolean(body.includeShippingInDiscount)
+          : existing.includeShippingInDiscount
+        : false;
+
+    if (
+      body.grantsFreeShipping !== undefined ||
+      body.discountType !== undefined
+    ) {
+      updateData.grantsFreeShipping = nextGrantsFreeShipping;
+    }
+
+    if (
+      body.includeShippingInDiscount !== undefined ||
+      body.discountType !== undefined
+    ) {
+      updateData.includeShippingInDiscount = nextIncludeShippingInDiscount;
     }
 
     if (body.isActive !== undefined) updateData.isActive = body.isActive;

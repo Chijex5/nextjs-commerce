@@ -109,6 +109,10 @@ export default function CheckoutPage() {
   const [couponData, setCouponData] = useState<{
     code: string;
     amount: number;
+    productDiscountAmount: number;
+    shippingDiscountAmount: number;
+    includeShippingInDiscount: boolean;
+    grantsFreeShipping: boolean;
   } | null>(null);
   const [orderNote, setOrderNote] = useState("");
   const tiktokIdentifyKeyRef = useRef<string | null>(null);
@@ -122,9 +126,9 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
-    fetchCart();
+    void fetchCart();
     if (session) {
-      fetchUserAddresses();
+      void fetchUserAddresses();
     }
   }, [session]);
 
@@ -154,7 +158,7 @@ export default function CheckoutPage() {
     });
   }, [formData.email, formData.phone]);
 
-  const loadCouponData = (cartId: string) => {
+  const loadCouponData = async (cartId: string, cartTotal: number) => {
     if (!cartId) {
       setCouponData(null);
       return;
@@ -165,7 +169,30 @@ export default function CheckoutPage() {
       const coupon = getStoredCoupon(cartId, customerKey);
 
       if (coupon) {
-        setCouponData({ code: coupon.code, amount: coupon.discountAmount });
+        const response = await fetch("/api/coupons/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: coupon.code,
+            cartTotal,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setCouponData({
+            code: data.coupon.code,
+            amount: data.coupon.discountAmount,
+            productDiscountAmount: data.coupon.productDiscountAmount || 0,
+            shippingDiscountAmount: data.coupon.shippingDiscountAmount || 0,
+            includeShippingInDiscount: Boolean(
+              data.coupon.includeShippingInDiscount,
+            ),
+            grantsFreeShipping: Boolean(data.coupon.grantsFreeShipping),
+          });
+        } else {
+          setCouponData(null);
+        }
       } else {
         setCouponData(null);
       }
@@ -214,7 +241,10 @@ export default function CheckoutPage() {
         }
         setCart(data.cart);
         if (data.cart?.id) {
-          loadCouponData(data.cart.id);
+          await loadCouponData(
+            data.cart.id,
+            parseFloat(data.cart.cost.subtotalAmount.amount),
+          );
         } else {
           setCouponData(null);
         }
@@ -287,7 +317,6 @@ export default function CheckoutPage() {
           : formData.billingAddress,
         saveAddress: formData.saveAddress,
         couponCode: couponData?.code,
-        discountAmount: couponData?.amount,
         notes: orderNote.trim() || undefined,
       };
 
@@ -336,7 +365,53 @@ export default function CheckoutPage() {
         totalQuantity,
       })
     : 0;
+  const shippingDiscountAmount = couponData?.shippingDiscountAmount || 0;
+  const netShippingCost = Math.max(shippingCost - shippingDiscountAmount, 0);
   const totalDue = subtotal - discountAmount + shippingCost;
+
+  useEffect(() => {
+    const revalidateCoupon = async () => {
+      if (!couponData?.code) return;
+      const payload: {
+        code: string;
+        cartTotal: number;
+        shippingAmount: number;
+        sessionId?: string;
+      } = {
+        code: couponData.code,
+        cartTotal: subtotal,
+        shippingAmount: shippingCost,
+      };
+
+      const customerKey = getCouponCustomerKey(session?.id);
+      if (!session?.id) {
+        payload.sessionId = customerKey.replace("guest:", "");
+      }
+
+      const response = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        setCouponData(null);
+        return;
+      }
+
+      const data = await response.json();
+      setCouponData({
+        code: data.coupon.code,
+        amount: data.coupon.discountAmount,
+        productDiscountAmount: data.coupon.productDiscountAmount || 0,
+        shippingDiscountAmount: data.coupon.shippingDiscountAmount || 0,
+        includeShippingInDiscount: Boolean(data.coupon.includeShippingInDiscount),
+        grantsFreeShipping: Boolean(data.coupon.grantsFreeShipping),
+      });
+    };
+
+    void revalidateCoupon();
+  }, [couponData?.code, shippingCost, subtotal, session?.id]);
 
   return (
     <div className="mx-auto mt-20 max-w-7xl px-4 pb-20">
@@ -869,10 +944,17 @@ export default function CheckoutPage() {
                 <div className="flex justify-between text-sm">
                   <span>Shipping</span>
                   {hasShippingState ? (
-                    <Price
-                      amount={shippingCost.toString()}
-                      currencyCode={cart.cost.totalAmount.currencyCode}
-                    />
+                    <div className="text-right">
+                      <Price
+                        amount={netShippingCost.toString()}
+                        currencyCode={cart.cost.totalAmount.currencyCode}
+                      />
+                      {shippingDiscountAmount > 0 && (
+                        <p className="text-xs text-green-600 dark:text-green-400">
+                          You saved ₦{shippingDiscountAmount.toFixed(2)} on shipping
+                        </p>
+                      )}
+                    </div>
                   ) : (
                     <span className="text-xs text-neutral-500 dark:text-neutral-400">
                       Select state to see shipping

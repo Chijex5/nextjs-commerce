@@ -3,7 +3,11 @@ export const GUEST_SESSION_STORAGE_KEY = "guestSessionId";
 
 export interface StoredCoupon {
   code: string;
-  discountAmount: number;
+  discountAmount?: number;
+  includeShippingInDiscount?: boolean;
+  grantsFreeShipping?: boolean;
+  shippingDiscountAmount?: number;
+  productDiscountAmount?: number;
   cartId: string;
   customerKey: string;
   description?: string;
@@ -38,7 +42,6 @@ export const getStoredCoupon = (
     if (
       !coupon ||
       typeof coupon.code !== "string" ||
-      typeof coupon.discountAmount !== "number" ||
       coupon.cartId !== cartId ||
       coupon.customerKey !== customerKey
     ) {

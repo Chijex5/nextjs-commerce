@@ -112,17 +112,27 @@ export async function POST(request: NextRequest) {
     });
     let discountAmount = 0;
     let appliedCouponCode: string | null = null;
+    let shippingDiscountAmount = 0;
+    let productDiscountAmount = 0;
 
     if (body.couponCode) {
-      const { coupon, discountAmount: computedDiscount } =
+      const {
+        coupon,
+        discountAmount: computedDiscount,
+        shippingDiscountAmount: computedShippingDiscount,
+        productDiscountAmount: computedProductDiscount,
+      } =
         await validateCouponForCheckout({
           code: body.couponCode,
           cartTotal: subtotal,
+          shippingAmount: shippingCost,
           userId: session?.id,
           sessionId: session?.id ? undefined : cart.id,
         });
 
       discountAmount = computedDiscount;
+      shippingDiscountAmount = computedShippingDiscount;
+      productDiscountAmount = computedProductDiscount;
       appliedCouponCode = coupon.code;
     }
 
@@ -200,6 +210,8 @@ export async function POST(request: NextRequest) {
                 ? {
                     coupon_code: appliedCouponCode,
                     discount_amount: discountAmount,
+                    product_discount_amount: productDiscountAmount,
+                    shipping_discount_amount: shippingDiscountAmount,
                   }
                 : {}),
             },
@@ -263,6 +275,8 @@ export async function POST(request: NextRequest) {
           ? {
               coupon_code: appliedCouponCode,
               discount_amount: discountAmount,
+              product_discount_amount: productDiscountAmount,
+              shipping_discount_amount: shippingDiscountAmount,
             }
           : {}),
       },

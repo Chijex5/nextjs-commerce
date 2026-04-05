@@ -762,6 +762,10 @@ export const coupons = pgTable(
     isActive: boolean("is_active").default(true).notNull(),
     startDate: timestamp("start_date"),
     expiryDate: timestamp("expiry_date"),
+    grantsFreeShipping: boolean("grants_free_shipping").default(false).notNull(),
+    includeShippingInDiscount: boolean("include_shipping_in_discount")
+      .default(false)
+      .notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

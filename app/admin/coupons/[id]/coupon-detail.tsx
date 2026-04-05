@@ -15,6 +15,8 @@ interface Coupon {
   usedCount: number;
   maxUsesPerUser: number | null;
   requiresLogin: boolean;
+  grantsFreeShipping: boolean;
+  includeShippingInDiscount: boolean;
   isActive: boolean;
   startDate: string | null;
   expiryDate: string | null;
@@ -85,6 +87,8 @@ interface CouponFormData {
   maxUses: string;
   maxUsesPerUser: string;
   requiresLogin: boolean;
+  grantsFreeShipping: boolean;
+  includeShippingInDiscount: boolean;
   isActive: boolean;
   startDate: string;
   expiryDate: string;
@@ -157,15 +161,25 @@ function getCouponStatus(coupon: Coupon) {
 }
 
 function formatDiscount(coupon: Coupon) {
+  const shippingFlags: string[] = [];
+  if (coupon.grantsFreeShipping || coupon.discountType === "free_shipping") {
+    shippingFlags.push("free shipping");
+  } else if (
+    coupon.discountType === "percentage" &&
+    coupon.includeShippingInDiscount
+  ) {
+    shippingFlags.push("% also applies to shipping");
+  }
+
   if (coupon.discountType === "percentage") {
-    return `${coupon.discountValue}%`;
+    return `${coupon.discountValue}%${shippingFlags.length ? ` + ${shippingFlags.join(", ")}` : ""}`;
   }
 
   if (coupon.discountType === "fixed") {
-    return formatCurrency(coupon.discountValue);
+    return `${formatCurrency(coupon.discountValue)}${shippingFlags.length ? ` + ${shippingFlags.join(", ")}` : ""}`;
   }
 
-  return "Free shipping";
+  return shippingFlags.length ? shippingFlags.join(", ") : "Free shipping";
 }
 
 export default function CouponDetailClient({ couponId }: CouponDetailClientProps) {
@@ -183,6 +197,8 @@ export default function CouponDetailClient({ couponId }: CouponDetailClientProps
     maxUses: "",
     maxUsesPerUser: "",
     requiresLogin: false,
+    grantsFreeShipping: false,
+    includeShippingInDiscount: false,
     isActive: true,
     startDate: "",
     expiryDate: "",
@@ -203,6 +219,8 @@ export default function CouponDetailClient({ couponId }: CouponDetailClientProps
       maxUsesPerUser:
         coupon.maxUsesPerUser === null ? "" : String(coupon.maxUsesPerUser),
       requiresLogin: coupon.requiresLogin,
+      grantsFreeShipping: coupon.grantsFreeShipping,
+      includeShippingInDiscount: coupon.includeShippingInDiscount,
       isActive: coupon.isActive,
       startDate: toDateTimeInputValue(coupon.startDate),
       expiryDate: toDateTimeInputValue(coupon.expiryDate),
@@ -266,6 +284,14 @@ export default function CouponDetailClient({ couponId }: CouponDetailClientProps
     }
 
     if (
+      formData.discountType === "percentage" &&
+      Number(formData.discountValue) > 100
+    ) {
+      toast.error("Percentage discount cannot exceed 100%");
+      return;
+    }
+
+    if (
       formData.startDate &&
       formData.expiryDate &&
       new Date(formData.expiryDate).getTime() <=
@@ -297,6 +323,8 @@ export default function CouponDetailClient({ couponId }: CouponDetailClientProps
             ? Number(formData.maxUsesPerUser)
             : null,
           requiresLogin: formData.requiresLogin,
+          grantsFreeShipping: formData.grantsFreeShipping,
+          includeShippingInDiscount: formData.includeShippingInDiscount,
           isActive: formData.isActive,
           startDate: formData.startDate || null,
           expiryDate: formData.expiryDate || null,
@@ -507,6 +535,14 @@ export default function CouponDetailClient({ couponId }: CouponDetailClientProps
                       | "free_shipping",
                     discountValue:
                       e.target.value === "free_shipping" ? "" : prev.discountValue,
+                    grantsFreeShipping:
+                      e.target.value === "free_shipping"
+                        ? true
+                        : prev.grantsFreeShipping,
+                    includeShippingInDiscount:
+                      e.target.value === "percentage"
+                        ? prev.includeShippingInDiscount
+                        : false,
                   }))
                 }
                 className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
@@ -534,6 +570,7 @@ export default function CouponDetailClient({ couponId }: CouponDetailClientProps
                     }))
                   }
                   min="0"
+                  max={formData.discountType === "percentage" ? "100" : undefined}
                   step="0.01"
                   className="w-full rounded-md border border-neutral-300 px-3 py-2 pr-10 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                   required
@@ -544,6 +581,43 @@ export default function CouponDetailClient({ couponId }: CouponDetailClientProps
               </div>
             </div>
           )}
+
+          <div className="space-y-3">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={formData.grantsFreeShipping}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    grantsFreeShipping: e.target.checked,
+                  }))
+                }
+                className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-500"
+              />
+              <span className="text-sm text-neutral-700 dark:text-neutral-300">
+                Include free shipping
+              </span>
+            </label>
+            {formData.discountType === "percentage" && (
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.includeShippingInDiscount}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      includeShippingInDiscount: e.target.checked,
+                    }))
+                  }
+                  className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-500"
+                />
+                <span className="text-sm text-neutral-700 dark:text-neutral-300">
+                  Apply percentage discount to shipping too
+                </span>
+              </label>
+            )}
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
