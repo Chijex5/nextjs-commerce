@@ -10,6 +10,15 @@ import {
   products,
 } from "lib/db/schema";
 
+type ProductImageInput = {
+  url: string;
+  altText?: string;
+  width?: number;
+  height?: number;
+  position?: number;
+  isFeatured?: boolean;
+};
+
 export async function POST(request: Request) {
   try {
     const session = await requireAdminSession();
@@ -39,12 +48,21 @@ export async function POST(request: Request) {
         throw new Error("Failed to create product");
       }
 
+      const MAX_IMAGES = 20;
+      const MAX_OPTIONS = 50;
+
       if (body.images && Array.isArray(body.images) && body.images.length > 0) {
+        const imagesToInsert = body.images.slice(0, MAX_IMAGES);
+        if (body.images.length > MAX_IMAGES) {
+          console.warn(
+            `Product "${createdProduct.id}" (${body.title}): ${body.images.length} images provided but only ${MAX_IMAGES} will be saved (limit enforced).`,
+          );
+        }
         await tx.insert(productImages).values(
-          body.images.map((img: any) => ({
+          imagesToInsert.map((img: ProductImageInput) => ({
             productId: createdProduct.id,
             url: img.url,
-            altText: createdProduct.title,
+            altText: img.altText ?? createdProduct.title,
             width: img.width ?? PRODUCT_IMAGE_WIDTH,
             height: img.height ?? PRODUCT_IMAGE_HEIGHT,
             position: img.position || 0,
@@ -53,8 +71,22 @@ export async function POST(request: Request) {
         );
       }
 
-      const sizes = body.sizes || [];
-      const colors = body.colors || [];
+      const sizes = Array.isArray(body.sizes)
+        ? body.sizes.slice(0, MAX_OPTIONS)
+        : [];
+      const colors = Array.isArray(body.colors)
+        ? body.colors.slice(0, MAX_OPTIONS)
+        : [];
+      if (Array.isArray(body.sizes) && body.sizes.length > MAX_OPTIONS) {
+        console.warn(
+          `Product "${createdProduct.id}" (${body.title}): ${body.sizes.length} sizes provided but only ${MAX_OPTIONS} will be saved (limit enforced).`,
+        );
+      }
+      if (Array.isArray(body.colors) && body.colors.length > MAX_OPTIONS) {
+        console.warn(
+          `Product "${createdProduct.id}" (${body.title}): ${body.colors.length} colors provided but only ${MAX_OPTIONS} will be saved (limit enforced).`,
+        );
+      }
 
       if (sizes.length > 0) {
         await tx.insert(productOptions).values({

@@ -180,39 +180,59 @@ export async function POST(request: NextRequest) {
 
     const callbackUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/checkout/verify`;
 
-    const paystackResponse = await fetch(
-      "https://api.paystack.co/transaction/initialize",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${paystackSecretKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: body.email,
-          amount: amountInKobo,
-          currency: "NGN",
-          callback_url: callbackUrl,
-          metadata: {
-            customer_name: `${shippingAddress.firstName || ""} ${shippingAddress.lastName || ""}`.trim(),
-            phone: body.phone,
-            cart_id: cart.id,
-            checkout_user_id: session?.id || null,
-            checkout_email: body.email,
-            checkout_shipping_address: shippingAddress,
-            checkout_billing_address: billingAddress,
-            checkout_save_address: Boolean(body.saveAddress),
-            checkout_notes: body.notes?.trim() || null,
-            ...(appliedCouponCode
-              ? {
-                  coupon_code: appliedCouponCode,
-                  discount_amount: discountAmount,
-                }
-              : {}),
+    const paystackController = new AbortController();
+    const paystackTimeout = setTimeout(() => paystackController.abort(), 10000);
+
+    let paystackResponse: Response;
+    try {
+      paystackResponse = await fetch(
+        "https://api.paystack.co/transaction/initialize",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${paystackSecretKey}`,
+            "Content-Type": "application/json",
           },
-        }),
-      },
-    );
+          body: JSON.stringify({
+            email: body.email,
+            amount: amountInKobo,
+            currency: "NGN",
+            callback_url: callbackUrl,
+            metadata: {
+              customer_name: `${shippingAddress.firstName || ""} ${shippingAddress.lastName || ""}`.trim(),
+              phone: body.phone,
+              cart_id: cart.id,
+              checkout_user_id: session?.id || null,
+              checkout_email: body.email,
+              checkout_shipping_address: shippingAddress,
+              checkout_billing_address: billingAddress,
+              checkout_save_address: Boolean(body.saveAddress),
+              checkout_notes: body.notes?.trim() || null,
+              ...(appliedCouponCode
+                ? {
+                    coupon_code: appliedCouponCode,
+                    discount_amount: discountAmount,
+                  }
+                : {}),
+            },
+          }),
+          signal: paystackController.signal,
+        },
+      );
+    } catch (fetchError: unknown) {
+      if (
+        fetchError instanceof Error &&
+        fetchError.name === "AbortError"
+      ) {
+        return NextResponse.json(
+          { error: "Payment gateway timed out. Please try again." },
+          { status: 504 },
+        );
+      }
+      throw fetchError;
+    } finally {
+      clearTimeout(paystackTimeout);
+    }
 
     const paystackData = await paystackResponse.json();
 

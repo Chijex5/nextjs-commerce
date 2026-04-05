@@ -6,6 +6,9 @@ import {
 } from "next/cache";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { asc, desc, eq } from "drizzle-orm";
+import { db } from "../db/client";
+import { customOrders } from "../db/schema";
 import * as dbQueries from "../db/queries";
 import type { Cart, Collection, Menu, Page, Product } from "../shopify/types";
 
@@ -214,6 +217,27 @@ export async function getPages(): Promise<Page[]> {
   cacheLife("days");
 
   return dbQueries.getPages();
+}
+
+export type PublishedCustomOrder = typeof customOrders.$inferSelect;
+
+export async function getPublishedCustomOrders(
+  limit: number = 3,
+): Promise<PublishedCustomOrder[]> {
+  "use cache";
+  cacheTag(TAGS.customOrders);
+  cacheLife("hours");
+
+  return db
+    .select()
+    .from(customOrders)
+    .where(eq(customOrders.isPublished, true))
+    .orderBy(asc(customOrders.position), desc(customOrders.updatedAt))
+    .limit(limit);
+}
+
+export function revalidateCustomOrders(): void {
+  revalidateTag(TAGS.customOrders, "seconds");
 }
 
 // Revalidation webhook handler (for potential future use with admin dashboard)

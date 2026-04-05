@@ -43,7 +43,7 @@ const sql =
     username: AMAZON_DB_USER,
     password: AMAZON_DB_PASSWORD,
     ssl,
-    max: 10,
+    max: 20,
     prepare: false,
   });
 
