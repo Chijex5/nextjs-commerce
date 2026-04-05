@@ -226,7 +226,7 @@ export default function CheckoutPage() {
     couponData?.includesShipping,
   ]);
 
-
+  const loadCouponData = (cartId: string) => {
     if (!cartId) {
       setCouponData(null);
       return;

@@ -288,7 +288,9 @@ export default function CouponInput({
               </p>
             </div>
             <p className="mt-1 text-sm text-green-700 dark:text-green-300">
-              {isFreeShipping ? "Free shipping on this order!" : `Discount: -₦${appliedCoupon.discountAmount.toFixed(2)}`}
+              {isFreeShipping
+                ? "Free shipping on this order!"
+                : `Discount: -₦${appliedCoupon.discountAmount.toFixed(2)}`}
             </p>
             {appliedCoupon.description && (
               <p className="mt-0.5 text-xs text-green-600 dark:text-green-400">
