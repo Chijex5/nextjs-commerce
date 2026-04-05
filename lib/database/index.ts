@@ -208,7 +208,7 @@ export async function getPage(handle: string): Promise<Page | undefined> {
  * Example: admin page routes should invoke this once mutation succeeds.
  */
 export function revalidatePages(): void {
-  revalidateTag(TAGS.pages);
+  revalidateTag(TAGS.pages, "seconds");
 }
 
 export async function getPages(): Promise<Page[]> {
@@ -237,7 +237,7 @@ export async function getPublishedCustomOrders(
 }
 
 export function revalidateCustomOrders(): void {
-  revalidateTag(TAGS.customOrders);
+  revalidateTag(TAGS.customOrders, "seconds");
 }
 
 // Revalidation webhook handler (for potential future use with admin dashboard)
@@ -269,15 +269,15 @@ export async function revalidate(req: NextRequest): Promise<NextResponse> {
   }
 
   if (isCollectionUpdate) {
-    revalidateTag(TAGS.collections);
+    revalidateTag(TAGS.collections, "seconds");
   }
 
   if (isProductUpdate) {
-    revalidateTag(TAGS.products);
+    revalidateTag(TAGS.products, "seconds");
   }
 
   if (isPageUpdate) {
-    revalidateTag(TAGS.pages);
+    revalidateTag(TAGS.pages, "seconds");
   }
 
   return NextResponse.json({ status: 200, revalidated: true, now: Date.now() });
