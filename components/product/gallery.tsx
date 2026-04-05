@@ -3,6 +3,7 @@
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import { GridTileImage } from "components/grid/tile";
 import { PRODUCT_IMAGE_ASPECT } from "lib/image-constants";
+import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
@@ -63,18 +64,34 @@ export function Gallery({
         style={{ aspectRatio: `${activeAspect}` }}
       >
         {activeImage && (
-          <Image
-            className={
-              useCover
-                ? "h-full w-full object-cover"
-                : "h-full w-full object-contain"
-            }
-            fill
-            sizes="(min-width: 1280px) 58vw, (min-width: 1024px) 62vw, (min-width: 768px) 90vw, 100vw"
-            alt={activeImage.altText as string}
-            src={activeImage.src as string}
-            priority={safeImageIndex === 0}
-          />
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={activeImage.src}
+              initial={{ opacity: 0 }}
+              animate={{
+                opacity: 1,
+                transition: { duration: 0.25, ease: [0, 0, 0.2, 1] },
+              }}
+              exit={{
+                opacity: 0,
+                transition: { duration: 0.15, ease: [0.4, 0, 1, 1] },
+              }}
+              className="absolute inset-0"
+            >
+              <Image
+                className={
+                  useCover
+                    ? "h-full w-full object-cover"
+                    : "h-full w-full object-contain"
+                }
+                fill
+                sizes="(min-width: 1280px) 58vw, (min-width: 1024px) 62vw, (min-width: 768px) 90vw, 100vw"
+                alt={activeImage.altText as string}
+                src={activeImage.src as string}
+                priority={safeImageIndex === 0}
+              />
+            </motion.div>
+          </AnimatePresence>
         )}
 
         {images.length > 1 ? (
