@@ -13,6 +13,11 @@ interface CouponLike {
 /**
  * Calculate the discount for a coupon given the order amounts.
  *
+ * `shippingAmount` defaults to 0, which is appropriate for cart-time validation
+ * where the shipping address is not yet known.  Always pass the actual shipping
+ * cost at checkout time so that `free_shipping` and `includesShipping` coupons
+ * are calculated correctly.
+ *
  * Returns `{ productDiscount, shippingDiscount }` so callers can record each
  * separately or combine them.
  */

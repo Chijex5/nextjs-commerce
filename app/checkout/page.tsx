@@ -126,9 +126,9 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
-    fetchCart();
+    void fetchCart();
     if (session) {
-      fetchUserAddresses();
+      void fetchUserAddresses();
     }
   }, [session]);
 
@@ -297,7 +297,6 @@ export default function CheckoutPage() {
           : formData.billingAddress,
         saveAddress: formData.saveAddress,
         couponCode: couponData?.code,
-        discountAmount: couponData?.amount,
         notes: orderNote.trim() || undefined,
       };
 
