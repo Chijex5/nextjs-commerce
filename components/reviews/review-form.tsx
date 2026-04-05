@@ -137,8 +137,8 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
         </p>
       </div>
 
-      {error && (
-        <AnimatePresence>
+      <AnimatePresence>
+        {error && (
           <motion.div
             key="review-error"
             initial="hidden"
@@ -149,8 +149,8 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
           >
             {error}
           </motion.div>
-        </AnimatePresence>
-      )}
+        )}
+      </AnimatePresence>
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-neutral-500 dark:text-neutral-400">
