@@ -4,6 +4,7 @@ import { db } from "lib/db";
 import { customOrderRequests, orders, users } from "lib/db/schema";
 import { createUserSession, setUserSessionCookie } from "lib/user-session";
 import { and, eq, ilike, isNull } from "drizzle-orm";
+import { handleApiError } from "lib/errors";
 
 export async function POST(request: NextRequest) {
   try {
@@ -79,10 +80,6 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Login error:", error);
-    return NextResponse.json(
-      { error: "An error occurred during login" },
-      { status: 500 },
-    );
+    return handleApiError(error, "Login");
   }
 }

@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { orderItems, orders, products, reviews, users } from "@/lib/db/schema";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { getUserSession } from "lib/user-session";
+import { handleApiError } from "lib/errors";
 
 export async function POST(request: NextRequest) {
   try {
@@ -130,11 +131,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error submitting review:", error);
-    return NextResponse.json(
-      { error: "Failed to submit review. Please try again." },
-      { status: 500 },
-    );
+    return handleApiError(error, "Submit review");
   }
 }
 
@@ -190,10 +187,6 @@ export async function GET(request: NextRequest) {
       totalReviews: Number(stats?.totalReviews ?? 0),
     });
   } catch (error) {
-    console.error("Error fetching reviews:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch reviews" },
-      { status: 500 },
-    );
+    return handleApiError(error, "Fetch reviews");
   }
 }

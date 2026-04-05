@@ -3,6 +3,7 @@ import { getUserSession } from "lib/user-session";
 import { db } from "lib/db";
 import { customOrderRequests, orderItems, orders } from "lib/db/schema";
 import { desc, eq, inArray } from "drizzle-orm";
+import { handleApiError } from "lib/errors";
 
 export async function GET(request: NextRequest) {
   try {
@@ -81,10 +82,6 @@ export async function GET(request: NextRequest) {
       })),
     });
   } catch (error) {
-    console.error("Failed to fetch orders:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch orders" },
-      { status: 500 },
-    );
+    return handleApiError(error, "Fetch orders");
   }
 }
