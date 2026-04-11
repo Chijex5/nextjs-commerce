@@ -1,8 +1,8 @@
-import { CartProvider } from "components/cart/cart-context";
 import { Analytics } from "@vercel/analytics/next";
 import AnalyticsPageView from "components/analytics/page-view";
 import TikTokIdentify from "components/analytics/tiktok-identify";
 import AbandonedCartTracker from "components/cart/abandoned-cart-tracker";
+import { CartProvider } from "components/cart/cart-context";
 import ExitIntentPopup from "components/exit-intent-popup";
 import { Navbar } from "components/layout/navbar";
 import PageTransition from "components/layout/page-transition";
@@ -10,18 +10,17 @@ import FirstVisitSignupPopup from "components/onboarding/first-visit-signup";
 import { WelcomeToast } from "components/welcome-toast";
 import { getCart } from "lib/database";
 import {
-  canonicalUrl,
-  organizationJsonLd,
-  siteName,
-  siteTagline,
+    canonicalUrl,
+    organizationJsonLd,
+    siteName,
+    siteTagline,
 } from "lib/seo";
 import { baseUrl } from "lib/utils";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { headers } from "next/headers";
-import { ReactNode } from "react";
-import { Suspense } from "react";
 import Script from "next/script";
+import { ReactNode, Suspense } from "react";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -80,7 +79,7 @@ export default async function RootLayout({
         {/* Theme initialisation: runs synchronously before first paint to avoid flash */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('theme');var d=document.documentElement;if(t==='dark'){d.classList.add('dark');d.style.colorScheme='dark';}else if(t==='light'){d.style.colorScheme='light';}else{if(window.matchMedia('(prefers-color-scheme:dark)').matches){d.classList.add('dark');d.style.colorScheme='dark';}}}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('theme');var d=document.documentElement;var m=window.matchMedia('(prefers-color-scheme: dark)').matches;var s=t==='dark'||(t!=='light'&&m);if(s){d.classList.add('dark');d.style.colorScheme='dark';}else{d.classList.remove('dark');d.style.colorScheme='light';}}catch(e){}})();`,
           }}
         />
         <script
