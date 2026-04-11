@@ -2,12 +2,12 @@
 
 import { Dialog, Transition } from "@headlessui/react";
 import {
-    ChevronDownIcon,
-    PencilSquareIcon,
-    ShoppingCartIcon,
-    TagIcon,
-    TruckIcon,
-    XMarkIcon,
+  ChevronDownIcon,
+  PencilSquareIcon,
+  ShoppingCartIcon,
+  TagIcon,
+  TruckIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import LoadingDots from "components/loading-dots";
@@ -15,17 +15,22 @@ import Price from "components/price";
 import { useUserSession } from "hooks/useUserSession";
 import { trackInitiateCheckout } from "lib/analytics";
 import { DEFAULT_OPTION } from "lib/constants";
+import {
+  COUPON_STORAGE_KEY,
+  getCouponCustomerKey,
+  getStoredCoupon,
+} from "lib/coupon-storage";
 import { calculateShippingAmount } from "lib/shipping";
 import { createUrl } from "lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import {
-    Fragment,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-    type ReactNode,
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
 } from "react";
 import { useFormStatus } from "react-dom";
 import { redirectToCheckout } from "./actions";
@@ -40,16 +45,23 @@ type MerchandiseSearchParams = {
 };
 
 const ORDER_NOTE_STORAGE_KEY = "orderNote";
+const DEV_COUPON_DEBUG = process.env.NODE_ENV !== "production";
+
+function logCouponDebug(message: string, payload?: unknown) {
+  if (!DEV_COUPON_DEBUG) return;
+  console.debug(`[coupon][cart-modal] ${message}`, payload);
+}
 
 export default function CartModal() {
   const { cart } = useCart();
-  const { status } = useUserSession();
+  const { data: session, status } = useUserSession();
   const [isOpen, setIsOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [activeSheet, setActiveSheet] = useState<
     "coupon" | "note" | "shipping" | null
   >(null);
   const [discountAmount, setDiscountAmount] = useState(0);
+  const [shippingDiscountAmount, setShippingDiscountAmount] = useState(0);
   const [couponCode, setCouponCode] = useState("");
   const [orderNote, setOrderNote] = useState("");
   const [noteDraft, setNoteDraft] = useState("");
@@ -82,9 +94,20 @@ export default function CartModal() {
     });
   }, [cart, shippingAddress]);
 
-  const summaryTotal =
+  const effectiveShippingDiscount =
     shippingPreview !== null
-      ? Math.max(baseSummaryTotal + shippingPreview, 0)
+      ? Math.min(
+          Math.max(shippingDiscountAmount, 0),
+          Math.max(shippingPreview, 0),
+        )
+      : 0;
+  const netShippingPreview =
+    shippingPreview !== null
+      ? Math.max(shippingPreview - effectiveShippingDiscount, 0)
+      : null;
+  const summaryTotal =
+    netShippingPreview !== null
+      ? Math.max(baseSummaryTotal + (netShippingPreview ?? 0), 0)
       : baseSummaryTotal;
   const summaryCurrency = cart?.cost.totalAmount.currencyCode ?? "USD";
   const formattedSummaryTotal = new Intl.NumberFormat(undefined, {
@@ -93,11 +116,32 @@ export default function CartModal() {
     currencyDisplay: "narrowSymbol",
   }).format(summaryTotal);
 
-  const handleCouponApply = (amount: number, code: string) => {
+  const handleCouponApply = (
+    amount: number,
+    code: string,
+    couponMeta?: {
+      shippingDiscountAmount?: number;
+      productDiscountAmount?: number;
+      grantsFreeShipping?: boolean;
+      includeShippingInDiscount?: boolean;
+    },
+  ) => {
     setDiscountAmount(amount);
+    setShippingDiscountAmount(couponMeta?.shippingDiscountAmount || 0);
     setCouponCode(code);
     if (activeSheet === "coupon" && amount > 0) {
       setActiveSheet(null);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setDiscountAmount(0);
+    setShippingDiscountAmount(0);
+    setCouponCode("");
+    try {
+      localStorage.removeItem(COUPON_STORAGE_KEY);
+    } catch {
+      // Ignore storage errors.
     }
   };
 
@@ -139,6 +183,100 @@ export default function CartModal() {
       isMounted = false;
     };
   }, [status]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const hydrateStoredCoupon = async () => {
+      if (!cart?.id) {
+        if (isMounted) {
+          setDiscountAmount(0);
+          setCouponCode("");
+        }
+        return;
+      }
+
+      try {
+        const customerKey = getCouponCustomerKey(
+          status === "authenticated" ? session?.id : undefined,
+        );
+        const storedCoupon = getStoredCoupon(cart.id, customerKey);
+
+        if (!storedCoupon) {
+          if (isMounted) {
+            setDiscountAmount(0);
+            setShippingDiscountAmount(0);
+            setCouponCode("");
+          }
+          return;
+        }
+
+        const payload: {
+          code: string;
+          cartTotal: number;
+          shippingAmount: number;
+          sessionId?: string;
+        } = {
+          code: storedCoupon.code,
+          cartTotal: parseFloat(cart.cost.subtotalAmount.amount),
+          shippingAmount: shippingPreview ?? 0,
+        };
+
+        if (status !== "authenticated") {
+          payload.sessionId = customerKey.replace("guest:", "");
+        }
+
+        const response = await fetch("/api/coupons/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          logCouponDebug("Hydrate revalidation failed", {
+            cartId: cart.id,
+            customerKey,
+            status: response.status,
+            payload,
+          });
+          if (isMounted) {
+            setDiscountAmount(0);
+            setShippingDiscountAmount(0);
+            setCouponCode("");
+          }
+          return;
+        }
+
+        const data = await response.json();
+        if (isMounted) {
+          setDiscountAmount(data.coupon.discountAmount || 0);
+          setShippingDiscountAmount(data.coupon.shippingDiscountAmount || 0);
+          setCouponCode(data.coupon.code || "");
+        }
+      } catch {
+        logCouponDebug("Hydrate revalidation error", {
+          cartId: cart.id,
+        });
+        if (isMounted) {
+          setDiscountAmount(0);
+          setShippingDiscountAmount(0);
+          setCouponCode("");
+        }
+      }
+    };
+
+    void hydrateStoredCoupon();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    cart?.id,
+    cart?.cost.subtotalAmount.amount,
+    session?.id,
+    shippingPreview,
+    status,
+  ]);
 
   useEffect(() => {
     if (
@@ -359,7 +497,13 @@ export default function CartModal() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setActiveSheet("coupon")}
+                        onClick={() => {
+                          if (couponCode) {
+                            handleRemoveCoupon();
+                            return;
+                          }
+                          setActiveSheet("coupon");
+                        }}
                         className="flex flex-col items-start gap-1 rounded-lg border border-neutral-200 bg-white px-2 py-2 text-left text-xs font-medium text-neutral-800 transition hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
                       >
                         <div className="flex items-center gap-2">
@@ -367,7 +511,7 @@ export default function CartModal() {
                           <span>Discount</span>
                         </div>
                         <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                          {couponCode ? couponCode : "Add code"}
+                          {couponCode ? `Remove ${couponCode}` : "Add code"}
                         </span>
                       </button>
                     </div>
@@ -418,13 +562,22 @@ export default function CartModal() {
                               />
                             </div>
                             {discountAmount > 0 && (
-                              <div className="flex items-center justify-between px-4 py-2.5">
-                                <p className="text-emerald-700 dark:text-emerald-400">
+                              <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+                                <p className="truncate text-emerald-700 dark:text-emerald-400">
                                   Discount ({couponCode})
                                 </p>
-                                <p className="text-right text-sm font-semibold text-emerald-700 dark:text-emerald-400">
-                                  -₦{discountAmount.toFixed(2)}
-                                </p>
+                                <div className="flex items-center gap-3">
+                                  <p className="text-right text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                                    -₦{discountAmount.toFixed(2)}
+                                  </p>
+                                  <button
+                                    type="button"
+                                    onClick={handleRemoveCoupon}
+                                    className="text-xs font-medium text-emerald-700 underline-offset-2 hover:underline dark:text-emerald-300"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
                               </div>
                             )}
                             <div className="flex items-center justify-between px-4 py-2.5">
@@ -440,9 +593,18 @@ export default function CartModal() {
                             <div className="flex items-center justify-between px-4 py-2.5">
                               <p>Shipping</p>
                               {shippingPreview !== null ? (
-                                <p className="text-right text-sm font-medium text-neutral-900 dark:text-white">
-                                  ₦{shippingPreview.toLocaleString()}
-                                </p>
+                                <div className="text-right">
+                                  <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                                    ₦
+                                    {(netShippingPreview ?? 0).toLocaleString()}
+                                  </p>
+                                  {effectiveShippingDiscount > 0 && (
+                                    <p className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                                      Saved ₦
+                                      {effectiveShippingDiscount.toFixed(2)}
+                                    </p>
+                                  )}
+                                </div>
                               ) : (
                                 <p className="text-right text-xs text-neutral-500 dark:text-neutral-400">
                                   Calculated at checkout
@@ -456,7 +618,7 @@ export default function CartModal() {
                                 amount={Math.max(
                                   parseFloat(cart.cost.totalAmount.amount) -
                                     discountAmount +
-                                    (shippingPreview ?? 0),
+                                    (netShippingPreview ?? 0),
                                   0,
                                 ).toString()}
                                 currencyCode={
@@ -492,7 +654,7 @@ export default function CartModal() {
                       const total = parseFloat(cart.cost.totalAmount.amount);
                       const trackedTotal = Number.isFinite(total)
                         ? Math.max(
-                            total - discountAmount + (shippingPreview ?? 0),
+                            total - discountAmount + (netShippingPreview ?? 0),
                             0,
                           )
                         : 0;
@@ -527,6 +689,7 @@ export default function CartModal() {
                     cartTotal={
                       cart ? parseFloat(cart.cost.subtotalAmount.amount) : 0
                     }
+                    shippingAmount={shippingPreview ?? 0}
                     cartId={cart?.id || ""}
                   />
                 )}

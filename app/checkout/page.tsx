@@ -1,23 +1,33 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { toast } from "sonner";
-import Price from "components/price";
 import LoadingDots from "components/loading-dots";
-import PageLoader from "components/page-loader";
 import {
-  LocationSelectGroup,
-  type LocationChangeSource,
+    LocationSelectGroup,
+    type LocationChangeSource,
 } from "components/locations/location-select-group";
+import PageLoader from "components/page-loader";
+import Price from "components/price";
 import { useUserSession } from "hooks/useUserSession";
 import { identifyUser } from "lib/analytics/tiktok-pixel";
-import { getCouponCustomerKey, getStoredCoupon } from "lib/coupon-storage";
+import {
+    getCouponCustomerKey,
+    getStoredCoupon,
+    migrateGuestCouponToUser,
+} from "lib/coupon-storage";
 import { normalizeLocationName } from "lib/locations";
 import { calculateShippingAmount } from "lib/shipping";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 const ORDER_NOTE_STORAGE_KEY = "orderNote";
+const DEV_COUPON_DEBUG = process.env.NODE_ENV !== "production";
+
+function logCouponDebug(message: string, payload?: unknown) {
+  if (!DEV_COUPON_DEBUG) return;
+  console.debug(`[coupon][checkout] ${message}`, payload);
+}
 
 interface CartItem {
   id?: string;
@@ -166,16 +176,21 @@ export default function CheckoutPage() {
 
     try {
       const customerKey = getCouponCustomerKey(session?.id);
-      const coupon = getStoredCoupon(cartId, customerKey);
+      let coupon = getStoredCoupon(cartId, customerKey);
+
+      if (!coupon && session?.id) {
+        coupon = migrateGuestCouponToUser(cartId, session.id);
+      }
 
       if (coupon) {
+        const payload = {
+          code: coupon.code,
+          cartTotal,
+        };
         const response = await fetch("/api/coupons/validate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            code: coupon.code,
-            cartTotal,
-          }),
+          body: JSON.stringify(payload),
         });
 
         if (response.ok) {
@@ -191,12 +206,22 @@ export default function CheckoutPage() {
             grantsFreeShipping: Boolean(data.coupon.grantsFreeShipping),
           });
         } else {
+          logCouponDebug("Initial load validation failed", {
+            cartId,
+            customerKey,
+            status: response.status,
+            payload,
+          });
           setCouponData(null);
         }
       } else {
         setCouponData(null);
       }
     } catch (err) {
+      logCouponDebug("Initial load validation error", {
+        cartId,
+        error: err instanceof Error ? err.message : String(err),
+      });
       console.error("Failed to load coupon data:", err);
       setCouponData(null);
     }
@@ -332,6 +357,11 @@ export default function CheckoutPage() {
       if (response.ok && data.authorizationUrl) {
         // Redirect to Paystack payment page
         window.location.href = data.authorizationUrl;
+      } else if (response.ok && data.freeCheckout && data.orderNumber) {
+        toast.success("Order placed successfully");
+        router.push(
+          `/checkout/success?order=${encodeURIComponent(data.orderNumber)}`,
+        );
       } else {
         toast.error(data.error || "Failed to initialize payment");
       }
@@ -343,20 +373,10 @@ export default function CheckoutPage() {
     }
   };
 
-  if (loading) {
-    return <PageLoader size="lg" message="Loading checkout..." />;
-  }
-
-  if (!cart || cart.lines.length === 0) {
-    return null;
-  }
-
-  const subtotal = parseFloat(cart.cost.subtotalAmount.amount);
+  const subtotal = parseFloat(cart?.cost.subtotalAmount.amount ?? "0");
   const discountAmount = couponData?.amount || 0;
-  const totalQuantity = cart.lines.reduce(
-    (sum, line) => sum + line.quantity,
-    0,
-  );
+  const totalQuantity =
+    cart?.lines.reduce((sum, line) => sum + line.quantity, 0) ?? 0;
   const hasShippingState = Boolean(formData.shippingAddress.state?.trim());
   const shippingCost = hasShippingState
     ? calculateShippingAmount({
@@ -368,10 +388,12 @@ export default function CheckoutPage() {
   const shippingDiscountAmount = couponData?.shippingDiscountAmount || 0;
   const netShippingCost = Math.max(shippingCost - shippingDiscountAmount, 0);
   const totalDue = subtotal - discountAmount + shippingCost;
+  const isFreeCheckout = totalDue <= 0;
 
   useEffect(() => {
+    if (loading || !cart || !couponData?.code) return;
+
     const revalidateCoupon = async () => {
-      if (!couponData?.code) return;
       const payload: {
         code: string;
         cartTotal: number;
@@ -395,6 +417,12 @@ export default function CheckoutPage() {
       });
 
       if (!response.ok) {
+        logCouponDebug("Shipping revalidation failed", {
+          cartId: cart.id,
+          customerKey,
+          status: response.status,
+          payload,
+        });
         setCouponData(null);
         return;
       }
@@ -405,13 +433,23 @@ export default function CheckoutPage() {
         amount: data.coupon.discountAmount,
         productDiscountAmount: data.coupon.productDiscountAmount || 0,
         shippingDiscountAmount: data.coupon.shippingDiscountAmount || 0,
-        includeShippingInDiscount: Boolean(data.coupon.includeShippingInDiscount),
+        includeShippingInDiscount: Boolean(
+          data.coupon.includeShippingInDiscount,
+        ),
         grantsFreeShipping: Boolean(data.coupon.grantsFreeShipping),
       });
     };
 
     void revalidateCoupon();
-  }, [couponData?.code, shippingCost, subtotal, session?.id]);
+  }, [loading, cart, couponData?.code, shippingCost, subtotal, session?.id]);
+
+  if (loading) {
+    return <PageLoader size="lg" message="Loading checkout..." />;
+  }
+
+  if (!cart || cart.lines.length === 0) {
+    return null;
+  }
 
   return (
     <div className="mx-auto mt-20 max-w-7xl px-4 pb-20">
@@ -951,7 +989,8 @@ export default function CheckoutPage() {
                       />
                       {shippingDiscountAmount > 0 && (
                         <p className="text-xs text-green-600 dark:text-green-400">
-                          You saved ₦{shippingDiscountAmount.toFixed(2)} on shipping
+                          You saved ₦{shippingDiscountAmount.toFixed(2)} on
+                          shipping
                         </p>
                       )}
                     </div>
@@ -968,6 +1007,11 @@ export default function CheckoutPage() {
                     currencyCode={cart.cost.totalAmount.currencyCode}
                   />
                 </div>
+                {isFreeCheckout ? (
+                  <p className="mt-2 text-xs text-green-600 dark:text-green-400">
+                    This coupon fully covers your order. No payment is required.
+                  </p>
+                ) : null}
               </div>
               <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
                 Shipping is calculated from your location and item count. You
@@ -983,7 +1027,7 @@ export default function CheckoutPage() {
                 {submitting ? (
                   <LoadingDots className="bg-white" />
                 ) : (
-                  "Proceed to Payment"
+                  isFreeCheckout ? "Place Order" : "Proceed to Payment"
                 )}
               </button>
 

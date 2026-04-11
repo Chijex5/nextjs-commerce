@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
-import { trackPurchase } from "lib/analytics";
 import { useUserSession } from "hooks/useUserSession";
+import { trackPurchase } from "lib/analytics";
 import { COUPON_STORAGE_KEY } from "lib/coupon-storage";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 export default function CheckoutSuccess() {
   const searchParams = useSearchParams();
@@ -22,6 +22,7 @@ export default function CheckoutSuccess() {
   useEffect(() => {
     try {
       localStorage.removeItem(COUPON_STORAGE_KEY);
+      localStorage.removeItem("local-first-cart");
     } catch {
       // Ignore storage errors.
     }

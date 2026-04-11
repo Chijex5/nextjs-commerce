@@ -2,11 +2,11 @@
 
 import { TAGS } from "lib/constants";
 import {
-  addToCart,
-  createCart,
-  getCart,
-  removeFromCart,
-  updateCart,
+    addToCart,
+    createCart,
+    getCart,
+    removeFromCart,
+    updateCart,
 } from "lib/database";
 import { revalidateTag } from "next/cache";
 import { cookies } from "next/headers";
@@ -110,7 +110,7 @@ export async function redirectToCheckout() {
     return;
   }
 
-  redirect("/checkout");
+  redirect(cart.checkoutUrl || "/checkout");
 }
 
 export async function createCartAndSetCookie() {

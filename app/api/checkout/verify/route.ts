@@ -1,8 +1,8 @@
+import { verifyPaystackReference } from "lib/payments/paystack";
+import { reconcilePaystackPayment } from "lib/payments/paystack-reconcile";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { NextRequest } from "next/server";
-import { verifyPaystackReference } from "lib/payments/paystack";
-import { reconcilePaystackPayment } from "lib/payments/paystack-reconcile";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -85,6 +85,8 @@ export async function GET(request: NextRequest) {
 
     if (result.status === "paid") {
       cookieStore.delete("checkout-session");
+      cookieStore.delete("cartId");
+      cookieStore.delete("cartSessionId");
       return redirect(
         `/checkout/success?order=${encodeURIComponent(result.orderNumber)}`,
       );

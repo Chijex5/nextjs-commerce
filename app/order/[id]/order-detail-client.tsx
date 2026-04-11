@@ -5,12 +5,13 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import OrderActions from "./order-actions";
+import OrderFinancialSummary from "./order-financial-summary";
+import OrderStatusStepper from "./order-status-stepper";
 import PageLoader from "components/page-loader";
 import Price from "components/price";
 import {
   formatEstimatedArrival,
-  getDeliveryStatusColor,
-  getDeliveryStatusDescription,
   type DeliveryStatus,
 } from "lib/order-utils/delivery-tracking";
 
@@ -22,6 +23,7 @@ type OrderItem = {
   variantTitle: string;
   quantity: number;
   price: string;
+  totalAmount?: string;
   productImage?: string;
 };
 
@@ -33,6 +35,10 @@ type Order = {
   status: string;
   deliveryStatus?: DeliveryStatus;
   estimatedArrival?: string | null;
+  subtotalAmount?: string;
+  shippingAmount?: string;
+  discountAmount?: string;
+  couponCode?: string | null;
   totalAmount: string;
   currencyCode: string;
   createdAt: string;
@@ -53,12 +59,48 @@ type Order = {
   items: OrderItem[];
 };
 
-const deliveryStages: { status: DeliveryStatus; label: string }[] = [
-  { status: "production", label: "Production" },
-  { status: "sorting", label: "Packed" },
-  { status: "dispatch", label: "Dispatched" },
-  { status: "completed", label: "Delivered" },
+const deliverySteps = [
+  { id: "placed", label: "Order placed" },
+  { id: "production", label: "In production" },
+  { id: "sorting", label: "Packed" },
+  { id: "dispatch", label: "Dispatched" },
+  { id: "completed", label: "Delivered" },
 ];
+
+const stepByDeliveryStatus: Record<DeliveryStatus, number> = {
+  production: 1,
+  sorting: 2,
+  dispatch: 3,
+  completed: 4,
+  paused: 1,
+  cancelled: 1,
+};
+
+function parseMoney(value?: string | null) {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatDeliveryWindow(estimatedArrival?: string | null) {
+  if (!estimatedArrival) {
+    return "Delivery in 3–5 days";
+  }
+
+  return `Expected by ${formatEstimatedArrival(new Date(estimatedArrival))}`;
+}
+
+function getCurrentStatusLine(status?: DeliveryStatus) {
+  const statusLine: Record<DeliveryStatus, string> = {
+    production: "We’re currently crafting your pair by hand.",
+    sorting: "Your order has been finished and is now packed with care.",
+    dispatch: "Your order is on the way to you.",
+    completed: "Delivered. We hope you love your pair.",
+    paused: "Your order is on hold while we resolve a delivery issue.",
+    cancelled: "This order was cancelled.",
+  };
+
+  return status ? statusLine[status] : "We’re currently crafting your pair by hand.";
+}
 
 export default function OrderDetailClient({ orderId }: { orderId: string }) {
   const searchParams = useSearchParams();
@@ -109,126 +151,144 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
     );
   }
 
-  const stageIndex = deliveryStages.findIndex(
-    (item) => item.status === order.deliveryStatus,
-  );
+  const parsedSubtotal = parseMoney(order.subtotalAmount);
+  const parsedShipping = parseMoney(order.shippingAmount);
+  const parsedDiscount = parseMoney(order.discountAmount);
+  const parsedTotal = parseMoney(order.totalAmount);
+  const itemBasedSubtotal = order.items.reduce((sum, item) => {
+    const lineTotal = item.totalAmount
+      ? parseMoney(item.totalAmount)
+      : parseMoney(item.price) * item.quantity;
+    return sum + lineTotal;
+  }, 0);
+  const summarySubtotal = parsedSubtotal > 0 ? parsedSubtotal : itemBasedSubtotal;
+  const computedTotal = Math.max(summarySubtotal + parsedShipping - parsedDiscount, 0);
+  const finalTotal = parsedTotal > 0 ? parsedTotal : computedTotal;
+  const currentStep = order.deliveryStatus
+    ? stepByDeliveryStatus[order.deliveryStatus]
+    : 1;
+  const deliveryState =
+    order.shippingAddress?.state || order.shippingAddress?.lga || "Nigeria";
 
   return (
-    <div className="space-y-8 pb-12">
-      <header className="rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950 md:p-8">
-        <p className="text-xs uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
-          Order details
+    <div className="space-y-5 pb-10">
+      <header className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950 md:p-7">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
+          Order confirmed
         </p>
-        <h1 className="mt-3 text-3xl font-semibold text-neutral-900 [overflow-wrap:anywhere] dark:text-neutral-100 md:text-4xl">
-          {order.orderNumber}
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100 md:text-4xl">
+          Thank you — your payment was successful
         </h1>
+        <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-300">
+          {getCurrentStatusLine(order.deliveryStatus)}
+        </p>
 
-        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 inline-flex rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-sm font-medium text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100">
+          {formatDeliveryWindow(order.estimatedArrival)}
+        </div>
+
+        <div className="mt-5 grid gap-4 text-sm sm:grid-cols-3">
           <div>
-            <p className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-              Placed
+            <p className="text-neutral-500 dark:text-neutral-400">Order ID</p>
+            <p className="mt-1 font-medium text-neutral-900 [overflow-wrap:anywhere] dark:text-neutral-100">
+              {order.orderNumber}
             </p>
-            <p className="mt-1 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+          </div>
+          <div>
+            <p className="text-neutral-500 dark:text-neutral-400">Placed</p>
+            <p className="mt-1 font-medium text-neutral-900 dark:text-neutral-100">
               {new Date(order.createdAt).toLocaleString()}
             </p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-              Status
-            </p>
-            <p className="mt-1 text-sm font-medium uppercase text-neutral-900 dark:text-neutral-100">
-              {order.status}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-              Delivery
-            </p>
-            <span
-              className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                order.deliveryStatus
-                  ? getDeliveryStatusColor(order.deliveryStatus)
-                  : "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-              }`}
-            >
-              {order.deliveryStatus
-                ? getDeliveryStatusDescription(order.deliveryStatus)
-                : "Pending"}
-            </span>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-              Total
-            </p>
+            <p className="text-neutral-500 dark:text-neutral-400">Total paid</p>
             <Price
-              amount={order.totalAmount}
+              amount={finalTotal.toFixed(2)}
               currencyCode={order.currencyCode}
               currencyCodeClassName="hidden"
-              className="mt-1 text-lg font-semibold text-neutral-900 dark:text-neutral-100"
+              className="mt-1 text-base font-semibold text-neutral-900 dark:text-neutral-100"
             />
           </div>
         </div>
       </header>
 
-      {order.deliveryStatus ? (
-        <section className="rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950 md:p-8">
-          <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-            Shipping progress
-          </h2>
+      <section
+        id="status"
+        className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950 md:p-6"
+      >
+        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          Order status
+        </h2>
+        <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+          {getCurrentStatusLine(order.deliveryStatus)}
+        </p>
+        <div className="mt-4">
+          <OrderStatusStepper steps={deliverySteps} currentStep={currentStep} />
+        </div>
+      </section>
 
-          {order.estimatedArrival ? (
-            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-              Estimated arrival:{" "}
-              {formatEstimatedArrival(new Date(order.estimatedArrival))}
+      <section className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950 md:p-6">
+        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          Delivery information
+        </h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div>
+            <p className="text-xs uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
+              Estimated delivery
             </p>
-          ) : null}
-
-          <div className="mt-5 grid gap-3 md:grid-cols-4">
-            {deliveryStages.map((stage, index) => {
-              const isDone = stageIndex >= 0 && index <= stageIndex;
-              return (
-                <div
-                  key={stage.status}
-                  className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800"
-                >
-                  <div
-                    className={`h-2 w-full rounded-full ${
-                      isDone
-                        ? "bg-neutral-900 dark:bg-neutral-100"
-                        : "bg-neutral-200 dark:bg-neutral-800"
-                    }`}
-                  />
-                  <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
-                    {stage.label}
-                  </p>
-                </div>
-              );
-            })}
+            <p className="mt-1 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+              {formatDeliveryWindow(order.estimatedArrival)}
+            </p>
           </div>
-        </section>
-      ) : null}
+          <div>
+            <p className="text-xs uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
+              Delivery location
+            </p>
+            <p className="mt-1 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+              {deliveryState}
+            </p>
+          </div>
+        </div>
+      </section>
 
-      <section className="rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950 md:p-8">
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-          Items
+      <OrderFinancialSummary
+        items={order.items.map((item) => ({
+          id:
+            item.id ||
+            `${item.productId || order.id}-${item.productVariantId || item.productTitle}`,
+          name: `${item.productTitle} × ${item.quantity}`,
+          amount: item.totalAmount || (parseMoney(item.price) * item.quantity).toFixed(2),
+        }))}
+        currencyCode={order.currencyCode}
+        shippingAmount={parsedShipping.toFixed(2)}
+        discountAmount={parsedDiscount.toFixed(2)}
+        couponCode={order.couponCode}
+        totalPaid={finalTotal.toFixed(2)}
+      />
+
+      <OrderActions orderNumber={order.orderNumber} />
+
+      <section className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950 md:p-6">
+        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          Purchased items
         </h2>
 
-        <div className="mt-5 space-y-3">
+        <div className="mt-4 space-y-3">
           {order.items.map((item) => (
             <article
               key={
                 item.id ||
                 `${order.id}-${item.productVariantId || item.productTitle}`
               }
-              className="flex items-center gap-4 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800"
+              className="flex items-center gap-3 rounded-xl border border-neutral-200 p-3 dark:border-neutral-800"
             >
-              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-900">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-900">
                 {item.productImage ? (
                   <Image
                     src={item.productImage}
                     alt={item.productTitle}
                     fill
-                    sizes="80px"
+                    sizes="64px"
                     className="object-cover"
                   />
                 ) : null}
@@ -242,7 +302,10 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                 </p>
               </div>
               <Price
-                amount={item.price}
+                amount={
+                  item.totalAmount ||
+                  (parseMoney(item.price) * item.quantity).toFixed(2)
+                }
                 currencyCode={order.currencyCode}
                 currencyCodeClassName="hidden"
                 className="text-sm font-medium text-neutral-700 dark:text-neutral-300"
@@ -250,7 +313,20 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
             </article>
           ))}
         </div>
+
+        <p className="mt-4 text-xs text-neutral-500 dark:text-neutral-400">
+          Need to make a change? Contact support with your order ID above.
+        </p>
       </section>
+
+      <div className="px-1">
+        <Link
+          href="/orders"
+          className="text-xs font-medium text-neutral-600 underline underline-offset-4 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+        >
+          Back to all orders
+        </Link>
+      </div>
     </div>
   );
 }

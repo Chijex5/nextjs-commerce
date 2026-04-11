@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "crypto";
 import { getCart } from "lib/database";
 import { getUserSession } from "lib/user-session";
 import { cookies } from "next/headers";
-import { registerInitializedPaymentTransaction } from "lib/payments/paystack-reconcile";
+import {
+  registerInitializedPaymentTransaction,
+  reconcilePaystackPayment,
+} from "lib/payments/paystack-reconcile";
 import { validateCouponForCheckout } from "lib/coupon-validation";
 import { calculateShippingAmount } from "lib/shipping";
 import { handleApiError } from "lib/errors";
@@ -105,6 +109,7 @@ export async function POST(request: NextRequest) {
       (sum, line) => sum + line.quantity,
       0,
     );
+    const checkoutSessionId = session?.id ? null : cart.id;
     const shippingCost = calculateShippingAmount({
       address: shippingAddress,
       subtotalAmount: subtotal,
@@ -141,6 +146,27 @@ export async function POST(request: NextRequest) {
     // Convert amount to kobo (Paystack uses kobo for NGN)
     const amountInKobo = Math.round(totalAmount * 100);
 
+    const checkoutMetadata = {
+      customer_name: `${shippingAddress.firstName || ""} ${shippingAddress.lastName || ""}`.trim(),
+      phone: body.phone,
+      cart_id: cart.id,
+      checkout_session_id: checkoutSessionId,
+      checkout_user_id: session?.id || null,
+      checkout_email: body.email,
+      checkout_shipping_address: shippingAddress,
+      checkout_billing_address: billingAddress,
+      checkout_save_address: Boolean(body.saveAddress),
+      checkout_notes: body.notes?.trim() || null,
+      ...(appliedCouponCode
+        ? {
+            coupon_code: appliedCouponCode,
+            discount_amount: discountAmount,
+            product_discount_amount: productDiscountAmount,
+            shipping_discount_amount: shippingDiscountAmount,
+          }
+        : {}),
+    };
+
     // Store checkout data in a cookie temporarily (will be retrieved after payment)
     const checkoutSession = {
       email: body.email,
@@ -150,6 +176,7 @@ export async function POST(request: NextRequest) {
       saveAddress: body.saveAddress,
       userId: session?.id,
       cartId: cart.id,
+      checkoutSessionId,
       subtotalAmount: subtotal,
       shippingAmount: shippingCost,
       discountAmount,
@@ -165,6 +192,77 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 30, // 30 minutes
       path: "/",
     });
+
+    if (amountInKobo <= 0) {
+      if (!appliedCouponCode) {
+        return NextResponse.json(
+          { error: "Invalid payment amount" },
+          { status: 400 },
+        );
+      }
+
+      const freeCheckoutReference = `FREE-${createHash("sha256")
+        .update(
+          JSON.stringify({
+            cartId: cart.id,
+            email: body.email.trim().toLowerCase(),
+            phone: body.phone.trim(),
+            shippingAddress,
+            billingAddress,
+            subtotal,
+            shippingCost,
+            discountAmount,
+            couponCode: appliedCouponCode,
+            notes: body.notes?.trim() || null,
+            userId: session?.id || null,
+          }),
+        )
+        .digest("hex")
+        .slice(0, 24)
+        .toUpperCase()}`;
+
+      const result = await reconcilePaystackPayment({
+        reference: freeCheckoutReference,
+        amount: 0,
+        currencyCode: "NGN",
+        paystackStatus: "success",
+        metadata: {
+          ...checkoutMetadata,
+          payment_provider: "coupon_free",
+        },
+        customer: {
+          email: body.email,
+          first_name: shippingAddress.firstName || undefined,
+          last_name: shippingAddress.lastName || undefined,
+          phone: body.phone,
+        },
+        payload: {
+          source: "free_checkout",
+          reason: "discount_covered_checkout",
+          couponCode: appliedCouponCode,
+        },
+        eventType: "admin_reconcile",
+        checkoutCartId: cart.id,
+      });
+
+      if (result.status !== "paid") {
+        return NextResponse.json(
+          { error: result.message || "Failed to complete free checkout" },
+          { status: 400 },
+        );
+      }
+
+      const cookieStore = await cookies();
+      cookieStore.delete("checkout-session");
+      cookieStore.delete("cartId");
+      cookieStore.delete("cartSessionId");
+
+      return NextResponse.json({
+        freeCheckout: true,
+        orderNumber: result.orderNumber,
+        orderId: result.orderId,
+      });
+    }
 
     // Initialize Paystack payment
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
@@ -196,25 +294,7 @@ export async function POST(request: NextRequest) {
             amount: amountInKobo,
             currency: "NGN",
             callback_url: callbackUrl,
-            metadata: {
-              customer_name: `${shippingAddress.firstName || ""} ${shippingAddress.lastName || ""}`.trim(),
-              phone: body.phone,
-              cart_id: cart.id,
-              checkout_user_id: session?.id || null,
-              checkout_email: body.email,
-              checkout_shipping_address: shippingAddress,
-              checkout_billing_address: billingAddress,
-              checkout_save_address: Boolean(body.saveAddress),
-              checkout_notes: body.notes?.trim() || null,
-              ...(appliedCouponCode
-                ? {
-                    coupon_code: appliedCouponCode,
-                    discount_amount: discountAmount,
-                    product_discount_amount: productDiscountAmount,
-                    shipping_discount_amount: shippingDiscountAmount,
-                  }
-                : {}),
-            },
+            metadata: checkoutMetadata,
           }),
           signal: paystackController.signal,
         },
@@ -261,25 +341,7 @@ export async function POST(request: NextRequest) {
       source: "catalog_checkout",
       amount: amountInKobo,
       currencyCode: "NGN",
-      metadata: {
-        customer_name: `${shippingAddress.firstName || ""} ${shippingAddress.lastName || ""}`.trim(),
-        phone: body.phone,
-        cart_id: cart.id,
-        checkout_user_id: session?.id || null,
-        checkout_email: body.email,
-        checkout_shipping_address: shippingAddress,
-        checkout_billing_address: billingAddress,
-        checkout_save_address: Boolean(body.saveAddress),
-        checkout_notes: body.notes?.trim() || null,
-        ...(appliedCouponCode
-          ? {
-              coupon_code: appliedCouponCode,
-              discount_amount: discountAmount,
-              product_discount_amount: productDiscountAmount,
-              shipping_discount_amount: shippingDiscountAmount,
-            }
-          : {}),
-      },
+      metadata: checkoutMetadata,
       payload: paystackData.data,
     });
 

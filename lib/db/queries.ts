@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import {
     and,
     asc,
@@ -224,7 +225,7 @@ async function reshapeDbCart(
 
   return {
     id: dbCart.id,
-    checkoutUrl: dbCart.checkoutUrl || "",
+    checkoutUrl: dbCart.checkoutUrl || "/checkout",
     cost: {
       subtotalAmount: {
         amount: String(dbCart.subtotalAmount),
@@ -810,11 +811,24 @@ export async function getCollectionsWithProducts(): Promise<
   return collectionsWithProducts.filter((c) => c.products.length > 0);
 }
 
-export async function createCart(): Promise<Cart> {
+export async function createCart(sessionId?: string): Promise<Cart> {
+  const resolvedSessionId = sessionId?.trim() || randomUUID();
+  const [existingCart] = await db
+    .select()
+    .from(carts)
+    .where(eq(carts.sessionId, resolvedSessionId))
+    .limit(1);
+
+  if (existingCart) {
+    return (await reshapeDbCart(existingCart))!;
+  }
+
   const expiresAt = getCartExpiryDate(); // 30 days
   const [dbCart] = await db
     .insert(carts)
     .values({
+      sessionId: resolvedSessionId,
+      checkoutUrl: "/checkout",
       totalQuantity: 0,
       subtotalAmount: "0.00",
       totalAmount: "0.00",
@@ -832,6 +846,18 @@ export async function getCart(cartId: string): Promise<Cart | undefined> {
     .select()
     .from(carts)
     .where(eq(carts.id, cartId))
+    .limit(1);
+
+  return reshapeDbCart(dbCart);
+}
+
+export async function getCartBySessionId(
+  sessionId: string,
+): Promise<Cart | undefined> {
+  const [dbCart] = await db
+    .select()
+    .from(carts)
+    .where(eq(carts.sessionId, sessionId))
     .limit(1);
 
   return reshapeDbCart(dbCart);

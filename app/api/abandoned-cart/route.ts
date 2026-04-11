@@ -1,10 +1,56 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { sendAbandonedCartEmail } from "@/lib/email/order-emails";
+import { and, desc, eq, isNotNull, lt, lte } from "drizzle-orm";
 import { db } from "lib/db";
 import { abandonedCarts, carts, users } from "lib/db/schema";
-import { sendAbandonedCartEmail } from "@/lib/email/order-emails";
-import { and, eq, isNotNull, lt, lte } from "drizzle-orm";
+import { getServerSession } from "next-auth";
+import { NextRequest, NextResponse } from "next/server";
+
+type AbandonedCartItem = {
+  productTitle: string;
+  variantTitle: string;
+  quantity: number;
+  price: number;
+  imageUrl?: string;
+};
+
+const normalizeCartItems = (items: unknown): AbandonedCartItem[] => {
+  if (!Array.isArray(items)) return [];
+
+  return items
+    .map((item) => ({
+      productTitle:
+        typeof item?.productTitle === "string" ? item.productTitle.trim() : "",
+      variantTitle:
+        typeof item?.variantTitle === "string" ? item.variantTitle.trim() : "",
+      quantity: Math.max(0, Number(item?.quantity ?? 0)),
+      price: Math.max(0, Number(item?.price ?? 0)),
+      imageUrl: typeof item?.imageUrl === "string" ? item.imageUrl : undefined,
+    }))
+    .filter(
+      (item) =>
+        item.productTitle.length > 0 &&
+        item.variantTitle.length > 0 &&
+        item.quantity > 0,
+    )
+    .sort((a, b) => {
+      const product = a.productTitle.localeCompare(b.productTitle);
+      if (product !== 0) return product;
+      const variant = a.variantTitle.localeCompare(b.variantTitle);
+      if (variant !== 0) return variant;
+      return a.price - b.price;
+    });
+};
+
+const buildItemSignature = (items: AbandonedCartItem[]) =>
+  JSON.stringify(
+    items.map((item) => ({
+      productTitle: item.productTitle,
+      variantTitle: item.variantTitle,
+      quantity: item.quantity,
+      price: item.price,
+    })),
+  );
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,8 +65,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { cartId, items, cartTotal } = body;
+    const normalizedItems = normalizeCartItems(items);
 
-    if (!cartId || !items || !Array.isArray(items) || items.length === 0) {
+    if (!cartId || normalizedItems.length === 0) {
       return NextResponse.json({ error: "Invalid cart data" }, { status: 400 });
     }
 
@@ -34,16 +81,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const [existing] = await db
+    const existingUserRecords = await db
       .select()
       .from(abandonedCarts)
       .where(
         and(
           eq(abandonedCarts.userId, user.id),
-          eq(abandonedCarts.cartId, cartId),
+          eq(abandonedCarts.recovered, false),
         ),
       )
-      .limit(1);
+      .orderBy(desc(abandonedCarts.createdAt))
+      .limit(30);
+
+    const incomingSignature = buildItemSignature(normalizedItems);
+    const existingBySignature = existingUserRecords.find(
+      (record) =>
+        buildItemSignature(normalizeCartItems(record.items)) === incomingSignature,
+    );
+    const existingByCartId = existingUserRecords.find(
+      (record) => record.cartId === cartId,
+    );
+    const existing = existingBySignature || existingByCartId;
 
     if (existing) {
       // If an email was already sent for this cart, do not create a new
@@ -55,7 +113,8 @@ export async function POST(request: NextRequest) {
       await db
         .update(abandonedCarts)
         .set({
-          items,
+          cartId,
+          items: normalizedItems,
           cartTotal: String(cartTotal),
           expiresAt: new Date(Date.now() + 60 * 60 * 1000),
         })
@@ -66,7 +125,7 @@ export async function POST(request: NextRequest) {
         cartId,
         email: user.email,
         customerName: user.name || "Valued Customer",
-        items,
+        items: normalizedItems,
         cartTotal: String(cartTotal),
         expiresAt: new Date(Date.now() + 60 * 60 * 1000),
       });
@@ -101,6 +160,7 @@ export async function GET(request: NextRequest) {
           lte(abandonedCarts.expiresAt, new Date()),
         ),
       )
+      .orderBy(desc(abandonedCarts.createdAt))
       .limit(50);
 
     if (expiredCarts.length === 0) {
@@ -114,15 +174,57 @@ export async function GET(request: NextRequest) {
     let emailsSent = 0;
     const errors: string[] = [];
 
+    const dedupedCarts = new Map<string, (typeof expiredCarts)[number]>();
+    const duplicateIdsByKey = new Map<string, string[]>();
+
     for (const cart of expiredCarts) {
+      const signature = buildItemSignature(normalizeCartItems(cart.items));
+      const key = `${cart.email}|${signature}`;
+
+      if (!dedupedCarts.has(key)) {
+        dedupedCarts.set(key, cart);
+        duplicateIdsByKey.set(key, []);
+      } else {
+        const duplicates = duplicateIdsByKey.get(key) || [];
+        duplicates.push(cart.id);
+        duplicateIdsByKey.set(key, duplicates);
+      }
+    }
+
+    for (const [key, cart] of dedupedCarts.entries()) {
       try {
-        const items = cart.items as Array<{
-          productTitle: string;
-          variantTitle: string;
-          quantity: number;
-          price: number;
-          imageUrl?: string;
-        }>;
+        const [currentCart] = await db
+          .select({ id: carts.id, totalQuantity: carts.totalQuantity })
+          .from(carts)
+          .where(eq(carts.id, cart.cartId))
+          .limit(1);
+
+        if (!currentCart || currentCart.totalQuantity <= 0) {
+          await db
+            .update(abandonedCarts)
+            .set({
+              recovered: true,
+              recoveredAt: new Date(),
+            })
+            .where(eq(abandonedCarts.id, cart.id));
+
+          const duplicateIds = duplicateIdsByKey.get(key) || [];
+          if (duplicateIds.length > 0) {
+            for (const duplicateId of duplicateIds) {
+              await db
+                .update(abandonedCarts)
+                .set({
+                  recovered: true,
+                  recoveredAt: new Date(),
+                })
+                .where(eq(abandonedCarts.id, duplicateId));
+            }
+          }
+
+          continue;
+        }
+
+        const items = normalizeCartItems(cart.items);
 
         await sendAbandonedCartEmail({
           customerName: cart.customerName,
@@ -138,6 +240,19 @@ export async function GET(request: NextRequest) {
             emailSentAt: new Date(),
           })
           .where(eq(abandonedCarts.id, cart.id));
+
+        const duplicateIds = duplicateIdsByKey.get(key) || [];
+        if (duplicateIds.length > 0) {
+          for (const duplicateId of duplicateIds) {
+            await db
+              .update(abandonedCarts)
+              .set({
+                emailSent: true,
+                emailSentAt: new Date(),
+              })
+              .where(eq(abandonedCarts.id, duplicateId));
+          }
+        }
 
         emailsSent++;
       } catch (emailError) {

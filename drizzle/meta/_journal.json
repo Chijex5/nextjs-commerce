@@ -50,6 +50,27 @@
       "when": 1773072000000,
       "tag": "0006_account_customisation",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1773141000000,
+      "tag": "0007_cart_expiry",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1773172800000,
+      "tag": "0008_coupon_shipping_guards",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1773360000000,
+      "tag": "0009_cart_session_identity",
+      "breakpoints": true
     }
   ]
 }

@@ -1,14 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
 import { useUserSession } from "hooks/useUserSession";
-import {
-  COUPON_STORAGE_KEY,
-  getCouponCustomerKey,
-  getStoredCoupon,
-} from "lib/coupon-storage";
 import { getErrorMessage, parseApiError } from "lib/client-error";
+import {
+    COUPON_STORAGE_KEY,
+    getCouponCustomerKey,
+    getStoredCoupon,
+    migrateGuestCouponToUser,
+    saveStoredCoupon,
+} from "lib/coupon-storage";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+
+const DEV_COUPON_DEBUG = process.env.NODE_ENV !== "production";
+
+function logCouponDebug(message: string, payload?: unknown) {
+  if (!DEV_COUPON_DEBUG) return;
+  console.debug(`[coupon][cart-input] ${message}`, payload);
+}
 
 interface CouponInputProps {
   onApply: (
@@ -22,6 +31,7 @@ interface CouponInputProps {
     },
   ) => void;
   cartTotal: number;
+  shippingAmount?: number;
   cartId: string;
   variant?: "card" | "compact";
 }
@@ -29,6 +39,7 @@ interface CouponInputProps {
 export default function CouponInput({
   onApply,
   cartTotal,
+  shippingAmount = 0,
   cartId,
   variant = "card",
 }: CouponInputProps) {
@@ -49,16 +60,23 @@ export default function CouponInput({
 
       try {
         const customerKey = getCouponCustomerKey(session?.id);
-        const couponData = getStoredCoupon(cartId, customerKey);
+        let couponData = getStoredCoupon(cartId, customerKey);
+
+        if (!couponData && session?.id) {
+          couponData = migrateGuestCouponToUser(cartId, session.id);
+        }
+
         if (couponData) {
           // Revalidate the coupon
           const payload: {
             code: string;
             cartTotal: number;
+            shippingAmount: number;
             sessionId?: string;
           } = {
             code: couponData.code,
             cartTotal,
+            shippingAmount,
           };
 
           if (!session?.id) {
@@ -75,18 +93,41 @@ export default function CouponInput({
             const data = await response.json();
             setAppliedCoupon(data.coupon);
             onApply(data.coupon.discountAmount, data.coupon.code, data.coupon);
+            saveStoredCoupon({
+              code: data.coupon.code,
+              discountAmount: data.coupon.discountAmount,
+              shippingDiscountAmount: data.coupon.shippingDiscountAmount || 0,
+              productDiscountAmount: data.coupon.productDiscountAmount || 0,
+              grantsFreeShipping: Boolean(data.coupon.grantsFreeShipping),
+              includeShippingInDiscount: Boolean(
+                data.coupon.includeShippingInDiscount,
+              ),
+              description: data.coupon.description,
+              cartId,
+              customerKey,
+            });
           } else {
-            // Coupon no longer valid, remove it
-            localStorage.removeItem(COUPON_STORAGE_KEY);
+            setAppliedCoupon(null);
+            onApply(0, "");
+            logCouponDebug("Revalidation failed", {
+              cartId,
+              customerKey,
+              status: response.status,
+              payload,
+            });
           }
         }
       } catch (err) {
-        localStorage.removeItem(COUPON_STORAGE_KEY);
+        logCouponDebug("Revalidation error", {
+          cartId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        // Keep stored coupon on transient failures.
       }
     };
 
     loadStoredCoupon();
-  }, [cartId, cartTotal, onApply, session?.id]);
+  }, [cartId, cartTotal, onApply, session?.id, shippingAmount]);
 
   const handleApply = async () => {
     const trimmedCode = code.trim().toUpperCase();
@@ -106,9 +147,15 @@ export default function CouponInput({
     setLoading(true);
 
     try {
-      const payload: { code: string; cartTotal: number; sessionId?: string } = {
+      const payload: {
+        code: string;
+        cartTotal: number;
+        shippingAmount: number;
+        sessionId?: string;
+      } = {
         code: trimmedCode,
         cartTotal,
+        shippingAmount,
       };
       const customerKey = getCouponCustomerKey(session?.id);
 
@@ -125,6 +172,13 @@ export default function CouponInput({
       const data = await response.json();
 
       if (!response.ok) {
+        logCouponDebug("Apply failed", {
+          cartId,
+          customerKey,
+          status: response.status,
+          payload,
+          response: data,
+        });
         toast.error(parseApiError(response, data));
         return;
       }
@@ -138,22 +192,19 @@ export default function CouponInput({
 
       // Store in localStorage for persistence
       try {
-        localStorage.setItem(
-          COUPON_STORAGE_KEY,
-          JSON.stringify({
-            code: data.coupon.code,
-            discountAmount: data.coupon.discountAmount,
-            shippingDiscountAmount: data.coupon.shippingDiscountAmount || 0,
-            productDiscountAmount: data.coupon.productDiscountAmount || 0,
-            grantsFreeShipping: Boolean(data.coupon.grantsFreeShipping),
-            includeShippingInDiscount: Boolean(
-              data.coupon.includeShippingInDiscount,
-            ),
-            description: data.coupon.description,
-            cartId,
-            customerKey,
-          }),
-        );
+        saveStoredCoupon({
+          code: data.coupon.code,
+          discountAmount: data.coupon.discountAmount,
+          shippingDiscountAmount: data.coupon.shippingDiscountAmount || 0,
+          productDiscountAmount: data.coupon.productDiscountAmount || 0,
+          grantsFreeShipping: Boolean(data.coupon.grantsFreeShipping),
+          includeShippingInDiscount: Boolean(
+            data.coupon.includeShippingInDiscount,
+          ),
+          description: data.coupon.description,
+          cartId,
+          customerKey,
+        });
       } catch (err) {
         console.error("Failed to save coupon to storage:", err);
       }

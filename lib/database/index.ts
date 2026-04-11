@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { asc, desc, eq } from "drizzle-orm";
 import { HIDDEN_PRODUCT_TAG, TAGS } from "lib/constants";
 import {
@@ -12,6 +13,55 @@ import * as dbQueries from "../db/queries";
 import { customOrders } from "../db/schema";
 import type { Cart, Collection, Menu, Page, Product } from "../shopify/types";
 
+const CART_SESSION_COOKIE = "cartSessionId";
+const CART_COOKIE_OPTIONS = {
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+};
+
+function getOrCreateCartSessionId(cookieStore: Awaited<ReturnType<typeof cookies>>) {
+  let sessionId = cookieStore.get(CART_SESSION_COOKIE)?.value;
+
+  if (!sessionId) {
+    sessionId = randomUUID();
+    cookieStore.set(CART_SESSION_COOKIE, sessionId, {
+      ...CART_COOKIE_OPTIONS,
+      httpOnly: true,
+      maxAge: 60 * 60 * 24 * 30,
+    });
+  }
+
+  return sessionId;
+}
+
+async function resolveCartForSession(
+  cookieStore: Awaited<ReturnType<typeof cookies>>,
+): Promise<Cart> {
+  const sessionId = getOrCreateCartSessionId(cookieStore);
+  const cookieCartId = cookieStore.get("cartId")?.value;
+
+  if (cookieCartId) {
+    const cookieCart = await dbQueries.getCart(cookieCartId);
+    if (cookieCart) {
+      return cookieCart;
+    }
+  }
+
+  let sessionCart = await dbQueries.getCartBySessionId(sessionId);
+  if (!sessionCart) {
+    sessionCart = await dbQueries.createCart(sessionId);
+  }
+
+  cookieStore.set("cartId", sessionCart.id!, {
+    ...CART_COOKIE_OPTIONS,
+    httpOnly: true,
+    maxAge: 60 * 60 * 24 * 30,
+  });
+
+  return sessionCart;
+}
+
 // Re-export types from shopify for compatibility
 export type {
     Cart, CartItem,
@@ -23,36 +73,70 @@ export type {
 
 // Cart operations
 export async function createCart(): Promise<Cart> {
-  return dbQueries.createCart();
+  const cookieStore = await cookies();
+  return resolveCartForSession(cookieStore);
 }
 
 export async function addToCart(
   lines: { merchandiseId: string; quantity: number }[],
 ): Promise<Cart> {
-  const cartId = (await cookies()).get("cartId")?.value!;
+  const cookieStore = await cookies();
+  const cart = await resolveCartForSession(cookieStore);
+  const cartId = cart.id;
+  if (!cartId) {
+    throw new Error("Resolved cart is missing id");
+  }
   return dbQueries.addToCart(cartId, lines);
 }
 
 export async function removeFromCart(lineIds: string[]): Promise<Cart> {
-  const cartId = (await cookies()).get("cartId")?.value!;
+  const cookieStore = await cookies();
+  const cart = await resolveCartForSession(cookieStore);
+  const cartId = cart.id;
+  if (!cartId) {
+    throw new Error("Resolved cart is missing id");
+  }
   return dbQueries.removeFromCart(cartId, lineIds);
 }
 
 export async function updateCart(
   lines: { id: string; merchandiseId: string; quantity: number }[],
 ): Promise<Cart> {
-  const cartId = (await cookies()).get("cartId")?.value!;
+  const cookieStore = await cookies();
+  const cart = await resolveCartForSession(cookieStore);
+  const cartId = cart.id;
+  if (!cartId) {
+    throw new Error("Resolved cart is missing id");
+  }
   return dbQueries.updateCart(cartId, lines);
 }
 
 export async function getCart(): Promise<Cart | undefined> {
-  const cartId = (await cookies()).get("cartId")?.value;
+  const cookieStore = await cookies();
+  const cartId = cookieStore.get("cartId")?.value;
 
-  if (!cartId) {
+  if (cartId) {
+    const cart = await dbQueries.getCart(cartId);
+    if (cart) {
+      return cart;
+    }
+  }
+
+  const sessionId = cookieStore.get(CART_SESSION_COOKIE)?.value;
+  if (!sessionId) {
     return undefined;
   }
 
-  return dbQueries.getCart(cartId);
+  const sessionCart = await dbQueries.getCartBySessionId(sessionId);
+  if (sessionCart) {
+    cookieStore.set("cartId", sessionCart.id!, {
+      ...CART_COOKIE_OPTIONS,
+      httpOnly: true,
+      maxAge: 60 * 60 * 24 * 30,
+    });
+  }
+
+  return sessionCart;
 }
 
 // Collection operations

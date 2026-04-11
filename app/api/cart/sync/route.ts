@@ -5,7 +5,6 @@ import {
     removeFromCart,
     updateCart,
 } from "lib/database";
-import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 type SyncItem = {
@@ -30,9 +29,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ ok: true, cart: null });
       }
 
-      const newCart = await createCart();
-      (await cookies()).set("cartId", newCart.id!);
-      cart = newCart;
+      cart = await createCart();
     }
 
     for (const item of items) {

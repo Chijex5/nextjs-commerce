@@ -190,6 +190,7 @@ async function insertPaymentEvent(
   input: {
     paymentTransactionId: string;
     reference: string;
+    provider?: string;
     source: PaymentSource;
     eventType: PaymentEventType;
     status: string;
@@ -199,7 +200,7 @@ async function insertPaymentEvent(
 ) {
   await tx.insert(paymentEvents).values({
     paymentTransactionId: input.paymentTransactionId,
-    provider: "paystack",
+    provider: input.provider || "paystack",
     reference: input.reference,
     source: input.source,
     eventType: input.eventType,
@@ -287,6 +288,7 @@ async function attachExistingOrder(
     reference: string;
     source: PaymentSource;
     eventType: PaymentEventType;
+    paymentProvider: string;
     payload?: unknown;
     paystackStatus?: string | null;
   },
@@ -308,7 +310,7 @@ async function attachExistingOrder(
     .update(orders)
     .set({
       paymentTransactionId: input.paymentTransactionId,
-      paymentProvider: "paystack",
+      paymentProvider: input.paymentProvider,
       paymentReference: input.reference,
       updatedAt: new Date(),
     })
@@ -400,6 +402,7 @@ export async function reconcilePaystackPayment(
 
   const metadata = isRecord(input.metadata) ? input.metadata : {};
   const source = getSourceFromMetadata(metadata);
+  const paymentProvider = toStringOrNull(metadata.payment_provider) || "paystack";
   let paymentTransactionId: string | undefined;
 
   try {
@@ -409,7 +412,7 @@ export async function reconcilePaystackPayment(
       const [upserted] = await tx
         .insert(paymentTransactions)
         .values({
-          provider: "paystack",
+          provider: paymentProvider,
           reference,
           source,
           status: "processing",
@@ -482,7 +485,7 @@ export async function reconcilePaystackPayment(
         .from(orders)
         .where(
           and(
-            eq(orders.paymentProvider, "paystack"),
+            eq(orders.paymentProvider, paymentProvider),
             eq(orders.paymentReference, reference),
           ),
         )
@@ -495,6 +498,7 @@ export async function reconcilePaystackPayment(
           reference,
           source,
           eventType: input.eventType,
+          paymentProvider,
           payload: input.payload,
           paystackStatus: input.paystackStatus,
         });
@@ -663,6 +667,7 @@ export async function reconcilePaystackPayment(
               reference,
               source,
               eventType: input.eventType,
+              paymentProvider,
               payload: input.payload,
               paystackStatus: input.paystackStatus,
             });
@@ -697,7 +702,7 @@ export async function reconcilePaystackPayment(
             orderType: "custom",
             customOrderRequestId: requestRow.id,
             paymentTransactionId: upserted.id,
-            paymentProvider: "paystack",
+            paymentProvider,
             paymentReference: reference,
           })
           .returning();
@@ -776,6 +781,7 @@ export async function reconcilePaystackPayment(
         await insertPaymentEvent(tx, {
           paymentTransactionId: upserted.id,
           reference,
+            provider: paymentProvider,
           source,
           eventType: input.eventType,
           status: "paid",
@@ -955,6 +961,7 @@ export async function reconcilePaystackPayment(
             cartTotal: subtotalAmount,
             shippingAmount,
             userId: toStringOrNull(metadata.checkout_user_id),
+            sessionId: toStringOrNull(metadata.checkout_session_id),
           });
           discountAmount = validated.discountAmount;
         } catch {
@@ -1084,7 +1091,7 @@ export async function reconcilePaystackPayment(
           currencyCode: "NGN",
           notes: buildOrderNotes(userNote, reference),
           paymentTransactionId: upserted.id,
-          paymentProvider: "paystack",
+          paymentProvider,
           paymentReference: reference,
         })
         .returning();

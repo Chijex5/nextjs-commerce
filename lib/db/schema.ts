@@ -1,17 +1,17 @@
-import {
-  pgTable,
-  uuid,
-  varchar,
-  text,
-  timestamp,
-  decimal,
-  integer,
-  boolean,
-  jsonb,
-  index,
-  uniqueIndex,
-} from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import {
+    boolean,
+    decimal,
+    index,
+    integer,
+    jsonb,
+    pgTable,
+    text,
+    timestamp,
+    uniqueIndex,
+    uuid,
+    varchar,
+} from "drizzle-orm/pg-core";
 
 // Products table - stores the main product information
 export const products = pgTable(
@@ -134,27 +134,33 @@ export const productCollections = pgTable(
 );
 
 // Carts table
-export const carts = pgTable("carts", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  checkoutUrl: text("checkout_url"),
-  totalQuantity: integer("total_quantity").default(0).notNull(),
-  subtotalAmount: decimal("subtotal_amount", { precision: 10, scale: 2 })
-    .default("0.00")
-    .notNull(),
-  totalAmount: decimal("total_amount", { precision: 10, scale: 2 })
-    .default("0.00")
-    .notNull(),
-  totalTaxAmount: decimal("total_tax_amount", { precision: 10, scale: 2 })
-    .default("0.00")
-    .notNull(),
-  currencyCode: varchar("currency_code", { length: 3 })
-    .default("NGN")
-    .notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  expiresAt: timestamp("expires_at"),
-});
-
+export const carts = pgTable(
+  "carts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sessionId: varchar("session_id", { length: 255 }).notNull(),
+    checkoutUrl: text("checkout_url"),
+    totalQuantity: integer("total_quantity").default(0).notNull(),
+    subtotalAmount: decimal("subtotal_amount", { precision: 10, scale: 2 })
+      .default("0.00")
+      .notNull(),
+    totalAmount: decimal("total_amount", { precision: 10, scale: 2 })
+      .default("0.00")
+      .notNull(),
+    totalTaxAmount: decimal("total_tax_amount", { precision: 10, scale: 2 })
+      .default("0.00")
+      .notNull(),
+    currencyCode: varchar("currency_code", { length: 3 })
+      .default("NGN")
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    expiresAt: timestamp("expires_at"),
+  },
+  (table) => ({
+    sessionIdIdx: uniqueIndex("carts_session_id_unique").on(table.sessionId),
+  }),
+);
 // Cart lines (items in cart)
 export const cartLines = pgTable(
   "cart_lines",

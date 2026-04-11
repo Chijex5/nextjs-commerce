@@ -34,7 +34,7 @@ const LOCAL_CART_STORAGE_KEY = "local-first-cart";
 function createEmptyCart(currencyCode: string = "NGN"): Cart {
   return {
     id: undefined,
-    checkoutUrl: "",
+    checkoutUrl: "/checkout",
     totalQuantity: 0,
     lines: [],
     cost: {
