@@ -31,6 +31,13 @@ export async function POST(
       return NextResponse.json({ error: "Payment not found" }, { status: 404 });
     }
 
+    if (payment.provider !== "paystack") {
+      return NextResponse.json(
+        { error: "Only Paystack transactions can be reconciled here" },
+        { status: 400 },
+      );
+    }
+
     const verifyResult = await verifyPaystackReference(payment.reference);
     const paystackData = verifyResult.data;
 
@@ -75,7 +82,12 @@ export async function POST(
   } catch (error) {
     console.error("Failed to reconcile payment transaction:", error);
     return NextResponse.json(
-      { error: "Failed to reconcile payment transaction" },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to reconcile payment transaction",
+      },
       { status: 500 },
     );
   }

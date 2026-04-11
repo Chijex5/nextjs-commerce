@@ -30,6 +30,13 @@ export async function POST(
       return NextResponse.json({ error: "Payment not found" }, { status: 404 });
     }
 
+    if (payment.provider !== "paystack") {
+      return NextResponse.json(
+        { error: "Only Paystack transactions can be refreshed here" },
+        { status: 400 },
+      );
+    }
+
     const verifyResult = await verifyPaystackReference(payment.reference);
     const data = verifyResult.data;
 
@@ -92,7 +99,12 @@ export async function POST(
   } catch (error) {
     console.error("Failed to verify payment transaction:", error);
     return NextResponse.json(
-      { error: "Failed to verify payment transaction" },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to verify payment transaction",
+      },
       { status: 500 },
     );
   }

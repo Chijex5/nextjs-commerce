@@ -15,6 +15,11 @@ export type PaystackVerifyData = {
 };
 
 export async function verifyPaystackReference(reference: string) {
+  const normalizedReference = reference.trim();
+  if (!normalizedReference) {
+    throw new Error("Missing payment reference");
+  }
+
   const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
   if (!paystackSecretKey) {
     throw new Error("Payment gateway not configured");
@@ -27,7 +32,7 @@ export async function verifyPaystackReference(reference: string) {
   let response: Response;
   try {
     response = await fetch(
-      `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
+      `https://api.paystack.co/transaction/verify/${encodeURIComponent(normalizedReference)}`,
       {
         headers: {
           Authorization: `Bearer ${paystackSecretKey}`,
@@ -51,9 +56,19 @@ export async function verifyPaystackReference(reference: string) {
     throw new Error("Invalid response from payment gateway.");
   }
 
-  return payload as {
+  const parsed = payload as {
     status?: boolean;
     message?: string;
     data?: PaystackVerifyData;
   };
+
+  if (!response.ok || parsed.status === false) {
+    throw new Error(parsed.message || "Payment verification failed");
+  }
+
+  if (!parsed.data) {
+    throw new Error("Payment gateway did not return transaction details");
+  }
+
+  return parsed;
 }

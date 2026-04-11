@@ -1,12 +1,12 @@
-import Link from "next/link";
-import { getServerSession } from "next-auth";
-import { notFound, redirect } from "next/navigation";
-import { desc, eq } from "drizzle-orm";
 import AdminNav from "components/admin/AdminNav";
 import PaymentDetailActions from "components/admin/PaymentDetailActions";
+import { desc, eq } from "drizzle-orm";
 import { authOptions } from "lib/auth";
 import { db } from "lib/db";
 import { orders, paymentEvents, paymentTransactions } from "lib/db/schema";
+import { getServerSession } from "next-auth";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
 
 export default async function AdminPaymentDetailPage({
   params,
@@ -77,7 +77,10 @@ export default async function AdminPaymentDetailPage({
                 Payment {payment.reference}
               </h1>
             </div>
-            <PaymentDetailActions paymentId={payment.id} />
+            <PaymentDetailActions
+              paymentId={payment.id}
+              provider={payment.provider}
+            />
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
@@ -87,41 +90,60 @@ export default async function AdminPaymentDetailPage({
               </h2>
               <dl className="mt-4 space-y-2 text-sm">
                 <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-500 dark:text-neutral-400">Provider</dt>
+                  <dt className="text-neutral-500 dark:text-neutral-400">
+                    Provider
+                  </dt>
                   <dd>{payment.provider}</dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-500 dark:text-neutral-400">Source</dt>
+                  <dt className="text-neutral-500 dark:text-neutral-400">
+                    Source
+                  </dt>
                   <dd>{payment.source}</dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-500 dark:text-neutral-400">Status</dt>
+                  <dt className="text-neutral-500 dark:text-neutral-400">
+                    Status
+                  </dt>
                   <dd>{payment.status}</dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-500 dark:text-neutral-400">Paystack Status</dt>
+                  <dt className="text-neutral-500 dark:text-neutral-400">
+                    Paystack Status
+                  </dt>
                   <dd>{payment.paystackStatus || "-"}</dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-500 dark:text-neutral-400">Amount</dt>
+                  <dt className="text-neutral-500 dark:text-neutral-400">
+                    Amount
+                  </dt>
                   <dd>
-                    {payment.currencyCode} {(Number(payment.amount) / 100).toFixed(2)}
+                    {payment.currencyCode}{" "}
+                    {(Number(payment.amount) / 100).toFixed(2)}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-500 dark:text-neutral-400">Created</dt>
+                  <dt className="text-neutral-500 dark:text-neutral-400">
+                    Created
+                  </dt>
                   <dd>{payment.createdAt.toLocaleString()}</dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-500 dark:text-neutral-400">Updated</dt>
+                  <dt className="text-neutral-500 dark:text-neutral-400">
+                    Updated
+                  </dt>
                   <dd>{payment.updatedAt.toLocaleString()}</dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-500 dark:text-neutral-400">Last Verified</dt>
+                  <dt className="text-neutral-500 dark:text-neutral-400">
+                    Last Verified
+                  </dt>
                   <dd>{payment.lastVerifiedAt?.toLocaleString() || "-"}</dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-500 dark:text-neutral-400">Resolved</dt>
+                  <dt className="text-neutral-500 dark:text-neutral-400">
+                    Resolved
+                  </dt>
                   <dd>{payment.resolvedAt?.toLocaleString() || "-"}</dd>
                 </div>
               </dl>
@@ -141,7 +163,9 @@ export default async function AdminPaymentDetailPage({
               {payment.orderId && payment.orderNumber ? (
                 <div className="mt-4 space-y-2 text-sm">
                   <div>
-                    <span className="text-neutral-500 dark:text-neutral-400">Order:</span>{" "}
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Order:
+                    </span>{" "}
                     <Link
                       href={`/admin/orders/${payment.orderId}`}
                       className="font-medium hover:underline"
@@ -150,11 +174,15 @@ export default async function AdminPaymentDetailPage({
                     </Link>
                   </div>
                   <div>
-                    <span className="text-neutral-500 dark:text-neutral-400">Customer:</span>{" "}
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Customer:
+                    </span>{" "}
                     {payment.orderCustomerName || "-"}
                   </div>
                   <div>
-                    <span className="text-neutral-500 dark:text-neutral-400">Email:</span>{" "}
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Email:
+                    </span>{" "}
                     {payment.orderEmail || "-"}
                   </div>
                 </div>

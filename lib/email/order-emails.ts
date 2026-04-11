@@ -13,6 +13,7 @@ import { customOrderQuoteExpiredTemplate } from "./templates/custom-order-quote-
 import { adminNewCustomOrderRequestTemplate } from "./templates/admin-new-custom-order-request";
 
 const ORDER_FROM_EMAIL = "order@dfootprint.me";
+const STATUS_UPDATE_FROM_EMAIL = "notification@dfootprint.me";
 const ORDER_REPLY_TO = "support@dfootprint.me";
 const CUSTOM_ORDER_FROM_EMAIL =
   process.env.CUSTOM_ORDER_FROM_EMAIL || "custom-orders@dfootprint.me";
@@ -123,7 +124,7 @@ export const sendOrderStatusUpdate = async (data: {
 }) => {
   return sendEmail({
     to: data.email,
-    from: ORDER_FROM_EMAIL,
+    from: STATUS_UPDATE_FROM_EMAIL,
     replyTo: ORDER_REPLY_TO,
     subject: `Order Update: ${data.orderNumber} - D'FOOTPRINT`,
     html: orderStatusUpdateTemplate(data),

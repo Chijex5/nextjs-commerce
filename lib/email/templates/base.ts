@@ -7,7 +7,8 @@ export const baseTemplate = (content: string) => {
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXTAUTH_URL ||
     "https://yourdomain.com";
-  const logoUrl = `${siteUrl}/d.png`;
+  const lightLogoUrl = "https://www.dfootprint.me/d-light.png";
+  const darkLogoUrl = "https://www.dfootprint.me/d.png";
 
   return `
   <!DOCTYPE html>
@@ -45,6 +46,12 @@ export const baseTemplate = (content: string) => {
         height: 56px;
         display: block;
         border: 0;
+      }
+      .logo-light {
+        display: block;
+      }
+      .logo-dark {
+        display: none;
       }
       .brand-text {
         margin-top: 10px;
@@ -175,6 +182,22 @@ export const baseTemplate = (content: string) => {
         font-size: 13px;
         color: #525252;
       }
+      @media (prefers-color-scheme: dark) {
+        .logo-light {
+          display: none !important;
+        }
+        .logo-dark {
+          display: block !important;
+        }
+      }
+      [data-ogsc] .logo-light,
+      [data-ogsb] .logo-light {
+        display: none !important;
+      }
+      [data-ogsc] .logo-dark,
+      [data-ogsb] .logo-dark {
+        display: block !important;
+      }
       @media (max-width: 640px) {
         body {
           padding: 12px 8px;
@@ -201,7 +224,8 @@ export const baseTemplate = (content: string) => {
     <div class="email-container">
       <div class="header">
         <a class="logo" href="${siteUrl}" target="_blank" rel="noopener noreferrer">
-          <img src="${logoUrl}" alt="D'FOOTPRINT" width="500" height="500" />
+          <img class="logo-light" src="${lightLogoUrl}" alt="D'FOOTPRINT" width="56" height="56" />
+          <img class="logo-dark" src="${darkLogoUrl}" alt="D'FOOTPRINT" width="56" height="56" />
         </a>
         <div class="brand-text">D'FOOTPRINT</div>
       </div>

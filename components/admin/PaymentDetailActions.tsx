@@ -1,12 +1,26 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
 
-export default function PaymentDetailActions({ paymentId }: { paymentId: string }) {
+export default function PaymentDetailActions({
+  paymentId,
+  provider,
+}: {
+  paymentId: string;
+  provider: string;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState<"verify" | "reconcile" | null>(null);
+
+  if (provider !== "paystack") {
+    return (
+      <div className="rounded-md border border-neutral-300 px-3 py-2 text-xs text-neutral-600 dark:border-neutral-700 dark:text-neutral-300">
+        Paystack actions are unavailable for provider: {provider}
+      </div>
+    );
+  }
 
   const runAction = async (action: "verify" | "reconcile") => {
     setLoading(action);
