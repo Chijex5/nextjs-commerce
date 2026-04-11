@@ -16,8 +16,14 @@ export const baseTemplate = (content: string) => {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
     <title>D'FOOTPRINT</title>
     <style>
+      :root {
+        color-scheme: light dark;
+        supported-color-schemes: light dark;
+      }
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         line-height: 1.6;
@@ -52,6 +58,13 @@ export const baseTemplate = (content: string) => {
       }
       .logo-dark {
         display: none;
+        width: 0;
+        max-height: 0;
+        overflow: hidden;
+        visibility: hidden;
+        mso-hide: all;
+        line-height: 0;
+        font-size: 0;
       }
       .brand-text {
         margin-top: 10px;
@@ -185,18 +198,44 @@ export const baseTemplate = (content: string) => {
       @media (prefers-color-scheme: dark) {
         .logo-light {
           display: none !important;
+          width: 0 !important;
+          max-height: 0 !important;
+          overflow: hidden !important;
+          visibility: hidden !important;
+          line-height: 0 !important;
+          font-size: 0 !important;
         }
         .logo-dark {
           display: block !important;
+          width: 56px !important;
+          max-height: none !important;
+          overflow: visible !important;
+          visibility: visible !important;
+          line-height: normal !important;
+          font-size: inherit !important;
+          mso-hide: none !important;
         }
       }
       [data-ogsc] .logo-light,
       [data-ogsb] .logo-light {
         display: none !important;
+        width: 0 !important;
+        max-height: 0 !important;
+        overflow: hidden !important;
+        visibility: hidden !important;
+        line-height: 0 !important;
+        font-size: 0 !important;
       }
       [data-ogsc] .logo-dark,
       [data-ogsb] .logo-dark {
         display: block !important;
+        width: 56px !important;
+        max-height: none !important;
+        overflow: visible !important;
+        visibility: visible !important;
+        line-height: normal !important;
+        font-size: inherit !important;
+        mso-hide: none !important;
       }
       @media (max-width: 640px) {
         body {
@@ -224,8 +263,8 @@ export const baseTemplate = (content: string) => {
     <div class="email-container">
       <div class="header">
         <a class="logo" href="${siteUrl}" target="_blank" rel="noopener noreferrer">
-          <img class="logo-light" src="${lightLogoUrl}" alt="D'FOOTPRINT" width="56" height="56" />
-          <img class="logo-dark" src="${darkLogoUrl}" alt="D'FOOTPRINT" width="56" height="56" />
+          <img class="logo-light" src="${lightLogoUrl}" alt="D'FOOTPRINT" width="56" height="56" style="display:block;" />
+          <img class="logo-dark" src="${darkLogoUrl}" alt="D'FOOTPRINT" width="56" height="56" style="display:none; width:0; max-height:0; overflow:hidden; visibility:hidden; mso-hide:all; line-height:0; font-size:0;" />
         </a>
         <div class="brand-text">D'FOOTPRINT</div>
       </div>
