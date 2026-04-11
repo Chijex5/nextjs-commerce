@@ -19,6 +19,8 @@ export const orderStatusUpdateTemplate = (data: OrderStatusUpdateData) => {
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXTAUTH_URL ||
     "https://yourdomain.com";
+  const orderUrl = `${siteUrl}/orders?orderNumber=${encodeURIComponent(data.orderNumber)}`;
+  const supportUrl = `${siteUrl}/contact?order=${encodeURIComponent(data.orderNumber)}`;
 
   // Get status title and message
   const getStatusInfo = (status: string, deliveryStatus?: string) => {
@@ -60,6 +62,7 @@ export const orderStatusUpdateTemplate = (data: OrderStatusUpdateData) => {
   const statusInfo = getStatusInfo(data.newStatus, data.deliveryStatus);
 
   const content = `
+    <p style="margin: 0; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #6b7280; font-weight: 600;">Order Update</p>
     <h2>${statusInfo.title}</h2>
     <p>Hi ${data.customerName},</p>
     <p>${statusInfo.message}</p>
@@ -82,7 +85,9 @@ export const orderStatusUpdateTemplate = (data: OrderStatusUpdateData) => {
         : ""
     }
     
-    <a href="${siteUrl}/orders" class="button">View Order Details</a>
+    <a href="${orderUrl}" class="button">View Order Details</a>
+    <a href="${supportUrl}" class="button-secondary">Contact Support</a>
+    ${data.trackingNumber ? `<a href="${orderUrl}" class="button-ghost">Track Order</a>` : ""}
     
     ${
       data.deliveryStatus === "delivered"
@@ -94,6 +99,7 @@ export const orderStatusUpdateTemplate = (data: OrderStatusUpdateData) => {
     `
     }
     
+    <p class="support-note">If you need help with this update, reply to this email and we’ll assist right away.</p>
     <p>Best regards,<br>The D'FOOTPRINT Team</p>
   `;
 

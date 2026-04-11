@@ -44,7 +44,26 @@ export const orderConfirmationWithMarkupTemplate = (
   const orderUrl =
     order.orderUrl ||
     `${siteUrl}/orders?orderNumber=${encodeURIComponent(order.orderNumber)}`;
-  const totalAmount = Number.isFinite(order.totalAmount) ? order.totalAmount : 0;
+  const subtotalAmount = Number.isFinite(order.subtotalAmount)
+    ? Number(order.subtotalAmount)
+    : order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const shippingAmount = Number.isFinite(order.shippingAmount)
+    ? Number(order.shippingAmount)
+    : 0;
+  const taxAmount = Number.isFinite(order.taxAmount) ? Number(order.taxAmount) : 0;
+  const discountAmount = Number.isFinite(order.discountAmount)
+    ? Math.max(Number(order.discountAmount), 0)
+    : 0;
+  const computedTotal = Math.max(
+    subtotalAmount + shippingAmount + taxAmount - discountAmount,
+    0,
+  );
+  const totalAmount = Number.isFinite(order.totalAmount)
+    ? Math.max(Number(order.totalAmount), 0)
+    : computedTotal;
+  const isPromoCovered = totalAmount === 0 && discountAmount > 0;
+  const supportUrl = `${siteUrl}/contact?order=${encodeURIComponent(order.orderNumber)}`;
+
   const formatMoney = (amount: number) => {
     const safeAmount = Number.isFinite(amount) ? amount : 0;
     try {
@@ -56,16 +75,22 @@ export const orderConfirmationWithMarkupTemplate = (
       return `${currencyCode} ${safeAmount.toLocaleString()}`;
     }
   };
+  const formatPlainNaira = (amount: number) =>
+    `₦${Math.max(amount, 0).toLocaleString("en-NG")}`;
 
   const itemsHtml = order.items
     .map(
       (item) => {
         const price = Number.isFinite(item.price) ? item.price : 0;
+        const lineTotal = price * item.quantity;
         return `
       <tr>
-        <td>${item.productTitle} - ${item.variantTitle}</td>
+        <td>
+          <p style="margin: 0; font-weight: 600; color: #111827;">${item.productTitle}</p>
+          <p style="margin: 4px 0 0; font-size: 12px; color: #4b5563;">${item.variantTitle}</p>
+        </td>
         <td style="text-align: center;">${item.quantity}</td>
-        <td style="text-align: right;">${formatMoney(price)}</td>
+        <td style="text-align: right;">${formatMoney(lineTotal)}</td>
       </tr>
     `;
       },
@@ -178,16 +203,29 @@ export const orderConfirmationWithMarkupTemplate = (
     ${JSON.stringify(jsonLd, null, 2)}
     </script>
     
-    <h2>Thank You for Your Order</h2>
+    <p style="margin: 0; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #6b7280; font-weight: 600;">Order Confirmed</p>
+    <h2>Your order has been received successfully</h2>
     <p>Hi ${order.customerName},</p>
-    <p>We've received your order and it's being processed.</p>
+    <p>Your payment was successful and your order is now being prepared.</p>
     
     <div class="info-box">
-      <p><strong>Order #${order.orderNumber}</strong></p>
-      <p>Order Date: ${new Date(order.orderDate).toLocaleDateString()}</p>
-      <p>Status: Processing</p>
+      <p style="font-weight: 600; color: #111827; margin-bottom: 8px;">Order ${order.orderNumber}</p>
+      <p style="margin: 0;">Order date: ${new Date(order.orderDate).toLocaleDateString()}</p>
+      <p style="margin: 6px 0 0; color: #4b5563;">We’ve started crafting your pair with care.</p>
+    </div>
+
+    <div class="info-box">
+      <p style="margin-bottom: 10px;"><strong>Order timeline</strong></p>
+      <p style="margin: 0 0 6px;">1. Order confirmed</p>
+      <p style="margin: 0 0 6px;">2. In production (current)</p>
+      <p style="margin: 0 0 6px; color: #6b7280;">3. Ready for dispatch</p>
+      <p style="margin: 0; color: #6b7280;">4. Shipped</p>
+      <p style="margin-top: 10px; font-size: 13px; color: #525252;">
+        Your shoes are now being handcrafted by our artisans. This typically takes 7-10 days.
+      </p>
     </div>
     
+    <h3>Order summary</h3>
     <table>
       <thead>
         <tr>
@@ -200,29 +238,33 @@ export const orderConfirmationWithMarkupTemplate = (
         ${itemsHtml}
       </tbody>
       <tfoot>
-        ${order.subtotalAmount !== undefined ? `<tr><td colspan="2" style="text-align: right; padding-top: 16px;">Subtotal:</td><td style="text-align: right; padding-top: 16px;">₦${order.subtotalAmount.toLocaleString()}</td></tr>` : ""}
-        ${order.discountAmount && order.discountAmount > 0 ? `<tr><td colspan="2" style="text-align: right;">Discount${order.couponCode ? ` (${order.couponCode})` : ""}:</td><td style="text-align: right; color: #15803d;">-₦${order.discountAmount.toLocaleString()}</td></tr>` : ""}
-        ${order.shippingAmount !== undefined ? `<tr><td colspan="2" style="text-align: right;">Shipping:</td><td style="text-align: right;">₦${order.shippingAmount.toLocaleString()}</td></tr>` : ""}
-        ${order.taxAmount !== undefined && order.taxAmount > 0 ? `<tr><td colspan="2" style="text-align: right;">Tax:</td><td style="text-align: right;">₦${order.taxAmount.toLocaleString()}</td></tr>` : ""}
+        <tr><td colspan="2" style="text-align: right; padding-top: 16px;">Items:</td><td style="text-align: right; padding-top: 16px;">${formatPlainNaira(subtotalAmount)}</td></tr>
+        <tr><td colspan="2" style="text-align: right;">Delivery:</td><td style="text-align: right;">${formatPlainNaira(shippingAmount)}</td></tr>
+        ${discountAmount > 0 ? `<tr><td colspan="2" style="text-align: right;">Discount Applied${order.couponCode ? ` (${order.couponCode})` : ""}:</td><td style="text-align: right; color: #15803d;">-${formatPlainNaira(discountAmount)}</td></tr>` : ""}
+        ${taxAmount > 0 ? `<tr><td colspan="2" style="text-align: right;">Tax:</td><td style="text-align: right;">${formatPlainNaira(taxAmount)}</td></tr>` : ""}
         <tr style="font-weight: 600;">
-          <td colspan="2" style="text-align: right; padding-top: 16px;">Total:</td>
-          <td style="text-align: right; padding-top: 16px;">${formatMoney(totalAmount)}</td>
+          <td colspan="2" style="text-align: right; padding-top: 16px;">Total Paid:</td>
+          <td style="text-align: right; padding-top: 16px;">${formatMoney(totalAmount)}${isPromoCovered ? " (Promo Applied)" : ""}</td>
         </tr>
       </tfoot>
     </table>
+
+    ${isPromoCovered ? `<p style="font-size: 13px; color: #525252;">Your promo covered this purchase in full, so no charge was applied at checkout.</p>` : ""}
 
     <div class="info-box">
       <p><strong>Shipping Address</strong></p>
       ${addressLines.map((line) => `<p>${line}</p>`).join("")}
     </div>
     
-    <p>Your order will be handcrafted with care. Production typically takes 7-10 days, after which we'll ship it to you.</p>
+    <p>Estimated delivery: 7-10 days after production.</p>
     
-    <p>You'll receive another email when your order ships with tracking information.</p>
+    <p>What happens next: we’ll update you when your pair moves from production to dispatch.</p>
     
-    <a href="${orderUrl}" class="button">Track Your Order</a>
+    <a href="${orderUrl}" class="button">View Order Details</a>
+    <a href="${supportUrl}" class="button-secondary">Contact Support</a>
+    ${order.trackingNumber ? `<a href="${orderUrl}" class="button-ghost">Track Order</a>` : ""}
     
-    <p>If you have any questions, feel free to contact us.</p>
+    <p class="support-note">If anything looks off, reply to this email and our team will help immediately.</p>
     <p>Best regards,<br>The D'FOOTPRINT Team</p>
   `;
 

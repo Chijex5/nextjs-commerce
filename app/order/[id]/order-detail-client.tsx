@@ -5,15 +5,15 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import OrderActions from "./order-actions";
-import OrderFinancialSummary from "./order-financial-summary";
-import OrderStatusStepper from "./order-status-stepper";
 import PageLoader from "components/page-loader";
 import Price from "components/price";
 import {
-  formatEstimatedArrival,
-  type DeliveryStatus,
+    formatEstimatedArrival,
+    type DeliveryStatus,
 } from "lib/order-utils/delivery-tracking";
+import OrderActions from "./order-actions";
+import OrderFinancialSummary from "./order-financial-summary";
+import OrderStatusStepper from "./order-status-stepper";
 
 type OrderItem = {
   id?: string;
@@ -99,7 +99,9 @@ function getCurrentStatusLine(status?: DeliveryStatus) {
     cancelled: "This order was cancelled.",
   };
 
-  return status ? statusLine[status] : "We’re currently crafting your pair by hand.";
+  return status
+    ? statusLine[status]
+    : "We’re currently crafting your pair by hand.";
 }
 
 export default function OrderDetailClient({ orderId }: { orderId: string }) {
@@ -161,8 +163,12 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
       : parseMoney(item.price) * item.quantity;
     return sum + lineTotal;
   }, 0);
-  const summarySubtotal = parsedSubtotal > 0 ? parsedSubtotal : itemBasedSubtotal;
-  const computedTotal = Math.max(summarySubtotal + parsedShipping - parsedDiscount, 0);
+  const summarySubtotal =
+    parsedSubtotal > 0 ? parsedSubtotal : itemBasedSubtotal;
+  const computedTotal = Math.max(
+    summarySubtotal + parsedShipping - parsedDiscount,
+    0,
+  );
   const finalTotal = parsedTotal > 0 ? parsedTotal : computedTotal;
   const currentStep = order.deliveryStatus
     ? stepByDeliveryStatus[order.deliveryStatus]
@@ -257,7 +263,9 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
             item.id ||
             `${item.productId || order.id}-${item.productVariantId || item.productTitle}`,
           name: `${item.productTitle} × ${item.quantity}`,
-          amount: item.totalAmount || (parseMoney(item.price) * item.quantity).toFixed(2),
+          amount:
+            item.totalAmount ||
+            (parseMoney(item.price) * item.quantity).toFixed(2),
         }))}
         currencyCode={order.currencyCode}
         shippingAmount={parsedShipping.toFixed(2)}

@@ -1026,8 +1026,10 @@ export default function CheckoutPage() {
               >
                 {submitting ? (
                   <LoadingDots className="bg-white" />
+                ) : isFreeCheckout ? (
+                  "Place Order"
                 ) : (
-                  isFreeCheckout ? "Place Order" : "Proceed to Payment"
+                  "Proceed to Payment"
                 )}
               </button>
 

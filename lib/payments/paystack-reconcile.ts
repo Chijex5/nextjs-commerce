@@ -1,35 +1,35 @@
 import {
-  sendAdminNewOrderNotification,
-  sendOrderConfirmationWithMarkup,
+    sendAdminNewOrderNotification,
+    sendOrderConfirmationWithMarkup,
 } from "@/lib/email/order-emails";
 import { and, eq, ilike, isNull, sql } from "drizzle-orm";
+import { validateCouponForCheckout } from "lib/coupon-validation";
 import { db } from "lib/db";
 import {
-  abandonedCarts,
-  cartLines,
-  carts,
-  couponUsages,
-  coupons,
-  customOrderQuoteTokens,
-  customOrderQuotes,
-  customOrderRequests,
-  orderItems,
-  orders,
-  paymentEvents,
-  paymentTransactions,
-  productImages,
-  productVariants,
-  products,
-  users,
+    abandonedCarts,
+    cartLines,
+    carts,
+    couponUsages,
+    coupons,
+    customOrderQuoteTokens,
+    customOrderQuotes,
+    customOrderRequests,
+    orderItems,
+    orders,
+    paymentEvents,
+    paymentTransactions,
+    productImages,
+    productVariants,
+    products,
+    users,
 } from "lib/db/schema";
 import { getAdminNotificationEmails } from "lib/email/admin-notification-emails";
-import {
-  type PaymentConflictCode,
-  type PaymentEventType,
-  type PaymentSource,
-} from "types/payments";
 import { calculateShippingAmount } from "lib/shipping";
-import { validateCouponForCheckout } from "lib/coupon-validation";
+import {
+    type PaymentConflictCode,
+    type PaymentEventType,
+    type PaymentSource,
+} from "types/payments";
 
 type PaystackCustomer = {
   email?: string;

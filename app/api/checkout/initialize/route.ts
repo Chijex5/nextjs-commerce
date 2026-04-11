@@ -1,15 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
+import { validateCouponForCheckout } from "lib/coupon-validation";
 import { getCart } from "lib/database";
+import { handleApiError } from "lib/errors";
+import {
+    reconcilePaystackPayment,
+    registerInitializedPaymentTransaction,
+} from "lib/payments/paystack-reconcile";
+import { calculateShippingAmount } from "lib/shipping";
 import { getUserSession } from "lib/user-session";
 import { cookies } from "next/headers";
-import {
-  registerInitializedPaymentTransaction,
-  reconcilePaystackPayment,
-} from "lib/payments/paystack-reconcile";
-import { validateCouponForCheckout } from "lib/coupon-validation";
-import { calculateShippingAmount } from "lib/shipping";
-import { handleApiError } from "lib/errors";
+import { NextRequest, NextResponse } from "next/server";
 
 type LegacyCheckoutAddress = {
   firstName?: string;

@@ -30,7 +30,7 @@ import {
   users,
 } from "../lib/db";
 
-const GOOGLE_REVIEW_EMAIL = "schema.whitelisting+sample@gmail.com";
+const DEFAULT_REVIEW_EMAIL = "schema.whitelisting+sample@gmail.com";
 const FROM_EMAIL = "order@dfootprint.me";
 const REPLY_TO_EMAIL = "support@dfootprint.me";
 
@@ -92,6 +92,12 @@ const quantityOverrideRaw =
 
 const shippingAddressOverrideRaw =
   process.env.SHIPPING_ADDRESS_JSON || process.env.GOOGLE_REVIEW_SHIPPING_ADDRESS;
+
+const toEmailOverride =
+  getArgValue("--to-email") ||
+  process.env.GOOGLE_REVIEW_TO_EMAIL ||
+  process.env.TEST_TO_EMAIL ||
+  DEFAULT_REVIEW_EMAIL;
 
 type SelectedItem = {
   productTitle: string;
@@ -445,7 +451,7 @@ async function sendGoogleReviewEmail() {
     "Sending production-style order confirmation to Google review inbox...",
   );
   console.log(`From: ${FROM_EMAIL}`);
-  console.log(`To: ${GOOGLE_REVIEW_EMAIL}`);
+  console.log(`To: ${toEmailOverride}`);
   console.log(`Reply-To: ${REPLY_TO_EMAIL}`);
   console.log(`Order: ${order.orderNumber} (${order.id})`);
   if (orderIdOverride) {
@@ -473,7 +479,7 @@ async function sendGoogleReviewEmail() {
   });
 
   const result = await sendEmail({
-    to: GOOGLE_REVIEW_EMAIL,
+    to: toEmailOverride,
     from: FROM_EMAIL,
     replyTo: REPLY_TO_EMAIL,
     subject: `Order Confirmation #${order.orderNumber} - D'FOOTPRINT`,
