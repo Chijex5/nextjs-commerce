@@ -4,8 +4,9 @@ import {
     eq,
     ilike,
     inArray,
+  isNull,
     or,
-    sql,
+  sql,
 } from "drizzle-orm";
 import { db } from "lib/db";
 import {
@@ -319,7 +320,7 @@ export async function DELETE(request: NextRequest) {
           or(
             eq(customOrderRequests.userId, user.id),
             and(
-              isNullSafe(customOrderRequests.userId),
+              isNull(customOrderRequests.userId),
               ilike(customOrderRequests.email, user.email),
             ),
           ),
@@ -362,6 +363,3 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
-function isNullSafe(column: ReturnType<typeof sql>) {
-  return sql`${column} is null`;
-}
