@@ -15,11 +15,11 @@ function SubmitButton({
   selectedVariantId: string | undefined;
 }) {
   const baseClasses =
-    "relative flex w-full items-center justify-center gap-2 rounded-full px-6 py-4 text-sm font-semibold tracking-wide transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-neutral-900";
+    "relative flex w-full items-center justify-center gap-2 rounded-none px-6 py-4 text-xs font-medium uppercase tracking-[0.14em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--dp-ember,#BF5A28)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--dp-charcoal,#191209)]";
   const activeClasses =
-    "bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30 ring-1 ring-blue-400/30";
+    "bg-[var(--dp-ember,#BF5A28)] text-[var(--dp-cream,#F2E8D5)] ring-1 ring-[rgba(191,90,40,0.35)]";
   const inactiveClasses =
-    "bg-neutral-200 text-neutral-500 ring-1 ring-neutral-300 dark:bg-neutral-800 dark:text-neutral-400 dark:ring-neutral-700";
+    "bg-[rgba(242,232,213,0.06)] text-[var(--dp-muted,#6A5A48)] ring-1 ring-[var(--dp-border,rgba(242,232,213,0.09))]";
   const disabledClasses = "cursor-not-allowed";
 
   if (!availableForSale) {
@@ -52,7 +52,7 @@ function SubmitButton({
       aria-label="Add to cart"
       whileTap={{ scale: 0.97 }}
       transition={{ duration: 0.15 }}
-      className={clsx(baseClasses, activeClasses, "hover:brightness-110")}
+      className={clsx(baseClasses, activeClasses, "hover:opacity-90")}
     >
       <PlusIcon className="h-5" />
       Add To Cart

@@ -1,7 +1,13 @@
 "use client";
 
-import { Dialog, DialogPanel, TransitionChild, Transition } from "@headlessui/react";
+import {
+  Dialog,
+  DialogPanel,
+  Transition,
+  TransitionChild,
+} from "@headlessui/react";
 import { Bars3Icon, UserIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import clsx from "clsx";
 import { useUserSession } from "hooks/useUserSession";
 import { Menu } from "lib/shopify/types";
 import Link from "next/link";
@@ -40,11 +46,77 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
 
   return (
     <>
+      <style>{`
+        .dp-mobile-trigger {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 2.25rem;
+          height: 2.25rem;
+          border: 1px solid var(--dp-border, rgba(242,232,213,0.09));
+          background: transparent;
+          color: var(--dp-muted, #6A5A48);
+          cursor: pointer;
+          transition: border-color 0.2s, color 0.2s, background 0.2s;
+        }
+        .dp-mobile-trigger:hover {
+          border-color: rgba(242,232,213,0.3);
+          color: var(--dp-cream, #F2E8D5);
+          background: rgba(242,232,213,0.05);
+        }
+
+        .dp-mobile-link {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          width: 100%;
+          padding: 0.72rem 0;
+          text-decoration: none;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.76rem;
+          font-weight: 500;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: var(--dp-muted, #6A5A48);
+          border-bottom: 1px solid var(--dp-border, rgba(242,232,213,0.09));
+          transition: color 0.2s;
+        }
+        .dp-mobile-link:hover {
+          color: var(--dp-cream, #F2E8D5);
+        }
+        .dp-mobile-link.active {
+          color: var(--dp-cream, #F2E8D5);
+        }
+        .dp-mobile-dot {
+          display: inline-block;
+          width: 0.36rem;
+          height: 0.36rem;
+          border-radius: 999px;
+          background: var(--dp-ember, #BF5A28);
+          flex-shrink: 0;
+        }
+
+        .dp-mobile-panel-enter {
+          animation: dp-mobile-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        @keyframes dp-mobile-in {
+          from {
+            opacity: 0;
+            transform: translateX(-22px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+      `}</style>
+
       <button
         type="button"
         onClick={() => setIsOpen(true)}
         aria-label="Open mobile menu"
-        className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 bg-white text-black transition-colors md:hidden dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+        className="dp-mobile-trigger md:hidden"
       >
         <Bars3Icon className="h-5 w-5" />
       </button>
@@ -60,7 +132,10 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+            <div
+              className="fixed inset-0 bg-black/45 backdrop-blur-[1px]"
+              aria-hidden="true"
+            />
           </TransitionChild>
 
           <TransitionChild
@@ -72,15 +147,31 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
             leaveFrom="translate-x-0"
             leaveTo="-translate-x-full"
           >
-            <DialogPanel className="fixed inset-y-0 left-0 flex w-[86%] max-w-sm flex-col justify-between border-r border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
+            <DialogPanel
+              className="dp-mobile-panel-enter fixed inset-y-0 left-0 flex w-[88%] max-w-sm flex-col justify-between border-r p-5"
+              style={{
+                borderColor: "var(--dp-border, rgba(242,232,213,0.09))",
+                background: "var(--dp-charcoal, #191209)",
+                color: "var(--dp-cream, #F2E8D5)",
+                fontFamily: "DM Sans, sans-serif",
+              }}
+            >
               <div>
                 <div className="mb-8 flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500 dark:text-neutral-400">
+                  <p
+                    style={{
+                      fontSize: "0.65rem",
+                      fontWeight: 500,
+                      letterSpacing: "0.26em",
+                      textTransform: "uppercase",
+                      color: "var(--dp-ember, #BF5A28)",
+                    }}
+                  >
                     Menu
                   </p>
                   <button
                     type="button"
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 bg-white text-black transition-colors dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                    className="dp-mobile-trigger"
                     onClick={() => setIsOpen(false)}
                     aria-label="Close mobile menu"
                   >
@@ -88,7 +179,17 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                   </button>
                 </div>
 
-                <ul className="space-y-2">
+                <div
+                  style={{
+                    height: 1,
+                    width: "100%",
+                    marginBottom: "0.4rem",
+                    background:
+                      "linear-gradient(90deg, var(--dp-ember, #BF5A28) 0%, var(--dp-gold, #C0892A) 50%, transparent 100%)",
+                  }}
+                />
+
+                <ul className="space-y-0">
                   {menuItems.map((item: Menu) => {
                     const isActive = isActivePath(item.path);
                     return (
@@ -98,13 +199,18 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                           prefetch={true}
                           onClick={() => setIsOpen(false)}
                           aria-current={isActive ? "page" : undefined}
-                          className={`block rounded-xl px-3 py-3 text-base font-medium transition-colors ${
-                            isActive
-                              ? "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
-                              : "text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
-                          }`}
+                          className={clsx(
+                            "dp-mobile-link",
+                            isActive && "active",
+                          )}
                         >
-                          {item.title}
+                          <span>{item.title}</span>
+                          {isActive && (
+                            <span
+                              className="dp-mobile-dot"
+                              aria-hidden="true"
+                            />
+                          )}
                         </Link>
                       </li>
                     );
@@ -114,14 +220,18 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                       href="/orders"
                       prefetch={true}
                       onClick={() => setIsOpen(false)}
-                      aria-current={isActivePath("/orders") ? "page" : undefined}
-                      className={`block rounded-xl px-3 py-3 text-base font-medium transition-colors ${
-                        isActivePath("/orders")
-                          ? "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
-                          : "text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
-                      }`}
+                      aria-current={
+                        isActivePath("/orders") ? "page" : undefined
+                      }
+                      className={clsx(
+                        "dp-mobile-link",
+                        isActivePath("/orders") && "active",
+                      )}
                     >
-                      Orders
+                      <span>Orders</span>
+                      {isActivePath("/orders") && (
+                        <span className="dp-mobile-dot" aria-hidden="true" />
+                      )}
                     </Link>
                   </li>
                   <li>
@@ -134,21 +244,39 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                           ? "page"
                           : undefined
                       }
-                      className={`flex items-center gap-3 rounded-xl px-3 py-3 text-base font-medium transition-colors ${
-                        isActivePath(session ? "/account" : "/auth/login")
-                          ? "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
-                          : "text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
-                      }`}
+                      className={clsx(
+                        "dp-mobile-link",
+                        isActivePath(session ? "/account" : "/auth/login") &&
+                          "active",
+                      )}
                     >
-                      <UserIcon className="h-5 w-5" />
-                      {session ? "My Account" : "Login"}
+                      <span className="flex items-center gap-2">
+                        <UserIcon className="h-4 w-4" />
+                        {session ? "My Account" : "Login"}
+                      </span>
+                      {isActivePath(session ? "/account" : "/auth/login") && (
+                        <span className="dp-mobile-dot" aria-hidden="true" />
+                      )}
                     </Link>
                   </li>
                 </ul>
               </div>
 
-              <div className="border-t border-neutral-200 pt-4 dark:border-neutral-800">
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              <div
+                style={{
+                  borderTop:
+                    "1px solid var(--dp-border, rgba(242,232,213,0.09))",
+                  paddingTop: "1rem",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: "0.76rem",
+                    lineHeight: 1.65,
+                    color: "var(--dp-muted, #6A5A48)",
+                    margin: 0,
+                  }}
+                >
                   Handcrafted footwear from Lagos, Nigeria.
                 </p>
               </div>

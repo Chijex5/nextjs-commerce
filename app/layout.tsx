@@ -73,13 +73,18 @@ export default async function RootLayout({
   const isAdminRoute = requestHeaders.get("x-is-admin-route") === "1";
 
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} dark`}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+      </head>
+
       <Analytics />
       <body className="bg-neutral-50 font-sans text-black selection:bg-teal-300 dark:bg-neutral-900 dark:text-white dark:selection:bg-pink-500 dark:selection:text-white">
-        {/* Theme initialisation: runs synchronously before first paint to avoid flash */}
+        {/* Temporary dark-mode lock until light theme redesign is complete */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('theme');var d=document.documentElement;var m=window.matchMedia('(prefers-color-scheme: dark)').matches;var s=t==='dark'||(t!=='light'&&m);if(s){d.classList.add('dark');d.style.colorScheme='dark';}else{d.classList.remove('dark');d.style.colorScheme='light';}}catch(e){}})();`,
+            __html: `(function(){try{var d=document.documentElement;d.classList.add('dark');d.style.colorScheme='dark';localStorage.setItem('theme','dark');}catch(e){}})();`,
           }}
         />
         <script

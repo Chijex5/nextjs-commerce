@@ -1,22 +1,23 @@
 import clsx from "clsx";
 import LogoIcon from "./icons/logo";
 
-export default function LogoSquare({ size }: { size?: "sm" | undefined }) {
+export default function LogoSquare({ size, forceStyle }: { size?: "sm" | undefined; forceStyle?: boolean }) {
   return (
     <div
-      className={clsx(
-        "flex flex-none items-center justify-center border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-black",
+      className={forceStyle? `dp-icon-btn` : clsx(
+        "flex flex-none items-center justify-center text-[#bf5a28] border border-white border-1 bg-[rgba(191,90,40,0.11)]",
         {
-          "h-[40px] w-[40px] rounded-xl": !size,
-          "h-[30px] w-[30px] rounded-lg": size === "sm",
+          "h-[40px] w-[40px]": !size,
+          "h-[30px] w-[30px]": size === "sm",
         },
       )}
     >
       <LogoIcon
-        className={clsx({
+        className={forceStyle ? '' : clsx({
           "h-[32px] w-[32px]": !size,
           "h-[10px] w-[10px]": size === "sm",
         })}
+        style={forceStyle ? { width: "1rem", height: "1rem" } : undefined}
       />
     </div>
   );

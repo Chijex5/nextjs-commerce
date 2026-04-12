@@ -17,48 +17,166 @@ export default function ProductsFilterMenu({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="relative">
+    <div style={{ position: "relative" }}>
+      <style>{`
+        .pf-trigger {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: transparent;
+          border: 1px solid rgba(242,232,213,0.2);
+          color: #6A5A48;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          padding: 10px 18px;
+          cursor: pointer;
+          transition: border-color 0.2s, color 0.2s, background 0.2s;
+        }
+        .pf-trigger:hover,
+        .pf-trigger[aria-expanded="true"] {
+          border-color: rgba(242,232,213,0.35);
+          color: #F2E8D5;
+          background: rgba(242,232,213,0.05);
+        }
+
+        .pf-panel {
+          position: absolute;
+          right: 0;
+          top: calc(100% + 10px);
+          width: min(92vw, 340px);
+          background: #0D0A07;
+          border: 1px solid rgba(242,232,213,0.14);
+          box-shadow: 0 32px 64px rgba(0,0,0,0.5);
+          padding: 20px;
+          z-index: 999;
+        }
+
+        .pf-panel-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 16px;
+          padding-bottom: 14px;
+          border-bottom: 1px solid rgba(242,232,213,0.08);
+        }
+        .pf-heading {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: 0.26em;
+          text-transform: uppercase;
+          color: #BF5A28;
+        }
+        .pf-close {
+          background: none;
+          border: none;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 9px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: #6A5A48;
+          cursor: pointer;
+          transition: color 0.2s;
+          padding: 0;
+        }
+        .pf-close:hover { color: #F2E8D5; }
+
+        .pf-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .pf-option {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border: 1px solid rgba(242,232,213,0.1);
+          padding: 11px 14px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 10px;
+          font-weight: 400;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          text-decoration: none;
+          transition: border-color 0.2s, color 0.2s, background 0.2s;
+          color: #6A5A48;
+        }
+        .pf-option:hover {
+          border-color: rgba(242,232,213,0.28);
+          color: #F2E8D5;
+          background: rgba(242,232,213,0.03);
+        }
+        .pf-option-active {
+          border-color: #BF5A28 !important;
+          background: rgba(191,90,40,0.14) !important;
+          color: #F2E8D5 !important;
+        }
+
+        .pf-check {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 14px;
+          height: 14px;
+          border: 1px solid #BF5A28;
+          flex-shrink: 0;
+        }
+        .pf-check::after {
+          content: '';
+          display: block;
+          width: 6px;
+          height: 6px;
+          background: #BF5A28;
+        }
+      `}</style>
+
+      {/* Trigger */}
       <button
         type="button"
-        onClick={() => setIsOpen((value) => !value)}
+        onClick={() => setIsOpen((v) => !v)}
         aria-expanded={isOpen}
-        aria-controls="products-filter-menu"
-        className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-900 transition-colors hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:border-neutral-500"
+        aria-controls="pf-panel"
+        className="pf-trigger"
       >
+        {/* Filter icon */}
         <svg
           aria-hidden="true"
           viewBox="0 0 20 20"
-          className="h-4 w-4"
+          width="14"
+          height="14"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.8"
+          strokeWidth="1.6"
         >
           <path d="M3 5h14" strokeLinecap="round" />
           <path d="M6 10h8" strokeLinecap="round" />
           <path d="M8 15h4" strokeLinecap="round" />
         </svg>
-        Filters
+        Sort &amp; Filter
       </button>
 
-      {isOpen ? (
-        <div
-          id="products-filter-menu"
-          className="absolute right-0 top-[calc(100%+0.75rem)] z-20 w-[min(92vw,360px)] rounded-2xl border border-neutral-200 bg-white p-4 shadow-xl dark:border-neutral-800 dark:bg-neutral-950"
-        >
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              Sort products
-            </h2>
+      {/* Panel */}
+      {isOpen && (
+        <div id="pf-panel" className="pf-panel" role="dialog" aria-label="Sort products">
+          <div className="pf-panel-header">
+            <span className="pf-heading">Sort products</span>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="text-sm text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-100"
+              className="pf-close"
             >
-              Close
+              Close ✕
             </button>
           </div>
 
-          <ul className="space-y-2">
+          <ul className="pf-list">
             {sorting.map((option) => {
               const href = option.slug
                 ? `/products?sort=${option.slug}`
@@ -69,23 +187,18 @@ export default function ProductsFilterMenu({
                 <li key={option.title}>
                   <Link
                     href={href}
-                    className={clsx(
-                      "flex items-center justify-between rounded-xl border px-3 py-2 text-sm transition-colors",
-                      isActive
-                        ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-black"
-                        : "border-neutral-200 text-neutral-700 hover:border-neutral-400 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500 dark:hover:text-neutral-100",
-                    )}
+                    className={clsx("pf-option", isActive && "pf-option-active")}
                     onClick={() => setIsOpen(false)}
                   >
                     <span>{option.title}</span>
-                    {isActive ? <span>✓</span> : null}
+                    {isActive && <span className="pf-check" aria-label="Selected" />}
                   </Link>
                 </li>
               );
             })}
           </ul>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

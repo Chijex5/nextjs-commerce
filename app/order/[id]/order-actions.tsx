@@ -2,41 +2,126 @@
 
 import Link from "next/link";
 
-type OrderActionsProps = {
-  orderNumber: string;
-};
+type OrderActionsProps = { orderNumber: string };
 
 export default function OrderActions({ orderNumber }: OrderActionsProps) {
   return (
-    <section className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950 md:p-6">
-      <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        Need anything else?
-      </h2>
-      <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-        You can track your update, talk to us, or keep a copy of this receipt.
-      </p>
+    <>
+      <style>{`
+        .oa-root {
+          border: 1px solid rgba(242,232,213,0.09);
+          border-top: none;
+          background: rgba(16,12,6,0.7);
+          padding: 36px 48px;
+          font-family: 'DM Sans', sans-serif;
+        }
+        .oa-accent {
+          height: 1px;
+          background: linear-gradient(90deg, #BF5A28 0%, #C0892A 50%, transparent 100%);
+          margin-bottom: 28px;
+        }
+        .oa-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 26px;
+          font-weight: 300;
+          color: var(--cream, #F2E8D5);
+          margin-bottom: 6px;
+        }
+        .oa-sub {
+          font-size: 13px;
+          color: var(--muted, #6A5A48);
+          margin-bottom: 24px;
+          line-height: 1.6;
+        }
+        .oa-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
 
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <Link
-          href={`/orders${orderNumber ? `?orderNumber=${encodeURIComponent(orderNumber)}` : ""}`}
-          className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
-        >
-          Track order
-        </Link>
-        <Link
-          href={`/contact?order=${encodeURIComponent(orderNumber)}`}
-          className="inline-flex items-center justify-center rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 transition hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-100 dark:hover:bg-neutral-900"
-        >
-          Contact support
-        </Link>
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="inline-flex items-center justify-center rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 transition hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-100 dark:hover:bg-neutral-900"
-        >
-          Download receipt
-        </button>
-      </div>
-    </section>
+        /* Primary CTA */
+        .oa-btn-primary {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: var(--terra, #BF5A28);
+          border: none;
+          color: var(--cream, #F2E8D5);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          padding: 13px 24px;
+          text-decoration: none;
+          cursor: pointer;
+          transition: background 0.2s;
+          flex-shrink: 0;
+        }
+        .oa-btn-primary:hover { background: #a34d22; }
+
+        /* Secondary CTAs */
+        .oa-btn-secondary {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: transparent;
+          border: 1px solid rgba(242,232,213,0.18);
+          color: var(--muted, #6A5A48);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          padding: 13px 24px;
+          text-decoration: none;
+          cursor: pointer;
+          transition: border-color 0.2s, color 0.2s, background 0.2s;
+          flex-shrink: 0;
+        }
+        .oa-btn-secondary:hover {
+          border-color: rgba(242,232,213,0.35);
+          color: var(--cream, #F2E8D5);
+          background: rgba(242,232,213,0.03);
+        }
+
+        @media (max-width: 768px) {
+          .oa-root { padding: 24px; }
+          .oa-actions { flex-direction: column; }
+          .oa-btn-primary,
+          .oa-btn-secondary { justify-content: center; }
+        }
+      `}</style>
+
+      <section className="oa-root">
+        <div className="oa-accent" />
+        <h2 className="oa-title">Need anything else?</h2>
+        <p className="oa-sub">
+          Track your update, talk to us, or keep a copy of this receipt.
+        </p>
+
+        <div className="oa-actions">
+          <Link
+            href={`/orders${orderNumber ? `?orderNumber=${encodeURIComponent(orderNumber)}` : ""}`}
+            className="oa-btn-primary"
+          >
+            Track order →
+          </Link>
+          <Link
+            href={`/contact?order=${encodeURIComponent(orderNumber)}`}
+            className="oa-btn-secondary"
+          >
+            Contact support
+          </Link>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="oa-btn-secondary"
+          >
+            Download receipt
+          </button>
+        </div>
+      </section>
+    </>
   );
 }

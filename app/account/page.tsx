@@ -29,17 +29,68 @@ function getInitials(name: string | null | undefined, email: string) {
   return source.slice(0, 2).toUpperCase();
 }
 
+type ActivityItem = {
+  id: string;
+  type: "order" | "custom" | "review";
+  label: string;
+  status: string;
+  createdAt: string;
+  meta?: string;
+};
+
+type AccountSummary = {
+  accountCreatedAt: string;
+  lastLoginAt: string | null;
+  hasShippingAddress: boolean;
+  hasBillingAddress: boolean;
+  ordersCount: number;
+  customRequestsCount: number;
+  reviewsCount: number;
+  couponUsageCount: number;
+  abandonedCartsCount: number;
+  recoveredCartsCount: number;
+  totalSpent: number;
+  averageOrderValue: number;
+  averageRating: number;
+  currencyCode: string;
+  paymentTransactionsCount: number;
+  successfulPaymentsCount: number;
+  failedPaymentsCount: number;
+  catalogOrdersCount: number;
+  customOrdersFromOrdersCount: number;
+  lastOrderAt: string | null;
+  newsletterStatus: string;
+  newsletterSubscribedAt: string | null;
+  newsletterUnsubscribedAt: string | null;
+  recentActivity: ActivityItem[];
+};
+
+function formatDate(value: string | null) {
+  if (!value) return "Not available";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not available";
+  return new Intl.DateTimeFormat("en-NG", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatCurrency(value: number, currencyCode: string) {
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: currencyCode || "NGN",
+    maximumFractionDigits: 2,
+  }).format(value || 0);
+}
+
 // ─── sub-components ──────────────────────────────────────────────────────────
 
-function Info({ label, value }: { label: string; value: string }) {
+function InfoCell({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <p className="text-xs uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
-        {label}
-      </p>
-      <p className="mt-1 text-sm font-medium text-neutral-900 dark:text-neutral-100">
-        {value}
-      </p>
+    <div className="ac-info-cell">
+      <span className="ac-info-label">{label}</span>
+      <span className="ac-info-value">{value}</span>
     </div>
   );
 }
@@ -56,21 +107,13 @@ function QuickLink({
   icon: React.ReactNode;
 }) {
   return (
-    <Link
-      href={href}
-      className="flex items-start gap-3 rounded-xl border border-neutral-200 p-4 transition-colors hover:border-neutral-400 dark:border-neutral-700 dark:hover:border-neutral-500"
-    >
-      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-        {icon}
-      </span>
+    <Link href={href} className="ac-quick-link">
+      <span className="ac-quick-icon">{icon}</span>
       <div>
-        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-          {title}
-        </p>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          {description}
-        </p>
+        <p className="ac-quick-title">{title}</p>
+        <p className="ac-quick-desc">{description}</p>
       </div>
+      <span className="ac-quick-arrow">→</span>
     </Link>
   );
 }
@@ -84,23 +127,29 @@ function AccountPageContent() {
 
   const showWelcome = searchParams.get("welcome") === "1";
 
-  // profile editing
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showProfilePrompt, setShowProfilePrompt] = useState(false);
 
-  // welcome gift
   const [showWelcomeGift, setShowWelcomeGift] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // change password (existing password set)
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordData, setPasswordData] = useState(emptyPasswordData());
 
-  // add password (magic-link user – OTP flow)
-  const [addPasswordStep, setAddPasswordStep] = useState<"idle" | "otp-sent" | "done">("idle");
-  const [addPasswordData, setAddPasswordData] = useState(emptyAddPasswordData());
+  const [addPasswordStep, setAddPasswordStep] = useState<
+    "idle" | "otp-sent" | "done"
+  >("idle");
+  const [addPasswordData, setAddPasswordData] = useState(
+    emptyAddPasswordData(),
+  );
   const [sendingOtp, setSendingOtp] = useState(false);
+
+  const [summary, setSummary] = useState<AccountSummary | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const [profile, setProfile] = useState({ name: "", email: "", phone: "" });
 
@@ -109,7 +158,6 @@ function AccountPageContent() {
     return deriveNameFromEmail(session.email);
   }, [session?.email]);
 
-  // ── seed profile from session ──
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/auth/login?callbackUrl=/account");
@@ -130,7 +178,6 @@ function AccountPageContent() {
     }
   }, [status, router, session, showWelcome, derivedName]);
 
-  // ── welcome gift cookie ──
   useEffect(() => {
     if (!showWelcome) return;
     const hasGiftCookie =
@@ -139,7 +186,27 @@ function AccountPageContent() {
     setShowWelcomeGift(hasGiftCookie);
   }, [showWelcome]);
 
-  // ── handlers ──
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.id) return;
+
+    const fetchAccountSummary = async () => {
+      setSummaryLoading(true);
+      try {
+        const res = await fetch("/api/user-auth/account", {
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setSummary(data.summary || null);
+      } catch {
+        setSummary(null);
+      } finally {
+        setSummaryLoading(false);
+      }
+    };
+
+    void fetchAccountSummary();
+  }, [status, session?.id]);
 
   const handleCopyCoupon = async () => {
     try {
@@ -182,7 +249,11 @@ function AccountPageContent() {
   };
 
   const handleChangePassword = async () => {
-    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+    if (
+      !passwordData.currentPassword ||
+      !passwordData.newPassword ||
+      !passwordData.confirmPassword
+    ) {
       toast.error("All password fields are required");
       return;
     }
@@ -238,7 +309,11 @@ function AccountPageContent() {
   };
 
   const handleAddPassword = async () => {
-    if (!addPasswordData.otp || !addPasswordData.newPassword || !addPasswordData.confirmPassword) {
+    if (
+      !addPasswordData.otp ||
+      !addPasswordData.newPassword ||
+      !addPasswordData.confirmPassword
+    ) {
       toast.error("All fields are required");
       return;
     }
@@ -273,438 +348,1182 @@ function AccountPageContent() {
     }
   };
 
-  // ── render ──
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "DELETE") {
+      toast.error("Type DELETE exactly to continue.");
+      return;
+    }
 
-  if (status === "loading") {
+    setDeletingAccount(true);
+    try {
+      const res = await fetch("/api/user-auth/account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmText: deleteConfirmText }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        toast.error(data.error || "Failed to delete account");
+        return;
+      }
+
+      toast.success("Account deleted successfully");
+      router.replace("/?accountDeleted=1");
+      router.refresh();
+    } catch {
+      toast.error("Failed to delete account");
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
+  if (status === "loading")
     return <PageLoader size="lg" message="Loading account..." />;
-  }
-
   if (!session) return null;
 
   const hasPassword = session.hasPassword ?? false;
   const initials = getInitials(session.name, session.email);
+  const displayName = session.name || deriveNameFromEmail(session.email);
 
   return (
-    <div className="space-y-8 pb-12">
-      {/* ── Welcome gift modal ── */}
-      {showWelcomeGift ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="relative w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950">
-            <button
-              onClick={() => {
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+
+        :root {
+          --espresso:   #0A0704;
+          --charcoal:   #100C06;
+          --cream:      #F2E8D5;
+          --sand:       #C9B99A;
+          --muted:      #6A5A48;
+          --terra:      #BF5A28;
+          --gold:       #C0892A;
+          --border:     rgba(242,232,213,0.09);
+          --border-mid: rgba(242,232,213,0.18);
+        }
+
+        .ac-root {
+          font-family: 'DM Sans', sans-serif;
+          color: var(--cream);
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          padding-bottom: 80px;
+        }
+
+        /* ── HERO ── */
+        .ac-hero {
+          background: rgba(16,12,6,0.96);
+          border: 1px solid var(--border);
+          padding: 48px;
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 32px;
+          flex-wrap: wrap;
+        }
+        .ac-hero::before {
+          content: '';
+          position: absolute;
+          right: -60px; top: -60px;
+          width: 280px; height: 280px;
+          border: 1px solid var(--border);
+          border-radius: 50%;
+          pointer-events: none;
+        }
+        .ac-hero::after {
+          content: '';
+          position: absolute;
+          right: 50px; top: 50px;
+          width: 120px; height: 120px;
+          border: 1px solid var(--border);
+          border-radius: 50%;
+          pointer-events: none;
+        }
+        .ac-hero-left { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; position: relative; z-index: 1; flex: 1; min-width: 0; }
+        .ac-avatar {
+          width: 72px; height: 72px;
+          border-radius: 50%;
+          background: rgba(191,90,40,0.15);
+          border: 1px solid rgba(191,90,40,0.35);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 24px;
+          font-weight: 400;
+          color: var(--terra);
+          flex-shrink: 0;
+          letter-spacing: 0.05em;
+        }
+        .ac-hero-name {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: clamp(28px, 4vw, 48px);
+          font-weight: 300;
+          line-height: 1.0;
+          color: var(--cream);
+          margin-bottom: 4px;
+        }
+        .ac-hero-email {
+          font-size: 13px;
+          color: var(--muted);
+          letter-spacing: 0.03em;
+        }
+        .ac-hero-right {
+          position: relative;
+          z-index: 1;
+          flex-shrink: 0;
+        }
+
+        /* ── STATS BAR ── */
+        .ac-stats-bar {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 2px;
+          border: 1px solid var(--border);
+          border-top: none;
+        }
+        .ac-stat {
+          background: rgba(242,232,213,0.02);
+          padding: 18px 24px;
+        }
+        .ac-stat-label {
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: 0.24em;
+          text-transform: uppercase;
+          color: var(--terra);
+          margin-bottom: 6px;
+        }
+        .ac-stat-value {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 18px;
+          font-weight: 400;
+          color: var(--cream);
+        }
+
+        /* ── PROFILE PROMPT ── */
+        .ac-prompt {
+          border: 1px solid rgba(192,137,42,0.35);
+          border-top: none;
+          background: rgba(192,137,42,0.06);
+          padding: 14px 24px;
+          font-size: 13px;
+          color: #d4a84b;
+          letter-spacing: 0.03em;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .ac-prompt::before {
+          content: '';
+          display: block;
+          width: 5px; height: 5px;
+          border-radius: 50%;
+          background: var(--gold);
+          flex-shrink: 0;
+        }
+
+        /* ── MAIN GRID ── */
+        .ac-grid {
+          display: grid;
+          grid-template-columns: 1fr 380px;
+          gap: 2px;
+          align-items: start;
+          border: 1px solid var(--border);
+          border-top: none;
+        }
+
+        /* ── PANEL BASE ── */
+        .ac-panel {
+          background: rgba(16,12,6,0.7);
+          padding: 36px 40px;
+          border-right: 1px solid var(--border);
+        }
+        .ac-panel-last { border-right: none; }
+        .ac-panel-accent {
+          height: 1px;
+          background: linear-gradient(90deg, var(--terra) 0%, var(--gold) 50%, transparent 100%);
+          margin-bottom: 24px;
+        }
+        .ac-panel-head {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 28px;
+        }
+        .ac-panel-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 26px;
+          font-weight: 300;
+          color: var(--cream);
+        }
+        .ac-panel-action {
+          background: none;
+          border: none;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: var(--terra);
+          cursor: pointer;
+          transition: color 0.2s;
+          padding: 0;
+        }
+        .ac-panel-action:hover { color: #d96a30; }
+
+        /* ── PROFILE VIEW ── */
+        .ac-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+        .ac-info-cell {
+          background: rgba(242,232,213,0.02);
+          border: 1px solid var(--border);
+          padding: 16px 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .ac-info-label {
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          color: var(--muted);
+        }
+        .ac-info-value {
+          font-size: 14px;
+          color: var(--cream);
+          font-weight: 400;
+          overflow-wrap: anywhere;
+        }
+
+        /* ── FORM ── */
+        .ac-form { display: flex; flex-direction: column; gap: 14px; }
+        .ac-field-label {
+          display: block;
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          color: var(--muted);
+          margin-bottom: 8px;
+        }
+        .ac-input {
+          width: 100%;
+          background: rgba(10,7,4,0.7);
+          border: 1px solid rgba(242,232,213,0.09);
+          color: var(--cream);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          padding: 12px 16px;
+          outline: none;
+          transition: border-color 0.2s;
+          box-sizing: border-box;
+        }
+        .ac-input::placeholder { color: var(--muted); }
+        .ac-input:focus { border-color: rgba(191,90,40,0.5); }
+        .ac-input:disabled {
+          background: rgba(242,232,213,0.03);
+          color: rgba(242,232,213,0.25);
+          cursor: not-allowed;
+        }
+        .ac-input-hint {
+          font-size: 11px;
+          color: var(--muted);
+          margin-top: 5px;
+          letter-spacing: 0.03em;
+        }
+        .ac-form-actions { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 6px; }
+        .ac-btn-primary {
+          background: var(--terra);
+          border: none;
+          color: var(--cream);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          padding: 12px 22px;
+          cursor: pointer;
+          transition: background 0.2s;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 120px;
+        }
+        .ac-btn-primary:hover { background: #a34d22; }
+        .ac-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+        .ac-btn-ghost {
+          background: transparent;
+          border: 1px solid var(--border-mid);
+          color: var(--muted);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          padding: 12px 20px;
+          cursor: pointer;
+          transition: border-color 0.2s, color 0.2s;
+        }
+        .ac-btn-ghost:hover { border-color: rgba(242,232,213,0.35); color: var(--cream); }
+        .ac-btn-text {
+          background: none;
+          border: none;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 11px;
+          color: var(--muted);
+          cursor: pointer;
+          text-decoration: underline;
+          text-underline-offset: 3px;
+          transition: color 0.2s;
+          padding: 0;
+          margin-top: 4px;
+          align-self: flex-start;
+        }
+        .ac-btn-text:hover { color: var(--cream); }
+        .ac-btn-text:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ── DATA FOOTPRINT ── */
+        .ac-summary-strip {
+          margin-top: 16px;
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 2px;
+        }
+        .ac-summary-metric {
+          background: rgba(242,232,213,0.02);
+          border: 1px solid var(--border);
+          padding: 14px;
+        }
+        .ac-summary-metric-label {
+          font-size: 9px;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          color: var(--muted);
+          margin-bottom: 6px;
+        }
+        .ac-summary-metric-value {
+          color: var(--cream);
+          font-size: 14px;
+        }
+
+        /* ── INSIGHTS + ACTIVITY ── */
+        .ac-insight-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 2px;
+        }
+        .ac-insight-card {
+          background: rgba(242,232,213,0.02);
+          border: 1px solid var(--border);
+          padding: 12px;
+        }
+        .ac-insight-label {
+          font-size: 9px;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          color: var(--muted);
+          margin-bottom: 6px;
+        }
+        .ac-insight-value {
+          color: var(--cream);
+          font-size: 13px;
+          line-height: 1.5;
+        }
+
+        .ac-activity-list {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .ac-activity-item {
+          border: 1px solid var(--border);
+          background: rgba(242,232,213,0.02);
+          padding: 10px 12px;
+        }
+        .ac-activity-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+        .ac-activity-label {
+          color: var(--cream);
+          font-size: 12px;
+          font-weight: 500;
+        }
+        .ac-activity-date {
+          color: var(--muted);
+          font-size: 10px;
+          white-space: nowrap;
+        }
+        .ac-activity-meta {
+          margin-top: 3px;
+          color: var(--muted);
+          font-size: 11px;
+          line-height: 1.4;
+        }
+
+        .ac-status-pill {
+          display: inline-flex;
+          align-items: center;
+          border: 1px solid rgba(242,232,213,0.18);
+          padding: 2px 8px;
+          font-size: 9px;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: var(--sand);
+        }
+
+        /* ── DANGER ZONE ── */
+        .ac-danger {
+          border: 1px solid rgba(191,90,40,0.35);
+          background: rgba(191,90,40,0.06);
+          padding: 14px;
+        }
+        .ac-danger-title {
+          font-size: 11px;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: #e08a58;
+          margin-bottom: 6px;
+        }
+        .ac-danger-note {
+          font-size: 12px;
+          color: #cfb7a0;
+          line-height: 1.6;
+          margin-bottom: 12px;
+        }
+        .ac-danger-input {
+          width: 100%;
+          background: rgba(10,7,4,0.9);
+          border: 1px solid rgba(191,90,40,0.35);
+          color: var(--cream);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 12px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          padding: 10px 12px;
+          margin-bottom: 10px;
+          box-sizing: border-box;
+        }
+        .ac-danger-btn {
+          background: transparent;
+          border: 1px solid rgba(191,90,40,0.45);
+          color: #f0b08b;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          padding: 10px 14px;
+          cursor: pointer;
+        }
+        .ac-danger-btn:disabled {
+          opacity: 0.45;
+          cursor: not-allowed;
+        }
+
+        /* ── RIGHT COLUMN ── */
+        .ac-right {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        .ac-right-panel {
+          background: rgba(16,12,6,0.5);
+          padding: 28px 32px;
+          border-bottom: 1px solid var(--border);
+        }
+        .ac-right-panel:last-child { border-bottom: none; }
+        .ac-right-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 20px;
+          font-weight: 300;
+          color: var(--cream);
+          margin-bottom: 16px;
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+        /* Security note */
+        .ac-security-note {
+          font-size: 13px;
+          color: var(--muted);
+          line-height: 1.6;
+          margin-bottom: 16px;
+        }
+
+        /* ── QUICK LINKS ── */
+        .ac-quick-link {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          padding: 14px 0;
+          border-bottom: 1px solid var(--border);
+          text-decoration: none;
+          transition: padding-left 0.2s;
+        }
+        .ac-quick-link:last-child { border-bottom: none; }
+        .ac-quick-link:hover { padding-left: 4px; }
+        .ac-quick-icon {
+          width: 32px; height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(191,90,40,0.1);
+          border: 1px solid rgba(191,90,40,0.2);
+          border-radius: 50%;
+          color: var(--terra);
+          flex-shrink: 0;
+        }
+        .ac-quick-title {
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--cream);
+          margin-bottom: 2px;
+        }
+        .ac-quick-desc { font-size: 11px; color: var(--muted); }
+        .ac-quick-arrow { margin-left: auto; font-size: 12px; color: var(--muted); flex-shrink: 0; transition: color 0.2s; }
+        .ac-quick-link:hover .ac-quick-arrow { color: var(--terra); }
+
+        /* ── THEME SECTION ── */
+        .ac-theme-note {
+          font-size: 12px;
+          color: var(--muted);
+          margin-bottom: 16px;
+          line-height: 1.5;
+        }
+
+        /* ── WELCOME MODAL ── */
+        .ac-modal-backdrop {
+          position: fixed;
+          inset: 0;
+          z-index: 50;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          background: rgba(10,7,4,0.88);
+          backdrop-filter: blur(4px);
+        }
+        .ac-modal {
+          width: 100%;
+          max-width: 440px;
+          background: #100C06;
+          border: 1px solid var(--border-mid);
+          padding: 40px;
+          position: relative;
+        }
+        .ac-modal-close {
+          position: absolute;
+          top: 16px; right: 16px;
+          background: transparent;
+          border: 1px solid var(--border);
+          color: var(--muted);
+          font-size: 11px;
+          letter-spacing: 0.1em;
+          padding: 6px 12px;
+          cursor: pointer;
+          transition: color 0.2s, border-color 0.2s;
+          font-family: 'DM Sans', sans-serif;
+        }
+        .ac-modal-close:hover { color: var(--cream); border-color: var(--border-mid); }
+        .ac-modal-eyebrow {
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: 0.28em;
+          text-transform: uppercase;
+          color: var(--terra);
+          margin-bottom: 12px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .ac-modal-eyebrow::before {
+          content: '';
+          display: block;
+          width: 20px; height: 1px;
+          background: var(--terra);
+        }
+        .ac-modal-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 34px;
+          font-weight: 300;
+          line-height: 1.05;
+          color: var(--cream);
+          margin-bottom: 8px;
+        }
+        .ac-modal-sub {
+          font-size: 13px;
+          color: var(--muted);
+          margin-bottom: 28px;
+          line-height: 1.5;
+        }
+        .ac-coupon-box {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          border: 1px dashed rgba(192,137,42,0.4);
+          background: rgba(192,137,42,0.05);
+          padding: 16px 20px;
+        }
+        .ac-coupon-code {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 28px;
+          font-weight: 400;
+          color: var(--gold);
+          letter-spacing: 0.1em;
+        }
+        .ac-coupon-copy {
+          background: transparent;
+          border: 1px solid rgba(192,137,42,0.4);
+          color: var(--gold);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          padding: 8px 14px;
+          cursor: pointer;
+          transition: background 0.2s, color 0.2s;
+          flex-shrink: 0;
+        }
+        .ac-coupon-copy:hover { background: rgba(192,137,42,0.12); }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1024px) {
+          .ac-grid { grid-template-columns: 1fr; }
+          .ac-panel { border-right: none; border-bottom: 1px solid var(--border); }
+          .ac-panel-last { border-bottom: none; }
+          .ac-stats-bar { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 640px) {
+          .ac-hero { padding: 28px 24px; }
+          .ac-panel { padding: 24px; }
+          .ac-right-panel { padding: 20px 24px; }
+          .ac-modal { padding: 28px 24px; }
+          .ac-info-grid { grid-template-columns: 1fr; }
+          .ac-stats-bar { grid-template-columns: 1fr; }
+          .ac-summary-strip { grid-template-columns: 1fr; }
+          .ac-insight-grid { grid-template-columns: 1fr; }
+        }
+      `}</style>
+
+      <div className="ac-root">
+        {/* ── WELCOME GIFT MODAL ── */}
+        {showWelcomeGift && (
+          <div
+            className="ac-modal-backdrop"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
                 setShowWelcomeGift(false);
                 document.cookie = "welcome_gift_signup=; Max-Age=0; path=/";
                 router.replace("/account");
-              }}
-              className="absolute right-3 top-3 rounded-full p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-              aria-label="Close"
-            >
-              ✕
-            </button>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
-              Welcome gift
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-              ₦1,500 off your first order
-            </h2>
-            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-              Use this code at checkout.
-            </p>
-            <div className="mt-5 flex items-center justify-between rounded-xl border border-dashed border-neutral-300 px-4 py-3 dark:border-neutral-700">
-              <p className="font-mono text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                NEWCOM
-              </p>
+              }
+            }}
+          >
+            <div className="ac-modal">
               <button
-                onClick={handleCopyCoupon}
-                className="rounded-full border border-neutral-300 px-3 py-1.5 text-xs font-medium hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
+                className="ac-modal-close"
+                onClick={() => {
+                  setShowWelcomeGift(false);
+                  document.cookie = "welcome_gift_signup=; Max-Age=0; path=/";
+                  router.replace("/account");
+                }}
+                aria-label="Close"
               >
-                {copied ? "Copied" : "Copy"}
+                Close ✕
               </button>
+              <div className="ac-modal-eyebrow">Welcome gift</div>
+              <h2 className="ac-modal-title">
+                ₦1,500 off your
+                <br />
+                first order
+              </h2>
+              <p className="ac-modal-sub">
+                Use this code at checkout. One use only.
+              </p>
+              <div className="ac-coupon-box">
+                <span className="ac-coupon-code">NEWCOM</span>
+                <button onClick={handleCopyCoupon} className="ac-coupon-copy">
+                  {copied ? "Copied ✓" : "Copy code"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      ) : null}
+        )}
 
-      {/* ── Profile prompt for new users ── */}
-      {showProfilePrompt ? (
-        <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-          Please confirm your profile details before continuing.
-        </div>
-      ) : null}
-
-      {/* ── Hero / account overview ── */}
-      <div className="rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950">
-        <div className="flex flex-wrap items-center gap-5">
-          {/* Avatar */}
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-lg font-semibold tracking-wider text-white dark:bg-neutral-100 dark:text-neutral-900">
-            {initials}
+        {/* ── HERO ── */}
+        <header className="ac-hero">
+          <div className="ac-hero-left">
+            <div className="ac-avatar">{initials}</div>
+            <div>
+              <h1 className="ac-hero-name">{displayName}</h1>
+              <p className="ac-hero-email">{session.email}</p>
+            </div>
           </div>
-
-          {/* Name / email */}
-          <div className="min-w-0 flex-1">
-            <h2 className="truncate text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-              {session.name || deriveNameFromEmail(session.email)}
-            </h2>
-            <p className="truncate text-sm text-neutral-500 dark:text-neutral-400">
-              {session.email}
-            </p>
-          </div>
-
-          {/* Theme toggle on the right */}
-          <div className="shrink-0">
+          <div className="ac-hero-right">
             <ThemeToggle />
           </div>
-        </div>
+        </header>
 
-        {/* Divider + quick stats */}
-        <div className="mt-6 grid grid-cols-2 gap-4 border-t border-neutral-100 pt-5 sm:grid-cols-3 dark:border-neutral-800">
-          <div>
-            <p className="text-xs uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
-              Auth method
-            </p>
-            <p className="mt-1 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+        {/* ── STATS BAR ── */}
+        <div className="ac-stats-bar">
+          <div className="ac-stat">
+            <div className="ac-stat-label">Auth method</div>
+            <div className="ac-stat-value">
               {hasPassword ? "Password" : "Magic link"}
-            </p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
-              Account type
-            </p>
-            <p className="mt-1 text-sm font-medium text-neutral-900 dark:text-neutral-100">
-              Customer
-            </p>
+          <div className="ac-stat">
+            <div className="ac-stat-label">Orders</div>
+            <div className="ac-stat-value">{summary?.ordersCount ?? "-"}</div>
           </div>
-          <div className="col-span-2 sm:col-span-1">
-            <p className="text-xs uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
-              Phone
-            </p>
-            <p className="mt-1 text-sm font-medium text-neutral-900 dark:text-neutral-100">
-              {session.phone || "Not provided"}
-            </p>
+          <div className="ac-stat">
+            <div className="ac-stat-label">Lifetime spend</div>
+            <div className="ac-stat-value">
+              {summary
+                ? formatCurrency(summary.totalSpent, summary.currencyCode)
+                : "-"}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* ── Main grid ── */}
-      <div className="grid gap-6 xl:grid-cols-3">
-        {/* ── Profile details ── */}
-        <section className="rounded-2xl border border-neutral-200 bg-white p-6 xl:col-span-2 dark:border-neutral-800 dark:bg-neutral-950">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-              Profile details
-            </h2>
-            {!isEditing ? (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
-              >
-                Edit
-              </button>
-            ) : null}
+        {/* ── PROFILE PROMPT ── */}
+        {showProfilePrompt && (
+          <div className="ac-prompt">
+            Please confirm your profile details before continuing.
           </div>
+        )}
 
-          {isEditing ? (
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                  Name
-                </label>
-                <input
-                  value={profile.name}
-                  onChange={(e) =>
-                    setProfile((prev) => ({ ...prev, name: e.target.value }))
-                  }
-                  className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                  Phone
-                </label>
-                <input
-                  value={profile.phone}
-                  onChange={(e) =>
-                    setProfile((prev) => ({ ...prev, phone: e.target.value }))
-                  }
-                  placeholder="e.g. +2348012345678"
-                  className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                  Email
-                </label>
-                <input
-                  value={profile.email}
-                  disabled
-                  className="w-full rounded-xl border border-neutral-200 bg-neutral-100 px-4 py-2.5 text-sm text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-500"
-                />
-                <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
-                  Email cannot be changed.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-3 pt-1">
+        {/* ── MAIN GRID ── */}
+        <div className="ac-grid">
+          {/* ── PROFILE DETAILS ── */}
+          <section className="ac-panel">
+            <div className="ac-panel-accent" />
+            <div className="ac-panel-head">
+              <h2 className="ac-panel-title">Profile details</h2>
+              {!isEditing && (
                 <button
-                  onClick={handleEditProfile}
-                  disabled={saving}
-                  className="rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+                  className="ac-panel-action"
+                  onClick={() => setIsEditing(true)}
                 >
-                  {saving ? (
-                    <LoadingDots className="bg-white dark:bg-black" />
-                  ) : (
-                    "Save changes"
-                  )}
+                  Edit →
                 </button>
-                <button
-                  onClick={() => {
-                    setIsEditing(false);
-                    setShowProfilePrompt(false);
-                    setProfile({
-                      name: session.name || "",
-                      email: session.email || "",
-                      phone: session.phone || "",
-                    });
-                  }}
-                  disabled={saving}
-                  className="rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Info label="Full name" value={session.name || "Not set"} />
-              <Info label="Email address" value={session.email || "Not set"} />
-              <Info label="Phone number" value={session.phone || "Not provided"} />
-              <Info label="Account status" value="Active" />
-            </div>
-          )}
-        </section>
-
-        {/* ── Right column ── */}
-        <section className="space-y-6">
-          {/* ── Security ── */}
-          <div className="rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                Security
-              </h2>
-              {hasPassword && !isChangingPassword ? (
-                <button
-                  onClick={() => setIsChangingPassword(true)}
-                  className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
-                >
-                  Change
-                </button>
-              ) : null}
+              )}
             </div>
 
-            {/* ── Has a real password → Change Password ── */}
-            {hasPassword ? (
-              isChangingPassword ? (
-                <div className="space-y-3">
+            {isEditing ? (
+              <div className="ac-form">
+                <div>
+                  <label className="ac-field-label">Full name</label>
                   <input
-                    type="password"
-                    placeholder="Current password"
-                    value={passwordData.currentPassword}
+                    value={profile.name}
                     onChange={(e) =>
-                      setPasswordData((prev) => ({
-                        ...prev,
-                        currentPassword: e.target.value,
-                      }))
+                      setProfile((p) => ({ ...p, name: e.target.value }))
                     }
-                    className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+                    className="ac-input"
+                    placeholder="Your full name"
                   />
+                </div>
+                <div>
+                  <label className="ac-field-label">Phone</label>
                   <input
-                    type="password"
-                    placeholder="New password"
-                    value={passwordData.newPassword}
+                    value={profile.phone}
                     onChange={(e) =>
-                      setPasswordData((prev) => ({
-                        ...prev,
-                        newPassword: e.target.value,
-                      }))
+                      setProfile((p) => ({ ...p, phone: e.target.value }))
                     }
-                    className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+                    className="ac-input"
+                    placeholder="e.g. +2348012345678"
                   />
-                  <input
-                    type="password"
-                    placeholder="Confirm new password"
-                    value={passwordData.confirmPassword}
-                    onChange={(e) =>
-                      setPasswordData((prev) => ({
-                        ...prev,
-                        confirmPassword: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+                </div>
+                <div>
+                  <label className="ac-field-label">Email address</label>
+                  <input value={profile.email} disabled className="ac-input" />
+                  <p className="ac-input-hint">Email cannot be changed.</p>
+                </div>
+                <div className="ac-form-actions">
+                  <button
+                    onClick={handleEditProfile}
+                    disabled={saving}
+                    className="ac-btn-primary"
+                  >
+                    {saving ? (
+                      <LoadingDots className="bg-[#F2E8D5]" />
+                    ) : (
+                      "Save changes"
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditing(false);
+                      setShowProfilePrompt(false);
+                      setProfile({
+                        name: session.name || "",
+                        email: session.email || "",
+                        phone: session.phone || "",
+                      });
+                    }}
+                    disabled={saving}
+                    className="ac-btn-ghost"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="ac-info-grid">
+                  <InfoCell
+                    label="Full name"
+                    value={session.name || "Not set"}
                   />
-                  <div className="flex gap-2 pt-1">
-                    <button
-                      onClick={handleChangePassword}
-                      disabled={saving}
-                      className="rounded-full bg-neutral-900 px-4 py-2 text-xs font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black"
-                    >
-                      {saving ? (
-                        <LoadingDots className="bg-white dark:bg-black" />
-                      ) : (
-                        "Update password"
-                      )}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setIsChangingPassword(false);
-                        setPasswordData(emptyPasswordData());
-                      }}
-                      className="rounded-full border border-neutral-300 px-4 py-2 text-xs font-medium dark:border-neutral-700"
-                    >
-                      Cancel
-                    </button>
+                  <InfoCell
+                    label="Email address"
+                    value={session.email || "Not set"}
+                  />
+                  <InfoCell
+                    label="Phone number"
+                    value={session.phone || "Not provided"}
+                  />
+                  <InfoCell label="Account status" value="Active" />
+                </div>
+
+                <div className="ac-summary-strip">
+                  <div className="ac-summary-metric">
+                    <p className="ac-summary-metric-label">Member since</p>
+                    <p className="ac-summary-metric-value">
+                      {summary
+                        ? formatDate(summary.accountCreatedAt)
+                        : "Loading..."}
+                    </p>
+                  </div>
+                  <div className="ac-summary-metric">
+                    <p className="ac-summary-metric-label">Last sign in</p>
+                    <p className="ac-summary-metric-value">
+                      {summary ? formatDate(summary.lastLoginAt) : "Loading..."}
+                    </p>
+                  </div>
+                  <div className="ac-summary-metric">
+                    <p className="ac-summary-metric-label">Newsletter</p>
+                    <p className="ac-summary-metric-value">
+                      {summary
+                        ? summary.newsletterStatus === "active"
+                          ? "Subscribed"
+                          : "Not subscribed"
+                        : "Loading..."}
+                    </p>
                   </div>
                 </div>
-              ) : (
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                  Password is set and protected.
-                </p>
-              )
-            ) : (
-              /* ── Magic-link user → Add Password (OTP flow) ── */
-              <div className="space-y-4">
-                {addPasswordStep === "idle" ? (
-                  <>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      You signed in with a magic link. Add a password to also
-                      sign in with your email and password.
-                    </p>
-                    <button
-                      onClick={handleRequestOtp}
-                      disabled={sendingOtp}
-                      className="rounded-full bg-neutral-900 px-4 py-2 text-xs font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black"
-                    >
-                      {sendingOtp ? (
-                        <LoadingDots className="bg-white dark:bg-black" />
-                      ) : (
-                        "Add password"
-                      )}
-                    </button>
-                  </>
-                ) : addPasswordStep === "otp-sent" ? (
-                  <>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      We sent a 6-digit code to{" "}
-                      <span className="font-medium text-neutral-700 dark:text-neutral-300">
-                        {session.email}
-                      </span>
-                      . Enter it below along with your new password.
-                    </p>
+              </>
+            )}
+          </section>
+
+          {/* ── RIGHT COLUMN ── */}
+          <div className="ac-right ac-panel-last">
+            {/* Security */}
+            <div className="ac-right-panel">
+              <div className="ac-right-title">
+                <span>Security</span>
+                {hasPassword && !isChangingPassword && (
+                  <button
+                    className="ac-panel-action"
+                    onClick={() => setIsChangingPassword(true)}
+                  >
+                    Change →
+                  </button>
+                )}
+              </div>
+
+              {hasPassword ? (
+                isChangingPassword ? (
+                  <div className="ac-form">
                     <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={6}
-                      placeholder="6-digit code"
-                      value={addPasswordData.otp}
+                      type="password"
+                      placeholder="Current password"
+                      value={passwordData.currentPassword}
                       onChange={(e) =>
-                        setAddPasswordData((prev) => ({
-                          ...prev,
-                          otp: e.target.value.replace(/\D/g, ""),
+                        setPasswordData((p) => ({
+                          ...p,
+                          currentPassword: e.target.value,
                         }))
                       }
-                      className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm tracking-widest dark:border-neutral-700 dark:bg-neutral-900"
+                      className="ac-input"
                     />
                     <input
                       type="password"
                       placeholder="New password"
-                      value={addPasswordData.newPassword}
+                      value={passwordData.newPassword}
                       onChange={(e) =>
-                        setAddPasswordData((prev) => ({
-                          ...prev,
+                        setPasswordData((p) => ({
+                          ...p,
                           newPassword: e.target.value,
                         }))
                       }
-                      className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+                      className="ac-input"
                     />
                     <input
                       type="password"
                       placeholder="Confirm new password"
-                      value={addPasswordData.confirmPassword}
+                      value={passwordData.confirmPassword}
                       onChange={(e) =>
-                        setAddPasswordData((prev) => ({
-                          ...prev,
+                        setPasswordData((p) => ({
+                          ...p,
                           confirmPassword: e.target.value,
                         }))
                       }
-                      className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+                      className="ac-input"
                     />
-                    <div className="flex flex-wrap gap-2 pt-1">
+                    <div className="ac-form-actions">
                       <button
-                        onClick={handleAddPassword}
+                        onClick={handleChangePassword}
                         disabled={saving}
-                        className="rounded-full bg-neutral-900 px-4 py-2 text-xs font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black"
+                        className="ac-btn-primary"
                       >
                         {saving ? (
-                          <LoadingDots className="bg-white dark:bg-black" />
+                          <LoadingDots className="bg-[#F2E8D5]" />
                         ) : (
-                          "Confirm & add password"
+                          "Update"
                         )}
                       </button>
                       <button
                         onClick={() => {
-                          setAddPasswordStep("idle");
-                          setAddPasswordData(emptyAddPasswordData());
+                          setIsChangingPassword(false);
+                          setPasswordData(emptyPasswordData());
                         }}
-                        className="rounded-full border border-neutral-300 px-4 py-2 text-xs font-medium dark:border-neutral-700"
+                        className="ac-btn-ghost"
                       >
                         Cancel
                       </button>
                     </div>
-                    <button
-                      onClick={handleRequestOtp}
-                      disabled={sendingOtp}
-                      className="text-xs text-neutral-400 underline-offset-2 hover:text-neutral-600 hover:underline dark:text-neutral-500 dark:hover:text-neutral-300"
-                    >
-                      {sendingOtp ? "Resending…" : "Resend code"}
-                    </button>
-                  </>
+                  </div>
                 ) : (
-                  /* addPasswordStep === "done" — session refetch should flip hasPassword */
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Password added successfully.
+                  <p className="ac-security-note">
+                    Password is set and protected.
                   </p>
-                )}
-              </div>
-            )}
-          </div>
+                )
+              ) : (
+                <div className="ac-form">
+                  {addPasswordStep === "idle" && (
+                    <>
+                      <p className="ac-security-note">
+                        You signed in with a magic link. Add a password to also
+                        sign in with email and password.
+                      </p>
+                      <button
+                        onClick={handleRequestOtp}
+                        disabled={sendingOtp}
+                        className="ac-btn-primary"
+                        style={{ alignSelf: "flex-start" }}
+                      >
+                        {sendingOtp ? (
+                          <LoadingDots className="bg-[#F2E8D5]" />
+                        ) : (
+                          "Add password"
+                        )}
+                      </button>
+                    </>
+                  )}
+                  {addPasswordStep === "otp-sent" && (
+                    <>
+                      <p className="ac-security-note">
+                        We sent a 6-digit code to{" "}
+                        <strong style={{ color: "var(--sand)" }}>
+                          {session.email}
+                        </strong>
+                        . Enter it below with your new password.
+                      </p>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        placeholder="6-digit code"
+                        value={addPasswordData.otp}
+                        onChange={(e) =>
+                          setAddPasswordData((p) => ({
+                            ...p,
+                            otp: e.target.value.replace(/\D/g, ""),
+                          }))
+                        }
+                        className="ac-input"
+                        style={{ letterSpacing: "0.2em" }}
+                      />
+                      <input
+                        type="password"
+                        placeholder="New password"
+                        value={addPasswordData.newPassword}
+                        onChange={(e) =>
+                          setAddPasswordData((p) => ({
+                            ...p,
+                            newPassword: e.target.value,
+                          }))
+                        }
+                        className="ac-input"
+                      />
+                      <input
+                        type="password"
+                        placeholder="Confirm new password"
+                        value={addPasswordData.confirmPassword}
+                        onChange={(e) =>
+                          setAddPasswordData((p) => ({
+                            ...p,
+                            confirmPassword: e.target.value,
+                          }))
+                        }
+                        className="ac-input"
+                      />
+                      <div className="ac-form-actions">
+                        <button
+                          onClick={handleAddPassword}
+                          disabled={saving}
+                          className="ac-btn-primary"
+                        >
+                          {saving ? (
+                            <LoadingDots className="bg-[#F2E8D5]" />
+                          ) : (
+                            "Confirm"
+                          )}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setAddPasswordStep("idle");
+                            setAddPasswordData(emptyAddPasswordData());
+                          }}
+                          className="ac-btn-ghost"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      <button
+                        onClick={handleRequestOtp}
+                        disabled={sendingOtp}
+                        className="ac-btn-text"
+                      >
+                        {sendingOtp ? "Resending…" : "Resend code"}
+                      </button>
+                    </>
+                  )}
+                  {addPasswordStep === "done" && (
+                    <p className="ac-security-note">
+                      Password added successfully.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
 
-          {/* ── Appearance ── */}
-          <div className="rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950">
-            <h2 className="mb-3 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-              Appearance
-            </h2>
-            <p className="mb-4 text-xs text-neutral-500 dark:text-neutral-400">
-              Choose a colour theme. &ldquo;System&rdquo; follows your device
-              setting.
-            </p>
-            <ThemeToggle />
-          </div>
+            {/* Appearance */}
+            <div className="ac-right-panel">
+              <div className="ac-right-title">Account insights</div>
 
-          {/* ── Quick links ── */}
-          <div className="rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950">
-            <h2 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-              Quick links
-            </h2>
-            <div className="space-y-2">
+              {summaryLoading ? (
+                <p className="ac-security-note">Loading account activity...</p>
+              ) : summary ? (
+                <div className="ac-insight-grid">
+                  <div className="ac-insight-card">
+                    <p className="ac-insight-label">Order mix</p>
+                    <p className="ac-insight-value">
+                      {summary.catalogOrdersCount} catalog /{" "}
+                      {summary.customOrdersFromOrdersCount} custom
+                    </p>
+                  </div>
+                  <div className="ac-insight-card">
+                    <p className="ac-insight-label">Avg order value</p>
+                    <p className="ac-insight-value">
+                      {formatCurrency(
+                        summary.averageOrderValue,
+                        summary.currencyCode,
+                      )}
+                    </p>
+                  </div>
+                  <div className="ac-insight-card">
+                    <p className="ac-insight-label">Payments</p>
+                    <p className="ac-insight-value">
+                      {summary.successfulPaymentsCount} successful /{" "}
+                      {summary.failedPaymentsCount} failed
+                    </p>
+                  </div>
+                  <div className="ac-insight-card">
+                    <p className="ac-insight-label">Engagement</p>
+                    <p className="ac-insight-value">
+                      {summary.reviewsCount} reviews /{" "}
+                      {summary.couponUsageCount} coupon uses
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="ac-security-note">
+                  No account insights available yet.
+                </p>
+              )}
+            </div>
+
+            <div className="ac-right-panel">
+              <div className="ac-right-title">Recent activity</div>
+
+              {summary?.recentActivity?.length ? (
+                <div className="ac-activity-list">
+                  {summary.recentActivity.map((item) => (
+                    <div
+                      key={`${item.type}-${item.id}`}
+                      className="ac-activity-item"
+                    >
+                      <div className="ac-activity-head">
+                        <p className="ac-activity-label">{item.label}</p>
+                        <span className="ac-status-pill">{item.status}</span>
+                      </div>
+                      <p className="ac-activity-meta">
+                        {item.meta ? `${item.meta} • ` : ""}
+                        {formatDate(item.createdAt)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="ac-security-note">
+                  No recent activity to show yet.
+                </p>
+              )}
+            </div>
+
+            <div className="ac-right-panel">
+              <div className="ac-right-title">Appearance</div>
+              <p className="ac-theme-note">
+                Choose a colour theme. "System" follows your device setting.
+              </p>
+              <ThemeToggle />
+            </div>
+
+            {/* Quick links */}
+            <div className="ac-right-panel">
+              <div className="ac-right-title">Quick links</div>
               <QuickLink
                 href="/orders"
                 title="My orders"
                 description="Track delivery and order updates"
                 icon={
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <rect x="2" y="7" width="20" height="14" rx="2" />
                     <path d="M16 7V5a2 2 0 0 0-4 0v2" />
-                    <path d="M8 7V5a2 2 0 0 1 4 0" />
-                    <line x1="12" y1="12" x2="12" y2="16" />
-                    <line x1="10" y1="14" x2="14" y2="14" />
                   </svg>
                 }
               />
@@ -713,7 +1532,16 @@ function AccountPageContent() {
                 title="Saved addresses"
                 description="Manage shipping and billing details"
                 icon={
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z" />
                     <circle cx="12" cy="10" r="3" />
                   </svg>
@@ -724,7 +1552,16 @@ function AccountPageContent() {
                 title="Continue shopping"
                 description="Browse the latest collections"
                 icon={
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
                     <line x1="3" y1="6" x2="21" y2="6" />
                     <path d="M16 10a4 4 0 0 1-8 0" />
@@ -732,10 +1569,65 @@ function AccountPageContent() {
                 }
               />
             </div>
+
+            <div className="ac-right-panel">
+              <div className="ac-right-title">Privacy controls</div>
+              <div className="ac-danger">
+                <p className="ac-danger-title">
+                  Delete all personal information
+                </p>
+                <p className="ac-danger-note">
+                  This permanently deletes your account profile, address data,
+                  saved authentication records, and newsletter profile.
+                  Essential order and payment records are retained only in
+                  anonymized form for legal and audit purposes.
+                </p>
+
+                {!showDeleteConfirm ? (
+                  <button
+                    className="ac-danger-btn"
+                    onClick={() => setShowDeleteConfirm(true)}
+                  >
+                    Start deletion
+                  </button>
+                ) : (
+                  <>
+                    <input
+                      className="ac-danger-input"
+                      value={deleteConfirmText}
+                      onChange={(e) =>
+                        setDeleteConfirmText(e.target.value.toUpperCase())
+                      }
+                      placeholder="Type DELETE"
+                      maxLength={6}
+                    />
+                    <div className="ac-form-actions">
+                      <button
+                        className="ac-danger-btn"
+                        onClick={handleDeleteAccount}
+                        disabled={deletingAccount}
+                      >
+                        {deletingAccount ? "Deleting..." : "Delete account"}
+                      </button>
+                      <button
+                        className="ac-btn-ghost"
+                        onClick={() => {
+                          setShowDeleteConfirm(false);
+                          setDeleteConfirmText("");
+                        }}
+                        disabled={deletingAccount}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
-        </section>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

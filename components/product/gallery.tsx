@@ -2,8 +2,8 @@
 
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import { GridTileImage } from "components/grid/tile";
-import { PRODUCT_IMAGE_ASPECT } from "lib/image-constants";
 import { AnimatePresence, motion } from "framer-motion";
+import { PRODUCT_IMAGE_ASPECT } from "lib/image-constants";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
@@ -55,12 +55,28 @@ export function Gallery({
     safeImageIndex === 0 ? images.length - 1 : safeImageIndex - 1;
 
   const buttonClassName =
-    "h-full px-6 transition-all ease-in-out hover:scale-110 hover:text-black dark:hover:text-white flex items-center justify-center";
+    "flex h-full items-center justify-center px-6 text-[var(--dp-muted,#6A5A48)] transition-all ease-in-out hover:scale-105 hover:text-[var(--dp-cream,#F2E8D5)]";
 
   return (
     <form>
+      <style>{`
+        .dp-gallery-shell {
+          border: 1px solid var(--dp-border, rgba(242,232,213,0.09));
+          background: rgba(242,232,213,0.02);
+        }
+        .dp-gallery-controls {
+          border: 1px solid var(--dp-border, rgba(242,232,213,0.09));
+          background: rgba(10,7,4,0.66);
+          color: var(--dp-muted, #6A5A48);
+          backdrop-filter: blur(8px);
+        }
+        .dp-gallery-divider {
+          background: var(--dp-border, rgba(242,232,213,0.09));
+        }
+      `}</style>
+
       <div
-        className="relative w-full overflow-hidden rounded-2xl bg-neutral-50 dark:bg-neutral-900/40"
+        className="dp-gallery-shell relative w-full overflow-hidden rounded-none"
         style={{ aspectRatio: `${activeAspect}` }}
       >
         {activeImage && (
@@ -96,7 +112,7 @@ export function Gallery({
 
         {images.length > 1 ? (
           <div className="absolute bottom-[15%] hidden w-full justify-center sm:flex">
-            <div className="mx-auto flex h-11 items-center rounded-full border border-white bg-neutral-50/80 text-neutral-500 backdrop-blur-sm dark:border-black dark:bg-neutral-900/80">
+            <div className="dp-gallery-controls mx-auto flex h-11 items-center rounded-none">
               <button
                 formAction={() => updateImage(previousImageIndex.toString())}
                 aria-label="Previous product image"
@@ -104,7 +120,7 @@ export function Gallery({
               >
                 <ArrowLeftIcon className="h-5" />
               </button>
-              <div className="mx-1 h-6 w-px bg-neutral-500"></div>
+              <div className="dp-gallery-divider mx-1 h-6 w-px"></div>
               <button
                 formAction={() => updateImage(nextImageIndex.toString())}
                 aria-label="Next product image"
@@ -119,7 +135,7 @@ export function Gallery({
 
       {images.length > 1 ? (
         <div className="mt-6 sm:hidden">
-          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
+          <h3 className="mb-3 text-[0.66rem] font-medium uppercase tracking-[0.2em] text-[var(--dp-ember,#BF5A28)]">
             Gallery
           </h3>
           <ul className="flex gap-4 overflow-x-auto pb-2">
@@ -132,7 +148,7 @@ export function Gallery({
               return (
                 <li
                   key={`${image.src}-mobile`}
-                  className="relative w-2/3 flex-none overflow-hidden rounded-xl bg-neutral-50 dark:bg-neutral-900/40"
+                  className="dp-gallery-shell relative w-2/3 flex-none overflow-hidden rounded-none"
                   style={{ aspectRatio: `${mobileAspect}` }}
                 >
                   <button

@@ -4,13 +4,13 @@ import { Gallery } from "components/product/gallery";
 import { ProductDescription } from "components/product/product-description";
 import { ProductReviewsSection } from "components/product/product-reviews-section";
 import { HIDDEN_PRODUCT_TAG } from "lib/constants";
+import type { Image as ProductImage } from "lib/database";
 import {
   getProduct,
   getProductRecommendations,
   getProductReviewAggregate,
 } from "lib/database";
 import { canonicalUrl, siteName } from "lib/seo";
-import type { Image as ProductImage } from "lib/database";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -34,32 +34,18 @@ export async function generateMetadata(props: {
   return {
     title,
     description,
-    alternates: {
-      canonical: canonicalUrl(canonicalPath),
-    },
+    alternates: { canonical: canonicalUrl(canonicalPath) },
     robots: {
       index: indexable,
       follow: indexable,
-      googleBot: {
-        index: indexable,
-        follow: indexable,
-      },
+      googleBot: { index: indexable, follow: indexable },
     },
     openGraph: {
       title,
       description,
       url: canonicalUrl(canonicalPath),
       type: "website",
-      images: url
-        ? [
-            {
-              url,
-              width,
-              height,
-              alt,
-            },
-          ]
-        : ["/opengraph-image"],
+      images: url ? [{ url, width, height, alt }] : ["/opengraph-image"],
     },
     twitter: {
       card: "summary_large_image",
@@ -79,6 +65,10 @@ export default async function ProductPage(props: {
   if (!product) return notFound();
 
   const reviewAggregate = await getProductReviewAggregate(product.id);
+  const averageRating = Number(reviewAggregate.averageRating);
+  const hasValidAverageRating =
+    Number.isFinite(averageRating) && averageRating > 0;
+
   const productJsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -86,10 +76,7 @@ export default async function ProductPage(props: {
     description: product.seo.description || product.description,
     image: product.images.map((image) => image.url).filter(Boolean),
     url: canonicalUrl(`/product/${product.handle}`),
-    brand: {
-      "@type": "Brand",
-      name: siteName,
-    },
+    brand: { "@type": "Brand", name: siteName },
     offers: {
       "@type": "AggregateOffer",
       availability: product.availableForSale
@@ -102,68 +89,271 @@ export default async function ProductPage(props: {
     },
   };
 
-  if (reviewAggregate.reviewCount > 0 && reviewAggregate.averageRating) {
+  if (reviewAggregate.reviewCount > 0 && hasValidAverageRating) {
     productJsonLd.aggregateRating = {
       "@type": "AggregateRating",
-      ratingValue: Number(reviewAggregate.averageRating.toFixed(1)),
+      ratingValue: Number(averageRating.toFixed(1)),
       reviewCount: reviewAggregate.reviewCount,
     };
   }
 
   return (
     <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+
+        :root {
+          --espresso:   #0A0704;
+          --charcoal:   #100C06;
+          --cream:      #F2E8D5;
+          --sand:       #C9B99A;
+          --muted:      #6A5A48;
+          --terra:      #BF5A28;
+          --gold:       #C0892A;
+          --border:     rgba(242,232,213,0.09);
+          --border-mid: rgba(242,232,213,0.18);
+        }
+
+        .pp-root {
+          background: var(--espresso);
+          min-height: 100vh;
+          font-family: 'DM Sans', sans-serif;
+          color: var(--cream);
+        }
+
+        /* ── BREADCRUMB ── */
+        .pp-breadcrumb {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 8px;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          color: var(--muted);
+          padding: 24px 48px 0;
+        }
+        .pp-breadcrumb a {
+          color: inherit;
+          text-decoration: none;
+          transition: color 0.2s;
+        }
+        .pp-breadcrumb a:hover { color: var(--cream); }
+        .pp-breadcrumb-sep { color: var(--border-mid); }
+        .pp-breadcrumb-current { color: var(--sand); }
+
+        /* ── PRODUCT SHELL ── */
+        .pp-shell {
+          margin: 20px 48px 0;
+          border: 1px solid var(--border);
+          background: rgba(16,12,6,0.9);
+        }
+        .pp-inner {
+          display: grid;
+          grid-template-columns: 1.08fr 0.92fr;
+          gap: 0;
+          align-items: start;
+        }
+        .pp-gallery-col {
+          border-right: 1px solid var(--border);
+          padding: 40px;
+        }
+        .pp-info-col {
+          padding: 40px;
+          position: sticky;
+          top: 24px;
+        }
+
+        /* ── REVIEWS SECTION ── */
+        .pp-reviews-wrap {
+          margin: 2px 48px 0;
+          border: 1px solid var(--border);
+          border-top: none;
+          background: rgba(16,12,6,0.6);
+        }
+
+        /* ── RELATED ── */
+        .pp-related {
+          margin: 2px 48px 0;
+          border: 1px solid var(--border);
+          border-top: none;
+          background: rgba(16,12,6,0.5);
+          padding: 40px;
+        }
+        .pp-related-eyebrow {
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.26em;
+          text-transform: uppercase;
+          color: var(--terra);
+          margin-bottom: 8px;
+        }
+        .pp-related-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: clamp(26px, 3vw, 36px);
+          font-weight: 300;
+          color: var(--cream);
+          line-height: 1.05;
+        }
+        .pp-related-header {
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 16px;
+          flex-wrap: wrap;
+          padding-bottom: 28px;
+          border-bottom: 1px solid var(--border);
+          margin-bottom: 28px;
+        }
+        .pp-related-link {
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          color: var(--muted);
+          text-decoration: none;
+          transition: color 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-shrink: 0;
+        }
+        .pp-related-link::after { content: '→'; }
+        .pp-related-link:hover { color: var(--cream); }
+
+        .pp-related-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 2px;
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+        .pp-related-card {
+          display: flex;
+          flex-direction: column;
+          background: rgba(242,232,213,0.02);
+          border: 1px solid var(--border);
+          text-decoration: none;
+          transition: background 0.3s, border-color 0.3s;
+          overflow: hidden;
+        }
+        .pp-related-card:hover {
+          background: rgba(242,232,213,0.04);
+          border-color: var(--border-mid);
+        }
+        .pp-related-img {
+          position: relative;
+          aspect-ratio: 3/4;
+          overflow: hidden;
+          background: rgba(242,232,213,0.03);
+        }
+        .pp-related-img img {
+          object-fit: cover;
+          transition: transform 0.5s ease;
+        }
+        .pp-related-card:hover .pp-related-img img { transform: scale(1.04); }
+        .pp-related-info {
+          padding: 16px;
+          border-top: 1px solid var(--border);
+        }
+        .pp-related-name {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 18px;
+          font-weight: 400;
+          color: var(--cream);
+          line-height: 1.2;
+          margin-bottom: 8px;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .pp-related-price {
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--gold);
+        }
+
+        /* ── ACCENT LINE ── */
+        .pp-accent-line {
+          height: 1px;
+          background: linear-gradient(90deg, var(--terra) 0%, var(--gold) 50%, transparent 100%);
+          margin-bottom: 28px;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1024px) {
+          .pp-breadcrumb { padding: 20px 24px 0; }
+          .pp-shell { margin: 16px 24px 0; }
+          .pp-inner { grid-template-columns: 1fr; }
+          .pp-gallery-col { border-right: none; border-bottom: 1px solid var(--border); padding: 24px; }
+          .pp-info-col { padding: 24px; position: static; }
+          .pp-reviews-wrap { margin: 2px 24px 0; }
+          .pp-related { margin: 2px 24px 0; padding: 24px; }
+        }
+        @media (max-width: 640px) {
+          .pp-breadcrumb { padding: 16px 16px 0; }
+          .pp-shell { margin: 12px 16px 0; }
+          .pp-gallery-col { padding: 16px; }
+          .pp-info-col { padding: 16px; }
+          .pp-reviews-wrap { margin: 2px 16px 0; }
+          .pp-related { margin: 2px 16px 0; padding: 16px; }
+          .pp-related-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+      `}</style>
+
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(productJsonLd),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
       />
-      <div className="mx-auto w-full max-w-[1800px] px-4 pb-16 pt-6 md:px-6 lg:px-8">
-        <nav
-          aria-label="Breadcrumb"
-          className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400"
-        >
-          <Link
-            href="/"
-            className="transition-colors hover:text-neutral-900 dark:hover:text-neutral-100"
-          >
-            Home
-          </Link>
-          <span aria-hidden="true">/</span>
-          <Link
-            href="/products"
-            className="transition-colors hover:text-neutral-900 dark:hover:text-neutral-100"
-          >
-            Shop
-          </Link>
-          <span aria-hidden="true">/</span>
-          <span className="text-neutral-700 dark:text-neutral-200">
-            {product.title}
+
+      <div className="pp-root">
+        {/* Breadcrumb */}
+        <nav aria-label="Breadcrumb" className="pp-breadcrumb">
+          <Link href="/">Home</Link>
+          <span className="pp-breadcrumb-sep" aria-hidden="true">
+            /
           </span>
+          <Link href="/products">Shop</Link>
+          <span className="pp-breadcrumb-sep" aria-hidden="true">
+            /
+          </span>
+          <span className="pp-breadcrumb-current">{product.title}</span>
         </nav>
 
-        <section className="mt-6 rounded-[32px] border border-neutral-200 bg-white/90 p-6 shadow-sm backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-950/90 md:p-10">
-          <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
-            <div className="h-full w-full">
+        {/* Main product shell */}
+        <div className="pp-shell">
+          <div className="pp-inner">
+            {/* Gallery */}
+            <div className="pp-gallery-col">
               <Suspense
                 fallback={
-                  <div className="relative aspect-[3/4] h-full max-h-[700px] w-full overflow-hidden rounded-2xl bg-neutral-100 dark:bg-neutral-900" />
+                  <div
+                    style={{
+                      aspectRatio: "3/4",
+                      background: "rgba(242,232,213,0.02)",
+                      border: "1px solid var(--border)",
+                    }}
+                  />
                 }
               >
                 <Gallery
                   images={product.images
                     .slice(0, 5)
                     .map((image: ProductImage) => ({
-                    src: image.url,
-                    altText: image.altText,
-                    width: image.width,
-                    height: image.height,
-                  }))}
+                      src: image.url,
+                      altText: image.altText,
+                      width: image.width,
+                      height: image.height,
+                    }))}
                 />
               </Suspense>
             </div>
 
-            <div className="lg:sticky lg:top-24">
+            {/* Info panel */}
+            <div className="pp-info-col">
               <Suspense fallback={null}>
                 <ProductDescription
                   product={product}
@@ -172,75 +362,67 @@ export default async function ProductPage(props: {
               </Suspense>
             </div>
           </div>
-        </section>
+        </div>
 
-        <ProductReviewsSection
-          productId={product.id}
-          productHandle={product.handle}
-        />
+        {/* Reviews */}
+        <div className="pp-reviews-wrap">
+          <ProductReviewsSection
+            productId={product.id}
+            productHandle={product.handle}
+          />
+        </div>
+
+        {/* Related products */}
         <RelatedProducts id={product.id} />
+
+        <Footer />
       </div>
-      <Footer />
     </>
   );
 }
 
 async function RelatedProducts({ id }: { id: string }) {
   const relatedProducts = await getProductRecommendations(id);
-
   if (!relatedProducts.length) return null;
 
   return (
-    <section className="mt-12 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-black sm:p-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <section className="pp-related">
+      <div className="pp-accent-line" />
+      <div className="pp-related-header">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
-            You may also like
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-            Related products
-          </h2>
+          <p className="pp-related-eyebrow">You may also like</p>
+          <h2 className="pp-related-title">Related products</h2>
         </div>
-        <Link
-          href="/products"
-          className="text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
-        >
-          Shop all products
+        <Link href="/products" className="pp-related-link">
+          Shop all
         </Link>
       </div>
-      <ul className="no-scrollbar mt-6 flex w-full gap-4 overflow-x-auto pb-4 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+
+      <ul className="pp-related-grid">
         {relatedProducts.map((product, index) => (
-          <li
-            key={`${product.handle}-${index}`}
-            className="w-[70%] flex-none sm:w-auto"
-          >
+          <li key={`${product.handle}-${index}`}>
             <Link
-              className="group flex h-full flex-col rounded-2xl border border-neutral-200 bg-white p-3 transition-all hover:-translate-y-1 hover:border-neutral-300 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-neutral-700"
+              className="pp-related-card"
               href={`/product/${product.handle}`}
               prefetch={true}
             >
-              <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-900">
+              <div className="pp-related-img">
                 {product.featuredImage?.url ? (
                   <Image
                     src={product.featuredImage.url}
                     alt={product.featuredImage.altText || product.title}
                     fill
-                    sizes="(min-width: 1280px) 18vw, (min-width: 1024px) 22vw, (min-width: 640px) 35vw, 70vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                    sizes="(min-width: 1280px) 18vw, (min-width: 1024px) 22vw, (min-width: 640px) 35vw, 50vw"
                   />
                 ) : null}
               </div>
-              <div className="mt-4 space-y-1 px-1 pb-2">
-                <p className="line-clamp-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                  {product.title}
-                </p>
+              <div className="pp-related-info">
+                <p className="pp-related-name">{product.title}</p>
                 <Price
                   amount={product.priceRange.maxVariantPrice.amount}
-                  currencyCode={
-                    product.priceRange.maxVariantPrice.currencyCode
-                  }
+                  currencyCode={product.priceRange.maxVariantPrice.currencyCode}
                   currencyCodeClassName="hidden"
-                  className="text-sm text-neutral-600 dark:text-neutral-300"
+                  className="pp-related-price"
                 />
               </div>
             </Link>

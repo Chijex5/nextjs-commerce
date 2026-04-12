@@ -57,54 +57,35 @@ export default function CartModal() {
   const { data: session, status } = useUserSession();
   const [isOpen, setIsOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
-  const [activeSheet, setActiveSheet] = useState<
-    "coupon" | "note" | "shipping" | null
-  >(null);
+  const [activeSheet, setActiveSheet] = useState<"coupon" | "note" | "shipping" | null>(null);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [shippingDiscountAmount, setShippingDiscountAmount] = useState(0);
   const [couponCode, setCouponCode] = useState("");
   const [orderNote, setOrderNote] = useState("");
   const [noteDraft, setNoteDraft] = useState("");
-  const [shippingAddress, setShippingAddress] = useState<{
-    state?: string;
-    lga?: string;
-    ward?: string;
-  } | null>(null);
+  const [shippingAddress, setShippingAddress] = useState<{ state?: string; lga?: string; ward?: string } | null>(null);
   const [shippingLoading, setShippingLoading] = useState(false);
   const quantityRef = useRef(cart?.totalQuantity);
   const openCart = () => setIsOpen(true);
-  const closeCart = () => {
-    setIsOpen(false);
-    setActiveSheet(null);
-  };
+  const closeCart = () => { setIsOpen(false); setActiveSheet(null); };
+
   const baseSummaryTotal = cart
     ? Math.max(parseFloat(cart.cost.totalAmount.amount) - discountAmount, 0)
     : 0;
+
   const shippingPreview = useMemo(() => {
     if (!cart || !shippingAddress?.state) return null;
     const subtotal = parseFloat(cart.cost.subtotalAmount.amount);
-    const totalQuantity = cart.lines.reduce(
-      (sum, line) => sum + line.quantity,
-      0,
-    );
-    return calculateShippingAmount({
-      address: shippingAddress,
-      subtotalAmount: subtotal,
-      totalQuantity,
-    });
+    const totalQuantity = cart.lines.reduce((sum, line) => sum + line.quantity, 0);
+    return calculateShippingAmount({ address: shippingAddress, subtotalAmount: subtotal, totalQuantity });
   }, [cart, shippingAddress]);
 
   const effectiveShippingDiscount =
     shippingPreview !== null
-      ? Math.min(
-          Math.max(shippingDiscountAmount, 0),
-          Math.max(shippingPreview, 0),
-        )
+      ? Math.min(Math.max(shippingDiscountAmount, 0), Math.max(shippingPreview, 0))
       : 0;
   const netShippingPreview =
-    shippingPreview !== null
-      ? Math.max(shippingPreview - effectiveShippingDiscount, 0)
-      : null;
+    shippingPreview !== null ? Math.max(shippingPreview - effectiveShippingDiscount, 0) : null;
   const summaryTotal =
     netShippingPreview !== null
       ? Math.max(baseSummaryTotal + (netShippingPreview ?? 0), 0)
@@ -129,124 +110,63 @@ export default function CartModal() {
     setDiscountAmount(amount);
     setShippingDiscountAmount(couponMeta?.shippingDiscountAmount || 0);
     setCouponCode(code);
-    if (activeSheet === "coupon" && amount > 0) {
-      setActiveSheet(null);
-    }
+    if (activeSheet === "coupon" && amount > 0) setActiveSheet(null);
   };
 
   const handleRemoveCoupon = () => {
     setDiscountAmount(0);
     setShippingDiscountAmount(0);
     setCouponCode("");
-    try {
-      localStorage.removeItem(COUPON_STORAGE_KEY);
-    } catch {
-      // Ignore storage errors.
-    }
+    try { localStorage.removeItem(COUPON_STORAGE_KEY); } catch { }
   };
 
   useEffect(() => {
-    if (status !== "authenticated") {
-      setShippingAddress(null);
-      return;
-    }
-
+    if (status !== "authenticated") { setShippingAddress(null); return; }
     let isMounted = true;
     const fetchAddress = async () => {
       setShippingLoading(true);
       try {
         const response = await fetch("/api/user-auth/addresses");
-        if (!response.ok) {
-          if (isMounted) {
-            setShippingAddress(null);
-          }
-          return;
-        }
+        if (!response.ok) { if (isMounted) setShippingAddress(null); return; }
         const data = await response.json();
-        const address = data?.addresses?.shippingAddress || null;
-        if (isMounted) {
-          setShippingAddress(address);
-        }
-      } catch {
-        if (isMounted) {
-          setShippingAddress(null);
-        }
-      } finally {
-        if (isMounted) {
-          setShippingLoading(false);
-        }
-      }
+        if (isMounted) setShippingAddress(data?.addresses?.shippingAddress || null);
+      } catch { if (isMounted) setShippingAddress(null); }
+      finally { if (isMounted) setShippingLoading(false); }
     };
-
     void fetchAddress();
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [status]);
 
   useEffect(() => {
     let isMounted = true;
-
     const hydrateStoredCoupon = async () => {
       if (!cart?.id) {
-        if (isMounted) {
-          setDiscountAmount(0);
-          setCouponCode("");
-        }
+        if (isMounted) { setDiscountAmount(0); setCouponCode(""); }
         return;
       }
-
       try {
-        const customerKey = getCouponCustomerKey(
-          status === "authenticated" ? session?.id : undefined,
-        );
+        const customerKey = getCouponCustomerKey(status === "authenticated" ? session?.id : undefined);
         const storedCoupon = getStoredCoupon(cart.id, customerKey);
-
         if (!storedCoupon) {
-          if (isMounted) {
-            setDiscountAmount(0);
-            setShippingDiscountAmount(0);
-            setCouponCode("");
-          }
+          if (isMounted) { setDiscountAmount(0); setShippingDiscountAmount(0); setCouponCode(""); }
           return;
         }
-
-        const payload: {
-          code: string;
-          cartTotal: number;
-          shippingAmount: number;
-          sessionId?: string;
-        } = {
+        const payload: { code: string; cartTotal: number; shippingAmount: number; sessionId?: string } = {
           code: storedCoupon.code,
           cartTotal: parseFloat(cart.cost.subtotalAmount.amount),
           shippingAmount: shippingPreview ?? 0,
         };
-
-        if (status !== "authenticated") {
-          payload.sessionId = customerKey.replace("guest:", "");
-        }
-
+        if (status !== "authenticated") payload.sessionId = customerKey.replace("guest:", "");
         const response = await fetch("/api/coupons/validate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-
         if (!response.ok) {
-          logCouponDebug("Hydrate revalidation failed", {
-            cartId: cart.id,
-            customerKey,
-            status: response.status,
-            payload,
-          });
-          if (isMounted) {
-            setDiscountAmount(0);
-            setShippingDiscountAmount(0);
-            setCouponCode("");
-          }
+          logCouponDebug("Hydrate revalidation failed", { cartId: cart.id, customerKey, status: response.status, payload });
+          if (isMounted) { setDiscountAmount(0); setShippingDiscountAmount(0); setCouponCode(""); }
           return;
         }
-
         const data = await response.json();
         if (isMounted) {
           setDiscountAmount(data.coupon.discountAmount || 0);
@@ -254,39 +174,17 @@ export default function CartModal() {
           setCouponCode(data.coupon.code || "");
         }
       } catch {
-        logCouponDebug("Hydrate revalidation error", {
-          cartId: cart.id,
-        });
-        if (isMounted) {
-          setDiscountAmount(0);
-          setShippingDiscountAmount(0);
-          setCouponCode("");
-        }
+        logCouponDebug("Hydrate revalidation error", { cartId: cart.id });
+        if (isMounted) { setDiscountAmount(0); setShippingDiscountAmount(0); setCouponCode(""); }
       }
     };
-
     void hydrateStoredCoupon();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [
-    cart?.id,
-    cart?.cost.subtotalAmount.amount,
-    session?.id,
-    shippingPreview,
-    status,
-  ]);
+    return () => { isMounted = false; };
+  }, [cart?.id, cart?.cost.subtotalAmount.amount, session?.id, shippingPreview, status]);
 
   useEffect(() => {
-    if (
-      cart?.totalQuantity &&
-      cart?.totalQuantity !== quantityRef.current &&
-      cart?.totalQuantity > 0
-    ) {
-      if (!isOpen) {
-        setIsOpen(true);
-      }
+    if (cart?.totalQuantity && cart?.totalQuantity !== quantityRef.current && cart?.totalQuantity > 0) {
+      if (!isOpen) setIsOpen(true);
       quantityRef.current = cart?.totalQuantity;
     }
   }, [isOpen, cart?.totalQuantity, quantityRef]);
@@ -294,52 +192,124 @@ export default function CartModal() {
   useEffect(() => {
     try {
       const storedNote = localStorage.getItem(ORDER_NOTE_STORAGE_KEY);
-      if (storedNote) {
-        setOrderNote(storedNote);
-      }
-    } catch {
-      // Ignore storage errors.
-    }
+      if (storedNote) setOrderNote(storedNote);
+    } catch { }
   }, []);
 
-  const openNoteSheet = () => {
-    setNoteDraft(orderNote);
-    setActiveSheet("note");
-  };
-
+  const openNoteSheet = () => { setNoteDraft(orderNote); setActiveSheet("note"); };
   const handleSaveNote = () => {
     const trimmedNote = noteDraft.trim();
     setOrderNote(trimmedNote);
     try {
-      if (trimmedNote) {
-        localStorage.setItem(ORDER_NOTE_STORAGE_KEY, trimmedNote);
-      } else {
-        localStorage.removeItem(ORDER_NOTE_STORAGE_KEY);
-      }
-    } catch {
-      // Ignore storage errors.
-    }
+      if (trimmedNote) localStorage.setItem(ORDER_NOTE_STORAGE_KEY, trimmedNote);
+      else localStorage.removeItem(ORDER_NOTE_STORAGE_KEY);
+    } catch { }
     setActiveSheet(null);
   };
 
   return (
     <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;1,300&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+        :root {
+          --dp-ink:     #0A0704;
+          --dp-charcoal:#191209;
+          --dp-card:    #1E1510;
+          --dp-cream:   #F2E8D5;
+          --dp-sand:    #C9B99A;
+          --dp-muted:   #6A5A48;
+          --dp-ember:   #BF5A28;
+          --dp-gold:    #C0892A;
+          --dp-green:   #4A8C5C;
+          --dp-border:  rgba(242,232,213,0.09);
+        }
+        .dp-cart-wordmark { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.1em; }
+        .dp-cart-sans     { font-family: 'DM Sans', sans-serif; }
+
+        .dp-cart-action-btn {
+          display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+          flex: 1;
+          background: var(--dp-card);
+          border: 1px solid var(--dp-border);
+          padding: 0.6rem 0.65rem;
+          cursor: pointer;
+          transition: border-color 0.2s, background 0.2s;
+          text-align: left;
+        }
+        .dp-cart-action-btn:hover {
+          border-color: rgba(242,232,213,0.2);
+          background: rgba(242,232,213,0.04);
+        }
+        .dp-cart-action-btn.active {
+          border-color: var(--dp-ember);
+        }
+
+        .dp-summary-row {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 0.55rem 1rem;
+          border-bottom: 1px solid var(--dp-border);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.75rem;
+          color: var(--dp-muted);
+        }
+        .dp-summary-row:last-child { border-bottom: none; }
+
+        .dp-cart-item {
+          display: flex; width: 100%; flex-direction: row; justify-content: space-between;
+          padding: 0.875rem 0.25rem;
+          border-bottom: 1px solid var(--dp-border);
+          position: relative;
+        }
+
+        @keyframes dp-slide-in {
+          from { transform: translateX(100%); }
+          to   { transform: translateX(0); }
+        }
+        @keyframes dp-slide-out {
+          from { transform: translateX(0); }
+          to   { transform: translateX(100%); }
+        }
+        @keyframes dp-sheet-up {
+          from { transform: translateY(100%); opacity: 0; }
+          to   { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Qty button */
+        .dp-qty-btn {
+          display: flex; align-items: center; justify-content: center;
+          width: 1.75rem; height: 1.75rem;
+          border: 1px solid var(--dp-border);
+          background: transparent; color: var(--dp-muted); cursor: pointer;
+          transition: border-color 0.2s, color 0.2s;
+        }
+        .dp-qty-btn:hover { border-color: rgba(242,232,213,0.3); color: var(--dp-cream); }
+
+        /* Scrollbar */
+        .dp-cart-scroll::-webkit-scrollbar { width: 3px; }
+        .dp-cart-scroll::-webkit-scrollbar-track { background: transparent; }
+        .dp-cart-scroll::-webkit-scrollbar-thumb { background: var(--dp-border); }
+      `}</style>
+
       <button aria-label="Open cart" onClick={openCart}>
         <OpenCart quantity={cart?.totalQuantity} />
       </button>
+
       <Transition show={isOpen}>
         <Dialog onClose={closeCart} className="relative z-50">
+          {/* Backdrop */}
           <Transition.Child
             as={Fragment}
             enter="transition-all ease-in-out duration-300"
-            enterFrom="opacity-0 backdrop-blur-none"
-            enterTo="opacity-100 backdrop-blur-[.5px]"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
             leave="transition-all ease-in-out duration-200"
-            leaveFrom="opacity-100 backdrop-blur-[.5px]"
-            leaveTo="opacity-0 backdrop-blur-none"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+            <div className="fixed inset-0" style={{ background: "rgba(6,4,2,0.7)", backdropFilter: "blur(2px)" }} aria-hidden="true" />
           </Transition.Child>
+
+          {/* Panel */}
           <Transition.Child
             as={Fragment}
             enter="transition-all ease-in-out duration-300"
@@ -349,391 +319,495 @@ export default function CartModal() {
             leaveFrom="translate-x-0"
             leaveTo="translate-x-full"
           >
-            <Dialog.Panel className="fixed bottom-0 right-0 top-0 flex h-full w-full flex-col border-l border-neutral-200 bg-white/80 p-6 text-black backdrop-blur-xl md:w-[390px] dark:border-neutral-700 dark:bg-black/80 dark:text-white">
-              <div className="flex items-center justify-between">
-                <p className="text-lg font-semibold">My Cart</p>
-                <button aria-label="Close cart" onClick={closeCart}>
-                  <CloseCart />
+            <Dialog.Panel
+              className="dp-cart-sans fixed bottom-0 right-0 top-0 flex h-full w-full flex-col md:w-[400px]"
+              style={{
+                background: "var(--dp-ink)",
+                borderLeft: "1px solid var(--dp-border)",
+              }}
+            >
+              {/* Top ember accent */}
+              <div style={{ height: 2, background: "linear-gradient(90deg, var(--dp-ember), var(--dp-gold) 60%, transparent 100%)", flexShrink: 0 }} />
+
+              {/* Header */}
+              <div
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "1.1rem 1.25rem 1rem",
+                  borderBottom: "1px solid var(--dp-border)",
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                  <span
+                    className="dp-cart-wordmark"
+                    style={{ fontSize: "1.1rem", color: "var(--dp-cream)", letterSpacing: "0.12em" }}
+                  >
+                    Your Cart
+                  </span>
+                  {cart && cart.lines.length > 0 && (
+                    <span
+                      style={{
+                        fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", fontWeight: 500,
+                        letterSpacing: "0.1em", color: "var(--dp-ember)",
+                        border: "1px solid var(--dp-ember)", padding: "1px 7px",
+                      }}
+                    >
+                      {cart.totalQuantity} {cart.totalQuantity === 1 ? "ITEM" : "ITEMS"}
+                    </span>
+                  )}
+                </div>
+                <button
+                  aria-label="Close cart"
+                  onClick={closeCart}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: "2rem", height: "2rem",
+                    border: "1px solid var(--dp-border)",
+                    background: "transparent", color: "var(--dp-muted)", cursor: "pointer",
+                    transition: "border-color 0.2s, color 0.2s",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(242,232,213,0.3)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--dp-cream)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--dp-border)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--dp-muted)"; }}
+                >
+                  <XMarkIcon style={{ width: "1rem", height: "1rem" }} />
                 </button>
               </div>
 
+              {/* Empty state */}
               {!cart || cart.lines.length === 0 ? (
-                <div className="mt-20 flex w-full flex-col items-center justify-center overflow-hidden">
-                  <ShoppingCartIcon className="h-16" />
-                  <p className="mt-6 text-center text-2xl font-bold">
-                    Your cart is empty.
+                <div
+                  style={{
+                    flex: 1, display: "flex", flexDirection: "column",
+                    alignItems: "center", justifyContent: "center", gap: "1rem",
+                    padding: "2rem",
+                  }}
+                >
+                  <ShoppingCartIcon style={{ width: "3rem", height: "3rem", color: "var(--dp-muted)" }} />
+                  <p
+                    className="dp-cart-wordmark"
+                    style={{ fontSize: "1.5rem", color: "var(--dp-sand)", letterSpacing: "0.1em", textAlign: "center" }}
+                  >
+                    Your cart is empty
                   </p>
+                  <p style={{ fontSize: "0.75rem", color: "var(--dp-muted)", textAlign: "center", lineHeight: 1.6 }}>
+                    Discover our handcrafted footwear collection
+                  </p>
+                  <Link
+                    href="/products"
+                    onClick={closeCart}
+                    style={{
+                      marginTop: "0.5rem",
+                      display: "inline-flex", alignItems: "center", gap: "0.4rem",
+                      background: "var(--dp-ember)", color: "var(--dp-cream)",
+                      fontFamily: "DM Sans, sans-serif", fontWeight: 500,
+                      fontSize: "0.68rem", letterSpacing: "0.14em", textTransform: "uppercase",
+                      padding: "0.75rem 1.75rem", textDecoration: "none",
+                      transition: "opacity 0.2s",
+                    }}
+                  >
+                    Shop Collection
+                  </Link>
                 </div>
               ) : (
-                <div className="flex h-full flex-col justify-between overflow-hidden p-1">
-                  <ul className="grow overflow-auto py-4">
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+                  {/* Cart items */}
+                  <ul
+                    className="dp-cart-scroll"
+                    style={{ flex: 1, overflowY: "auto", padding: "0 1.25rem" }}
+                  >
                     {cart.lines
-                      .sort((a, b) =>
-                        a.merchandise.product.title.localeCompare(
-                          b.merchandise.product.title,
-                        ),
-                      )
+                      .sort((a, b) => a.merchandise.product.title.localeCompare(b.merchandise.product.title))
                       .map((item) => {
-                        const merchandiseSearchParams =
-                          {} as MerchandiseSearchParams;
-
-                        item.merchandise.selectedOptions.forEach(
-                          ({ name, value }) => {
-                            if (value !== DEFAULT_OPTION) {
-                              merchandiseSearchParams[name.toLowerCase()] =
-                                value;
-                            }
-                          },
-                        );
-
+                        const merchandiseSearchParams = {} as MerchandiseSearchParams;
+                        item.merchandise.selectedOptions.forEach(({ name, value }) => {
+                          if (value !== DEFAULT_OPTION) merchandiseSearchParams[name.toLowerCase()] = value;
+                        });
                         const merchandiseUrl = createUrl(
                           `/product/${item.merchandise.product.handle}`,
                           new URLSearchParams(merchandiseSearchParams),
                         );
 
                         return (
-                          <li
-                            key={item.id ?? item.merchandise.id}
-                            className="flex w-full flex-col border-b border-neutral-300 dark:border-neutral-700"
-                          >
-                            <div className="relative flex w-full flex-row justify-between px-1 py-4">
-                              <div className="absolute z-40 -ml-1 -mt-2">
-                                <DeleteItemButton item={item} />
-                              </div>
-                              <div className="flex flex-row">
-                                <div className="relative h-16 w-16 overflow-hidden rounded-md border border-neutral-300 bg-neutral-300 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:bg-neutral-800">
-                                  <Image
-                                    className="h-full w-full object-cover"
-                                    width={64}
-                                    height={64}
-                                    alt={
-                                      item.merchandise.product.featuredImage
-                                        .altText ||
-                                      item.merchandise.product.title
-                                    }
-                                    src={
-                                      item.merchandise.product.featuredImage.url
-                                    }
-                                  />
-                                </div>
-                                <Link
-                                  href={merchandiseUrl}
-                                  onClick={closeCart}
-                                  className="z-30 ml-2 flex flex-row space-x-4"
-                                >
-                                  <div className="flex flex-1 flex-col text-base">
-                                    <span className="leading-tight">
-                                      {item.merchandise.product.title}
-                                    </span>
-                                    {item.merchandise.title !==
-                                    DEFAULT_OPTION ? (
-                                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                        {item.merchandise.title}
-                                      </p>
-                                    ) : null}
-                                  </div>
-                                </Link>
-                              </div>
-                              <div className="flex h-16 flex-col justify-between">
-                                <Price
-                                  className="flex justify-end space-y-2 text-right text-sm"
-                                  amount={item.cost.totalAmount.amount}
-                                  currencyCode={
-                                    item.cost.totalAmount.currencyCode
-                                  }
+                          <li key={item.id ?? item.merchandise.id} className="dp-cart-item">
+                            {/* Delete */}
+                            <div style={{ position: "absolute", top: "0.6rem", left: "-0.25rem", zIndex: 10 }}>
+                              <DeleteItemButton item={item} />
+                            </div>
+
+                            <div style={{ display: "flex", gap: "0.75rem", flex: 1, minWidth: 0 }}>
+                              {/* Image */}
+                              <div
+                                style={{
+                                  position: "relative", width: 68, height: 68, flexShrink: 0,
+                                  background: "var(--dp-charcoal)", overflow: "hidden",
+                                }}
+                              >
+                                <Image
+                                  fill
+                                  sizes="68px"
+                                  className="object-cover"
+                                  alt={item.merchandise.product.featuredImage?.altText || item.merchandise.product.title}
+                                  src={item.merchandise.product.featuredImage.url}
                                 />
-                                <div className="ml-auto flex h-9 flex-row items-center rounded-full border border-neutral-200 dark:border-neutral-700">
-                                  <EditItemQuantityButton
-                                    item={item}
-                                    type="minus"
-                                  />
-                                  <p className="w-6 text-center">
-                                    <span className="w-full text-sm">
-                                      {item.quantity}
-                                    </span>
+                              </div>
+
+                              {/* Info */}
+                              <Link
+                                href={merchandiseUrl}
+                                onClick={closeCart}
+                                style={{ flex: 1, minWidth: 0, textDecoration: "none" }}
+                              >
+                                <p
+                                  className="line-clamp-2"
+                                  style={{ fontSize: "0.78rem", color: "var(--dp-sand)", lineHeight: 1.4, fontFamily: "DM Sans, sans-serif" }}
+                                >
+                                  {item.merchandise.product.title}
+                                </p>
+                                {item.merchandise.title !== DEFAULT_OPTION && (
+                                  <p style={{ fontSize: "0.68rem", color: "var(--dp-muted)", marginTop: "0.2rem", fontFamily: "DM Sans, sans-serif" }}>
+                                    {item.merchandise.title}
                                   </p>
-                                  <EditItemQuantityButton
-                                    item={item}
-                                    type="plus"
-                                  />
-                                </div>
+                                )}
+                              </Link>
+                            </div>
+
+                            {/* Price + Qty */}
+                            <div
+                              style={{
+                                display: "flex", flexDirection: "column", alignItems: "flex-end",
+                                justifyContent: "space-between", height: 68, flexShrink: 0, paddingLeft: "0.5rem",
+                              }}
+                            >
+                              <Price
+                                amount={item.cost.totalAmount.amount}
+                                currencyCode={item.cost.totalAmount.currencyCode}
+                                currencyCodeClassName="hidden"
+                                className="dp-cart-wordmark"
+                                style={{ fontSize: "0.9rem", color: "var(--dp-cream)" } as React.CSSProperties}
+                              />
+                              <div style={{ display: "flex", alignItems: "center", border: "1px solid var(--dp-border)" }}>
+                                <EditItemQuantityButton item={item} type="minus" />
+                                <span
+                                  style={{
+                                    width: "1.6rem", textAlign: "center",
+                                    fontSize: "0.72rem", fontFamily: "DM Sans, sans-serif", color: "var(--dp-sand)",
+                                  }}
+                                >
+                                  {item.quantity}
+                                </span>
+                                <EditItemQuantityButton item={item} type="plus" />
                               </div>
                             </div>
                           </li>
                         );
                       })}
                   </ul>
-                  <div className="border-t border-neutral-200 pt-3 text-xs text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-                    <div className="grid grid-cols-3 gap-2">
+
+                  {/* Bottom area */}
+                  <div style={{ flexShrink: 0, padding: "0.875rem 1.25rem 1.25rem", borderTop: "1px solid var(--dp-border)" }}>
+
+                    {/* Action buttons: note / shipping / coupon */}
+                    <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.875rem" }}>
                       <button
                         type="button"
                         onClick={openNoteSheet}
-                        className="flex flex-col items-start gap-1 rounded-lg border border-neutral-200 bg-white px-2 py-2 text-left text-xs font-medium text-neutral-800 transition hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                        className={clsx("dp-cart-action-btn", activeSheet === "note" && "active")}
                       >
-                        <div className="flex items-center gap-2">
-                          <PencilSquareIcon className="h-4 w-4" />
-                          <span>Order note</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", color: "var(--dp-sand)" }}>
+                          <PencilSquareIcon style={{ width: "0.85rem", height: "0.85rem" }} />
+                          <span style={{ fontSize: "0.65rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase" }}>Note</span>
                         </div>
-                        <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                          {orderNote ? "Added" : "Optional"}
+                        <span style={{ fontSize: "0.6rem", color: orderNote ? "var(--dp-ember)" : "var(--dp-muted)" }}>
+                          {orderNote ? "Added ✓" : "Optional"}
                         </span>
                       </button>
+
                       <button
                         type="button"
                         onClick={() => setActiveSheet("shipping")}
-                        className="flex flex-col items-start gap-1 rounded-lg border border-neutral-200 bg-white px-2 py-2 text-left text-xs font-medium text-neutral-800 transition hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                        className={clsx("dp-cart-action-btn", activeSheet === "shipping" && "active")}
                       >
-                        <div className="flex items-center gap-2">
-                          <TruckIcon className="h-4 w-4" />
-                          <span>Shipping</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", color: "var(--dp-sand)" }}>
+                          <TruckIcon style={{ width: "0.85rem", height: "0.85rem" }} />
+                          <span style={{ fontSize: "0.65rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase" }}>Shipping</span>
                         </div>
-                        <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                          {shippingLoading
-                            ? "Loading"
-                            : shippingPreview !== null
-                              ? `₦${shippingPreview.toLocaleString()}`
-                              : "Calculated at checkout"}
+                        <span style={{ fontSize: "0.6rem", color: "var(--dp-muted)" }}>
+                          {shippingLoading ? "Loading…" : shippingPreview !== null ? `₦${shippingPreview.toLocaleString()}` : "At checkout"}
                         </span>
                       </button>
+
                       <button
                         type="button"
-                        onClick={() => {
-                          if (couponCode) {
-                            handleRemoveCoupon();
-                            return;
-                          }
-                          setActiveSheet("coupon");
-                        }}
-                        className="flex flex-col items-start gap-1 rounded-lg border border-neutral-200 bg-white px-2 py-2 text-left text-xs font-medium text-neutral-800 transition hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                        onClick={() => { if (couponCode) { handleRemoveCoupon(); return; } setActiveSheet("coupon"); }}
+                        className={clsx("dp-cart-action-btn", activeSheet === "coupon" && "active", couponCode && "active")}
                       >
-                        <div className="flex items-center gap-2">
-                          <TagIcon className="h-4 w-4" />
-                          <span>Discount</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", color: couponCode ? "var(--dp-ember)" : "var(--dp-sand)" }}>
+                          <TagIcon style={{ width: "0.85rem", height: "0.85rem" }} />
+                          <span style={{ fontSize: "0.65rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                            {couponCode ? "Applied" : "Coupon"}
+                          </span>
                         </div>
-                        <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                        <span style={{ fontSize: "0.6rem", color: couponCode ? "var(--dp-ember)" : "var(--dp-muted)" }}>
                           {couponCode ? `Remove ${couponCode}` : "Add code"}
                         </span>
                       </button>
                     </div>
-                  </div>
-                  <div className="space-y-4 pb-3 pt-2">
-                    <div className="overflow-hidden rounded-xl border border-neutral-200/70 bg-white/70 text-sm text-neutral-600 shadow-sm shadow-neutral-200/30 backdrop-blur dark:border-neutral-700/70 dark:bg-neutral-900/70 dark:text-neutral-300 dark:shadow-none">
+
+                    {/* Order summary */}
+                    <div
+                      style={{
+                        border: "1px solid var(--dp-border)",
+                        marginBottom: "0.875rem",
+                        background: "var(--dp-charcoal)",
+                      }}
+                    >
                       <button
                         type="button"
-                        onClick={() => setIsSummaryOpen((prev) => !prev)}
-                        className="flex w-full items-center justify-between px-4 py-3 text-left"
+                        onClick={() => setIsSummaryOpen((p) => !p)}
+                        style={{
+                          display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between",
+                          padding: "0.75rem 1rem",
+                          background: "transparent", border: "none", cursor: "pointer",
+                        }}
                         aria-expanded={isSummaryOpen}
                       >
                         <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
-                            Order summary
+                          <p
+                            style={{
+                              fontFamily: "DM Sans, sans-serif", fontSize: "0.58rem", fontWeight: 500,
+                              letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--dp-ember)",
+                              marginBottom: "0.2rem",
+                            }}
+                          >
+                            Order Summary
                           </p>
-                          <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-white">
-                            <span>Total</span>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                             <span
-                              suppressHydrationWarning={true}
-                              className="text-sm font-semibold text-neutral-900 dark:text-white"
+                              className="dp-cart-wordmark"
+                              style={{ fontSize: "1.15rem", color: "var(--dp-cream)" }}
+                              suppressHydrationWarning
                             >
                               {formattedSummaryTotal}
                             </span>
-                            <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                            <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", color: "var(--dp-muted)", letterSpacing: "0.08em" }}>
                               {summaryCurrency}
                             </span>
                           </div>
                         </div>
                         <ChevronDownIcon
-                          className={clsx(
-                            "h-5 w-5 text-neutral-500 transition-transform dark:text-neutral-400",
-                            isSummaryOpen && "rotate-180",
-                          )}
+                          style={{
+                            width: "1rem", height: "1rem", color: "var(--dp-muted)",
+                            transition: "transform 0.2s",
+                            transform: isSummaryOpen ? "rotate(180deg)" : "rotate(0deg)",
+                          }}
                         />
                       </button>
-                      {isSummaryOpen ? (
-                        <>
-                          <div className="divide-y divide-neutral-200/70 border-t border-neutral-200/70 dark:divide-neutral-700/70 dark:border-neutral-700/70">
-                            <div className="flex items-center justify-between px-4 py-2.5">
-                              <p>Subtotal</p>
-                              <Price
-                                className="text-right text-sm font-medium text-neutral-900 dark:text-white"
-                                amount={cart.cost.subtotalAmount.amount}
-                                currencyCode={
-                                  cart.cost.subtotalAmount.currencyCode
-                                }
-                              />
-                            </div>
-                            {discountAmount > 0 && (
-                              <div className="flex items-center justify-between gap-3 px-4 py-2.5">
-                                <p className="truncate text-emerald-700 dark:text-emerald-400">
-                                  Discount ({couponCode})
-                                </p>
-                                <div className="flex items-center gap-3">
-                                  <p className="text-right text-sm font-semibold text-emerald-700 dark:text-emerald-400">
-                                    -₦{discountAmount.toFixed(2)}
-                                  </p>
-                                  <button
-                                    type="button"
-                                    onClick={handleRemoveCoupon}
-                                    className="text-xs font-medium text-emerald-700 underline-offset-2 hover:underline dark:text-emerald-300"
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                            <div className="flex items-center justify-between px-4 py-2.5">
-                              <p>Taxes</p>
-                              <Price
-                                className="text-right text-sm font-medium text-neutral-900 dark:text-white"
-                                amount={cart.cost.totalTaxAmount.amount}
-                                currencyCode={
-                                  cart.cost.totalTaxAmount.currencyCode
-                                }
-                              />
-                            </div>
-                            <div className="flex items-center justify-between px-4 py-2.5">
-                              <p>Shipping</p>
-                              {shippingPreview !== null ? (
-                                <div className="text-right">
-                                  <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                                    ₦
-                                    {(netShippingPreview ?? 0).toLocaleString()}
-                                  </p>
-                                  {effectiveShippingDiscount > 0 && (
-                                    <p className="text-[11px] text-emerald-700 dark:text-emerald-400">
-                                      Saved ₦
-                                      {effectiveShippingDiscount.toFixed(2)}
-                                    </p>
-                                  )}
-                                </div>
-                              ) : (
-                                <p className="text-right text-xs text-neutral-500 dark:text-neutral-400">
-                                  Calculated at checkout
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex items-center justify-between px-4 py-3 text-base font-semibold text-neutral-900 dark:text-white">
-                              <p>Total</p>
-                              <Price
-                                className="text-right text-base font-semibold text-neutral-900 dark:text-white"
-                                amount={Math.max(
-                                  parseFloat(cart.cost.totalAmount.amount) -
-                                    discountAmount +
-                                    (netShippingPreview ?? 0),
-                                  0,
-                                ).toString()}
-                                currencyCode={
-                                  cart.cost.totalAmount.currencyCode
-                                }
-                              />
-                            </div>
+
+                      {isSummaryOpen && (
+                        <div style={{ borderTop: "1px solid var(--dp-border)" }}>
+                          <div className="dp-summary-row">
+                            <span>Subtotal</span>
+                            <Price
+                              amount={cart.cost.subtotalAmount.amount}
+                              currencyCode={cart.cost.subtotalAmount.currencyCode}
+                              currencyCodeClassName="hidden"
+                              style={{ color: "var(--dp-sand)", fontSize: "0.75rem" } as React.CSSProperties}
+                            />
                           </div>
-                        </>
-                      ) : null}
+                          {discountAmount > 0 && (
+                            <div className="dp-summary-row">
+                              <span style={{ color: "var(--dp-green)" }}>Discount ({couponCode})</span>
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                                <span style={{ color: "var(--dp-green)", fontFamily: "DM Sans, sans-serif" }}>-₦{discountAmount.toFixed(2)}</span>
+                                <button
+                                  type="button"
+                                  onClick={handleRemoveCoupon}
+                                  style={{
+                                    fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", fontWeight: 500,
+                                    color: "var(--dp-ember)", background: "none", border: "none", cursor: "pointer",
+                                    textDecoration: "underline", letterSpacing: "0.06em",
+                                  }}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          <div className="dp-summary-row">
+                            <span>Taxes</span>
+                            <Price
+                              amount={cart.cost.totalTaxAmount.amount}
+                              currencyCode={cart.cost.totalTaxAmount.currencyCode}
+                              currencyCodeClassName="hidden"
+                              style={{ color: "var(--dp-sand)", fontSize: "0.75rem" } as React.CSSProperties}
+                            />
+                          </div>
+                          <div className="dp-summary-row">
+                            <span>Shipping</span>
+                            {shippingPreview !== null ? (
+                              <div style={{ textAlign: "right" }}>
+                                <p style={{ color: "var(--dp-sand)", fontFamily: "DM Sans, sans-serif" }}>₦{(netShippingPreview ?? 0).toLocaleString()}</p>
+                                {effectiveShippingDiscount > 0 && (
+                                  <p style={{ fontSize: "0.65rem", color: "var(--dp-green)", fontFamily: "DM Sans, sans-serif" }}>
+                                    Saved ₦{effectiveShippingDiscount.toFixed(2)}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <span style={{ fontSize: "0.68rem", color: "var(--dp-muted)", fontFamily: "DM Sans, sans-serif" }}>At checkout</span>
+                            )}
+                          </div>
+                          <div className="dp-summary-row" style={{ borderTop: "1px solid var(--dp-border)" }}>
+                            <span style={{ fontFamily: "DM Sans, sans-serif", fontWeight: 500, color: "var(--dp-cream)", fontSize: "0.8rem" }}>Total</span>
+                            <Price
+                              amount={Math.max(
+                                parseFloat(cart.cost.totalAmount.amount) - discountAmount + (netShippingPreview ?? 0),
+                                0,
+                              ).toString()}
+                              currencyCode={cart.cost.totalAmount.currencyCode}
+                              currencyCodeClassName="hidden"
+                              className="dp-cart-wordmark"
+                              style={{ fontSize: "1rem", color: "var(--dp-cream)" } as React.CSSProperties}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  {status === "unauthenticated" && (
-                    <div className="mb-4 rounded-md border border-neutral-200 bg-white p-3 text-sm text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200">
-                      <p className="font-medium">
-                        Save your cart and track orders
-                      </p>
-                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                        Create an account for faster checkout next time.
-                      </p>
-                      <Link
-                        href="/auth/register?callbackUrl=/checkout"
-                        className="mt-2 inline-flex text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
-                        onClick={closeCart}
+
+                    {/* Auth nudge */}
+                    {status === "unauthenticated" && (
+                      <div
+                        style={{
+                          marginBottom: "0.875rem", padding: "0.75rem",
+                          border: "1px solid var(--dp-border)", background: "var(--dp-card)",
+                        }}
                       >
-                        Create account
-                      </Link>
-                    </div>
-                  )}
-                  <form
-                    action={redirectToCheckout}
-                    onSubmit={() => {
-                      const total = parseFloat(cart.cost.totalAmount.amount);
-                      const trackedTotal = Number.isFinite(total)
-                        ? Math.max(
-                            total - discountAmount + (netShippingPreview ?? 0),
-                            0,
-                          )
-                        : 0;
-                      trackInitiateCheckout(
-                        trackedTotal,
-                        cart.lines.map((line) => ({
-                          id: line.merchandise.product.id,
-                          name: line.merchandise.product.title,
-                          quantity: line.quantity,
-                        })),
-                      );
-                    }}
-                  >
-                    <CheckoutButton />
-                  </form>
+                        <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.72rem", fontWeight: 500, color: "var(--dp-sand)" }}>
+                          Save your cart &amp; track orders
+                        </p>
+                        <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.65rem", color: "var(--dp-muted)", marginTop: "0.2rem", lineHeight: 1.5 }}>
+                          Create an account for faster checkout.
+                        </p>
+                        <Link
+                          href="/auth/register?callbackUrl=/checkout"
+                          onClick={closeCart}
+                          style={{
+                            display: "inline-block", marginTop: "0.5rem",
+                            fontFamily: "DM Sans, sans-serif", fontSize: "0.62rem", fontWeight: 500,
+                            letterSpacing: "0.1em", textTransform: "uppercase",
+                            color: "var(--dp-ember)", textDecoration: "none",
+                            borderBottom: "1px solid var(--dp-ember)", paddingBottom: 1,
+                          }}
+                        >
+                          Create account →
+                        </Link>
+                      </div>
+                    )}
+
+                    {/* Checkout */}
+                    <form
+                      action={redirectToCheckout}
+                      onSubmit={() => {
+                        const total = parseFloat(cart.cost.totalAmount.amount);
+                        const trackedTotal = Number.isFinite(total)
+                          ? Math.max(total - discountAmount + (netShippingPreview ?? 0), 0)
+                          : 0;
+                        trackInitiateCheckout(
+                          trackedTotal,
+                          cart.lines.map((line) => ({
+                            id: line.merchandise.product.id,
+                            name: line.merchandise.product.title,
+                            quantity: line.quantity,
+                          })),
+                        );
+                      }}
+                    >
+                      <CheckoutButton />
+                    </form>
+                  </div>
                 </div>
               )}
+
+              {/* Sheet overlays */}
               <CartSheet
                 open={activeSheet !== null}
                 title={
-                  activeSheet === "note"
-                    ? "Order note"
-                    : activeSheet === "shipping"
-                      ? "Shipping"
-                      : "Discount code"
+                  activeSheet === "note" ? "Order Note"
+                  : activeSheet === "shipping" ? "Shipping"
+                  : "Discount Code"
                 }
                 onClose={() => setActiveSheet(null)}
               >
                 {activeSheet === "coupon" && (
                   <CouponInput
                     onApply={handleCouponApply}
-                    cartTotal={
-                      cart ? parseFloat(cart.cost.subtotalAmount.amount) : 0
-                    }
+                    cartTotal={cart ? parseFloat(cart.cost.subtotalAmount.amount) : 0}
                     shippingAmount={shippingPreview ?? 0}
                     cartId={cart?.id || ""}
                   />
                 )}
                 {activeSheet === "note" && (
-                  <div className="space-y-4">
-                    <div>
-                      <label
-                        htmlFor="order-note"
-                        className="block text-sm font-medium text-neutral-900 dark:text-neutral-100"
-                      >
-                        Order special instructions
-                      </label>
-                      <textarea
-                        id="order-note"
-                        value={noteDraft}
-                        onChange={(e) => setNoteDraft(e.target.value)}
-                        rows={4}
-                        maxLength={500}
-                        className="mt-2 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-                        placeholder="Share delivery instructions, size notes, or any special request."
-                      />
-                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                        Up to 500 characters. Saved with your order.
-                      </p>
-                    </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+                    <label
+                      htmlFor="order-note"
+                      style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.72rem", fontWeight: 500, color: "var(--dp-sand)", letterSpacing: "0.06em" }}
+                    >
+                      Special instructions
+                    </label>
+                    <textarea
+                      id="order-note"
+                      value={noteDraft}
+                      onChange={(e) => setNoteDraft(e.target.value)}
+                      rows={4}
+                      maxLength={500}
+                      placeholder="Delivery instructions, size notes, or any special request."
+                      style={{
+                        background: "rgba(242,232,213,0.04)",
+                        border: "1px solid var(--dp-border)",
+                        color: "var(--dp-cream)",
+                        fontFamily: "DM Sans, sans-serif",
+                        fontSize: "0.78rem",
+                        padding: "0.75rem",
+                        resize: "none",
+                        outline: "none",
+                        lineHeight: 1.6,
+                        transition: "border-color 0.2s",
+                      }}
+                      onFocus={(e) => (e.currentTarget.style.borderColor = "var(--dp-ember)")}
+                      onBlur={(e) => (e.currentTarget.style.borderColor = "var(--dp-border)")}
+                    />
+                    <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.62rem", color: "var(--dp-muted)" }}>
+                      Up to 500 characters. Saved with your order.
+                    </p>
                     <button
                       type="button"
                       onClick={handleSaveNote}
-                      className="w-full rounded-full bg-neutral-900 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+                      style={{
+                        background: "var(--dp-ember)", color: "var(--dp-cream)",
+                        border: "none", cursor: "pointer", padding: "0.75rem",
+                        fontFamily: "DM Sans, sans-serif", fontWeight: 500,
+                        fontSize: "0.68rem", letterSpacing: "0.14em", textTransform: "uppercase",
+                        transition: "opacity 0.2s",
+                      }}
+                      onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = "0.85")}
+                      onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = "1")}
                     >
-                      Save note
+                      Save Note
                     </button>
                   </div>
                 )}
                 {activeSheet === "shipping" && (
-                  <div className="space-y-3 text-sm text-neutral-700 dark:text-neutral-200">
-                    <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                    <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.78rem", fontWeight: 500, color: "var(--dp-sand)" }}>
                       {shippingPreview !== null
                         ? "Shipping preview from your saved address."
                         : "Shipping is calculated at checkout."}
                     </p>
-                    <p>
+                    <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.75rem", color: "var(--dp-muted)", lineHeight: 1.65 }}>
                       {shippingPreview !== null
-                        ? `Estimated shipping: ₦${shippingPreview.toLocaleString()}. Final pricing is confirmed after payment.`
+                        ? `Estimated shipping: ₦${shippingPreview.toLocaleString()}. Final pricing confirmed after payment.`
                         : "Select your delivery address during checkout to see your shipping fee."}
                     </p>
                   </div>
@@ -747,29 +821,26 @@ export default function CartModal() {
   );
 }
 
-function CloseCart({ className }: { className?: string }) {
-  return (
-    <div className="relative flex h-11 w-11 items-center justify-center rounded-md border border-neutral-200 text-black transition-colors dark:border-neutral-700 dark:text-white">
-      <XMarkIcon
-        className={clsx(
-          "h-6 transition-all ease-in-out hover:scale-110",
-          className,
-        )}
-      />
-    </div>
-  );
-}
-
 function CheckoutButton() {
   const { pending } = useFormStatus();
-
   return (
     <button
-      className="block w-full rounded-full bg-blue-600 p-3 text-center text-sm font-medium text-white opacity-90 hover:opacity-100"
       type="submit"
       disabled={pending}
+      style={{
+        display: "block", width: "100%",
+        background: pending ? "var(--dp-muted)" : "var(--dp-cream)",
+        color: "var(--dp-ink)",
+        border: "none", cursor: pending ? "not-allowed" : "pointer",
+        padding: "0.9rem",
+        fontFamily: "DM Sans, sans-serif", fontWeight: 500,
+        fontSize: "0.72rem", letterSpacing: "0.14em", textTransform: "uppercase",
+        transition: "background 0.2s, opacity 0.2s",
+      }}
+      onMouseEnter={(e) => { if (!pending) (e.currentTarget as HTMLButtonElement).style.background = "var(--dp-ember)"; if (!pending) (e.currentTarget as HTMLButtonElement).style.color = "var(--dp-cream)"; }}
+      onMouseLeave={(e) => { if (!pending) (e.currentTarget as HTMLButtonElement).style.background = "var(--dp-cream)"; if (!pending) (e.currentTarget as HTMLButtonElement).style.color = "var(--dp-ink)"; }}
     >
-      {pending ? <LoadingDots className="bg-white" /> : "Proceed to Checkout"}
+      {pending ? <LoadingDots className="bg-neutral-600" /> : "Proceed to Checkout →"}
     </button>
   );
 }
@@ -787,33 +858,77 @@ function CartSheet({
 }) {
   return (
     <Transition show={open} as={Fragment}>
-      <div className="absolute inset-0 z-50">
-        <div
-          className="absolute inset-0 bg-black/40"
-          aria-hidden="true"
-          onClick={onClose}
-        />
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={title}
-          className="absolute bottom-0 left-0 right-0 rounded-t-2xl border-t border-neutral-200 bg-white p-5 shadow-xl dark:border-neutral-800 dark:bg-neutral-950"
+      <div style={{ position: "absolute", inset: 0, zIndex: 50 }}>
+        {/* Sheet backdrop */}
+        <Transition.Child
+          as={Fragment}
+          enter="transition-opacity duration-200"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="transition-opacity duration-150"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
         >
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-              {title}
-            </h3>
-            <button
-              type="button"
-              aria-label="Close"
-              onClick={onClose}
-              className="rounded-full border border-neutral-200 p-1 text-neutral-600 hover:bg-neutral-100 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-900"
-            >
-              <XMarkIcon className="h-5 w-5" />
-            </button>
+          <div
+            style={{ position: "absolute", inset: 0, background: "rgba(6,4,2,0.6)" }}
+            aria-hidden="true"
+            onClick={onClose}
+          />
+        </Transition.Child>
+
+        {/* Sheet panel */}
+        <Transition.Child
+          as={Fragment}
+          enter="transition-all duration-250 ease-out"
+          enterFrom="translate-y-full opacity-0"
+          enterTo="translate-y-0 opacity-100"
+          leave="transition-all duration-200 ease-in"
+          leaveFrom="translate-y-0 opacity-100"
+          leaveTo="translate-y-full opacity-0"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
+            style={{
+              position: "absolute", bottom: 0, left: 0, right: 0,
+              background: "var(--dp-charcoal)",
+              borderTop: "1px solid var(--dp-border)",
+              padding: "1.25rem",
+            }}
+          >
+            {/* Top ember line */}
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, var(--dp-ember), transparent 70%)" }} />
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.1rem" }}>
+              <span
+                style={{
+                  fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", fontWeight: 500,
+                  letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--dp-ember)",
+                }}
+              >
+                {title}
+              </span>
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={onClose}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: "1.75rem", height: "1.75rem",
+                  border: "1px solid var(--dp-border)",
+                  background: "transparent", color: "var(--dp-muted)", cursor: "pointer",
+                  transition: "border-color 0.2s, color 0.2s",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(242,232,213,0.3)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--dp-cream)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--dp-border)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--dp-muted)"; }}
+              >
+                <XMarkIcon style={{ width: "0.875rem", height: "0.875rem" }} />
+              </button>
+            </div>
+            <div>{children}</div>
           </div>
-          <div className="mt-4">{children}</div>
-        </div>
+        </Transition.Child>
       </div>
     </Transition>
   );

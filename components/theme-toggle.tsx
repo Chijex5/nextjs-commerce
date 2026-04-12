@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  ComputerDesktopIcon,
+  MoonIcon,
+  SunIcon,
+} from "@heroicons/react/24/outline";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
 type Theme = "light" | "dark" | "system";
@@ -19,7 +25,9 @@ function applyTheme(theme: Theme) {
     root.style.colorScheme = "light";
   } else {
     // system
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
     if (prefersDark) {
       root.classList.add("dark");
       root.style.colorScheme = "dark";
@@ -30,10 +38,14 @@ function applyTheme(theme: Theme) {
   }
 }
 
-const options: { value: Theme; label: string; icon: string }[] = [
-  { value: "light", label: "Light", icon: "☀️" },
-  { value: "dark", label: "Dark", icon: "🌙" },
-  { value: "system", label: "System", icon: "💻" },
+const options: { value: Theme; label: string; icon: ReactNode }[] = [
+  { value: "light", label: "Light", icon: <SunIcon className="h-3.5 w-3.5" /> },
+  { value: "dark", label: "Dark", icon: <MoonIcon className="h-3.5 w-3.5" /> },
+  {
+    value: "system",
+    label: "System",
+    icon: <ComputerDesktopIcon className="h-3.5 w-3.5" />,
+  },
 ];
 
 export default function ThemeToggle() {
@@ -73,7 +85,7 @@ export default function ThemeToggle() {
               : "text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200",
           ].join(" ")}
         >
-          <span>{opt.icon}</span>
+          <span aria-hidden="true">{opt.icon}</span>
           <span className="hidden sm:inline">{opt.label}</span>
         </button>
       ))}

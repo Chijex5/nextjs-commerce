@@ -1,15 +1,14 @@
-import type { Metadata } from "next";
-import type { ReactNode } from "react";
-import Link from "next/link";
-import { SiTiktok } from "react-icons/si";
-import { RiSnapchatLine } from "react-icons/ri";
-import { FaInstagram } from "react-icons/fa6";
-import { FaWhatsapp } from "react-icons/fa";
-import { MdEmail } from "react-icons/md";
-import { FaPhone } from "react-icons/fa";
 import ContactForm from "components/contact/contact-form";
 import Footer from "components/layout/footer";
 import { canonicalUrl, siteName } from "lib/seo";
+import type { Metadata } from "next";
+import Link from "next/link";
+import type { ReactNode } from "react";
+import { FaPhone, FaWhatsapp } from "react-icons/fa";
+import { FaInstagram } from "react-icons/fa6";
+import { MdEmail } from "react-icons/md";
+import { RiSnapchatLine } from "react-icons/ri";
+import { SiTiktok } from "react-icons/si";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -130,126 +129,551 @@ export default function ContactPage() {
     },
   ].filter((method) => method.value && method.href);
 
+  const totalChannels = primaryMethods.length + socialMethods.length;
+
   return (
     <>
-      <section className="relative overflow-hidden border-b border-neutral-200 bg-gradient-to-br from-amber-50 via-white to-stone-100 dark:border-neutral-800 dark:from-stone-950 dark:via-neutral-900 dark:to-neutral-950">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -left-24 top-10 h-64 w-64 rounded-full bg-amber-200/40 blur-3xl dark:bg-amber-500/10" />
-          <div className="absolute right-16 top-1/3 h-72 w-72 rounded-full bg-rose-200/40 blur-3xl dark:bg-rose-500/10" />
-          <div className="absolute bottom-12 left-1/3 h-64 w-64 rounded-full bg-emerald-200/30 blur-3xl dark:bg-emerald-500/10" />
-        </div>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-neutral-500">
-                Contact
-              </p>
-              <h1 className="mt-4 text-4xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-5xl">
+        :root {
+          --dp-ink:     #0A0704;
+          --dp-charcoal:#191209;
+          --dp-card:    #1E1510;
+          --dp-cream:   #F2E8D5;
+          --dp-sand:    #C9B99A;
+          --dp-muted:   #8A7762;
+          --dp-ember:   #BF5A28;
+          --dp-gold:    #C0892A;
+          --dp-border:  rgba(242,232,213,0.09);
+        }
+
+        .dp-wordmark { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.1em; }
+        .dp-serif    { font-family: 'Cormorant Garamond', serif; }
+        .dp-sans     { font-family: 'DM Sans', sans-serif; }
+        .dp-label    {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.6rem; font-weight: 500;
+          letter-spacing: 0.26em; text-transform: uppercase;
+          color: var(--dp-ember);
+        }
+
+        @keyframes dp-rise {
+          from { opacity: 0; transform: translateY(20px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .dp-rise-1 { animation: dp-rise 0.9s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
+        .dp-rise-2 { animation: dp-rise 0.9s cubic-bezier(0.16,1,0.3,1) 0.18s both; }
+        .dp-rise-3 { animation: dp-rise 0.9s cubic-bezier(0.16,1,0.3,1) 0.3s both; }
+        .dp-rise-4 { animation: dp-rise 0.9s cubic-bezier(0.16,1,0.3,1) 0.42s both; }
+
+        .dp-lift {
+          transition: transform 0.45s cubic-bezier(0.16,1,0.3,1),
+                      box-shadow 0.45s cubic-bezier(0.16,1,0.3,1);
+        }
+        .dp-lift:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+        }
+
+        .dp-rule { border: none; border-top: 1px solid var(--dp-border); margin: 0; }
+
+        .dp-prose p {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.88rem; line-height: 1.85;
+          color: var(--dp-muted);
+        }
+        .dp-prose p + p { margin-top: 1.25rem; }
+        .dp-prose strong { color: var(--dp-sand); font-weight: 500; }
+
+        .dp-method-card {
+          display: block;
+          background: var(--dp-charcoal);
+          border: 1px solid var(--dp-border);
+          padding: 1rem;
+          color: var(--dp-cream);
+          text-decoration: none;
+        }
+        .dp-method-card:hover .dp-method-value {
+          color: var(--dp-ember);
+        }
+
+        .dp-contact-link {
+          display: inline-flex; align-items: center; gap: 0.4rem;
+          font-family: 'DM Sans', sans-serif; font-size: 0.68rem; font-weight: 500;
+          letter-spacing: 0.14em; text-transform: uppercase;
+          color: var(--dp-cream); text-decoration: none;
+          border-bottom: 1px solid var(--dp-ember); padding-bottom: 2px;
+          transition: color 0.2s, border-color 0.2s;
+        }
+        .dp-contact-link:hover { color: var(--dp-ember); }
+      `}</style>
+
+      <div
+        className="dp-sans"
+        style={{
+          background: "var(--dp-ink)",
+          color: "var(--dp-cream)",
+          minHeight: "100vh",
+        }}
+      >
+        <section
+          style={{
+            position: "relative",
+            overflow: "hidden",
+            padding: "4rem clamp(1.5rem,4vw,4rem) 3.5rem",
+            borderBottom: "1px solid var(--dp-border)",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              width: 600,
+              height: 600,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle, rgba(191,90,40,0.12) 0%, transparent 70%)",
+              right: -100,
+              top: -200,
+              filter: "blur(70px)",
+              pointerEvents: "none",
+            }}
+          />
+
+          <div style={{ maxWidth: 1000, position: "relative", zIndex: 1 }}>
+            <p
+              className="dp-label dp-rise-1"
+              style={{ marginBottom: "1.1rem" }}
+            >
+              Contact
+            </p>
+
+            <div style={{ position: "relative" }}>
+              <span
+                className="dp-wordmark"
+                style={{
+                  position: "absolute",
+                  top: "-0.5rem",
+                  left: "-0.1rem",
+                  fontSize: "clamp(7rem, 20vw, 16rem)",
+                  lineHeight: 1,
+                  color: "rgba(242,232,213,0.04)",
+                  pointerEvents: "none",
+                  userSelect: "none",
+                  zIndex: 0,
+                }}
+              >
+                02
+              </span>
+              <h1
+                className="dp-serif dp-rise-2"
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+                  fontSize: "clamp(2rem, 5vw, 4rem)",
+                  fontWeight: 600,
+                  lineHeight: 1.15,
+                  color: "var(--dp-cream)",
+                  maxWidth: 780,
+                }}
+              >
                 Let&apos;s craft your next pair together.
               </h1>
-              <p className="mt-4 text-lg text-neutral-600 dark:text-neutral-400">
-                Tell us about your custom order idea, sizing questions, or
-                delivery timeline. We respond within 1 business day.
+            </div>
+
+            <p
+              className="dp-rise-3"
+              style={{
+                fontFamily: "DM Sans, sans-serif",
+                fontSize: "0.88rem",
+                lineHeight: 1.75,
+                color: "var(--dp-muted)",
+                maxWidth: 620,
+                marginTop: "1.25rem",
+              }}
+            >
+              Reach out for custom orders, sizing guidance, product questions,
+              and delivery planning. We reply quickly with clear next steps.
+            </p>
+          </div>
+        </section>
+
+        <section
+          className="dp-rise-4"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            borderBottom: "1px solid var(--dp-border)",
+          }}
+        >
+          {[
+            {
+              label: "Response",
+              value: "1 Business Day",
+              sub: "Average reply time",
+            },
+            {
+              label: "Channels",
+              value: `${totalChannels}`,
+              sub: "Direct + social options",
+            },
+            {
+              label: "Support",
+              value: "Custom + Ready-made",
+              sub: "Sizing and delivery help",
+            },
+          ].map(({ label, value, sub }, i) => (
+            <div
+              key={label}
+              style={{
+                padding: "1.75rem clamp(1.25rem,3vw,2.5rem)",
+                borderRight: i < 2 ? "1px solid var(--dp-border)" : "none",
+              }}
+            >
+              <p className="dp-label" style={{ marginBottom: "0.6rem" }}>
+                {label}
               </p>
+              <p
+                className="dp-wordmark"
+                style={{
+                  fontSize: "clamp(1.4rem, 3vw, 2.2rem)",
+                  color: "var(--dp-cream)",
+                  lineHeight: 1,
+                }}
+              >
+                {value}
+              </p>
+              <p
+                style={{
+                  fontFamily: "DM Sans, sans-serif",
+                  fontSize: "0.68rem",
+                  color: "var(--dp-muted)",
+                  marginTop: "0.35rem",
+                }}
+              >
+                {sub}
+              </p>
+            </div>
+          ))}
+        </section>
 
-              <div className="mt-6 flex flex-wrap gap-3">
-                <span className="rounded-full border border-neutral-200 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-700 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/70 dark:text-neutral-200">
-                  Custom orders welcome
-                </span>
-                <span className="rounded-full border border-neutral-200 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-700 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/70 dark:text-neutral-200">
-                  Response time: 1 business day
-                </span>
+        <div
+          style={{
+            maxWidth: 1800,
+            margin: "0 auto",
+            padding: "4rem clamp(1.5rem,4vw,4rem)",
+            display: "grid",
+            gap: "3rem",
+          }}
+        >
+          <section
+            style={{
+              display: "grid",
+              gap: "2rem",
+            }}
+            className="lg:grid-cols-[1fr_1.2fr]"
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                gap: "1.5rem",
+              }}
+            >
+              <div>
+                <p className="dp-label" style={{ marginBottom: "0.75rem" }}>
+                  How we help
+                </p>
+                <hr
+                  className="dp-rule"
+                  style={{ width: "2.5rem", borderColor: "var(--dp-ember)" }}
+                />
               </div>
+              <blockquote
+                className="dp-serif"
+                style={{
+                  fontSize: "clamp(1.25rem, 2.5vw, 1.7rem)",
+                  fontWeight: 300,
+                  fontStyle: "italic",
+                  color: "var(--dp-sand)",
+                  lineHeight: 1.55,
+                  borderLeft: "2px solid var(--dp-ember)",
+                  paddingLeft: "1.25rem",
+                }}
+              >
+                &ldquo;Tell us what you need. We&apos;ll help you place the
+                right order without guesswork.&rdquo;
+              </blockquote>
+            </div>
 
-              <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <div
+              style={{
+                background: "var(--dp-charcoal)",
+                border: "1px solid var(--dp-border)",
+                padding: "2rem clamp(1.25rem,3vw,2.25rem)",
+              }}
+            >
+              <div className="dp-prose">
+                <p>
+                  Contact D&apos;FOOTPRINT for{" "}
+                  <strong>custom design requests</strong>, sizing confirmation,
+                  and delivery timeline support.
+                </p>
+                <p>
+                  For faster replies, include key details such as size,
+                  preferred style, color direction, and your target delivery
+                  date.
+                </p>
+                <p>
+                  You can also send reference photos through available channels.
+                  We&apos;ll confirm what is possible and provide pricing
+                  guidance.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <hr className="dp-rule" />
+
+          <section
+            style={{ display: "grid", gap: "1.5rem" }}
+            className="md:grid-cols-2"
+          >
+            <div
+              className="dp-lift"
+              style={{
+                background: "var(--dp-charcoal)",
+                border: "1px solid var(--dp-border)",
+                padding: "1.75rem",
+              }}
+            >
+              <p className="dp-label" style={{ marginBottom: "1rem" }}>
+                Direct methods
+              </p>
+              <div style={{ display: "grid", gap: "0.85rem" }}>
                 {primaryMethods.map((method) => (
                   <a
                     key={method.label}
                     href={method.href}
-                    className="group rounded-2xl border border-neutral-200 bg-white/80 p-4 text-neutral-900 shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-950/70 dark:text-white dark:hover:border-neutral-700"
+                    className="dp-method-card"
                   >
-                    <div className="flex items-center gap-3 text-sm font-semibold">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white transition group-hover:scale-105 dark:bg-white dark:text-black">
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.65rem",
+                      }}
+                    >
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          width: "2rem",
+                          height: "2rem",
+                          borderRadius: "999px",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: "var(--dp-ink)",
+                          color: "var(--dp-cream)",
+                        }}
+                      >
                         {method.icon}
                       </span>
-                      {method.label}
+                      <span
+                        className="dp-label"
+                        style={{ color: "var(--dp-sand)" }}
+                      >
+                        {method.label}
+                      </span>
                     </div>
-                    <p className="mt-3 text-sm font-medium text-neutral-900 dark:text-white">
+                    <p
+                      className="dp-method-value"
+                      style={{
+                        marginTop: "0.65rem",
+                        color: "var(--dp-cream)",
+                        fontSize: "0.86rem",
+                        transition: "color 0.2s",
+                        lineHeight: 1.5,
+                      }}
+                    >
                       {method.value}
                     </p>
-                    <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                    <p
+                      style={{
+                        marginTop: "0.25rem",
+                        color: "var(--dp-muted)",
+                        fontSize: "0.74rem",
+                      }}
+                    >
                       {method.description}
                     </p>
                   </a>
                 ))}
               </div>
+
+              {socialMethods.length > 0 ? (
+                <>
+                  <hr className="dp-rule" style={{ margin: "1.25rem 0" }} />
+                  <p className="dp-label" style={{ marginBottom: "0.8rem" }}>
+                    Social links
+                  </p>
+                  <div
+                    style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}
+                  >
+                    {socialMethods.map((method) => (
+                      <a
+                        key={method.label}
+                        href={method.href}
+                        target={method.isExternal ? "_blank" : undefined}
+                        rel={method.isExternal ? "noreferrer" : undefined}
+                        className="dp-contact-link"
+                      >
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          {method.icon}
+                        </span>
+                        {method.value}
+                      </a>
+                    ))}
+                  </div>
+                </>
+              ) : null}
             </div>
 
-            <div className="space-y-6">
+            <div
+              className="dp-lift"
+              style={{
+                background: "var(--dp-card)",
+                border: "1px solid var(--dp-border)",
+                padding: "1.75rem",
+                display: "grid",
+                gap: "1.25rem",
+              }}
+            >
+              <p className="dp-label">Send a message</p>
               <ContactForm />
-
-              <div className="rounded-3xl border border-neutral-200 bg-white/80 p-6 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/70">
-                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                  Custom order essentials
-                </h3>
-                <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                  Share references, preferred colors, sizes, and your desired
-                  delivery date. We&apos;ll confirm availability and pricing.
-                </p>
-                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                  <Link
-                    href="/custom-orders"
-                    className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-                  >
-                    View custom orders
-                  </Link>
-                  <Link
-                    href="/products"
-                    className="inline-flex items-center justify-center rounded-full border border-neutral-300 px-5 py-2.5 text-sm font-semibold text-neutral-900 transition hover:border-neutral-400 dark:border-neutral-700 dark:text-white dark:hover:border-neutral-600"
-                  >
-                    Browse ready-made
-                  </Link>
-                </div>
-              </div>
             </div>
-          </div>
+          </section>
 
-          {socialMethods.length > 0 ? (
-            <div className="mt-14 rounded-3xl border border-neutral-200 bg-white/80 p-6 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/70">
-              <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-neutral-500">
-                    Follow along
-                  </p>
-                  <h2 className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-white">
-                    Behind the studio doors
-                  </h2>
-                  <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                    New drops, process clips, and custom stories.
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  {socialMethods.map((method) => (
-                    <a
-                      key={method.label}
-                      href={method.href}
-                      target={method.isExternal ? "_blank" : undefined}
-                      rel={method.isExternal ? "noreferrer" : undefined}
-                      className="flex items-center gap-3 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-900 transition hover:border-neutral-300 dark:border-neutral-800 dark:bg-neutral-900 dark:text-white dark:hover:border-neutral-700"
-                    >
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-900 text-white dark:bg-white dark:text-black">
-                        {method.icon}
-                      </span>
-                      <span>{method.value}</span>
-                    </a>
-                  ))}
-                </div>
-              </div>
+          <section
+            style={{
+              background: "var(--dp-ember)",
+              padding: "2.5rem clamp(1.5rem,4vw,3rem)",
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "1.5rem",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <span
+              className="dp-wordmark"
+              style={{
+                position: "absolute",
+                right: "-1rem",
+                top: "50%",
+                transform: "translateY(-50%)",
+                fontSize: "clamp(4rem,12vw,9rem)",
+                lineHeight: 1,
+                color: "rgba(0,0,0,0.1)",
+                pointerEvents: "none",
+                userSelect: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              CONTACT
+            </span>
+            <div style={{ position: "relative", zIndex: 1 }}>
+              <p
+                className="dp-serif"
+                style={{
+                  fontSize: "clamp(1.2rem,2.5vw,1.75rem)",
+                  fontWeight: 600,
+                  color: "var(--dp-cream)",
+                  lineHeight: 1.3,
+                }}
+              >
+                Ready to start your order?
+              </p>
+              <p
+                style={{
+                  fontFamily: "DM Sans, sans-serif",
+                  fontSize: "0.78rem",
+                  color: "rgba(242,232,213,0.7)",
+                  marginTop: "0.3rem",
+                }}
+              >
+                Explore products or submit a custom request with your style
+                brief.
+              </p>
             </div>
-          ) : null}
+            <div
+              style={{
+                display: "flex",
+                gap: "0.75rem",
+                flexWrap: "wrap",
+                position: "relative",
+                zIndex: 1,
+              }}
+            >
+              <Link
+                href="/products"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  background: "var(--dp-cream)",
+                  color: "var(--dp-ink)",
+                  fontFamily: "DM Sans, sans-serif",
+                  fontWeight: 500,
+                  fontSize: "0.68rem",
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  padding: "0.8rem 1.75rem",
+                  textDecoration: "none",
+                  transition: "opacity 0.2s",
+                }}
+              >
+                Browse Products
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M3 8h10M9 4l4 4-4 4"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </Link>
+              <Link
+                href="/custom-orders"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  border: "1px solid rgba(242,232,213,0.4)",
+                  color: "var(--dp-cream)",
+                  fontFamily: "DM Sans, sans-serif",
+                  fontWeight: 500,
+                  fontSize: "0.68rem",
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  padding: "0.8rem 1.75rem",
+                  textDecoration: "none",
+                  transition: "border-color 0.2s",
+                }}
+              >
+                Start Custom Order
+              </Link>
+            </div>
+          </section>
         </div>
-      </section>
+      </div>
       <Footer />
     </>
   );

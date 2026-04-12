@@ -17,20 +17,17 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
       const response = await fetch("/api/user-auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
       const data = await response.json();
       if (!response.ok) {
         toast.error(data.error || "Invalid email or password");
         return;
       }
-
       toast.success("Logged in successfully");
       const callbackUrl = searchParams.get("callbackUrl") || "/account";
       router.push(callbackUrl);
@@ -45,22 +42,18 @@ export default function Login() {
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     setMagicLoading(true);
-
     try {
-      const callbackUrl =
-        searchParams.get("callbackUrl") || "/account?welcome=1";
+      const callbackUrl = searchParams.get("callbackUrl") || "/account?welcome=1";
       const response = await fetch("/api/user-auth/magic-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, callbackUrl }),
       });
-
       const data = await response.json();
       if (!response.ok) {
         toast.error(data.error || "Failed to send magic link");
         return;
       }
-
       toast.success(data.message || "Check your email for the login link.");
     } catch {
       toast.error("An error occurred. Please try again.");
@@ -70,99 +63,237 @@ export default function Login() {
   };
 
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950 md:p-8">
-      <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-        Login
-      </h2>
-      <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-        Access your account with magic link or password.
-      </p>
+    <>
+      <style>{`
+        .co-input {
+          width: 100%;
+          background: var(--dp-card);
+          border: 1px solid var(--dp-border);
+          color: var(--dp-cream);
+          font-family: 'DM Sans', sans-serif;
+          font-size: .82rem;
+          padding: .85rem 1rem;
+          outline: none;
+          transition: border-color .22s;
+        }
+        .co-input::placeholder { color: var(--dp-muted); }
+        .co-input:focus { border-color: rgba(191,90,40,.6); }
 
-      <form
-        onSubmit={usePassword ? handleSubmit : handleMagicLink}
-        className="mt-6 space-y-4"
-      >
-        <div>
-          <label htmlFor="email" className="mb-1 block text-sm font-medium">
-            Email
-          </label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-            placeholder="your@email.com"
-          />
-        </div>
+        .co-label {
+          font-family: 'DM Sans', sans-serif;
+          font-size: .6rem;
+          font-weight: 500;
+          letter-spacing: .2em;
+          text-transform: uppercase;
+          color: var(--dp-muted);
+          display: block;
+          margin-bottom: .45rem;
+        }
 
-        {usePassword ? (
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-sm font-medium"
-            >
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-              placeholder="••••••••"
-            />
-          </div>
-        ) : null}
+        .dp-btn-solid {
+          display: flex; align-items: center; justify-content: center; gap: .5rem;
+          width: 100%;
+          background: var(--dp-cream); color: var(--dp-ink);
+          font-family: 'DM Sans', sans-serif; font-weight: 500;
+          font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+          padding: .95rem 2rem; border: none; cursor: pointer;
+          transition: background .22s, color .22s;
+        }
+        .dp-btn-solid:hover:not(:disabled) { background: var(--dp-ember); color: var(--dp-cream); }
+        .dp-btn-solid:disabled { opacity: .5; cursor: not-allowed; }
 
-        <button
-          type="submit"
-          disabled={usePassword ? isLoading : magicLoading}
-          className="w-full rounded-full bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+        .dp-btn-ghost {
+          display: flex; align-items: center; justify-content: center; gap: .5rem;
+          width: 100%;
+          border: 1px solid rgba(242,232,213,.18); color: var(--dp-sand);
+          background: transparent;
+          font-family: 'DM Sans', sans-serif; font-weight: 500;
+          font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+          padding: .95rem 2rem; cursor: pointer;
+          transition: border-color .22s, color .22s;
+        }
+        .dp-btn-ghost:hover { border-color: rgba(242,232,213,.45); color: var(--dp-cream); }
+
+        .auth-card {
+          background: var(--dp-card);
+          border: 1px solid var(--dp-border);
+          padding: 2rem;
+        }
+
+        .auth-divider {
+          display: flex; align-items: center; gap: 1rem;
+          margin: 1.5rem 0;
+        }
+        .auth-divider::before,
+        .auth-divider::after {
+          content: ''; flex: 1; height: 1px; background: var(--dp-border);
+        }
+        .auth-divider span {
+          font-family: 'DM Sans', sans-serif;
+          font-size: .6rem;
+          letter-spacing: .2em;
+          text-transform: uppercase;
+          color: var(--dp-muted);
+          white-space: nowrap;
+        }
+
+        .auth-link {
+          color: var(--dp-ember);
+          text-decoration: none;
+          font-weight: 500;
+          border-bottom: 1px solid transparent;
+          transition: border-color .2s;
+        }
+        .auth-link:hover { border-color: var(--dp-ember); }
+      `}</style>
+
+      <div className="auth-card">
+        {/* Header */}
+        <p className="dp-label" style={{ marginBottom: ".6rem" }}>Welcome back</p>
+        <h2
+          className="dp-serif"
+          style={{
+            fontSize: "1.9rem",
+            fontWeight: 600,
+            color: "var(--dp-cream)",
+            lineHeight: 1.15,
+            marginBottom: ".5rem",
+          }}
+        >
+          Sign in to your account
+        </h2>
+        <p
+          style={{
+            fontFamily: "DM Sans, sans-serif",
+            fontSize: ".75rem",
+            color: "var(--dp-muted)",
+            marginBottom: "2rem",
+            lineHeight: 1.6,
+          }}
         >
           {usePassword
-            ? isLoading
-              ? "Logging in..."
-              : "Login"
-            : magicLoading
-              ? "Sending link..."
-              : "Send magic link"}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setUsePassword((current) => !current)}
-          className="w-full rounded-full border border-neutral-300 px-4 py-2.5 text-sm font-medium hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
-        >
-          {usePassword ? "Use magic link instead" : "Use password instead"}
-        </button>
-
-        {!usePassword ? (
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            We will email you a one-time sign-in link.
-          </p>
-        ) : null}
-      </form>
-
-      <div className="mt-5 space-y-2 text-sm">
-        <p className="text-neutral-600 dark:text-neutral-400">
-          Don&apos;t have an account?{" "}
-          <Link
-            href="/auth/register"
-            className="font-medium text-neutral-900 underline-offset-4 hover:underline dark:text-neutral-100"
-          >
-            Create one
-          </Link>
+            ? "Enter your email and password below."
+            : "Enter your email and we'll send a one-time sign-in link."}
         </p>
-        <Link
-          href="/"
-          className="inline-block text-neutral-500 underline-offset-4 hover:underline dark:text-neutral-400"
+
+        <form onSubmit={usePassword ? handleSubmit : handleMagicLink}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
+            {/* Email */}
+            <div>
+              <label htmlFor="email" className="co-label">Email Address</label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="co-input"
+                placeholder="you@example.com"
+              />
+            </div>
+
+            {/* Password (conditional) */}
+            {usePassword && (
+              <div>
+                <label htmlFor="password" className="co-label">Password</label>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="co-input"
+                  placeholder="••••••••"
+                />
+              </div>
+            )}
+
+            {/* Primary action */}
+            <button
+              type="submit"
+              disabled={usePassword ? isLoading : magicLoading}
+              className="dp-btn-solid"
+              style={{ marginTop: ".4rem" }}
+            >
+              {usePassword
+                ? isLoading ? "Signing in…" : "Sign In"
+                : magicLoading ? "Sending link…" : "Send Magic Link"}
+              {!isLoading && !magicLoading && (
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </button>
+          </div>
+
+          {!usePassword && (
+            <p
+              style={{
+                fontFamily: "DM Sans, sans-serif",
+                fontSize: ".65rem",
+                color: "var(--dp-muted)",
+                marginTop: ".75rem",
+                textAlign: "center",
+                lineHeight: 1.5,
+              }}
+            >
+              We&apos;ll email you a one-time sign-in link. No password needed.
+            </p>
+          )}
+
+          <div className="auth-divider">
+            <span>or</span>
+          </div>
+
+          {/* Toggle auth mode */}
+          <button
+            type="button"
+            onClick={() => setUsePassword((v) => !v)}
+            className="dp-btn-ghost"
+          >
+            {usePassword ? "Use magic link instead" : "Use password instead"}
+          </button>
+        </form>
+
+        {/* Footer links */}
+        <div
+          style={{
+            marginTop: "2rem",
+            paddingTop: "1.5rem",
+            borderTop: "1px solid var(--dp-border)",
+            display: "flex",
+            flexDirection: "column",
+            gap: ".6rem",
+          }}
         >
-          Continue without login
-        </Link>
+          <p
+            style={{
+              fontFamily: "DM Sans, sans-serif",
+              fontSize: ".72rem",
+              color: "var(--dp-muted)",
+            }}
+          >
+            Don&apos;t have an account?{" "}
+            <Link href="/auth/register" className="auth-link">
+              Create one
+            </Link>
+          </p>
+          <Link
+            href="/"
+            style={{
+              fontFamily: "DM Sans, sans-serif",
+              fontSize: ".72rem",
+              color: "var(--dp-muted)",
+              textDecoration: "none",
+              transition: "color .2s",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = "var(--dp-sand)")}
+            onMouseLeave={e => (e.currentTarget.style.color = "var(--dp-muted)")}
+          >
+            Continue without login →
+          </Link>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

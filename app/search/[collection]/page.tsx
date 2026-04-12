@@ -25,26 +25,16 @@ export async function generateMetadata(props: {
 
   if (!collection) return notFound();
 
-  const hasContentAffectingParams = hasContentAffectingSearchParams(
-    searchParams,
-    ["sort"],
-  );
+  const hasContentAffectingParams = hasContentAffectingSearchParams(searchParams, ["sort"]);
   const title = collection.seo?.title || collection.title;
-  const description =
-    collection.seo?.description ||
-    collection.description ||
-    `${collection.title} products`;
-  const isHiddenCollection =
-    collection.handle.startsWith("hidden-") || collection.handle === "all";
-
+  const description = collection.seo?.description || collection.description || `${collection.title} products`;
+  const isHiddenCollection = collection.handle.startsWith("hidden-") || collection.handle === "all";
   const ogImagePath = `${collection.path}/opengraph-image`;
 
   return {
     title,
     description,
-    alternates: {
-      canonical: canonicalUrl(collection.path),
-    },
+    alternates: { canonical: canonicalUrl(collection.path) },
     robots: {
       index: !hasContentAffectingParams && !isHiddenCollection,
       follow: true,
@@ -76,58 +66,118 @@ export default async function CategoryPage(props: {
   const collection = await getCollection(params.collection);
   if (!collection) return notFound();
 
-  const selectedSort =
-    sorting.find((item) => item.slug === sort) || defaultSort;
+  const selectedSort = sorting.find((item) => item.slug === sort) || defaultSort;
   const { sortKey, reverse } = selectedSort;
 
   const [products, collections] = await Promise.all([
-    getCollectionProducts({
-      collection: params.collection,
-      sortKey,
-      reverse,
-    }),
+    getCollectionProducts({ collection: params.collection, sortKey, reverse }),
     getCollections(),
   ]);
 
   return (
-    <section className="space-y-8 md:space-y-10">
-      <header className="space-y-4 border-b border-neutral-200 pb-6 dark:border-neutral-800 md:pb-8">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-100 sm:text-4xl">
-              {collection.title}
-            </h1>
-            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-              {products.length} item{products.length === 1 ? "" : "s"} · Sort:{" "}
-              {selectedSort.title}
-            </p>
+    <>
+      <style>{`
+        .co-empty {
+          border: 1px dashed rgba(242,232,213,0.12);
+          padding: 5rem 2rem;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+        }
+      `}</style>
+
+      <section style={{ display: "flex", flexDirection: "column", gap: "3rem" }}>
+
+        {/* ── Header ── */}
+        <header style={{ borderBottom: "1px solid var(--dp-border)", paddingBottom: "2rem" }}>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
+              gap: "1rem",
+              marginBottom: collection.description ? "1.5rem" : 0,
+            }}
+          >
+            <div>
+              <p className="dp-label" style={{ marginBottom: ".6rem" }}>Collection</p>
+              <h1
+                className="dp-wordmark"
+                style={{
+                  fontSize: "clamp(2.8rem,8vw,6rem)",
+                  lineHeight: .9,
+                  letterSpacing: "-.01em",
+                  color: "var(--dp-cream)",
+                  marginBottom: ".75rem",
+                }}
+              >
+                {collection.title.toUpperCase()}
+              </h1>
+              <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".72rem", color: "var(--dp-muted)", letterSpacing: ".06em" }}>
+                {products.length} item{products.length === 1 ? "" : "s"} · Sort: {selectedSort.title}
+              </p>
+            </div>
+
+            <SearchControlsMenu
+              collections={collections}
+              sorting={sorting}
+              pathname={collection.path}
+              activeSortSlug={selectedSort.slug ?? null}
+              activeCollectionPath={collection.path}
+            />
           </div>
 
-          <SearchControlsMenu
-            collections={collections}
-            sorting={sorting}
-            pathname={collection.path}
-            activeSortSlug={selectedSort.slug ?? null}
-            activeCollectionPath={collection.path}
-          />
-        </div>
+          {collection.description && (
+            <p
+              className="dp-serif"
+              style={{
+                fontSize: "clamp(1rem,1.8vw,1.35rem)",
+                fontWeight: 300,
+                fontStyle: "italic",
+                color: "var(--dp-sand)",
+                lineHeight: 1.55,
+                maxWidth: 640,
+              }}
+            >
+              {collection.description}
+            </p>
+          )}
+        </header>
 
-        {collection.description ? (
-          <p className="max-w-3xl text-sm leading-7 text-neutral-600 dark:text-neutral-400">
-            {collection.description}
-          </p>
-        ) : null}
-      </header>
-
-      {products.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-neutral-300 py-14 text-center text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-          No products found in this collection.
-        </div>
-      ) : (
-        <Grid className="grid-cols-1 gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          <ProductGridItems products={products} />
-        </Grid>
-      )}
-    </section>
+        {/* ── Grid or empty state ── */}
+        {products.length === 0 ? (
+          <div className="co-empty">
+            <p
+              className="dp-wordmark"
+              style={{
+                fontSize: "clamp(3rem,10vw,7rem)",
+                color: "rgba(242,232,213,0.04)",
+                lineHeight: 1,
+                userSelect: "none",
+                pointerEvents: "none",
+              }}
+            >
+              EMPTY
+            </p>
+            <p
+              className="dp-serif"
+              style={{ fontSize: "1.4rem", fontWeight: 600, color: "var(--dp-cream)" }}
+            >
+              Nothing here yet
+            </p>
+            <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".75rem", color: "var(--dp-muted)", maxWidth: 320, lineHeight: 1.65 }}>
+              No products found in this collection. Check back soon or browse another.
+            </p>
+          </div>
+        ) : (
+          <Grid className="grid-cols-1 gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <ProductGridItems products={products} />
+          </Grid>
+        )}
+      </section>
+    </>
   );
 }

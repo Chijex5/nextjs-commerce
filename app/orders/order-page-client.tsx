@@ -10,7 +10,7 @@ import PageLoader from "components/page-loader";
 import Price from "components/price";
 import { useUserSession } from "hooks/useUserSession";
 import {
-  getDeliveryStatusDescription,
+  getDeliveryStatusLabel,
   type DeliveryStatus,
 } from "lib/order-utils/delivery-tracking";
 
@@ -85,8 +85,7 @@ export default function OrdersPageClient() {
   const [trackingInput, setTrackingInput] = useState("");
   const [customTrackRequestNumber, setCustomTrackRequestNumber] = useState("");
   const [customTrackEmail, setCustomTrackEmail] = useState("");
-  const [trackedCustomRequest, setTrackedCustomRequest] =
-    useState<CustomRequest | null>(null);
+  const [trackedCustomRequest, setTrackedCustomRequest] = useState<CustomRequest | null>(null);
   const [isOrdersLoading, setIsOrdersLoading] = useState(false);
   const [isTrackingLoading, setIsTrackingLoading] = useState(false);
   const [isCustomRequestsLoading, setIsCustomRequestsLoading] = useState(false);
@@ -108,11 +107,8 @@ export default function OrdersPageClient() {
   }, [session]);
 
   useEffect(() => {
-    if (emailParam) {
-      setCustomTrackEmail(emailParam);
-    } else if (session?.email) {
-      setCustomTrackEmail(session.email);
-    }
+    if (emailParam) setCustomTrackEmail(emailParam);
+    else if (session?.email) setCustomTrackEmail(session.email);
   }, [emailParam, session?.email]);
 
   const fetchOrders = async () => {
@@ -123,11 +119,8 @@ export default function OrdersPageClient() {
         const data = await response.json();
         setOrders(data.orders || []);
       }
-    } catch {
-      toast.error("Failed to load orders");
-    } finally {
-      setIsOrdersLoading(false);
-    }
+    } catch { toast.error("Failed to load orders"); }
+    finally { setIsOrdersLoading(false); }
   };
 
   const fetchCustomRequests = async () => {
@@ -140,87 +133,47 @@ export default function OrdersPageClient() {
       } else if (response.status !== 404) {
         toast.error("Failed to load custom requests");
       }
-    } catch {
-      toast.error("Failed to load custom requests");
-    } finally {
-      setIsCustomRequestsLoading(false);
-    }
+    } catch { toast.error("Failed to load custom requests"); }
+    finally { setIsCustomRequestsLoading(false); }
   };
 
-  const trackOrderByNumber = useCallback(
-    async (orderNumber: string) => {
-      const trimmed = orderNumber.trim();
-      if (!trimmed) {
-        toast.error("Please enter an order number");
-        return;
-      }
+  const trackOrderByNumber = useCallback(async (orderNumber: string) => {
+    const trimmed = orderNumber.trim();
+    if (!trimmed) { toast.error("Please enter an order number"); return; }
+    setIsTrackingLoading(true);
+    try {
+      const response = await fetch(`/api/orders/track?orderNumber=${encodeURIComponent(trimmed)}`);
+      if (!response.ok) { toast.error("Order not found"); return; }
+      const data = await response.json();
+      const order = data.order as Order;
+      router.push(`/order/${order.id}?orderNumber=${encodeURIComponent(order.orderNumber)}`);
+      setIsTrackingModalOpen(false);
+    } catch { toast.error("Failed to track order"); }
+    finally { setIsTrackingLoading(false); }
+  }, [router]);
 
-      setIsTrackingLoading(true);
-      try {
-        const response = await fetch(
-          `/api/orders/track?orderNumber=${encodeURIComponent(trimmed)}`,
-        );
-
-        if (!response.ok) {
-          toast.error("Order not found");
-          return;
-        }
-
-        const data = await response.json();
-        const order = data.order as Order;
-        router.push(
-          `/order/${order.id}?orderNumber=${encodeURIComponent(order.orderNumber)}`,
-        );
-        setIsTrackingModalOpen(false);
-      } catch {
-        toast.error("Failed to track order");
-      } finally {
-        setIsTrackingLoading(false);
-      }
-    },
-    [router],
-  );
-
-  const trackCustomRequest = useCallback(
-    async (requestNumber: string, email: string) => {
-      const trimmedRequestNumber = requestNumber.trim();
-      const trimmedEmail = email.trim();
-
-      if (!trimmedRequestNumber || !trimmedEmail) {
-        toast.error("Request number and email are required");
-        return;
-      }
-
-      setIsCustomTrackingLoading(true);
-      try {
-        const response = await fetch(
-          `/api/custom-order-requests/track?requestNumber=${encodeURIComponent(
-            trimmedRequestNumber,
-          )}&email=${encodeURIComponent(trimmedEmail)}`,
-        );
-
-        if (!response.ok) {
-          setTrackedCustomRequest(null);
-          toast.error("Custom request not found");
-          return;
-        }
-
-        const data = await response.json();
-        setTrackedCustomRequest(data.request || null);
-      } catch {
-        setTrackedCustomRequest(null);
-        toast.error("Failed to track custom request");
-      } finally {
-        setIsCustomTrackingLoading(false);
-      }
-    },
-    [],
-  );
+  const trackCustomRequest = useCallback(async (requestNumber: string, email: string) => {
+    const trimmedRequestNumber = requestNumber.trim();
+    const trimmedEmail = email.trim();
+    if (!trimmedRequestNumber || !trimmedEmail) {
+      toast.error("Request number and email are required");
+      return;
+    }
+    setIsCustomTrackingLoading(true);
+    try {
+      const response = await fetch(
+        `/api/custom-order-requests/track?requestNumber=${encodeURIComponent(trimmedRequestNumber)}&email=${encodeURIComponent(trimmedEmail)}`,
+      );
+      if (!response.ok) { setTrackedCustomRequest(null); toast.error("Custom request not found"); return; }
+      const data = await response.json();
+      setTrackedCustomRequest(data.request || null);
+    } catch { setTrackedCustomRequest(null); toast.error("Failed to track custom request"); }
+    finally { setIsCustomTrackingLoading(false); }
+  }, []);
 
   useEffect(() => {
     if (!orderNumberParam) return;
     if (autoTrackedOrderRef.current === orderNumberParam) return;
-
     autoTrackedOrderRef.current = orderNumberParam;
     setTrackingInput(orderNumberParam);
     setTrackingMode("order");
@@ -232,204 +185,685 @@ export default function OrdersPageClient() {
     if (!customRequestParam) return;
     if (autoTrackedCustomRef.current === customRequestParam) return;
     if (!customTrackEmail && !emailParam) return;
-
     autoTrackedCustomRef.current = customRequestParam;
     setCustomTrackRequestNumber(customRequestParam);
     setTrackingMode("custom");
     setIsTrackingModalOpen(true);
-    void trackCustomRequest(
-      customRequestParam,
-      customTrackEmail || emailParam || "",
-    );
+    void trackCustomRequest(customRequestParam, customTrackEmail || emailParam || "");
   }, [customRequestParam, customTrackEmail, emailParam, trackCustomRequest]);
 
-  if (status === "loading") {
-    return <PageLoader size="lg" message="Loading orders..." />;
-  }
+  if (status === "loading") return <PageLoader size="lg" message="Loading orders..." />;
 
   const hasTrackingResults = Boolean(
-    trackedCustomRequest ||
-      (customRequestParam && (customTrackEmail || emailParam)),
+    trackedCustomRequest || (customRequestParam && (customTrackEmail || emailParam)),
   );
-
   const openTrackingModal = (mode: "order" | "custom") => {
     setTrackingMode(mode);
     setIsTrackingModalOpen(true);
   };
 
   return (
-    <div className="space-y-10 pb-12">
-      <header className="space-y-4 border-b border-neutral-200 pb-8 dark:border-neutral-800">
-        <p className="text-xs uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
-          Account
-        </p>
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100 md:text-4xl">
-              Orders
-            </h1>
-            <p className="max-w-2xl text-sm text-neutral-600 dark:text-neutral-400">
-              Keep your catalog purchases and custom request history organized
-              in dedicated sections. Open tracking only when you need it.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => openTrackingModal("order")}
-              className="rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
-            >
-              Track order
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+
+        :root {
+          --espresso:   #0A0704;
+          --charcoal:   #100C06;
+          --cream:      #F2E8D5;
+          --sand:       #C9B99A;
+          --muted:      #6A5A48;
+          --terra:      #BF5A28;
+          --gold:       #C0892A;
+          --border:     rgba(242,232,213,0.09);
+          --border-mid: rgba(242,232,213,0.18);
+        }
+
+        .op-root {
+          font-family: 'DM Sans', sans-serif;
+          color: var(--cream);
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          padding-bottom: 80px;
+        }
+
+        /* ── PAGE HERO ── */
+        .op-hero {
+          background: rgba(16,12,6,0.95);
+          border: 1px solid var(--border);
+          padding: 48px;
+          position: relative;
+          overflow: hidden;
+        }
+        .op-hero::before {
+          content: '';
+          position: absolute;
+          right: -50px; top: -50px;
+          width: 240px; height: 240px;
+          border: 1px solid var(--border);
+          border-radius: 50%;
+          pointer-events: none;
+        }
+        .op-hero::after {
+          content: '';
+          position: absolute;
+          right: 40px; top: 40px;
+          width: 110px; height: 110px;
+          border: 1px solid var(--border);
+          border-radius: 50%;
+          pointer-events: none;
+        }
+        .op-hero-eyebrow {
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.28em;
+          text-transform: uppercase;
+          color: var(--terra);
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 16px;
+          position: relative;
+          z-index: 1;
+        }
+        .op-hero-eyebrow::before {
+          content: '';
+          display: block;
+          width: 28px; height: 1px;
+          background: var(--terra);
+        }
+        .op-hero-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: clamp(36px, 5vw, 64px);
+          font-weight: 300;
+          line-height: 1.0;
+          color: var(--cream);
+          margin-bottom: 10px;
+          position: relative;
+          z-index: 1;
+        }
+        .op-hero-title em { font-style: italic; color: var(--terra); }
+        .op-hero-sub {
+          font-size: 14px;
+          color: var(--muted);
+          margin-bottom: 28px;
+          max-width: 520px;
+          line-height: 1.6;
+          position: relative;
+          z-index: 1;
+        }
+        .op-hero-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          position: relative;
+          z-index: 1;
+        }
+        .op-btn-primary {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: var(--terra);
+          border: none;
+          color: var(--cream);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          padding: 12px 22px;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .op-btn-primary:hover { background: #a34d22; }
+        .op-btn-secondary {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: transparent;
+          border: 1px solid var(--border-mid);
+          color: var(--muted);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          padding: 12px 22px;
+          cursor: pointer;
+          transition: border-color 0.2s, color 0.2s, background 0.2s;
+        }
+        .op-btn-secondary:hover {
+          border-color: rgba(242,232,213,0.35);
+          color: var(--cream);
+          background: rgba(242,232,213,0.03);
+        }
+
+        /* ── PANEL ── */
+        .op-panel {
+          border: 1px solid var(--border);
+          border-top: none;
+          background: rgba(16,12,6,0.7);
+          padding: 36px 48px;
+        }
+        .op-panel-head {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 28px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid var(--border);
+        }
+        .op-panel-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 26px;
+          font-weight: 300;
+          color: var(--cream);
+        }
+        .op-panel-count {
+          font-size: 11px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: var(--muted);
+        }
+        .op-accent {
+          height: 1px;
+          background: linear-gradient(90deg, var(--terra) 0%, var(--gold) 50%, transparent 100%);
+          margin-bottom: 28px;
+        }
+
+        /* ── ORDER GRID ── */
+        .op-order-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 2px;
+        }
+
+        /* ── ORDER CARD ── */
+        .op-order-card {
+          border: 1px solid var(--border);
+          background: rgba(242,232,213,0.02);
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 0;
+          transition: background 0.25s, border-color 0.25s;
+        }
+        .op-order-card:hover {
+          background: rgba(242,232,213,0.04);
+          border-color: var(--border-mid);
+        }
+        .op-card-eyebrow {
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: 0.24em;
+          text-transform: uppercase;
+          color: var(--terra);
+          margin-bottom: 8px;
+        }
+        .op-card-number {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 22px;
+          font-weight: 400;
+          color: var(--cream);
+          overflow-wrap: anywhere;
+          margin-bottom: 6px;
+          line-height: 1.1;
+        }
+        .op-card-date {
+          font-size: 12px;
+          color: var(--muted);
+          margin-bottom: 20px;
+          letter-spacing: 0.03em;
+        }
+        .op-card-footer {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-top: auto;
+          padding-top: 16px;
+          border-top: 1px solid var(--border);
+        }
+        .op-status-badge {
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          padding: 5px 12px;
+          border: 1px solid rgba(191,90,40,0.35);
+          background: rgba(191,90,40,0.08);
+          color: var(--terra);
+          flex-shrink: 0;
+        }
+        .op-view-link {
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: var(--muted);
+          text-decoration: none;
+          transition: color 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .op-view-link:hover { color: var(--cream); }
+        .op-view-link::after { content: '→'; }
+
+        /* ── CUSTOM REQUEST CARD ── */
+        .op-cr-card {
+          border: 1px solid var(--border);
+          background: rgba(242,232,213,0.02);
+          padding: 28px;
+          transition: background 0.25s, border-color 0.25s;
+        }
+        .op-cr-card:hover {
+          background: rgba(242,232,213,0.04);
+          border-color: var(--border-mid);
+        }
+        .op-cr-grid {
+          display: grid;
+          grid-template-columns: 1fr auto;
+          gap: 16px;
+          align-items: start;
+          margin-bottom: 16px;
+        }
+        .op-cr-number {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 22px;
+          font-weight: 400;
+          color: var(--cream);
+          overflow-wrap: anywhere;
+          margin-bottom: 4px;
+          line-height: 1.1;
+        }
+        .op-cr-subtitle {
+          font-size: 12px;
+          color: var(--muted);
+          letter-spacing: 0.03em;
+        }
+        .op-cr-right { text-align: right; }
+        .op-cr-status {
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          padding: 5px 12px;
+          border: 1px solid var(--border-mid);
+          color: var(--sand);
+          display: inline-block;
+          margin-bottom: 8px;
+        }
+        .op-cr-price p,
+        .op-cr-price span {
+          color: var(--gold) !important;
+          font-family: 'Cormorant Garamond', serif !important;
+          font-size: 20px !important;
+          font-weight: 400 !important;
+        }
+        .op-cr-desc {
+          font-size: 13px;
+          color: var(--muted);
+          line-height: 1.7;
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          margin-bottom: 12px;
+          border-top: 1px solid var(--border);
+          padding-top: 16px;
+        }
+        .op-cr-expiry {
+          font-size: 11px;
+          color: rgba(192,137,42,0.7);
+          letter-spacing: 0.06em;
+        }
+
+        /* ── SKELETON ── */
+        @keyframes op-pulse {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.55; }
+        }
+        .op-skeleton {
+          height: 140px;
+          background: rgba(242,232,213,0.04);
+          border: 1px solid var(--border);
+          animation: op-pulse 1.8s ease-in-out infinite;
+        }
+        .op-skeleton + .op-skeleton { animation-delay: 0.2s; border-top: none; }
+
+        /* ── EMPTY / AUTH STATES ── */
+        .op-empty {
+          border: 1px dashed rgba(242,232,213,0.1);
+          padding: 56px 40px;
+          text-align: center;
+        }
+        .op-empty-text {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 20px;
+          font-weight: 300;
+          font-style: italic;
+          color: var(--muted);
+          margin-bottom: 16px;
+        }
+        .op-empty-cta {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: var(--terra);
+          border: none;
+          color: var(--cream);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          padding: 11px 22px;
+          text-decoration: none;
+          transition: background 0.2s;
+        }
+        .op-empty-cta:hover { background: #a34d22; }
+        .op-empty-cta-ghost {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: transparent;
+          border: 1px solid var(--border-mid);
+          color: var(--muted);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          padding: 11px 22px;
+          text-decoration: none;
+          transition: border-color 0.2s, color 0.2s;
+        }
+        .op-empty-cta-ghost:hover { border-color: rgba(242,232,213,0.35); color: var(--cream); }
+
+        /* ── TRACKING RESULT ── */
+        .op-track-result-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 20px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid var(--border);
+        }
+        .op-track-another {
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          color: var(--terra);
+          background: none;
+          border: none;
+          cursor: pointer;
+          transition: color 0.2s;
+          padding: 0;
+        }
+        .op-track-another:hover { color: #d96a30; }
+
+        /* ── MODAL ── */
+        .op-modal-backdrop {
+          position: fixed;
+          inset: 0;
+          z-index: 50;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          background: rgba(10,7,4,0.85);
+          backdrop-filter: blur(4px);
+        }
+        .op-modal {
+          width: 100%;
+          max-width: 500px;
+          background: #100C06;
+          border: 1px solid var(--border-mid);
+          padding: 36px;
+        }
+        .op-modal-head {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 28px;
+          padding-bottom: 20px;
+          border-bottom: 1px solid var(--border);
+        }
+        .op-modal-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 28px;
+          font-weight: 300;
+          color: var(--cream);
+          margin-bottom: 4px;
+          line-height: 1.05;
+        }
+        .op-modal-sub {
+          font-size: 13px;
+          color: var(--muted);
+        }
+        .op-modal-close {
+          background: transparent;
+          border: 1px solid var(--border-mid);
+          color: var(--muted);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 9px;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          padding: 7px 14px;
+          cursor: pointer;
+          transition: color 0.2s, border-color 0.2s;
+          flex-shrink: 0;
+        }
+        .op-modal-close:hover { color: var(--cream); border-color: rgba(242,232,213,0.35); }
+
+        /* Mode toggle */
+        .op-mode-toggle {
+          display: inline-flex;
+          background: rgba(242,232,213,0.04);
+          border: 1px solid var(--border);
+          padding: 3px;
+          gap: 2px;
+          margin-bottom: 24px;
+        }
+        .op-mode-btn {
+          background: transparent;
+          border: none;
+          color: var(--muted);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          padding: 9px 16px;
+          cursor: pointer;
+          transition: background 0.2s, color 0.2s;
+        }
+        .op-mode-btn-active {
+          background: var(--terra);
+          color: var(--cream);
+        }
+
+        /* Form inputs */
+        .op-form { display: flex; flex-direction: column; gap: 10px; }
+        .op-input {
+          width: 100%;
+          background: rgba(10,7,4,0.7);
+          border: 1px solid rgba(242,232,213,0.09);
+          color: var(--cream);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          padding: 12px 16px;
+          outline: none;
+          transition: border-color 0.2s;
+          box-sizing: border-box;
+        }
+        .op-input::placeholder { color: var(--muted); }
+        .op-input:focus { border-color: rgba(191,90,40,0.5); }
+        .op-form-submit {
+          width: 100%;
+          background: var(--terra);
+          border: none;
+          color: var(--cream);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          padding: 14px;
+          cursor: pointer;
+          transition: background 0.2s;
+          margin-top: 4px;
+        }
+        .op-form-submit:hover { background: #a34d22; }
+        .op-form-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        @media (max-width: 768px) {
+          .op-hero { padding: 28px 24px; }
+          .op-panel { padding: 24px; }
+          .op-modal { padding: 24px; }
+          .op-order-grid { grid-template-columns: 1fr; }
+          .op-cr-grid { grid-template-columns: 1fr; }
+          .op-cr-right { text-align: left; }
+        }
+      `}</style>
+
+      <div className="op-root">
+        {/* ── HERO ── */}
+        <header className="op-hero">
+          <div className="op-hero-eyebrow">Account</div>
+          <h1 className="op-hero-title">
+            Your <em>Orders</em>
+          </h1>
+          <p className="op-hero-sub">
+            Catalog purchases and custom requests in dedicated sections. Open tracking only when you need it.
+          </p>
+          <div className="op-hero-actions">
+            <button type="button" onClick={() => openTrackingModal("order")} className="op-btn-primary">
+              Track order →
             </button>
-            <button
-              type="button"
-              onClick={() => openTrackingModal("custom")}
-              className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-500 dark:border-neutral-700 dark:text-neutral-200"
-            >
+            <button type="button" onClick={() => openTrackingModal("custom")} className="op-btn-secondary">
               Track custom request
             </button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {hasTrackingResults ? (
-        <section className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-              Tracking result
-            </h2>
-            <button
-              type="button"
-              onClick={() => setIsTrackingModalOpen(true)}
-              className="text-sm font-medium text-neutral-600 underline-offset-4 hover:underline dark:text-neutral-400"
-            >
-              Track another
-            </button>
-          </div>
-
-          {trackedCustomRequest ? (
-            <CustomRequestCard request={trackedCustomRequest} />
-          ) : null}
-          {customRequestParam &&
-          !trackedCustomRequest &&
-          !isCustomTrackingLoading ? (
-            <section className="rounded-2xl border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-400">
-              We couldn&apos;t find a custom request with those details.
-            </section>
-          ) : null}
-        </section>
-      ) : null}
-
-      {session ? (
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-              Catalog orders
-            </h2>
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              {orders.length} total
-            </span>
-          </div>
-
-          {isOrdersLoading ? (
-            <div className="space-y-3">
-              <div className="h-40 animate-pulse rounded-2xl bg-neutral-200 dark:bg-neutral-800" />
-              <div className="h-40 animate-pulse rounded-2xl bg-neutral-200 dark:bg-neutral-800" />
+        {/* ── TRACKING RESULT ── */}
+        {hasTrackingResults && (
+          <div className="op-panel">
+            <div className="op-accent" />
+            <div className="op-track-result-header">
+              <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "26px", fontWeight: 300, color: "var(--cream)" }}>
+                Tracking result
+              </h2>
+              <button type="button" onClick={() => setIsTrackingModalOpen(true)} className="op-track-another">
+                Track another →
+              </button>
             </div>
-          ) : orders.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {orders.map((order) => (
-                <OrderCard key={order.id} order={order} />
-              ))}
+            {trackedCustomRequest ? <CustomRequestCard request={trackedCustomRequest} /> : null}
+            {customRequestParam && !trackedCustomRequest && !isCustomTrackingLoading ? (
+              <div className="op-empty">
+                <p className="op-empty-text">No matching request found.</p>
+              </div>
+            ) : null}
+          </div>
+        )}
+
+        {/* ── CATALOG ORDERS ── */}
+        {session && (
+          <div className="op-panel">
+            <div className="op-accent" />
+            <div className="op-panel-head">
+              <h2 className="op-panel-title">Catalog orders</h2>
+              <span className="op-panel-count">{orders.length} total</span>
             </div>
-          ) : (
-            <section className="rounded-2xl border border-neutral-200 bg-white p-8 text-center dark:border-neutral-800 dark:bg-neutral-950">
-              <p className="text-neutral-600 dark:text-neutral-400">
-                You haven&apos;t placed any orders yet.
-              </p>
-              <Link
-                href="/products"
-                className="mt-4 inline-block rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white hover:bg-neutral-700 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-              >
-                Start shopping
+
+            {isOrdersLoading ? (
+              <div>
+                <div className="op-skeleton" />
+                <div className="op-skeleton" />
+              </div>
+            ) : orders.length > 0 ? (
+              <div className="op-order-grid">
+                {orders.map((order) => <OrderCard key={order.id} order={order} />)}
+              </div>
+            ) : (
+              <div className="op-empty">
+                <p className="op-empty-text">No orders placed yet.</p>
+                <Link href="/products" className="op-empty-cta">Start shopping →</Link>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── CUSTOM REQUESTS ── */}
+        {session && (
+          <div className="op-panel">
+            <div className="op-accent" />
+            <div className="op-panel-head">
+              <h2 className="op-panel-title">Custom requests</h2>
+              <span className="op-panel-count">{customRequests.length} total</span>
+            </div>
+
+            {isCustomRequestsLoading ? (
+              <div>
+                <div className="op-skeleton" />
+                <div className="op-skeleton" />
+              </div>
+            ) : customRequests.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                {customRequests.map((request) => <CustomRequestCard key={request.id} request={request} />)}
+              </div>
+            ) : (
+              <div className="op-empty">
+                <p className="op-empty-text">No custom requests yet.</p>
+                <Link href="/custom-orders" className="op-empty-cta-ghost">Start a custom order →</Link>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── UNAUTHENTICATED ── */}
+        {!session && (
+          <div className="op-panel">
+            <div className="op-empty">
+              <p className="op-empty-text">Sign in to see your orders.</p>
+              <Link href="/auth/login?callbackUrl=/orders" className="op-empty-cta">
+                Login to account →
               </Link>
-            </section>
-          )}
-        </section>
-      ) : null}
-
-      {session ? (
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-              Custom requests
-            </h2>
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              {customRequests.length} total
-            </span>
+            </div>
           </div>
+        )}
 
-          {isCustomRequestsLoading ? (
-            <div className="space-y-3">
-              <div className="h-32 animate-pulse rounded-2xl bg-neutral-200 dark:bg-neutral-800" />
-              <div className="h-32 animate-pulse rounded-2xl bg-neutral-200 dark:bg-neutral-800" />
-            </div>
-          ) : customRequests.length > 0 ? (
-            <div className="space-y-4">
-              {customRequests.map((request) => (
-                <CustomRequestCard key={request.id} request={request} />
-              ))}
-            </div>
-          ) : (
-            <section className="rounded-2xl border border-neutral-200 bg-white p-8 text-center dark:border-neutral-800 dark:bg-neutral-950">
-              <p className="text-neutral-600 dark:text-neutral-400">
-                No custom requests yet.
-              </p>
-              <Link
-                href="/custom-orders"
-                className="mt-4 inline-block rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-900 hover:border-neutral-500 dark:border-neutral-700 dark:text-neutral-100 dark:hover:border-neutral-500"
-              >
-                Start a custom order
-              </Link>
-            </section>
-          )}
-        </section>
-      ) : null}
-
-      {!session ? (
-        <section className="rounded-2xl border border-neutral-200 bg-white p-6 text-center dark:border-neutral-800 dark:bg-neutral-950">
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">
-            Login to see all your past orders and linked custom requests.
-          </p>
-          <Link
-            href="/auth/login?callbackUrl=/orders"
-            className="mt-3 inline-block rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-900 hover:border-neutral-500 dark:border-neutral-700 dark:text-neutral-100 dark:hover:border-neutral-500"
-          >
-            Login to account
-          </Link>
-        </section>
-      ) : null}
-
-      {isTrackingModalOpen ? (
-        <TrackingModal
-          trackingMode={trackingMode}
-          setTrackingMode={setTrackingMode}
-          trackingInput={trackingInput}
-          setTrackingInput={setTrackingInput}
-          isTrackingLoading={isTrackingLoading}
-          onTrackOrder={trackOrderByNumber}
-          customTrackRequestNumber={customTrackRequestNumber}
-          setCustomTrackRequestNumber={setCustomTrackRequestNumber}
-          customTrackEmail={customTrackEmail}
-          setCustomTrackEmail={setCustomTrackEmail}
-          isCustomTrackingLoading={isCustomTrackingLoading}
-          onTrackCustomRequest={trackCustomRequest}
-          onClose={() => setIsTrackingModalOpen(false)}
-        />
-      ) : null}
-    </div>
+        {/* ── TRACKING MODAL ── */}
+        {isTrackingModalOpen && (
+          <TrackingModal
+            trackingMode={trackingMode}
+            setTrackingMode={setTrackingMode}
+            trackingInput={trackingInput}
+            setTrackingInput={setTrackingInput}
+            isTrackingLoading={isTrackingLoading}
+            onTrackOrder={trackOrderByNumber}
+            customTrackRequestNumber={customTrackRequestNumber}
+            setCustomTrackRequestNumber={setCustomTrackRequestNumber}
+            customTrackEmail={customTrackEmail}
+            setCustomTrackEmail={setCustomTrackEmail}
+            isCustomTrackingLoading={isCustomTrackingLoading}
+            onTrackCustomRequest={trackCustomRequest}
+            onClose={() => setIsTrackingModalOpen(false)}
+          />
+        )}
+      </div>
+    </>
   );
 }
+
+/* ─────────────────────────── TRACKING MODAL ─────────────────────────── */
 
 type TrackingModalProps = {
   trackingMode: "order" | "custom";
@@ -448,61 +882,37 @@ type TrackingModalProps = {
 };
 
 function TrackingModal({
-  trackingMode,
-  setTrackingMode,
-  trackingInput,
-  setTrackingInput,
-  isTrackingLoading,
-  onTrackOrder,
-  customTrackRequestNumber,
-  setCustomTrackRequestNumber,
-  customTrackEmail,
-  setCustomTrackEmail,
-  isCustomTrackingLoading,
-  onTrackCustomRequest,
+  trackingMode, setTrackingMode,
+  trackingInput, setTrackingInput,
+  isTrackingLoading, onTrackOrder,
+  customTrackRequestNumber, setCustomTrackRequestNumber,
+  customTrackEmail, setCustomTrackEmail,
+  isCustomTrackingLoading, onTrackCustomRequest,
   onClose,
 }: TrackingModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-xl rounded-3xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-950 md:p-7">
-        <div className="mb-6 flex items-start justify-between gap-4">
+    <div className="op-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="op-modal">
+        <div className="op-modal-head">
           <div>
-            <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-              Track shipment
-            </h2>
-            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-              Choose what you want to track and submit your details.
-            </p>
+            <h2 className="op-modal-title">Track shipment</h2>
+            <p className="op-modal-sub">Choose what to track and submit your details.</p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full border border-neutral-300 px-3 py-1 text-sm text-neutral-700 dark:border-neutral-700 dark:text-neutral-300"
-          >
-            Close
-          </button>
+          <button type="button" onClick={onClose} className="op-modal-close">Close ✕</button>
         </div>
 
-        <div className="mb-4 inline-flex rounded-full border border-neutral-300 p-1 dark:border-neutral-700">
+        <div className="op-mode-toggle">
           <button
             type="button"
             onClick={() => setTrackingMode("order")}
-            className={`rounded-full px-3 py-1.5 text-sm font-medium ${
-              trackingMode === "order"
-                ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
-                : "text-neutral-600 dark:text-neutral-400"
-            }`}
+            className={`op-mode-btn${trackingMode === "order" ? " op-mode-btn-active" : ""}`}
           >
             Order
           </button>
           <button
             type="button"
             onClick={() => setTrackingMode("custom")}
-            className={`rounded-full px-3 py-1.5 text-sm font-medium ${
-              trackingMode === "custom"
-                ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
-                : "text-neutral-600 dark:text-neutral-400"
-            }`}
+            className={`op-mode-btn${trackingMode === "custom" ? " op-mode-btn-active" : ""}`}
           >
             Custom request
           </button>
@@ -510,58 +920,39 @@ function TrackingModal({
 
         {trackingMode === "order" ? (
           <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              void onTrackOrder(trackingInput);
-            }}
-            className="space-y-3"
+            className="op-form"
+            onSubmit={(e) => { e.preventDefault(); void onTrackOrder(trackingInput); }}
           >
             <input
               value={trackingInput}
-              onChange={(event) => setTrackingInput(event.target.value)}
+              onChange={(e) => setTrackingInput(e.target.value)}
               placeholder="Order number (e.g. ORD-123456)"
-              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+              className="op-input"
             />
-            <button
-              type="submit"
-              disabled={isTrackingLoading}
-              className="w-full rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-            >
-              {isTrackingLoading ? "Checking..." : "Track order"}
+            <button type="submit" disabled={isTrackingLoading} className="op-form-submit">
+              {isTrackingLoading ? "Checking..." : "Track order →"}
             </button>
           </form>
         ) : (
           <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              void onTrackCustomRequest(
-                customTrackRequestNumber,
-                customTrackEmail,
-              );
-            }}
-            className="space-y-3"
+            className="op-form"
+            onSubmit={(e) => { e.preventDefault(); void onTrackCustomRequest(customTrackRequestNumber, customTrackEmail); }}
           >
             <input
               value={customTrackRequestNumber}
-              onChange={(event) =>
-                setCustomTrackRequestNumber(event.target.value)
-              }
+              onChange={(e) => setCustomTrackRequestNumber(e.target.value)}
               placeholder="Request number (e.g. COR-123456)"
-              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+              className="op-input"
             />
             <input
               type="email"
               value={customTrackEmail}
-              onChange={(event) => setCustomTrackEmail(event.target.value)}
+              onChange={(e) => setCustomTrackEmail(e.target.value)}
               placeholder="Email address"
-              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+              className="op-input"
             />
-            <button
-              type="submit"
-              disabled={isCustomTrackingLoading}
-              className="w-full rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-            >
-              {isCustomTrackingLoading ? "Checking..." : "Track custom request"}
+            <button type="submit" disabled={isCustomTrackingLoading} className="op-form-submit">
+              {isCustomTrackingLoading ? "Checking..." : "Track custom request →"}
             </button>
           </form>
         )}
@@ -570,31 +961,22 @@ function TrackingModal({
   );
 }
 
+/* ─────────────────────────── ORDER CARD ─────────────────────────── */
+
 function OrderCard({ order }: { order: Order }) {
   const createdDate = new Date(order.createdAt).toLocaleDateString();
-
   return (
-    <article className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
-      <p className="text-xs uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
-        Order
-      </p>
-      <h3 className="mt-1 text-lg font-semibold text-neutral-900 [overflow-wrap:anywhere] dark:text-neutral-100">
-        {order.orderNumber}
-      </h3>
-      <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-        Placed on {createdDate}
-      </p>
-
-      <div className="mt-4 flex items-center justify-between gap-2">
-        <span className="inline-flex rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium uppercase tracking-wide text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
+    <article className="op-order-card">
+      <div className="op-card-eyebrow">Catalog order</div>
+      <h3 className="op-card-number">{order.orderNumber}</h3>
+      <p className="op-card-date">Placed on {createdDate}</p>
+      <div className="op-card-footer">
+        <span className="op-status-badge">
           {order.deliveryStatus
-            ? getDeliveryStatusDescription(order.deliveryStatus)
+            ? getDeliveryStatusLabel(order.deliveryStatus)
             : order.status}
         </span>
-        <Link
-          href={`/order/${order.id}`}
-          className="text-sm font-medium text-neutral-700 underline-offset-4 hover:underline dark:text-neutral-300"
-        >
+        <Link href={`/order/${order.id}`} className="op-view-link">
           View details
         </Link>
       </div>
@@ -602,50 +984,43 @@ function OrderCard({ order }: { order: Order }) {
   );
 }
 
+/* ─────────────────────────── CUSTOM REQUEST CARD ─────────────────────────── */
+
 function CustomRequestCard({ request }: { request: CustomRequest }) {
   const createdDate = new Date(request.createdAt).toLocaleDateString();
   const quoteAmount = request.latestQuote?.amount || request.quotedAmount;
-  const currencyCode =
-    request.latestQuote?.currencyCode || request.currencyCode || "NGN";
+  const currencyCode = request.latestQuote?.currencyCode || request.currencyCode || "NGN";
 
   return (
-    <article className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950 md:p-6">
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
-            Custom request
-          </p>
-          <h3 className="text-lg font-semibold text-neutral-900 [overflow-wrap:anywhere] dark:text-neutral-100">
-            {request.requestNumber}
-          </h3>
-          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-            {request.title} · Submitted on {createdDate}
-          </p>
+    <article className="op-cr-card">
+      <div className="op-cr-grid">
+        <div>
+          <div className="op-card-eyebrow">Custom request</div>
+          <h3 className="op-cr-number">{request.requestNumber}</h3>
+          <p className="op-cr-subtitle">{request.title} · {createdDate}</p>
         </div>
-        <div className="text-left sm:text-right">
-          <span className="inline-flex rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium uppercase tracking-wide text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
-            {request.status}
-          </span>
-          {quoteAmount ? (
-            <Price
-              amount={quoteAmount}
-              currencyCode={currencyCode}
-              currencyCodeClassName="hidden"
-              className="mt-2 text-base font-semibold text-neutral-900 dark:text-neutral-100"
-            />
-          ) : null}
+        <div className="op-cr-right">
+          <span className="op-cr-status">{request.status}</span>
+          {quoteAmount && (
+            <div className="op-cr-price">
+              <Price
+                amount={quoteAmount}
+                currencyCode={currencyCode}
+                currencyCodeClassName="hidden"
+                className="inline"
+              />
+            </div>
+          )}
         </div>
       </div>
 
-      <p className="mt-4 line-clamp-3 text-sm text-neutral-600 dark:text-neutral-400">
-        {request.description}
-      </p>
+      <p className="op-cr-desc">{request.description}</p>
 
-      {request.quoteExpiresAt ? (
-        <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
+      {request.quoteExpiresAt && (
+        <p className="op-cr-expiry">
           Quote expires: {new Date(request.quoteExpiresAt).toLocaleString()}
         </p>
-      ) : null}
+      )}
     </article>
   );
 }

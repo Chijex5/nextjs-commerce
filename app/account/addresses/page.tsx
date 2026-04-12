@@ -1,11 +1,11 @@
 "use client";
 
 import LoadingDots from "components/loading-dots";
-import PageLoader from "components/page-loader";
 import {
-  LocationSelectGroup,
-  type LocationChangeSource,
+    LocationSelectGroup,
+    type LocationChangeSource,
 } from "components/locations/location-select-group";
+import PageLoader from "components/page-loader";
 import { useUserSession } from "hooks/useUserSession";
 import { normalizeLocationName } from "lib/locations";
 import { useRouter } from "next/navigation";
@@ -153,36 +153,239 @@ export default function AddressesPage() {
   if (!session) return null;
 
   return (
-    <div className="space-y-6 pb-10">
-      <div className="rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950">
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-          Saved addresses
-        </h2>
-        <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-          Keep your delivery information up to date for faster checkout.
+    <div className="ad-root">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+
+        .ad-root {
+          font-family: 'DM Sans', sans-serif;
+          color: #F2E8D5;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          padding-bottom: 2.5rem;
+        }
+
+        .ad-hero {
+          background: rgba(16,12,6,0.85);
+          border: 1px solid rgba(242,232,213,0.09);
+          padding: 2rem;
+        }
+
+        .ad-eyebrow {
+          font-size: 0.6rem;
+          font-weight: 500;
+          letter-spacing: 0.24em;
+          text-transform: uppercase;
+          color: #BF5A28;
+          margin-bottom: 0.7rem;
+        }
+
+        .ad-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: clamp(1.75rem, 2.5vw, 2.3rem);
+          font-weight: 300;
+          color: #F2E8D5;
+          line-height: 1.2;
+        }
+
+        .ad-sub {
+          margin-top: 0.5rem;
+          color: #8A7762;
+          font-size: 0.85rem;
+          line-height: 1.6;
+          max-width: 40rem;
+        }
+
+        .ad-panel {
+          background: rgba(16,12,6,0.7);
+          border: 1px solid rgba(242,232,213,0.09);
+          padding: 1.5rem;
+        }
+
+        .ad-panel-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 1.55rem;
+          font-weight: 300;
+          color: #F2E8D5;
+          margin-bottom: 0.35rem;
+        }
+
+        .ad-panel-note {
+          color: #8A7762;
+          font-size: 0.8rem;
+          line-height: 1.6;
+        }
+
+        .ad-grid {
+          display: grid;
+          gap: 1rem;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .ad-form {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          margin-top: 1.25rem;
+        }
+
+        .ad-field-label {
+          display: block;
+          margin-bottom: 0.35rem;
+          color: #8A7762;
+          font-size: 0.62rem;
+          font-weight: 500;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+        }
+
+        .ad-input {
+          width: 100%;
+          background: rgba(10,7,4,0.8);
+          border: 1px solid rgba(242,232,213,0.09);
+          color: #F2E8D5;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.82rem;
+          padding: 0.72rem 0.85rem;
+          outline: none;
+          transition: border-color 0.2s;
+          box-sizing: border-box;
+        }
+
+        .ad-input:focus {
+          border-color: rgba(191,90,40,0.5);
+        }
+
+        .ad-phone-prefix {
+          display: flex;
+          align-items: center;
+          border: 1px solid rgba(242,232,213,0.09);
+          background: rgba(242,232,213,0.03);
+          color: #C9B99A;
+          padding: 0 0.75rem;
+          font-size: 0.75rem;
+        }
+
+        .ad-actions {
+          margin-top: 1.25rem;
+          display: flex;
+          gap: 0.55rem;
+          flex-wrap: wrap;
+        }
+
+        .ad-btn-primary {
+          border: none;
+          background: #BF5A28;
+          color: #F2E8D5;
+          font-size: 0.62rem;
+          font-weight: 500;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          padding: 0.72rem 1.2rem;
+          cursor: pointer;
+        }
+
+        .ad-btn-primary:disabled {
+          opacity: 0.55;
+          cursor: not-allowed;
+        }
+
+        .ad-btn-ghost {
+          border: 1px solid rgba(242,232,213,0.2);
+          background: transparent;
+          color: #C9B99A;
+          font-size: 0.62rem;
+          font-weight: 500;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          padding: 0.72rem 1.2rem;
+          cursor: pointer;
+        }
+
+        .ad-address-card {
+          background: rgba(16,12,6,0.75);
+          border: 1px solid rgba(242,232,213,0.09);
+          padding: 1.25rem;
+        }
+
+        .ad-address-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 0.9rem;
+          gap: 0.75rem;
+        }
+
+        .ad-address-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 1.3rem;
+          font-weight: 300;
+          color: #F2E8D5;
+        }
+
+        .ad-link-btn {
+          border: none;
+          background: none;
+          color: #BF5A28;
+          font-size: 0.62rem;
+          font-weight: 500;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          cursor: pointer;
+          padding: 0;
+        }
+
+        .ad-line {
+          color: #C9B99A;
+          font-size: 0.8rem;
+          line-height: 1.55;
+        }
+
+        .ad-line--muted {
+          color: #8A7762;
+        }
+
+        @media (max-width: 768px) {
+          .ad-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+
+      <div className="ad-hero">
+        <p className="ad-eyebrow">Address book</p>
+        <h2 className="ad-title">Saved addresses</h2>
+        <p className="ad-sub">
+          Keep your delivery details current so checkout stays fast and
+          accurate.
         </p>
       </div>
 
       {editMode ? (
-        <div className="rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950">
-          <h3 className="mb-5 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+        <div className="ad-panel">
+          <h3 className="ad-panel-title">
             {editMode === "shipping" ? "Edit shipping" : "Edit billing"} address
           </h3>
+          <p className="ad-panel-note">
+            Provide complete details including landmarks and valid phone
+            numbers.
+          </p>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field
-              label="First name"
-              value={formData.firstName}
-              onChange={(v) => handleInputChange("firstName", v)}
-            />
-            <Field
-              label="Last name"
-              value={formData.lastName}
-              onChange={(v) => handleInputChange("lastName", v)}
-            />
-          </div>
+          <div className="ad-form">
+            <div className="ad-grid">
+              <Field
+                label="First name"
+                value={formData.firstName}
+                onChange={(v) => handleInputChange("firstName", v)}
+              />
+              <Field
+                label="Last name"
+                value={formData.lastName}
+                onChange={(v) => handleInputChange("lastName", v)}
+              />
+            </div>
 
-          <div className="mt-4 space-y-4">
             <LocationSelectGroup
               stateValue={formData.state}
               lgaValue={formData.lga}
@@ -196,8 +399,8 @@ export default function AddressesPage() {
               onWardChange={(value, source) =>
                 handleLocationChange("ward", value, source)
               }
-              inputClassName="rounded-xl border-neutral-300 bg-white px-4 py-2.5 text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-              menuClassName="rounded-2xl"
+              inputClassName="ad-input"
+              menuClassName="rounded-none border border-[rgba(242,232,213,0.09)] bg-[#100C06]"
             />
 
             <Field
@@ -216,7 +419,7 @@ export default function AddressesPage() {
               onChange={(v) => handleInputChange("landmark", v)}
             />
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="ad-grid">
               <PhoneField
                 label="Phone number 1"
                 value={formData.phone1}
@@ -230,11 +433,11 @@ export default function AddressesPage() {
             </div>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="ad-actions">
             <button
               onClick={handleSave}
               disabled={saving}
-              className="rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black"
+              className="ad-btn-primary"
             >
               {saving ? (
                 <LoadingDots className="bg-white dark:bg-black" />
@@ -245,14 +448,14 @@ export default function AddressesPage() {
             <button
               onClick={() => setEditMode(null)}
               disabled={saving}
-              className="rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
+              className="ad-btn-ghost"
             >
               Cancel
             </button>
           </div>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="ad-grid">
           <AddressCard
             title="Shipping address"
             address={addresses.shippingAddress}
@@ -280,11 +483,11 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium">{label}</label>
+      <label className="ad-field-label">{label}</label>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 dark:border-neutral-700 dark:bg-neutral-900"
+        className="ad-input"
       />
     </div>
   );
@@ -301,16 +504,14 @@ function PhoneField({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium">{label}</label>
+      <label className="ad-field-label">{label}</label>
       <div className="flex gap-2">
-        <div className="flex items-center rounded-xl border border-neutral-300 bg-neutral-100 px-3 text-sm font-medium dark:border-neutral-700 dark:bg-neutral-900">
-          +234
-        </div>
+        <div className="ad-phone-prefix">+234</div>
         <input
           value={value}
           onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
           maxLength={10}
-          className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 dark:border-neutral-700 dark:bg-neutral-900"
+          className="ad-input"
         />
       </div>
     </div>
@@ -327,39 +528,35 @@ function AddressCard({
   onEdit: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-          {title}
-        </h3>
-        <button
-          onClick={onEdit}
-          className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
-        >
+    <div className="ad-address-card">
+      <div className="ad-address-head">
+        <h3 className="ad-address-title">{title}</h3>
+        <button onClick={onEdit} className="ad-link-btn">
           {address ? "Edit" : "Add"}
         </button>
       </div>
 
       {address ? (
-        <div className="space-y-1.5 text-sm text-neutral-700 dark:text-neutral-300">
-          <p className="font-medium text-neutral-900 dark:text-neutral-100">
+        <div>
+          <p
+            className="ad-line"
+            style={{ color: "#F2E8D5", marginBottom: "0.2rem" }}
+          >
             {address.firstName} {address.lastName}
           </p>
-          <p>{address.streetAddress}</p>
-          <p>{address.nearestBusStop}</p>
-          <p>{address.landmark}</p>
-          <p>
+          <p className="ad-line">{address.streetAddress}</p>
+          <p className="ad-line">{address.nearestBusStop}</p>
+          <p className="ad-line">{address.landmark}</p>
+          <p className="ad-line">
             {[address.ward, address.lga, address.state]
               .filter(Boolean)
               .join(", ")}
           </p>
-          <p>+234 {address.phone1}</p>
-          <p>+234 {address.phone2}</p>
+          <p className="ad-line">+234 {address.phone1}</p>
+          <p className="ad-line">+234 {address.phone2}</p>
         </div>
       ) : (
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          No address saved yet.
-        </p>
+        <p className="ad-line ad-line--muted">No address saved yet.</p>
       )}
     </div>
   );

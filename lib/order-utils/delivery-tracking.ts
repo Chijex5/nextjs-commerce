@@ -101,7 +101,24 @@ export function getDeliveryStatusDescription(status: DeliveryStatus): string {
     cancelled: "Your order has been cancelled",
   };
 
+
   return descriptions[status] || "Status unknown";
+}
+
+/**
+ * Get short status label for UI display
+ */
+export function getDeliveryStatusLabel(status: DeliveryStatus): string {  
+  const labels: Record<DeliveryStatus, string> = {
+    production: "In Production",
+    sorting: "Sorting",
+    dispatch: "Out for Delivery",
+    paused: "Paused",
+    completed: "Delivered",
+    cancelled: "Cancelled",
+  };
+
+  return labels[status] || "Unknown";
 }
 
 /**

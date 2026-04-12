@@ -1,6 +1,5 @@
 "use client";
 
-import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { useUserSession } from "hooks/useUserSession";
 import { trackPurchase } from "lib/analytics";
 import { COUPON_STORAGE_KEY } from "lib/coupon-storage";
@@ -15,137 +14,312 @@ export default function CheckoutSuccess() {
   const [mounted, setMounted] = useState(false);
   const trackedOrderRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     try {
       localStorage.removeItem(COUPON_STORAGE_KEY);
       localStorage.removeItem("local-first-cart");
-    } catch {
-      // Ignore storage errors.
-    }
+    } catch {}
   }, []);
+
   useEffect(() => {
     if (!orderNumber || trackedOrderRef.current === orderNumber) return;
-
     const trackOrder = async () => {
       try {
-        const response = await fetch(
-          `/api/orders/track?orderNumber=${encodeURIComponent(orderNumber)}`,
-        );
-
+        const response = await fetch(`/api/orders/track?orderNumber=${encodeURIComponent(orderNumber)}`);
         if (!response.ok) return;
-
         const data = await response.json();
         const order = data?.order;
         if (!order) return;
-
         trackedOrderRef.current = orderNumber;
         trackPurchase({
           orderId: order.orderNumber,
           value: parseFloat(order.totalAmount),
-          items: order.items.map((item: any) => ({
-            id: item.productId,
-            name: item.productTitle,
-            quantity: item.quantity,
-          })),
+          items: order.items.map((item: any) => ({ id: item.productId, name: item.productTitle, quantity: item.quantity })),
         });
-      } catch (error) {
-        console.error("Failed to track purchase:", error);
-      }
+      } catch (error) { console.error("Failed to track purchase:", error); }
     };
-
     trackOrder();
   }, [orderNumber]);
 
-  if (!mounted) {
-    return null;
-  }
+  if (!mounted) return null;
+
+  const NEXT_STEPS = [
+    { icon: "◈", text: "Email confirmation sent with your order details." },
+    { icon: "⟡", text: "We'll notify you when your order is shipped." },
+    { icon: "⊛", text: "Track anytime from your account or with your order number." },
+  ];
 
   return (
-    <div className="mx-auto mt-20 max-w-2xl px-4 pb-20">
-      <div className="rounded-lg border border-neutral-200 bg-white p-8 text-center dark:border-neutral-800 dark:bg-black">
-        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
-          <CheckCircleIcon className="h-12 w-12 text-green-600 dark:text-green-400" />
-        </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+        :root {
+          --dp-ink:     #0A0704;
+          --dp-charcoal:#191209;
+          --dp-card:    #1E1510;
+          --dp-cream:   #F2E8D5;
+          --dp-sand:    #C9B99A;
+          --dp-muted:   #6A5A48;
+          --dp-ember:   #BF5A28;
+          --dp-gold:    #C0892A;
+          --dp-green:   #4A8C5C;
+          --dp-border:  rgba(242,232,213,0.09);
+        }
 
-        <h1 className="mb-4 text-3xl font-bold">Order Placed Successfully!</h1>
+        @keyframes dp-rise {
+          from { opacity: 0; transform: translateY(20px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes dp-check-in {
+          0%   { stroke-dashoffset: 60; opacity: 0; }
+          40%  { opacity: 1; }
+          100% { stroke-dashoffset: 0; }
+        }
+        @keyframes dp-ring-pulse {
+          0%   { transform: scale(0.85); opacity: 0; }
+          60%  { transform: scale(1.05); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
 
-        <p className="mb-6 text-neutral-600 dark:text-neutral-400">
-          Thank you for your purchase. Your order has been confirmed and is
-          being processed.
-        </p>
+        .dp-rise-1 { animation: dp-rise 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s both; }
+        .dp-rise-2 { animation: dp-rise 0.8s cubic-bezier(0.16,1,0.3,1) 0.22s both; }
+        .dp-rise-3 { animation: dp-rise 0.8s cubic-bezier(0.16,1,0.3,1) 0.35s both; }
+        .dp-rise-4 { animation: dp-rise 0.8s cubic-bezier(0.16,1,0.3,1) 0.48s both; }
+        .dp-rise-5 { animation: dp-rise 0.8s cubic-bezier(0.16,1,0.3,1) 0.60s both; }
 
-        {orderNumber && (
-          <div className="mb-6 rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-900">
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              Order Number
-            </p>
-            <p className="text-xl font-bold">{orderNumber}</p>
+        .dp-check-ring { animation: dp-ring-pulse 0.6s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
+        .dp-check-path { stroke-dasharray: 60; animation: dp-check-in 0.5s cubic-bezier(0.16,1,0.3,1) 0.45s both; }
+
+        .dp-step-item {
+          display: flex; align-items: flex-start; gap: 0.875rem;
+          padding: 0.875rem 0;
+          border-bottom: 1px solid var(--dp-border);
+        }
+        .dp-step-item:last-child { border-bottom: none; }
+
+        .dp-btn-primary {
+          display: inline-flex; align-items: center; gap: 0.4rem;
+          background: var(--dp-cream); color: var(--dp-ink);
+          font-family: 'DM Sans', sans-serif; font-weight: 500;
+          font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase;
+          padding: 0.85rem 1.75rem; text-decoration: none;
+          transition: background 0.2s, color 0.2s;
+        }
+        .dp-btn-primary:hover { background: var(--dp-ember); color: var(--dp-cream); }
+
+        .dp-btn-ghost {
+          display: inline-flex; align-items: center; gap: 0.4rem;
+          border: 1px solid var(--dp-border); color: var(--dp-muted);
+          font-family: 'DM Sans', sans-serif; font-weight: 500;
+          font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase;
+          padding: 0.85rem 1.75rem; text-decoration: none;
+          transition: border-color 0.2s, color 0.2s;
+        }
+        .dp-btn-ghost:hover { border-color: rgba(242,232,213,0.3); color: var(--dp-cream); }
+      `}</style>
+
+      <div
+        style={{
+          background: "var(--dp-ink)", color: "var(--dp-cream)",
+          minHeight: "100vh", fontFamily: "DM Sans, sans-serif",
+        }}
+      >
+        {/* Top accent line */}
+        <div style={{ height: 2, background: "linear-gradient(90deg, var(--dp-ember), var(--dp-gold) 50%, transparent 100%)" }} />
+
+        <div
+          style={{
+            maxWidth: 700, margin: "0 auto",
+            padding: "4rem clamp(1.25rem,4vw,2.5rem) 6rem",
+          }}
+        >
+          {/* ── Animated check ── */}
+          <div className="dp-rise-1" style={{ display: "flex", justifyContent: "center", marginBottom: "2.5rem" }}>
+            <div className="dp-check-ring" style={{ position: "relative", width: 80, height: 80 }}>
+              {/* Outer ring */}
+              <div
+                style={{
+                  position: "absolute", inset: 0, borderRadius: "50%",
+                  border: "1px solid rgba(74,140,92,0.3)",
+                  background: "rgba(74,140,92,0.06)",
+                }}
+              />
+              {/* SVG checkmark */}
+              <svg
+                viewBox="0 0 80 80"
+                fill="none"
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+              >
+                <path
+                  className="dp-check-path"
+                  d="M24 40 l12 12 l20 -22"
+                  stroke="var(--dp-green)"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
           </div>
-        )}
 
-        <p className="mb-8 text-sm text-neutral-600 dark:text-neutral-400">
-          A confirmation email has been sent to your email address with the
-          order details.
-        </p>
-
-        {status === "unauthenticated" && (
-          <div className="mb-8 rounded-lg border border-blue-100 bg-blue-50 p-4 text-left text-sm text-blue-900 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-100">
-            <p className="font-medium">Create an account to track this order</p>
-            <p className="mt-1 text-xs text-blue-700 dark:text-blue-200">
-              Save your details for faster checkout and see updates in one
-              place.
+          {/* ── Headline ── */}
+          <div className="dp-rise-2" style={{ textAlign: "center", marginBottom: "2rem" }}>
+            <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.26em", textTransform: "uppercase", color: "var(--dp-ember)", marginBottom: "0.6rem" }}>
+              Order Confirmed
             </p>
-            <Link
-              href={`/auth/register?callbackUrl=${encodeURIComponent(`/orders?orderNumber=${orderNumber || ""}`)}`}
-              className="mt-2 inline-flex text-xs font-medium text-blue-700 hover:underline dark:text-blue-200"
+            <h1
+              style={{
+                fontFamily: "Cormorant Garamond, serif",
+                fontSize: "clamp(1.8rem, 5vw, 3rem)",
+                fontWeight: 600, lineHeight: 1.2,
+                color: "var(--dp-cream)",
+                marginBottom: "0.75rem",
+              }}
             >
-              Create account
+              Your pair is on its way.
+            </h1>
+            <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.82rem", color: "var(--dp-muted)", lineHeight: 1.7, maxWidth: 440, margin: "0 auto" }}>
+              Thank you for your purchase. Your order has been confirmed and is being prepared with care.
+            </p>
+          </div>
+
+          {/* ── Order number ── */}
+          {orderNumber && (
+            <div
+              className="dp-rise-3"
+              style={{
+                background: "var(--dp-charcoal)",
+                border: "1px solid var(--dp-border)",
+                padding: "1.25rem 1.5rem",
+                marginBottom: "1.25rem",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+              }}
+            >
+              <div>
+                <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--dp-muted)", marginBottom: "0.3rem" }}>
+                  Order Number
+                </p>
+                <p style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: "1.4rem", letterSpacing: "0.12em", color: "var(--dp-cream)" }}>
+                  {orderNumber}
+                </p>
+              </div>
+              <div style={{ width: 2, height: 40, background: "var(--dp-border)" }} />
+              <div style={{ textAlign: "right" }}>
+                <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--dp-muted)", marginBottom: "0.3rem" }}>
+                  Status
+                </p>
+                <span
+                  style={{
+                    fontFamily: "DM Sans, sans-serif", fontSize: "0.62rem", fontWeight: 500,
+                    letterSpacing: "0.12em", textTransform: "uppercase",
+                    color: "var(--dp-green)",
+                    border: "1px solid rgba(74,140,92,0.35)",
+                    padding: "2px 8px",
+                  }}
+                >
+                  Processing
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* ── Email note ── */}
+          <p
+            className="dp-rise-3"
+            style={{
+              fontFamily: "DM Sans, sans-serif", fontSize: "0.75rem",
+              color: "var(--dp-muted)", lineHeight: 1.65,
+              borderLeft: "2px solid var(--dp-ember)", paddingLeft: "0.875rem",
+              marginBottom: "1.75rem",
+            }}
+          >
+            A confirmation email with your order details has been sent to your address.
+          </p>
+
+          {/* ── Auth nudge ── */}
+          {status === "unauthenticated" && (
+            <div
+              className="dp-rise-4"
+              style={{
+                background: "var(--dp-card)",
+                border: "1px solid var(--dp-border)",
+                padding: "1.25rem 1.5rem",
+                marginBottom: "1.75rem",
+              }}
+            >
+              <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.78rem", fontWeight: 500, color: "var(--dp-sand)", marginBottom: "0.3rem" }}>
+                Create an account to track this order
+              </p>
+              <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.7rem", color: "var(--dp-muted)", lineHeight: 1.6, marginBottom: "0.75rem" }}>
+                Save your details for faster checkout and see updates in one place.
+              </p>
+              <Link
+                href={`/auth/register?callbackUrl=${encodeURIComponent(`/orders?orderNumber=${orderNumber || ""}`)}`}
+                style={{
+                  fontFamily: "DM Sans, sans-serif", fontSize: "0.62rem", fontWeight: 500,
+                  letterSpacing: "0.12em", textTransform: "uppercase",
+                  color: "var(--dp-ember)", textDecoration: "none",
+                  borderBottom: "1px solid var(--dp-ember)", paddingBottom: 2,
+                  transition: "color 0.2s",
+                }}
+              >
+                Create account →
+              </Link>
+            </div>
+          )}
+
+          {/* ── CTAs ── */}
+          <div className="dp-rise-4" style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", marginBottom: "2.5rem" }}>
+            <Link href="/orders" className="dp-btn-primary">
+              View Order Status
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+            <Link href="/" className="dp-btn-ghost">
+              Continue Shopping
             </Link>
           </div>
-        )}
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-          <Link
-            href="/orders"
-            className="rounded-md bg-blue-600 px-6 py-3 text-center font-medium text-white hover:bg-blue-700"
-          >
-            View Order Status
-          </Link>
-          <Link
-            href="/"
-            className="rounded-md border border-neutral-300 px-6 py-3 text-center font-medium hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-900"
-          >
-            Continue Shopping
-          </Link>
+          {/* ── What's next ── */}
+          <div className="dp-rise-5" style={{ background: "var(--dp-charcoal)", border: "1px solid var(--dp-border)" }}>
+            <div style={{ height: 2, background: "linear-gradient(90deg, var(--dp-ember), transparent 70%)" }} />
+            <div style={{ padding: "1.5rem" }}>
+              <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.26em", textTransform: "uppercase", color: "var(--dp-ember)", marginBottom: "1rem" }}>
+                What&apos;s Next
+              </p>
+              <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                {NEXT_STEPS.map(({ icon, text }) => (
+                  <li key={text} className="dp-step-item">
+                    <span style={{ fontSize: "0.9rem", color: "var(--dp-ember)", flexShrink: 0, lineHeight: 1.6 }}>{icon}</span>
+                    <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.78rem", color: "var(--dp-muted)", lineHeight: 1.65 }}>
+                      {text}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* ── Ghost wordmark ── */}
+          <div style={{ textAlign: "center", marginTop: "3rem", overflow: "hidden" }}>
+            <span
+              style={{
+                fontFamily: "Bebas Neue, sans-serif",
+                fontSize: "clamp(3rem,10vw,7rem)",
+                letterSpacing: "0.12em",
+                color: "rgba(242,232,213,0.04)",
+                lineHeight: 1,
+                userSelect: "none",
+              }}
+            >
+              D&apos;FOOTPRINT
+            </span>
+          </div>
         </div>
       </div>
-
-      <div className="mt-8 rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-black">
-        <h2 className="mb-4 text-lg font-semibold">What's Next?</h2>
-        <ul className="space-y-3 text-sm text-neutral-600 dark:text-neutral-400">
-          <li className="flex items-start">
-            <span className="mr-2">✓</span>
-            <span>
-              You'll receive an email confirmation with your order details
-            </span>
-          </li>
-          <li className="flex items-start">
-            <span className="mr-2">✓</span>
-            <span>We'll notify you when your order is shipped</span>
-          </li>
-          <li className="flex items-start">
-            <span className="mr-2">✓</span>
-            <span>
-              Track your order anytime from your account or using the order
-              number
-            </span>
-          </li>
-        </ul>
-      </div>
-    </div>
+    </>
   );
 }

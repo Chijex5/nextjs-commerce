@@ -62,7 +62,7 @@ export default function UserAccountIcon() {
 
   if (status === "loading") {
     return (
-      <div className="relative flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 bg-white text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white">
+      <div className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(242,232,213,0.3)] bg-[rgba(242,232,213,0.05)] text-[#F2E8D5">
         <UserIcon className="h-5 w-5 animate-pulse" />
       </div>
     );
@@ -72,13 +72,13 @@ export default function UserAccountIcon() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 bg-white text-black transition-colors hover:border-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:hover:border-neutral-500"
+        className="dp-icon-btn"
         aria-label="User account"
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-controls={menuId}
       >
-        <UserIcon className="h-5 w-5" />
+        <UserIcon style={{ width: "1rem", height: "1rem" }} />
       </button>
 
       {isOpen && (
@@ -106,11 +106,11 @@ export default function UserAccountIcon() {
               first?.focus();
             }
           }}
-          className="absolute right-0 z-50 mt-2 w-56 rounded-2xl border border-neutral-200 bg-white p-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
+          className="absolute right-0 z-50 mt-2 w-56 border border-[rgba(242,232,213,0.3)] bg-[rgba(242,232,213,0.05)] text-[#F2E8D5] p-1 shadow-lg"
         >
           {session ? (
             <>
-              <div className="border-b border-neutral-200 px-3 py-3 dark:border-neutral-700">
+              <div className="border-b text-[#F2E8D5] border-[rgba(242,232,213,0.3)] px-3 py-3">
                 <p className="text-sm font-medium">{session.name || "User"}</p>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
                   {session.email}
@@ -120,7 +120,7 @@ export default function UserAccountIcon() {
                 <Link
                   href="/account"
                   role="menuitem"
-                  className="block rounded-xl px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                  className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgba(242,232,213,0.1)] dark:hover:bg-neutral-800"
                   onClick={() => setIsOpen(false)}
                 >
                   My Account
@@ -128,7 +128,7 @@ export default function UserAccountIcon() {
                 <Link
                   href="/orders"
                   role="menuitem"
-                  className="block rounded-xl px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                  className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgba(242,232,213,0.1)] dark:hover:bg-neutral-800"
                   onClick={() => setIsOpen(false)}
                 >
                   My Orders
@@ -136,7 +136,7 @@ export default function UserAccountIcon() {
                 <button
                   onClick={handleSignOut}
                   role="menuitem"
-                  className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                  className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-[rgba(242,232,213,0.1)] dark:hover:bg-neutral-800"
                 >
                   Logout
                 </button>
@@ -147,7 +147,7 @@ export default function UserAccountIcon() {
               <Link
                 href="/auth/login"
                 role="menuitem"
-                className="block rounded-xl px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgba(242,232,213,0.1)] dark:hover:bg-neutral-800"
                 onClick={() => setIsOpen(false)}
               >
                 Login
@@ -155,7 +155,7 @@ export default function UserAccountIcon() {
               <Link
                 href="/auth/register"
                 role="menuitem"
-                className="block rounded-xl px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgba(242,232,213,0.1)] dark:hover:bg-neutral-800"
                 onClick={() => setIsOpen(false)}
               >
                 Register
@@ -163,7 +163,7 @@ export default function UserAccountIcon() {
               <Link
                 href="/orders"
                 role="menuitem"
-                className="block rounded-xl px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgba(242,232,213,0.1)] dark:hover:bg-neutral-800"
                 onClick={() => setIsOpen(false)}
               >
                 Track Order

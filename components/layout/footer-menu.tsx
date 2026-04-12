@@ -1,6 +1,5 @@
 "use client";
 
-import clsx from "clsx";
 import { Menu } from "lib/shopify/types";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -18,13 +17,33 @@ export function FooterMenuItem({ item }: { item: Menu }) {
     <li>
       <Link
         href={item.path}
-        className={clsx(
-          "block rounded-xl px-3 py-2 text-sm font-medium transition-colors",
-          active
-            ? "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
-            : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100",
-        )}
+        style={{
+          fontFamily: "DM Sans, sans-serif",
+          fontSize: "0.78rem",
+          color: active ? "var(--dp-cream)" : "var(--dp-muted)",
+          textDecoration: "none",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "0.4rem",
+          padding: "0.2rem 0",
+          position: "relative",
+          transition: "color 0.2s",
+        }}
+        className="dp-footer-link"
       >
+        {active && (
+          <span
+            aria-hidden="true"
+            style={{
+              display: "inline-block",
+              width: 4,
+              height: 4,
+              borderRadius: "50%",
+              background: "var(--dp-ember)",
+              flexShrink: 0,
+            }}
+          />
+        )}
         {item.title}
       </Link>
     </li>
@@ -36,13 +55,19 @@ export default function FooterMenu({ menu }: { menu: Menu[] }) {
 
   return (
     <nav>
-      <p className="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-neutral-900 dark:text-neutral-100">
-        Quick links
-      </p>
-      <ul className="space-y-1">
-        {menu.map((item: Menu) => {
-          return <FooterMenuItem key={item.title} item={item} />;
-        })}
+      <ul
+        style={{
+          listStyle: "none",
+          margin: 0,
+          padding: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.65rem",
+        }}
+      >
+        {menu.map((item: Menu) => (
+          <FooterMenuItem key={item.title} item={item} />
+        ))}
       </ul>
     </nav>
   );

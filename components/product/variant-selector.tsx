@@ -56,7 +56,9 @@ export function VariantSelector({
   return options.map((option) => (
     <form key={option.id}>
       <dl className="mb-8">
-        <dt className="mb-4 text-sm uppercase tracking-wide">{option.name}</dt>
+        <dt className="mb-4 text-[0.66rem] font-medium uppercase tracking-[0.2em] text-[var(--dp-ember,#BF5A28)]">
+          {option.name}
+        </dt>
         <dd className="flex flex-wrap gap-3">
           {option.values.map((value, index) => {
             const optionNameLowerCase = option.name.toLowerCase();
@@ -95,12 +97,13 @@ export function VariantSelector({
                 disabled={!isAvailableForSale}
                 title={`${option.name} ${value}${!isAvailableForSale ? " (Out of Stock)" : ""}`}
                 className={clsx(
-                  "flex min-w-[48px] items-center justify-center rounded-full border bg-neutral-100 px-2 py-1 text-sm dark:border-neutral-800 dark:bg-neutral-900",
+                  "flex min-w-[52px] items-center justify-center border px-2.5 py-1.5 text-[0.72rem] font-medium uppercase tracking-[0.12em] transition",
                   {
-                    "cursor-default ring-2 ring-blue-600": isActive,
-                    "ring-1 ring-transparent transition duration-300 ease-in-out hover:ring-blue-600":
+                    "cursor-default border-[var(--dp-ember,#BF5A28)] bg-[rgba(191,90,40,0.12)] text-[var(--dp-cream,#F2E8D5)]":
+                      isActive,
+                    "border-[var(--dp-border,rgba(242,232,213,0.09))] bg-[rgba(242,232,213,0.03)] text-[var(--dp-muted,#6A5A48)] hover:border-[rgba(242,232,213,0.3)] hover:text-[var(--dp-cream,#F2E8D5)]":
                       !isActive && isAvailableForSale,
-                    "relative z-10 cursor-not-allowed overflow-hidden bg-neutral-100 text-neutral-500 ring-1 ring-neutral-300 before:absolute before:inset-x-0 before:-z-10 before:h-px before:-rotate-45 before:bg-neutral-300 before:transition-transform dark:bg-neutral-900 dark:text-neutral-400 dark:ring-neutral-700 dark:before:bg-neutral-700":
+                    "relative z-10 cursor-not-allowed overflow-hidden border-[var(--dp-border,rgba(242,232,213,0.09))] bg-[rgba(242,232,213,0.03)] text-[var(--dp-muted,#6A5A48)] before:absolute before:inset-x-0 before:top-1/2 before:-z-10 before:h-px before:-translate-y-1/2 before:-rotate-12 before:bg-[var(--dp-border,rgba(242,232,213,0.09))]":
                       !isAvailableForSale,
                   },
                 )}

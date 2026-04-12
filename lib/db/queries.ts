@@ -645,7 +645,8 @@ export async function getProductReviewAggregate(productId: string): Promise<{
     );
 
   return {
-    averageRating: stats?.averageRating ?? null,
+    averageRating:
+      stats?.averageRating == null ? null : Number(stats.averageRating),
     reviewCount: Number(stats?.reviewCount ?? 0),
   };
 }

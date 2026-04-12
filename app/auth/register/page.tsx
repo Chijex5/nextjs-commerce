@@ -1,55 +1,41 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-export default function RegisterPage() {
+export default function Register() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+  const searchParams = useSearchParams();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [magicLoading, setMagicLoading] = useState(false);
-  const [usePassword, setUsePassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (formData.password !== formData.confirmPassword) {
+    if (password !== confirm) {
       toast.error("Passwords do not match");
       return;
     }
-
-    if (formData.password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
-
     setIsLoading(true);
     try {
       const response = await fetch("/api/user-auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name.trim() || undefined,
-          email: formData.email,
-          password: formData.password,
-        }),
+        body: JSON.stringify({ name, email, password }),
       });
-
       const data = await response.json();
       if (!response.ok) {
-        toast.error(data.error || "Registration failed");
+        toast.error(data.error || "Failed to create account");
         return;
       }
-
-      toast.success("Account created. Please login.");
-      router.push("/auth/login?callbackUrl=/account?welcome=1");
+      toast.success("Account created! Welcome to D'FOOTPRINT.");
+      const callbackUrl = searchParams.get("callbackUrl") || "/account?welcome=1";
+      router.push(callbackUrl);
+      router.refresh();
     } catch {
       toast.error("An error occurred. Please try again.");
     } finally {
@@ -57,190 +43,267 @@ export default function RegisterPage() {
     }
   };
 
-  const handleMagicLink = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMagicLoading(true);
-
-    try {
-      const response = await fetch("/api/user-auth/magic-link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: formData.email,
-          callbackUrl: "/account?welcome=1",
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        toast.error(data.error || "Failed to send magic link");
-        return;
-      }
-
-      toast.success(data.message || "Check your email for the sign-in link.");
-    } catch {
-      toast.error("An error occurred. Please try again.");
-    } finally {
-      setMagicLoading(false);
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  };
-
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950 md:p-8">
-      <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-        Create account
-      </h2>
-      <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-        Start with a magic link or sign up using password.
-      </p>
+    <>
+      <style>{`
+        .co-input {
+          width: 100%;
+          background: var(--dp-card);
+          border: 1px solid var(--dp-border);
+          color: var(--dp-cream);
+          font-family: 'DM Sans', sans-serif;
+          font-size: .82rem;
+          padding: .85rem 1rem;
+          outline: none;
+          transition: border-color .22s;
+        }
+        .co-input::placeholder { color: var(--dp-muted); }
+        .co-input:focus { border-color: rgba(191,90,40,.6); }
 
-      <form
-        onSubmit={usePassword ? handleSubmit : handleMagicLink}
-        className="mt-6 space-y-4"
-      >
-        {!usePassword ? (
-          <div>
-            <label
-              htmlFor="magicEmail"
-              className="mb-1 block text-sm font-medium"
-            >
-              Email
-            </label>
-            <input
-              type="email"
-              id="magicEmail"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, email: e.target.value }))
-              }
-              required
-              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-              placeholder="your@email.com"
-            />
-          </div>
-        ) : (
-          <>
+        .co-label {
+          font-family: 'DM Sans', sans-serif;
+          font-size: .6rem;
+          font-weight: 500;
+          letter-spacing: .2em;
+          text-transform: uppercase;
+          color: var(--dp-muted);
+          display: block;
+          margin-bottom: .45rem;
+        }
+
+        .dp-btn-solid {
+          display: flex; align-items: center; justify-content: center; gap: .5rem;
+          width: 100%;
+          background: var(--dp-cream); color: var(--dp-ink);
+          font-family: 'DM Sans', sans-serif; font-weight: 500;
+          font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+          padding: .95rem 2rem; border: none; cursor: pointer;
+          transition: background .22s, color .22s;
+        }
+        .dp-btn-solid:hover:not(:disabled) { background: var(--dp-ember); color: var(--dp-cream); }
+        .dp-btn-solid:disabled { opacity: .5; cursor: not-allowed; }
+
+        .auth-card {
+          background: var(--dp-card);
+          border: 1px solid var(--dp-border);
+          padding: 2rem;
+        }
+
+        .auth-link {
+          color: var(--dp-ember);
+          text-decoration: none;
+          font-weight: 500;
+          border-bottom: 1px solid transparent;
+          transition: border-color .2s;
+        }
+        .auth-link:hover { border-color: var(--dp-ember); }
+
+        .pw-strength {
+          height: 2px;
+          background: var(--dp-border);
+          margin-top: .5rem;
+          position: relative;
+          overflow: hidden;
+        }
+        .pw-strength-bar {
+          position: absolute; left: 0; top: 0; height: 100%;
+          transition: width .4s cubic-bezier(.16,1,.3,1), background .4s;
+        }
+      `}</style>
+
+      <div className="auth-card">
+        {/* Header */}
+        <p className="dp-label" style={{ marginBottom: ".6rem" }}>New here?</p>
+        <h2
+          className="dp-serif"
+          style={{
+            fontSize: "1.9rem",
+            fontWeight: 600,
+            color: "var(--dp-cream)",
+            lineHeight: 1.15,
+            marginBottom: ".5rem",
+          }}
+        >
+          Create your account
+        </h2>
+        <p
+          style={{
+            fontFamily: "DM Sans, sans-serif",
+            fontSize: ".75rem",
+            color: "var(--dp-muted)",
+            marginBottom: "2rem",
+            lineHeight: 1.6,
+          }}
+        >
+          Join D&apos;FOOTPRINT to track orders and request custom pairs.
+        </p>
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
+
+            {/* Full name */}
             <div>
-              <label htmlFor="name" className="mb-1 block text-sm font-medium">
-                Full name (optional)
-              </label>
+              <label htmlFor="name" className="co-label">Full Name</label>
               <input
                 type="text"
                 id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                placeholder="Jane Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="co-input"
+                placeholder="Chidera Okafor"
               />
             </div>
+
+            {/* Email */}
             <div>
-              <label htmlFor="email" className="mb-1 block text-sm font-medium">
-                Email
-              </label>
+              <label htmlFor="email" className="co-label">Email Address</label>
               <input
                 type="email"
                 id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                placeholder="your@email.com"
+                className="co-input"
+                placeholder="you@example.com"
               />
             </div>
+
+            {/* Password */}
             <div>
-              <label
-                htmlFor="password"
-                className="mb-1 block text-sm font-medium"
-              >
-                Password
-              </label>
+              <label htmlFor="password" className="co-label">Password</label>
               <input
                 type="password"
                 id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                placeholder="••••••••"
+                minLength={8}
+                className="co-input"
+                placeholder="Minimum 8 characters"
               />
+              {/* Strength indicator */}
+              <div className="pw-strength">
+                <div
+                  className="pw-strength-bar"
+                  style={{
+                    width: password.length === 0 ? "0%" : password.length < 8 ? "33%" : password.length < 12 ? "66%" : "100%",
+                    background: password.length < 8 ? "var(--dp-ember)" : password.length < 12 ? "var(--dp-gold)" : "#6abf69",
+                  }}
+                />
+              </div>
             </div>
+
+            {/* Confirm password */}
             <div>
-              <label
-                htmlFor="confirmPassword"
-                className="mb-1 block text-sm font-medium"
-              >
-                Confirm password
-              </label>
+              <label htmlFor="confirm" className="co-label">Confirm Password</label>
               <input
                 type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
+                id="confirm"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
                 required
-                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                className="co-input"
                 placeholder="••••••••"
+                style={{
+                  borderColor: confirm && confirm !== password
+                    ? "rgba(191,90,40,.7)"
+                    : undefined,
+                }}
               />
+              {confirm && confirm !== password && (
+                <p
+                  style={{
+                    fontFamily: "DM Sans, sans-serif",
+                    fontSize: ".62rem",
+                    color: "var(--dp-ember)",
+                    marginTop: ".4rem",
+                    letterSpacing: ".04em",
+                  }}
+                >
+                  Passwords don&apos;t match
+                </p>
+              )}
             </div>
-          </>
-        )}
 
-        <button
-          type="submit"
-          disabled={usePassword ? isLoading : magicLoading}
-          className="w-full rounded-full bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-        >
-          {usePassword
-            ? isLoading
-              ? "Creating account..."
-              : "Create account"
-            : magicLoading
-              ? "Sending link..."
-              : "Send magic link"}
-        </button>
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="dp-btn-solid"
+              style={{ marginTop: ".4rem" }}
+            >
+              {isLoading ? "Creating account…" : "Create Account"}
+              {!isLoading && (
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </button>
 
-        <button
-          type="button"
-          onClick={() => setUsePassword((current) => !current)}
-          className="w-full rounded-full border border-neutral-300 px-4 py-2.5 text-sm font-medium hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
-        >
-          {usePassword ? "Use magic link instead" : "Use password instead"}
-        </button>
+          </div>
 
-        {!usePassword ? (
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            We&apos;ll email a one-time sign-in link.
-          </p>
-        ) : null}
-      </form>
-
-      <div className="mt-5 space-y-2 text-sm">
-        <p className="text-neutral-600 dark:text-neutral-400">
-          Already have an account?{" "}
-          <Link
-            href="/auth/login"
-            className="font-medium text-neutral-900 underline-offset-4 hover:underline dark:text-neutral-100"
+          <p
+            style={{
+              fontFamily: "DM Sans, sans-serif",
+              fontSize: ".62rem",
+              color: "var(--dp-muted)",
+              marginTop: "1rem",
+              lineHeight: 1.6,
+              textAlign: "center",
+            }}
           >
-            Login
-          </Link>
-        </p>
-        <Link
-          href="/"
-          className="inline-block text-neutral-500 underline-offset-4 hover:underline dark:text-neutral-400"
+            By creating an account you agree to our{" "}
+            <Link href="/terms" className="auth-link" style={{ fontSize: ".62rem" }}>
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="auth-link" style={{ fontSize: ".62rem" }}>
+              Privacy Policy
+            </Link>
+            .
+          </p>
+        </form>
+
+        {/* Footer links */}
+        <div
+          style={{
+            marginTop: "2rem",
+            paddingTop: "1.5rem",
+            borderTop: "1px solid var(--dp-border)",
+            display: "flex",
+            flexDirection: "column",
+            gap: ".6rem",
+          }}
         >
-          Continue without account
-        </Link>
+          <p
+            style={{
+              fontFamily: "DM Sans, sans-serif",
+              fontSize: ".72rem",
+              color: "var(--dp-muted)",
+            }}
+          >
+            Already have an account?{" "}
+            <Link href="/auth/login" className="auth-link">
+              Sign in
+            </Link>
+          </p>
+          <Link
+            href="/"
+            style={{
+              fontFamily: "DM Sans, sans-serif",
+              fontSize: ".72rem",
+              color: "var(--dp-muted)",
+              textDecoration: "none",
+              transition: "color .2s",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = "var(--dp-sand)")}
+            onMouseLeave={e => (e.currentTarget.style.color = "var(--dp-muted)")}
+          >
+            Continue without login →
+          </Link>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
