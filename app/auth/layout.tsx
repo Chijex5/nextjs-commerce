@@ -1,12 +1,16 @@
 // app/auth/layout.tsx
-import Link from "next/link";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <>
       <style>{`
@@ -68,8 +72,12 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div
           aria-hidden
           style={{
-            position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
-            background: "radial-gradient(ellipse 60% 50% at 15% 20%, rgba(191,90,40,0.13) 0%, transparent 70%), radial-gradient(ellipse 40% 40% at 85% 80%, rgba(192,137,42,0.08) 0%, transparent 70%)",
+            position: "fixed",
+            inset: 0,
+            pointerEvents: "none",
+            zIndex: 0,
+            background:
+              "radial-gradient(ellipse 60% 50% at 15% 20%, rgba(191,90,40,0.13) 0%, transparent 70%), radial-gradient(ellipse 40% 40% at 85% 80%, rgba(192,137,42,0.08) 0%, transparent 70%)",
           }}
         />
 
@@ -77,16 +85,24 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <header
           className="dp-rise-1"
           style={{
-            position: "relative", zIndex: 10,
+            position: "relative",
+            zIndex: 10,
             padding: "1.5rem clamp(1.5rem,4vw,4rem)",
-            display: "flex", alignItems: "center", justifyContent: "space-between",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
             borderBottom: "1px solid var(--dp-border)",
           }}
         >
           <Link
             href="/"
             className="dp-wordmark"
-            style={{ fontSize: "1.6rem", letterSpacing: "0.02em", color: "var(--dp-cream)", textDecoration: "none" }}
+            style={{
+              fontSize: "1.6rem",
+              letterSpacing: "0.02em",
+              color: "var(--dp-cream)",
+              textDecoration: "none",
+            }}
           >
             D&apos;FOOTPRINT
           </Link>
@@ -94,8 +110,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             href="/products"
             className="auth-top-link"
             style={{
-              fontFamily: "DM Sans, sans-serif", fontSize: ".68rem", fontWeight: 500,
-              letterSpacing: ".14em", textTransform: "uppercase",
+              fontFamily: "DM Sans, sans-serif",
+              fontSize: ".68rem",
+              fontWeight: 500,
+              letterSpacing: ".14em",
+              textTransform: "uppercase",
             }}
           >
             Continue shopping →
@@ -105,33 +124,42 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         {/* Main content */}
         <main
           style={{
-            flex: 1, position: "relative", zIndex: 10,
-            display: "grid", placeItems: "start center",
+            flex: 1,
+            position: "relative",
+            zIndex: 10,
+            display: "grid",
+            placeItems: "start center",
             padding: "3rem clamp(1.5rem,4vw,4rem) 5rem",
           }}
         >
           <div
             style={{
-              width: "100%", maxWidth: 1100,
-              display: "grid", gap: "3rem",
+              width: "100%",
+              maxWidth: 1100,
+              display: "grid",
+              gap: "3rem",
               gridTemplateColumns: "1fr",
             }}
             className="lg:grid-cols-[1fr_420px] lg:items-start"
           >
             {/* Left: brand copy */}
             <div className="dp-rise-2" style={{ paddingTop: ".5rem" }}>
-              <p className="dp-label" style={{ marginBottom: "1.25rem" }}>Your Account</p>
+              <p className="dp-label" style={{ marginBottom: "1.25rem" }}>
+                Your Account
+              </p>
 
               <h1
                 className="dp-wordmark"
                 style={{
                   fontSize: "clamp(3.5rem,9vw,8rem)",
-                  lineHeight: .88,
+                  lineHeight: 0.88,
                   letterSpacing: "-.01em",
                   marginBottom: "2rem",
                 }}
               >
-                <span style={{ color: "var(--dp-cream)", display: "block" }}>SIGN</span>
+                <span style={{ color: "var(--dp-cream)", display: "block" }}>
+                  SIGN
+                </span>
                 <span
                   style={{
                     WebkitTextStroke: "1.5px rgba(242,232,213,0.22)",
@@ -155,20 +183,53 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                   marginBottom: "2.5rem",
                 }}
               >
-                Manage your orders, saved addresses, and custom requests — all in one place.
+                Manage your orders, saved addresses, and custom requests — all
+                in one place.
               </p>
 
               {/* Feature list */}
-              <div style={{ display: "flex", flexDirection: "column", gap: ".85rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: ".85rem",
+                }}
+              >
                 {[
                   { icon: "✦", text: "Track every order in real time" },
-                  { icon: "◈", text: "Save delivery addresses for faster checkout" },
+                  {
+                    icon: "◈",
+                    text: "Save delivery addresses for faster checkout",
+                  },
                   { icon: "⟡", text: "Manage your custom order requests" },
                   { icon: "⊛", text: "Secure across all your devices" },
                 ].map(({ icon, text }) => (
-                  <div key={text} style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
-                    <span style={{ color: "var(--dp-ember)", fontSize: ".9rem", flexShrink: 0 }}>{icon}</span>
-                    <p style={{ fontSize: ".78rem", color: "var(--dp-muted)", fontFamily: "DM Sans, sans-serif" }}>{text}</p>
+                  <div
+                    key={text}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: ".75rem",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: "var(--dp-ember)",
+                        fontSize: ".9rem",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {icon}
+                    </span>
+                    <p
+                      style={{
+                        fontSize: ".78rem",
+                        color: "var(--dp-muted)",
+                        fontFamily: "DM Sans, sans-serif",
+                      }}
+                    >
+                      {text}
+                    </p>
                   </div>
                 ))}
               </div>
