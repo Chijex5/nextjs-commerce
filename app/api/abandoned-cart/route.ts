@@ -96,7 +96,8 @@ export async function POST(request: NextRequest) {
     const incomingSignature = buildItemSignature(normalizedItems);
     const existingBySignature = existingUserRecords.find(
       (record) =>
-        buildItemSignature(normalizeCartItems(record.items)) === incomingSignature,
+        buildItemSignature(normalizeCartItems(record.items)) ===
+        incomingSignature,
     );
     const existingByCartId = existingUserRecords.find(
       (record) => record.cartId === cartId,
@@ -227,6 +228,7 @@ export async function GET(request: NextRequest) {
         const items = normalizeCartItems(cart.items);
 
         await sendAbandonedCartEmail({
+          abandonedCartId: cart.id,
           customerName: cart.customerName,
           email: cart.email,
           items,
@@ -265,13 +267,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Purge expired ghost carts (empty carts whose expiry has passed)
-    const deleteResult = await db.delete(carts).where(
-      and(
-        isNotNull(carts.expiresAt),
-        lt(carts.expiresAt, new Date()),
-        eq(carts.totalQuantity, 0),
-      ),
-    );
+    const deleteResult = await db
+      .delete(carts)
+      .where(
+        and(
+          isNotNull(carts.expiresAt),
+          lt(carts.expiresAt, new Date()),
+          eq(carts.totalQuantity, 0),
+        ),
+      );
     const deletedCarts =
       "rowsAffected" in deleteResult ? deleteResult.rowsAffected : 0;
 

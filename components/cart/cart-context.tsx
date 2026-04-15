@@ -1,20 +1,20 @@
 "use client";
 
 import type {
-    Cart,
-    CartItem,
-    Product,
-    ProductVariant,
+  Cart,
+  CartItem,
+  Product,
+  ProductVariant,
 } from "lib/shopify/types";
 import React, {
-    createContext,
-    use,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  createContext,
+  use,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 
 type UpdateType = "plus" | "minus" | "delete";
@@ -24,14 +24,17 @@ type CartContextType = {
   addCartItem: (variant: ProductVariant, product: Product) => void;
   updateCartItem: (merchandiseId: string, updateType: UpdateType) => void;
   setCartItemQuantity: (merchandiseId: string, quantity: number) => void;
+  clearCart: () => void;
+  replaceCart: (nextCart: Cart | undefined) => void;
   syncPendingCount: number;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const LOCAL_CART_STORAGE_KEY = "local-first-cart";
+const DEFAULT_CURRENCY_CODE = "NGN";
 
-function createEmptyCart(currencyCode: string = "NGN"): Cart {
+function createEmptyCart(currencyCode: string = DEFAULT_CURRENCY_CODE): Cart {
   return {
     id: undefined,
     checkoutUrl: "/checkout",
@@ -71,7 +74,8 @@ function computeCartTotals(
 
 function normalizeCart(cart: Cart | undefined): Cart {
   if (!cart) return createEmptyCart();
-  const currencyCode = cart.cost?.totalAmount?.currencyCode || "NGN";
+  const currencyCode =
+    cart.cost?.totalAmount?.currencyCode || DEFAULT_CURRENCY_CODE;
   return {
     ...cart,
     lines: cart.lines || [],
@@ -185,7 +189,8 @@ export function CartProvider({
       const nextQuantityForQueue = Math.max(0, quantity);
       setCart((prev) => {
         const current = normalizeCart(prev);
-        const currencyCode = current.cost.totalAmount.currencyCode || "NGN";
+        const currencyCode =
+          current.cost.totalAmount.currencyCode || DEFAULT_CURRENCY_CODE;
         const existing = current.lines.find(
           (line) => line.merchandise.id === merchandiseId,
         );
@@ -251,7 +256,8 @@ export function CartProvider({
               ? target.quantity - 1
               : 0;
 
-        const currencyCode = current.cost.totalAmount.currencyCode || "NGN";
+        const currencyCode =
+          current.cost.totalAmount.currencyCode || DEFAULT_CURRENCY_CODE;
         const unitPrice = String(
           Number(target.cost.totalAmount.amount) / target.quantity,
         );
@@ -303,7 +309,7 @@ export function CartProvider({
         const currencyCode =
           variant.price.currencyCode ||
           current.cost.totalAmount.currencyCode ||
-          "NGN";
+          DEFAULT_CURRENCY_CODE;
         const existing = current.lines.find(
           (line) => line.merchandise.id === variant.id,
         );
@@ -354,6 +360,46 @@ export function CartProvider({
     [queueQuantitySync],
   );
 
+  const clearCart = useCallback(() => {
+    const lineIdsToClear = (cart?.lines || []).map(
+      (line) => line.merchandise.id,
+    );
+
+    if (syncTimerRef.current) {
+      clearTimeout(syncTimerRef.current);
+      syncTimerRef.current = null;
+    }
+
+    pendingQuantitiesRef.current.clear();
+    setSyncPendingCount(0);
+
+    for (const lineId of lineIdsToClear) {
+      queueQuantitySync(lineId, 0);
+    }
+
+    setCart((prev) => {
+      const currencyCode =
+        normalizeCart(prev).cost?.totalAmount?.currencyCode ||
+        DEFAULT_CURRENCY_CODE;
+      const emptyCart = createEmptyCart(currencyCode);
+      safeWriteLocalCart(undefined);
+      return emptyCart;
+    });
+  }, [cart?.lines, queueQuantitySync]);
+
+  const replaceCart = useCallback((nextCart: Cart | undefined) => {
+    if (syncTimerRef.current) {
+      clearTimeout(syncTimerRef.current);
+      syncTimerRef.current = null;
+    }
+    pendingQuantitiesRef.current.clear();
+    setSyncPendingCount(0);
+
+    const normalized = normalizeCart(nextCart);
+    setCart(normalized);
+    safeWriteLocalCart(normalized);
+  }, []);
+
   useEffect(() => {
     const localCart = safeReadLocalCart();
     if (localCart) {
@@ -384,6 +430,8 @@ export function CartProvider({
         addCartItem,
         updateCartItem,
         setCartItemQuantity,
+        clearCart,
+        replaceCart,
         syncPendingCount,
       }}
     >

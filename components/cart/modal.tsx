@@ -24,6 +24,7 @@ import { calculateShippingAmount } from "lib/shipping";
 import { createUrl } from "lib/utils";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Fragment,
   useEffect,
@@ -65,7 +66,11 @@ export default function CartModal() {
   const [noteDraft, setNoteDraft] = useState("");
   const [shippingAddress, setShippingAddress] = useState<{ state?: string; lga?: string; ward?: string } | null>(null);
   const [shippingLoading, setShippingLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const quantityRef = useRef(cart?.totalQuantity);
+  const hasHandledViewCartParamRef = useRef(false);
   const openCart = () => setIsOpen(true);
   const closeCart = () => { setIsOpen(false); setActiveSheet(null); };
 
@@ -188,6 +193,20 @@ export default function CartModal() {
       quantityRef.current = cart?.totalQuantity;
     }
   }, [isOpen, cart?.totalQuantity, quantityRef]);
+
+  useEffect(() => {
+    const shouldOpen = searchParams.get("view-cart") === "1";
+    if (!shouldOpen || hasHandledViewCartParamRef.current) return;
+    hasHandledViewCartParamRef.current = true;
+    const timer = setTimeout(() => {
+      setIsOpen(true);
+      const nextParams = new URLSearchParams(searchParams.toString());
+      nextParams.delete("view-cart");
+      const nextQuery = nextParams.toString();
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [pathname, router, searchParams]);
 
   useEffect(() => {
     try {

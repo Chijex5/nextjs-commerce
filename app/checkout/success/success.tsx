@@ -1,6 +1,7 @@
 "use client";
 
 import { useUserSession } from "hooks/useUserSession";
+import { useCart } from "components/cart/cart-context";
 import { trackPurchase } from "lib/analytics";
 import { COUPON_STORAGE_KEY } from "lib/coupon-storage";
 import Link from "next/link";
@@ -11,6 +12,7 @@ export default function CheckoutSuccess() {
   const searchParams = useSearchParams();
   const orderNumber = searchParams.get("order");
   const { status } = useUserSession();
+  const { clearCart } = useCart();
   const [mounted, setMounted] = useState(false);
   const trackedOrderRef = useRef<string | null>(null);
 
@@ -19,9 +21,9 @@ export default function CheckoutSuccess() {
   useEffect(() => {
     try {
       localStorage.removeItem(COUPON_STORAGE_KEY);
-      localStorage.removeItem("local-first-cart");
     } catch {}
-  }, []);
+    clearCart();
+  }, [clearCart]);
 
   useEffect(() => {
     if (!orderNumber || trackedOrderRef.current === orderNumber) return;
