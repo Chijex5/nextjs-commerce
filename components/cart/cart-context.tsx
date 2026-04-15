@@ -32,8 +32,9 @@ type CartContextType = {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const LOCAL_CART_STORAGE_KEY = "local-first-cart";
+const DEFAULT_CURRENCY_CODE = "NGN";
 
-function createEmptyCart(currencyCode: string = "NGN"): Cart {
+function createEmptyCart(currencyCode: string = DEFAULT_CURRENCY_CODE): Cart {
   return {
     id: undefined,
     checkoutUrl: "/checkout",
@@ -73,7 +74,8 @@ function computeCartTotals(
 
 function normalizeCart(cart: Cart | undefined): Cart {
   if (!cart) return createEmptyCart();
-  const currencyCode = cart.cost?.totalAmount?.currencyCode || "NGN";
+  const currencyCode =
+    cart.cost?.totalAmount?.currencyCode || DEFAULT_CURRENCY_CODE;
   return {
     ...cart,
     lines: cart.lines || [],
@@ -187,7 +189,8 @@ export function CartProvider({
       const nextQuantityForQueue = Math.max(0, quantity);
       setCart((prev) => {
         const current = normalizeCart(prev);
-        const currencyCode = current.cost.totalAmount.currencyCode || "NGN";
+        const currencyCode =
+          current.cost.totalAmount.currencyCode || DEFAULT_CURRENCY_CODE;
         const existing = current.lines.find(
           (line) => line.merchandise.id === merchandiseId,
         );
@@ -253,7 +256,8 @@ export function CartProvider({
               ? target.quantity - 1
               : 0;
 
-        const currencyCode = current.cost.totalAmount.currencyCode || "NGN";
+        const currencyCode =
+          current.cost.totalAmount.currencyCode || DEFAULT_CURRENCY_CODE;
         const unitPrice = String(
           Number(target.cost.totalAmount.amount) / target.quantity,
         );
@@ -305,7 +309,7 @@ export function CartProvider({
         const currencyCode =
           variant.price.currencyCode ||
           current.cost.totalAmount.currencyCode ||
-          "NGN";
+          DEFAULT_CURRENCY_CODE;
         const existing = current.lines.find(
           (line) => line.merchandise.id === variant.id,
         );
@@ -375,7 +379,8 @@ export function CartProvider({
 
     setCart((prev) => {
       const currencyCode =
-        normalizeCart(prev).cost?.totalAmount?.currencyCode || "NGN";
+        normalizeCart(prev).cost?.totalAmount?.currencyCode ||
+        DEFAULT_CURRENCY_CODE;
       const emptyCart = createEmptyCart(currencyCode);
       safeWriteLocalCart(undefined);
       return emptyCart;

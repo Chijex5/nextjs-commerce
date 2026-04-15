@@ -70,6 +70,8 @@ export async function POST(request: NextRequest) {
     const shouldReplace = sourceSignature !== currentSignature;
 
     if (shouldReplace) {
+      // Compare/replace by merchandise variant id to preserve product identity
+      // across carts where line ids are session-specific.
       const sourceByVariantId = new Map(
         sourceCart.lines.map((line) => [line.merchandise.id, line.quantity]),
       );
