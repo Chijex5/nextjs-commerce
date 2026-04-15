@@ -1,20 +1,20 @@
 "use client";
 
 import type {
-    Cart,
-    CartItem,
-    Product,
-    ProductVariant,
+  Cart,
+  CartItem,
+  Product,
+  ProductVariant,
 } from "lib/shopify/types";
 import React, {
-    createContext,
-    use,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  createContext,
+  use,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 
 type UpdateType = "plus" | "minus" | "delete";
@@ -24,6 +24,8 @@ type CartContextType = {
   addCartItem: (variant: ProductVariant, product: Product) => void;
   updateCartItem: (merchandiseId: string, updateType: UpdateType) => void;
   setCartItemQuantity: (merchandiseId: string, quantity: number) => void;
+  clearCart: () => void;
+  replaceCart: (nextCart: Cart | undefined) => void;
   syncPendingCount: number;
 };
 
@@ -354,6 +356,45 @@ export function CartProvider({
     [queueQuantitySync],
   );
 
+  const clearCart = useCallback(() => {
+    const lineIdsToClear = (cart?.lines || []).map(
+      (line) => line.merchandise.id,
+    );
+
+    if (syncTimerRef.current) {
+      clearTimeout(syncTimerRef.current);
+      syncTimerRef.current = null;
+    }
+
+    pendingQuantitiesRef.current.clear();
+    setSyncPendingCount(0);
+
+    for (const lineId of lineIdsToClear) {
+      queueQuantitySync(lineId, 0);
+    }
+
+    setCart((prev) => {
+      const currencyCode =
+        normalizeCart(prev).cost?.totalAmount?.currencyCode || "NGN";
+      const emptyCart = createEmptyCart(currencyCode);
+      safeWriteLocalCart(undefined);
+      return emptyCart;
+    });
+  }, [cart?.lines, queueQuantitySync]);
+
+  const replaceCart = useCallback((nextCart: Cart | undefined) => {
+    if (syncTimerRef.current) {
+      clearTimeout(syncTimerRef.current);
+      syncTimerRef.current = null;
+    }
+    pendingQuantitiesRef.current.clear();
+    setSyncPendingCount(0);
+
+    const normalized = normalizeCart(nextCart);
+    setCart(normalized);
+    safeWriteLocalCart(normalized);
+  }, []);
+
   useEffect(() => {
     const localCart = safeReadLocalCart();
     if (localCart) {
@@ -384,6 +425,8 @@ export function CartProvider({
         addCartItem,
         updateCartItem,
         setCartItemQuantity,
+        clearCart,
+        replaceCart,
         syncPendingCount,
       }}
     >

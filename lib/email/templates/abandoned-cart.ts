@@ -1,6 +1,7 @@
 import { baseTemplate } from "./base";
 
 interface AbandonedCartData {
+  abandonedCartId: string;
   customerName: string;
   items: Array<{
     productTitle: string;
@@ -51,6 +52,9 @@ export const abandonedCartTemplate = (data: AbandonedCartData) => {
 
   const moreItems = data.items.length > 3 ? data.items.length - 3 : 0;
 
+  const completeOrderUrl = `${siteUrl}/checkout?abandoned-cart=${encodeURIComponent(data.abandonedCartId)}`;
+  const viewCartUrl = `${siteUrl}/?abandoned-cart=${encodeURIComponent(data.abandonedCartId)}&view-cart=1`;
+
   const content = `
     <h2>You Left Something Behind</h2>
     <p>Hi ${data.customerName},</p>
@@ -86,11 +90,11 @@ export const abandonedCartTemplate = (data: AbandonedCartData) => {
     <p style="margin: 8px 0;">• Nationwide delivery</p>
     
     <div style="text-align: center; margin: 32px 0;">
-      <a href="${siteUrl}/checkout" class="button">Complete Your Order</a>
+      <a href="${completeOrderUrl}" class="button">Complete Your Order</a>
     </div>
     
     <p style="text-align: center; font-size: 13px; color: #737373;">
-      <a href="${siteUrl}/cart" style="color: #171717; text-decoration: underline;">View Your Cart</a>
+      <a href="${viewCartUrl}" style="color: #171717; text-decoration: underline;">View Your Cart</a>
     </p>
     
     <p>Need help? Just reply to this email or contact us anytime.</p>
