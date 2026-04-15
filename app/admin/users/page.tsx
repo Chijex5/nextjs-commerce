@@ -5,7 +5,17 @@ import AdminNav from "components/admin/AdminNav";
 import UsersTable from "components/admin/UsersTable";
 import { db } from "lib/db";
 import { orders, users } from "lib/db/schema";
-import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  isNotNull,
+  or,
+  sql,
+} from "drizzle-orm";
 
 export default async function AdminUsersPage({
   searchParams,
@@ -28,6 +38,7 @@ export default async function AdminUsersPage({
   const page = parseInt(params.page || "1");
   const perPage = parseInt(params.perPage || "20");
   const statusFilter = params.status || "all";
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
   const filters = [];
 
@@ -80,29 +91,57 @@ export default async function AdminUsersPage({
         .select({ count: sql<number>`count(*)` })
         .from(users)
         .where(eq(users.isActive, false)),
+      db.select({ count: sql<number>`count(distinct ${orders.userId})` }).from(orders),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(gte(users.lastLoginAt, thirtyDaysAgo)),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(or(isNotNull(users.shippingAddress), isNotNull(users.billingAddress))),
     ]),
   ]);
 
   const userIds = userRows.map((user) => user.id);
-  const orderCounts = userIds.length
+  const orderMetrics = userIds.length
     ? await db
         .select({
           userId: orders.userId,
-          count: sql<number>`count(*)`,
+          orderCount: sql<number>`count(*)`,
+          totalSpent: sql<string>`coalesce(sum(${orders.totalAmount}), '0')`,
+          lastOrderAt: sql<Date | null>`max(${orders.createdAt})`,
         })
         .from(orders)
         .where(inArray(orders.userId, userIds))
         .groupBy(orders.userId)
     : [];
 
-  const countsByUser = new Map(
-    orderCounts.map((row) => [row.userId, Number(row.count)]),
+  const metricsByUser = new Map(
+    orderMetrics.map((row) => [
+      row.userId,
+      {
+        orders: Number(row.orderCount),
+        totalSpent: Number(row.totalSpent ?? 0),
+        lastOrderAt: row.lastOrderAt,
+      },
+    ]),
   );
 
-  const [totalUsersResult, activeUsersResult, inactiveUsersResult] = stats;
+  const [
+    totalUsersResult,
+    activeUsersResult,
+    inactiveUsersResult,
+    usersWithOrdersResult,
+    recentLoginUsersResult,
+    usersWithAddressesResult,
+  ] = stats;
   const totalUsers = Number(totalUsersResult[0]?.count ?? 0);
   const activeUsers = Number(activeUsersResult[0]?.count ?? 0);
   const inactiveUsers = Number(inactiveUsersResult[0]?.count ?? 0);
+  const usersWithOrders = Number(usersWithOrdersResult[0]?.count ?? 0);
+  const recentLoginUsers = Number(recentLoginUsersResult[0]?.count ?? 0);
+  const usersWithAddresses = Number(usersWithAddressesResult[0]?.count ?? 0);
 
   const total = Number(totalResult[0]?.count ?? 0);
   const totalPages = Math.ceil(total / perPage);
@@ -124,7 +163,7 @@ export default async function AdminUsersPage({
           </div>
 
           {/* Stats Overview */}
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
             <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
               <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
                 Total Users
@@ -147,6 +186,30 @@ export default async function AdminUsersPage({
               </div>
               <div className="mt-1 text-2xl font-semibold text-neutral-600 dark:text-neutral-400">
                 {inactiveUsers}
+              </div>
+            </div>
+            <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+              <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                Users With Orders
+              </div>
+              <div className="mt-1 text-2xl font-semibold text-blue-600 dark:text-blue-400">
+                {usersWithOrders}
+              </div>
+            </div>
+            <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+              <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                Logged In (30d)
+              </div>
+              <div className="mt-1 text-2xl font-semibold text-indigo-600 dark:text-indigo-400">
+                {recentLoginUsers}
+              </div>
+            </div>
+            <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+              <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                Saved Address Users
+              </div>
+              <div className="mt-1 text-2xl font-semibold text-amber-600 dark:text-amber-400">
+                {usersWithAddresses}
               </div>
             </div>
           </div>
@@ -190,7 +253,11 @@ export default async function AdminUsersPage({
             users={userRows.map((user) => ({
               ...user,
               _count: {
-                orders: countsByUser.get(user.id) || 0,
+                orders: metricsByUser.get(user.id)?.orders || 0,
+              },
+              _metrics: {
+                totalSpent: metricsByUser.get(user.id)?.totalSpent || 0,
+                lastOrderAt: metricsByUser.get(user.id)?.lastOrderAt || null,
               },
             }))}
             currentPage={page}

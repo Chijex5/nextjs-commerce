@@ -1,10 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import LoadingDots from "components/loading-dots";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import clsx from "clsx";
+import { getColorClassName } from "@/lib/color-system";
+import { toast } from "sonner";
 
 interface Admin {
   id: string;
@@ -14,6 +16,11 @@ interface Admin {
   isActive: boolean;
   createdAt: Date;
   lastLoginAt: Date | null;
+  _metrics: {
+    handledOrders: number;
+    handledValue: number;
+    lastHandledAt: Date | null;
+  };
 }
 
 interface AdminsManagementProps {
@@ -226,7 +233,7 @@ export default function AdminsManagement({
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
           <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-800">
             <thead className="bg-neutral-50 dark:bg-neutral-800">
               <tr>
@@ -245,6 +252,15 @@ export default function AdminsManagement({
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                   Last Login
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                  Handled Orders
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                  Handled Value
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                  Last Action
+                </th>
                 <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                   Actions
                 </th>
@@ -258,17 +274,20 @@ export default function AdminsManagement({
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center">
-                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
-                        <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                      <div className={clsx("flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full", getColorClassName(admin.id))}>
+                        <span className="text-sm font-medium ">
                           {admin.name
                             ? admin.name.charAt(0).toUpperCase()
                             : admin.email.charAt(0).toUpperCase()}
                         </span>
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                        <Link
+                          href={`/admin/admins/${admin.id}`}
+                          className="text-sm font-medium text-neutral-900 hover:underline dark:text-neutral-100"
+                        >
                           {admin.name || "No name"}
-                        </div>
+                        </Link>
                         <div className="text-sm text-neutral-500 dark:text-neutral-400">
                           {admin.email}
                         </div>
@@ -299,7 +318,26 @@ export default function AdminsManagement({
                       ? new Date(admin.lastLoginAt).toLocaleDateString()
                       : "Never"}
                   </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
+                    {admin._metrics.handledOrders}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
+                    NGN {admin._metrics.handledValue.toLocaleString()}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
+                    {admin._metrics.lastHandledAt
+                      ? new Date(
+                          admin._metrics.lastHandledAt,
+                        ).toLocaleDateString()
+                      : "No activity"}
+                  </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                    <Link
+                      href={`/admin/admins/${admin.id}`}
+                      className="mr-3 text-neutral-700 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
+                    >
+                      View
+                    </Link>
                     <button
                       onClick={() => openEditModal(admin)}
                       className="mr-3 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"

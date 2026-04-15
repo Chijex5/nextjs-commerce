@@ -1,11 +1,11 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "lib/auth";
-import { redirect } from "next/navigation";
 import AdminNav from "components/admin/AdminNav";
 import AdminsManagement from "components/admin/AdminsManagement";
+import { and, desc, eq, gte, ilike, inArray, or, sql } from "drizzle-orm";
+import { authOptions } from "lib/auth";
 import { db } from "lib/db";
-import { adminUsers } from "lib/db/schema";
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { adminUsers, orders } from "lib/db/schema";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 
 export default async function AdminAdminsPage({
   searchParams,
@@ -28,6 +28,7 @@ export default async function AdminAdminsPage({
   const page = parseInt(params.page || "1");
   const perPage = parseInt(params.perPage || "20");
   const statusFilter = params.status || "all";
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
   const filters = [];
 
@@ -79,14 +80,58 @@ export default async function AdminAdminsPage({
         .select({ count: sql<number>`count(*)` })
         .from(adminUsers)
         .where(eq(adminUsers.isActive, false)),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(adminUsers)
+        .where(eq(adminUsers.role, "super_admin")),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(adminUsers)
+        .where(gte(adminUsers.lastLoginAt, thirtyDaysAgo)),
     ]),
   ]);
 
-  const [totalAdminsResult, activeAdminsResult, inactiveAdminsResult] =
-    totalStats;
+  const [
+    totalAdminsResult,
+    activeAdminsResult,
+    inactiveAdminsResult,
+    superAdminsResult,
+    recentLoginAdminsResult,
+  ] = totalStats;
   const totalAdmins = Number(totalAdminsResult[0]?.count ?? 0);
   const activeAdmins = Number(activeAdminsResult[0]?.count ?? 0);
   const inactiveAdmins = Number(inactiveAdminsResult[0]?.count ?? 0);
+  const superAdmins = Number(superAdminsResult[0]?.count ?? 0);
+  const recentLoginAdmins = Number(recentLoginAdminsResult[0]?.count ?? 0);
+
+  const adminEmails = admins.map((admin) => admin.email);
+  const handledOrderMetrics = adminEmails.length
+    ? await db
+        .select({
+          acknowledgedBy: orders.acknowledgedBy,
+          handledOrders: sql<number>`count(*)`,
+          handledValue: sql<string>`coalesce(sum(${orders.totalAmount}), '0')`,
+          lastHandledAt: sql<Date | null>`max(${orders.acknowledgedAt})`,
+        })
+        .from(orders)
+        .where(inArray(orders.acknowledgedBy, adminEmails))
+        .groupBy(orders.acknowledgedBy)
+    : [];
+
+  const metricsByEmail = new Map(
+    handledOrderMetrics
+      .filter((row): row is typeof row & { acknowledgedBy: string } =>
+        Boolean(row.acknowledgedBy),
+      )
+      .map((row) => [
+        row.acknowledgedBy,
+        {
+          handledOrders: Number(row.handledOrders),
+          handledValue: Number(row.handledValue ?? 0),
+          lastHandledAt: row.lastHandledAt,
+        },
+      ]),
+  );
 
   const total = Number(totalResult[0]?.count ?? 0);
   const totalPages = Math.ceil(total / perPage);
@@ -110,7 +155,7 @@ export default async function AdminAdminsPage({
           </div>
 
           {/* Stats Overview */}
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
               <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
                 Total Admins
@@ -135,11 +180,37 @@ export default async function AdminAdminsPage({
                 {inactiveAdmins}
               </div>
             </div>
+            <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+              <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                Super Admins
+              </div>
+              <div className="mt-1 text-2xl font-semibold text-blue-600 dark:text-blue-400">
+                {superAdmins}
+              </div>
+            </div>
+            <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+              <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                Logged In (30d)
+              </div>
+              <div className="mt-1 text-2xl font-semibold text-indigo-600 dark:text-indigo-400">
+                {recentLoginAdmins}
+              </div>
+            </div>
           </div>
 
           {/* Admins Management Component */}
           <AdminsManagement
-            admins={admins}
+            admins={admins.map((admin) => ({
+              ...admin,
+              _metrics: {
+                handledOrders:
+                  metricsByEmail.get(admin.email)?.handledOrders || 0,
+                handledValue:
+                  metricsByEmail.get(admin.email)?.handledValue || 0,
+                lastHandledAt:
+                  metricsByEmail.get(admin.email)?.lastHandledAt || null,
+              },
+            }))}
             currentPage={page}
             totalPages={totalPages}
             total={total}

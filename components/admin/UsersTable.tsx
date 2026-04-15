@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import clsx from "clsx";  
+import { getColorClassName } from "@/lib/color-system";
 
 interface User {
   id: string;
@@ -12,6 +14,10 @@ interface User {
   lastLoginAt: Date | null;
   _count: {
     orders: number;
+  };
+  _metrics: {
+    totalSpent: number;
+    lastOrderAt: Date | null;
   };
 }
 
@@ -93,7 +99,13 @@ export default function UsersTable({
                 Orders
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                Lifetime Spend
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 Joined
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                Last Order
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 Last Login
@@ -108,17 +120,20 @@ export default function UsersTable({
               >
                 <td className="px-6 py-4">
                   <div className="flex items-center">
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-neutral-200 dark:bg-neutral-700">
-                      <span className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
+                    <div className={clsx("flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full", getColorClassName(user.id))}>
+                      <span className="text-sm font-medium ">
                         {user.name
                           ? user.name.charAt(0).toUpperCase()
                           : user.email.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                      <Link
+                        href={`/admin/users/${user.id}`}
+                        className="text-sm font-medium text-neutral-900 hover:underline dark:text-neutral-100"
+                      >
                         {user.name || "No name"}
-                      </div>
+                      </Link>
                       <div className="text-sm text-neutral-500 dark:text-neutral-400">
                         {user.email}
                       </div>
@@ -145,7 +160,15 @@ export default function UsersTable({
                   {user._count.orders}
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
+                  NGN {user._metrics.totalSpent.toLocaleString()}
+                </td>
+                <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
                   {new Date(user.createdAt).toLocaleDateString()}
+                </td>
+                <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
+                  {user._metrics.lastOrderAt
+                    ? new Date(user._metrics.lastOrderAt).toLocaleDateString()
+                    : "No orders"}
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
                   {user.lastLoginAt
@@ -167,17 +190,20 @@ export default function UsersTable({
           >
             <div className="mb-3 flex items-start justify-between">
               <div className="flex items-center">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-neutral-200 dark:bg-neutral-700">
-                  <span className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
+                <div className={clsx("flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full", getColorClassName(user.id))}>
+                  <span className="text-sm font-medium ">
                     {user.name
                       ? user.name.charAt(0).toUpperCase()
                       : user.email.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div className="ml-3">
-                  <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                  <Link
+                    href={`/admin/users/${user.id}`}
+                    className="text-sm font-medium text-neutral-900 hover:underline dark:text-neutral-100"
+                  >
                     {user.name || "No name"}
-                  </div>
+                  </Link>
                   <div className="text-sm text-neutral-500 dark:text-neutral-400">
                     {user.email}
                   </div>
@@ -215,10 +241,28 @@ export default function UsersTable({
               </div>
               <div className="flex justify-between">
                 <span className="text-neutral-500 dark:text-neutral-400">
+                  Lifetime Spend:
+                </span>
+                <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                  NGN {user._metrics.totalSpent.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-neutral-500 dark:text-neutral-400">
                   Joined:
                 </span>
                 <span className="font-medium text-neutral-900 dark:text-neutral-100">
                   {new Date(user.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Last Order:
+                </span>
+                <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                  {user._metrics.lastOrderAt
+                    ? new Date(user._metrics.lastOrderAt).toLocaleDateString()
+                    : "No orders"}
                 </span>
               </div>
               <div className="flex justify-between">

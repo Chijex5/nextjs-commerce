@@ -14,6 +14,7 @@ import { adminNewCustomOrderRequestTemplate } from "./templates/admin-new-custom
 
 const ORDER_FROM_EMAIL = "order@dfootprint.me";
 const STATUS_UPDATE_FROM_EMAIL = "notification@dfootprint.me";
+const ADMIN_NOTIFICATION_FROM_EMAIL = "admin@dfootprint.me";  
 const ORDER_REPLY_TO = "support@dfootprint.me";
 const CUSTOM_ORDER_FROM_EMAIL =
   process.env.CUSTOM_ORDER_FROM_EMAIL || "custom-orders@dfootprint.me";
@@ -206,7 +207,7 @@ export const sendAdminNewOrderNotification = async (data: {
 
   return sendEmail({
     to: data.to,
-    from: data.email,
+    from: ADMIN_NOTIFICATION_FROM_EMAIL,
     replyTo: ORDER_REPLY_TO,
     subject: `New Order: ${data.orderNumber} - D'FOOTPRINT`,
     html: adminNewOrderTemplate({

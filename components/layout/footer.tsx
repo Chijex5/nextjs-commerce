@@ -312,7 +312,7 @@ export default async function Footer() {
                   Get in touch
                 </span>
                 <a
-                  href="mailto:hello@dfootprint.ng"
+                  href="mailto:hello@dfootprint.me"
                   className="dp-footer-link"
                   style={{ fontSize: "0.74rem" }}
                 >
@@ -320,7 +320,7 @@ export default async function Footer() {
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                     <polyline points="22,6 12,13 2,6"/>
                   </svg>
-                  hello@dfootprint.ng
+                  hello@dfootprint.me
                 </a>
                 <a
                   href="https://wa.me/2340000000000"

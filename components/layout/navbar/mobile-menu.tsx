@@ -133,7 +133,7 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
             leaveTo="opacity-0"
           >
             <div
-              className="fixed inset-0 bg-black/45 backdrop-blur-[1px]"
+              className="fixed inset-0 bg-#0A0704 backdrop-blur-[1px]"
               aria-hidden="true"
             />
           </TransitionChild>

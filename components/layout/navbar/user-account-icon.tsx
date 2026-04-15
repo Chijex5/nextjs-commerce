@@ -62,8 +62,8 @@ export default function UserAccountIcon() {
 
   if (status === "loading") {
     return (
-      <div className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(242,232,213,0.3)] bg-[rgba(242,232,213,0.05)] text-[#F2E8D5">
-        <UserIcon className="h-5 w-5 animate-pulse" />
+      <div className="dp-icon-btn animate-pulse" aria-label="Loading user account">
+        <UserIcon style={{ width: "1rem", height: "1rem" }} className="animate-pulse" />
       </div>
     );
   }
@@ -106,7 +106,7 @@ export default function UserAccountIcon() {
               first?.focus();
             }
           }}
-          className="absolute right-0 z-50 mt-2 w-56 border border-[rgba(242,232,213,0.3)] bg-[rgba(242,232,213,0.05)] text-[#F2E8D5] p-1 shadow-lg"
+          className="absolute right-0 z-50 mt-2 w-56 border border-[rgba(242,232,213,0.3)] bg-[#0A0704] text-[#F2E8D5] p-1 shadow-lg"
         >
           {session ? (
             <>
