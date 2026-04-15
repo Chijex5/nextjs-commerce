@@ -27,11 +27,11 @@ export const metadata: Metadata = {
 };
 
 const socialLinks = [
-  { name: "Instagram", href: "https://instagram.com", handle: "@dfootprint", note: "New drops, styling clips & behind the scenes" },
-  { name: "TikTok", href: "https://tiktok.com", handle: "@dfootprint", note: "Short-form videos, process reels & trends" },
-  { name: "Twitter / X", href: "https://x.com", handle: "@dfootprint", note: "Updates, announcements & conversations" },
-  { name: "Snapchat", href: "https://snapchat.com", handle: "@dfootprint", note: "Exclusive stories and daily behind the craft" },
-  { name: "WhatsApp", href: "https://wa.me/2340000000000", handle: "Chat with us", note: "Sizing, custom requests and order updates" },
+  { name: "Instagram", href: "https://instagram.com/d_foot.print", handle: "@dfootprint", note: "New drops, styling clips & behind the scenes" },
+  { name: "TikTok", href: "https://tiktok.com/@d_footprint", handle: "@dfootprint", note: "Short-form videos, process reels & trends" },
+  { name: "Twitter / X", href: "https://x.com/chikaahey", handle: "@dfootprint", note: "Updates, announcements & conversations" },
+  { name: "Snapchat", href: "https://snapchat.com/t/To9LQPVS", handle: "@dfootprint", note: "Exclusive stories and daily behind the craft" },
+  { name: "WhatsApp", href: "https://wa.me/2348121993874", handle: "Chat with us", note: "Sizing, custom requests and order updates" },
 ];
 
 export default function SocialsPage() {
