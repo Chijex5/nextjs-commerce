@@ -1,20 +1,20 @@
 "use client";
 
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import {
-  AlertCircle,
-  CheckCircle2,
-  ImagePlus,
-  Loader2,
-  Trash2,
-  UploadCloud,
-} from "lucide-react";
-import { toast } from "sonner";
 import Price from "components/price";
 import { useUserSession } from "hooks/useUserSession";
 import { trackCustomOrderRequest } from "lib/analytics";
+import {
+    AlertCircle,
+    CheckCircle2,
+    ImagePlus,
+    Loader2,
+    Trash2,
+    UploadCloud,
+} from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 type SubmittedRequest = {
   requestNumber: string;
@@ -47,6 +47,7 @@ type UploadedImage = {
 };
 
 const MAX_IMAGES = 4;
+const MAX_IMAGE_SIZE_BYTES = 8 * 1024 * 1024;
 
 const createUploadId = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -56,6 +57,21 @@ const createUploadId = () => {
 };
 
 const isBlobUrl = (value: string) => value.startsWith("blob:");
+
+const parseErrorMessage = async (
+  response: Response,
+  fallback: string,
+): Promise<string> => {
+  try {
+    const payload = await response.json();
+    if (payload && typeof payload.error === "string" && payload.error.trim()) {
+      return payload.error;
+    }
+  } catch {
+    // Ignore parse issues and use fallback message.
+  }
+  return fallback;
+};
 
 export default function CustomOrderRequestSection() {
   const searchParams = useSearchParams();
@@ -167,9 +183,15 @@ export default function CustomOrderRequestSection() {
         method: "POST",
         body: payload,
       });
+      if (!response.ok) {
+        throw new Error(
+          await parseErrorMessage(response, `Failed to upload ${file.name}`),
+        );
+      }
+
       const data = await response.json();
-      if (!response.ok || !data?.url || !data?.publicId) {
-        throw new Error(data?.error || "Failed to upload image");
+      if (!data?.url || !data?.publicId) {
+        throw new Error(`Upload response was invalid for ${file.name}`);
       }
 
       setUploadItems((prev) =>
@@ -193,7 +215,9 @@ export default function CustomOrderRequestSection() {
         error instanceof Error ? error.message : "Failed to upload image";
       setUploadItems((prev) =>
         prev.map((item) =>
-          item.id === uploadId ? { ...item, status: "error", error: message } : item,
+          item.id === uploadId
+            ? { ...item, status: "error", error: message }
+            : item,
         ),
       );
       toast.error(message);
@@ -209,7 +233,21 @@ export default function CustomOrderRequestSection() {
     }
 
     const selectedFiles = Array.from(files).slice(0, remainingSlots);
-    const nextItems = selectedFiles.map((file) => ({
+    const validFiles = selectedFiles.filter((file) => {
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name} is not an image file.`);
+        return false;
+      }
+      if (file.size > MAX_IMAGE_SIZE_BYTES) {
+        toast.error(`${file.name} is larger than 8MB.`);
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length === 0) return;
+
+    const nextItems = validFiles.map((file) => ({
       id: createUploadId(),
       fileName: file.name,
       previewUrl: URL.createObjectURL(file),
@@ -217,7 +255,7 @@ export default function CustomOrderRequestSection() {
     }));
 
     setUploadItems((prev) => [...prev, ...nextItems]);
-    selectedFiles.forEach((file, index) => {
+    validFiles.forEach((file, index) => {
       const uploadId = nextItems[index]?.id;
       if (uploadId) {
         void startUpload(uploadId, file);
@@ -254,6 +292,44 @@ export default function CustomOrderRequestSection() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (!formValues.customerName.trim()) {
+      toast.error("Full name is required");
+      return;
+    }
+
+    if (!formValues.email.trim()) {
+      toast.error("Email is required");
+      return;
+    }
+
+    if (!formValues.title.trim()) {
+      toast.error("Request title is required");
+      return;
+    }
+
+    if (!formValues.description.trim()) {
+      toast.error("Design brief is required");
+      return;
+    }
+
+    const budgetMin = formValues.budgetMin
+      ? Number(formValues.budgetMin)
+      : undefined;
+    const budgetMax = formValues.budgetMax
+      ? Number(formValues.budgetMax)
+      : undefined;
+
+    if (
+      budgetMin !== undefined &&
+      budgetMax !== undefined &&
+      Number.isFinite(budgetMin) &&
+      Number.isFinite(budgetMax) &&
+      budgetMin > budgetMax
+    ) {
+      toast.error("Budget min cannot be greater than budget max");
+      return;
+    }
+
     if (isUploading) {
       toast.error("Please wait for image uploads to finish.");
       return;
@@ -272,18 +348,21 @@ export default function CustomOrderRequestSection() {
           description: formValues.description,
           sizeNotes: formValues.sizeNotes,
           colorPreferences: formValues.colorPreferences,
-          budgetMin: formValues.budgetMin ? Number(formValues.budgetMin) : undefined,
-          budgetMax: formValues.budgetMax ? Number(formValues.budgetMax) : undefined,
+          budgetMin,
+          budgetMax,
           desiredDate: formValues.desiredDate || undefined,
           referenceImages: uploadedImageUrls,
         }),
       });
-      const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.error || "Failed to submit request");
+        toast.error(
+          await parseErrorMessage(response, "Failed to submit request"),
+        );
         return;
       }
+
+      const data = await response.json();
 
       trackCustomOrderRequest();
       setSubmittedRequest({
@@ -445,7 +524,7 @@ export default function CustomOrderRequestSection() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+        <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
           <div className="grid gap-4 md:grid-cols-2">
             <Field
               label="Full name"
@@ -554,7 +633,8 @@ export default function CustomOrderRequestSection() {
                   Reference images
                 </p>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  Upload up to {MAX_IMAGES} images. Remove deletes from Cloudinary.
+                  Upload up to {MAX_IMAGES} images. Remove deletes from
+                  Cloudinary.
                 </p>
               </div>
               <button
@@ -643,7 +723,14 @@ export default function CustomOrderRequestSection() {
             disabled={submitting || isUploading}
             className="rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
           >
-            {submitting ? "Submitting request..." : "Submit custom request"}
+            {submitting ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Submitting request...
+              </span>
+            ) : (
+              "Submit custom request"
+            )}
           </button>
         </form>
 
@@ -670,7 +757,9 @@ export default function CustomOrderRequestSection() {
                   disabled={sendingMagicLink}
                   className="rounded-full bg-neutral-900 px-4 py-2 text-xs font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
                 >
-                  {sendingMagicLink ? "Sending link..." : "Send magic login link"}
+                  {sendingMagicLink
+                    ? "Sending link..."
+                    : "Send magic login link"}
                 </button>
               ) : null}
             </div>
