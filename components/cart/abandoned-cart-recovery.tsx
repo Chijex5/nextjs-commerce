@@ -45,9 +45,7 @@ export default function AbandonedCartRecovery() {
       }
     };
 
-    recover().catch((error) => {
-      console.error("Failed to recover abandoned cart:", error);
-    });
+    recover();
   }, [pathname, replaceCart, router, searchParams]);
 
   return null;

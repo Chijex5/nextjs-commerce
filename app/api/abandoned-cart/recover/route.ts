@@ -79,11 +79,19 @@ export async function POST(request: NextRequest) {
       const lineIdsToRemove = currentCart.lines
         .filter((line) => !sourceByVariantId.has(line.merchandise.id))
         .map((line) => line.id)
+        // Cart lines from local-first optimistic state can temporarily miss ids.
         .filter((lineId): lineId is string => Boolean(lineId));
 
       if (lineIdsToRemove.length > 0) {
         currentCart = await removeFromCart(lineIdsToRemove);
       }
+
+      const linesToUpdate: Array<{
+        id: string;
+        merchandiseId: string;
+        quantity: number;
+      }> = [];
+      const linesToAdd: Array<{ merchandiseId: string; quantity: number }> = [];
 
       for (const sourceLine of sourceCart.lines) {
         const existingLine = currentCart.lines.find(
@@ -92,22 +100,26 @@ export async function POST(request: NextRequest) {
 
         if (existingLine?.id) {
           if (existingLine.quantity !== sourceLine.quantity) {
-            currentCart = await updateCart([
-              {
-                id: existingLine.id,
-                merchandiseId: sourceLine.merchandise.id,
-                quantity: sourceLine.quantity,
-              },
-            ]);
-          }
-        } else {
-          currentCart = await addToCart([
-            {
+            linesToUpdate.push({
+              id: existingLine.id,
               merchandiseId: sourceLine.merchandise.id,
               quantity: sourceLine.quantity,
-            },
-          ]);
+            });
+          }
+        } else {
+          linesToAdd.push({
+            merchandiseId: sourceLine.merchandise.id,
+            quantity: sourceLine.quantity,
+          });
         }
+      }
+
+      if (linesToUpdate.length > 0) {
+        currentCart = await updateCart(linesToUpdate);
+      }
+
+      if (linesToAdd.length > 0) {
+        currentCart = await addToCart(linesToAdd);
       }
     }
 
