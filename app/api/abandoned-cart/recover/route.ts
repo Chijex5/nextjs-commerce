@@ -23,9 +23,11 @@ const buildCartSignature = (cart: Cart | undefined) =>
   );
 
 export async function POST(request: NextRequest) {
+  let abandonedCartId: string | undefined;
+
   try {
     const body = (await request.json()) as { abandonedCartId?: string };
-    const abandonedCartId = body.abandonedCartId?.trim();
+    abandonedCartId = body.abandonedCartId?.trim();
 
     if (!abandonedCartId) {
       return NextResponse.json(
@@ -137,7 +139,7 @@ export async function POST(request: NextRequest) {
       cart: currentCart,
     });
   } catch (error) {
-    console.error("Failed to recover abandoned cart:", error);
+    console.error("Failed to recover abandoned cart:", abandonedCartId, error);
     return NextResponse.json(
       { error: "Failed to recover abandoned cart" },
       { status: 500 },
