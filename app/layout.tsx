@@ -1,5 +1,6 @@
 import { Analytics } from "@vercel/analytics/next";
 import AnalyticsPageView from "components/analytics/page-view";
+import AbandonedCartRecovery from "components/cart/abandoned-cart-recovery";
 import TikTokIdentify from "components/analytics/tiktok-identify";
 import AbandonedCartTracker from "components/cart/abandoned-cart-tracker";
 import { CartProvider } from "components/cart/cart-context";
@@ -10,10 +11,10 @@ import FirstVisitSignupPopup from "components/onboarding/first-visit-signup";
 import { WelcomeToast } from "components/welcome-toast";
 import { getCart } from "lib/database";
 import {
-    canonicalUrl,
-    organizationJsonLd,
-    siteName,
-    siteTagline,
+  canonicalUrl,
+  organizationJsonLd,
+  siteName,
+  siteTagline,
 } from "lib/seo";
 import { baseUrl } from "lib/utils";
 import type { Metadata } from "next";
@@ -173,6 +174,9 @@ export default async function RootLayout({
         <CartProvider cartPromise={cart}>
           <Suspense fallback={null}>
             <AnalyticsPageView />
+          </Suspense>
+          <Suspense fallback={null}>
+            <AbandonedCartRecovery />
           </Suspense>
           {!isAdminRoute ? <AbandonedCartTracker /> : null}
           {!isAdminRoute ? <TikTokIdentify /> : null}

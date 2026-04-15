@@ -14,7 +14,7 @@ import { adminNewCustomOrderRequestTemplate } from "./templates/admin-new-custom
 
 const ORDER_FROM_EMAIL = "order@dfootprint.me";
 const STATUS_UPDATE_FROM_EMAIL = "notification@dfootprint.me";
-const ADMIN_NOTIFICATION_FROM_EMAIL = "admin@dfootprint.me";  
+const ADMIN_NOTIFICATION_FROM_EMAIL = "admin@dfootprint.me";
 const ORDER_REPLY_TO = "support@dfootprint.me";
 const CUSTOM_ORDER_FROM_EMAIL =
   process.env.CUSTOM_ORDER_FROM_EMAIL || "custom-orders@dfootprint.me";
@@ -137,6 +137,7 @@ export const sendOrderStatusUpdate = async (data: {
  * Called for logged-in users who abandoned their cart
  */
 export const sendAbandonedCartEmail = async (data: {
+  abandonedCartId: string;
   customerName: string;
   email: string;
   items: Array<{
