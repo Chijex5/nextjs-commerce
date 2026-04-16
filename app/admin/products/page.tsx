@@ -1,4 +1,5 @@
-import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db } from "lib/db";
 import {
   collections,
@@ -19,7 +20,13 @@ import { authOptions } from "../../../lib/auth";
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; page?: string; perPage?: string }>;
+  searchParams: Promise<{
+    search?: string;
+    page?: string;
+    perPage?: string;
+    status?: string;
+    collection?: string;
+  }>;
 }) {
   const session = await getServerSession(authOptions);
 
@@ -31,14 +38,66 @@ export default async function ProductsPage({
   const search = params.search || "";
   const page = parseInt(params.page || "1");
   const perPage = parseInt(params.perPage || "20");
+  const status =
+    params.status === "active" || params.status === "inactive"
+      ? params.status
+      : "all";
+  const collection = params.collection || "all";
 
-  const whereClause = search
-    ? or(
-        ilike(products.title, `%${search}%`),
-        ilike(products.handle, `%${search}%`),
-        sql`${products.tags} @> ${JSON.stringify([search])}::text[]`,
-      )
-    : undefined;
+  const allCollections = await db
+    .select({ id: collections.id, title: collections.title })
+    .from(collections)
+    .orderBy(asc(collections.title));
+
+  let filteredCollectionProductIds: string[] = [];
+  if (collection !== "all") {
+    const collectionProductRows = await db
+      .select({ productId: productCollections.productId })
+      .from(productCollections)
+      .where(eq(productCollections.collectionId, collection));
+    filteredCollectionProductIds = collectionProductRows.map(
+      (row) => row.productId,
+    );
+  }
+
+  const whereConditions: SQL[] = [];
+
+  if (search) {
+    const searchCondition = or(
+      ilike(products.title, `%${search}%`),
+      ilike(products.handle, `%${search}%`),
+      sql`${products.tags} @> ${JSON.stringify([search])}::text[]`,
+    );
+
+    if (searchCondition) {
+      whereConditions.push(searchCondition);
+    }
+  }
+
+  if (status === "active") {
+    whereConditions.push(eq(products.availableForSale, true) as SQL);
+  }
+
+  if (status === "inactive") {
+    whereConditions.push(eq(products.availableForSale, false) as SQL);
+  }
+
+  if (collection !== "all") {
+    if (filteredCollectionProductIds.length === 0) {
+      whereConditions.push(sql`1=0` as SQL);
+    } else {
+      whereConditions.push(
+        inArray(products.id, filteredCollectionProductIds) as SQL,
+      );
+    }
+  }
+
+  const whereClause: SQL | undefined =
+    whereConditions.length === 0
+      ? undefined
+      : whereConditions.length === 1
+        ? whereConditions[0]
+        : (and(...whereConditions) as SQL);
 
   const [productRows, totalResult, activeCountResult, inactiveCountResult] =
     await Promise.all([
@@ -163,10 +222,15 @@ export default async function ProductsPage({
   const buildPageUrl = (pageNum: number) => {
     const p = new URLSearchParams();
     if (search) p.set("search", search);
+    if (status !== "all") p.set("status", status);
+    if (collection !== "all") p.set("collection", collection);
     if (perPage !== 20) p.set("perPage", perPage.toString());
     p.set("page", pageNum.toString());
     return `/admin/products?${p.toString()}`;
   };
+
+  const hasActiveFilters =
+    Boolean(search) || status !== "all" || collection !== "all";
 
   const mappedProducts = productRows.map((product) => {
     const image = imagesByProduct.get(product.id);
@@ -254,58 +318,84 @@ export default async function ProductsPage({
             </div>
           </div>
 
-          {/* ── Search ── */}
-          <div className="mb-4">
-            <form action="/admin/products" method="get" className="relative">
-              <input
-                type="search"
-                name="search"
-                placeholder="Search by title, handle, or tag…"
-                defaultValue={search}
-                className="w-full rounded-xl border border-neutral-200 bg-white py-2.5 pl-10 pr-4 text-sm text-neutral-900 shadow-sm placeholder:text-neutral-400 focus:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-neutral-600 dark:focus:ring-neutral-700"
-              />
-              <svg
-                className="absolute left-3.5 top-3 h-4 w-4 text-neutral-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="2"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          {/* ── Search & Filters ── */}
+          <div className="mb-4 rounded-xl border border-neutral-200 bg-white p-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+            <form
+              action="/admin/products"
+              method="get"
+              className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_180px_220px_auto]"
+            >
+              <div className="relative sm:col-span-2 lg:col-span-1">
+                <input
+                  type="search"
+                  name="search"
+                  placeholder="Search by title, handle, or tag…"
+                  defaultValue={search}
+                  className="w-full rounded-xl border border-neutral-200 bg-white py-2.5 pl-10 pr-4 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-neutral-600 dark:focus:ring-neutral-700"
                 />
-              </svg>
-              {search && (
-                <Link
-                  href="/admin/products"
-                  className="absolute right-3.5 top-2.5 rounded-full p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+                <svg
+                  className="absolute left-3.5 top-3 h-4 w-4 text-neutral-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                  stroke="currentColor"
                 >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="2"
-                    stroke="currentColor"
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+
+              <select
+                name="status"
+                defaultValue={status}
+                className="rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-700 focus:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:focus:border-neutral-600 dark:focus:ring-neutral-700"
+              >
+                <option value="all">All statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+
+              <select
+                name="collection"
+                defaultValue={collection}
+                className="rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-700 focus:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:focus:border-neutral-600 dark:focus:ring-neutral-700"
+              >
+                <option value="all">All collections</option>
+                {allCollections.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.title}
+                  </option>
+                ))}
+              </select>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="submit"
+                  className="inline-flex h-10 items-center justify-center rounded-xl bg-neutral-900 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+                >
+                  Apply
+                </button>
+                {hasActiveFilters && (
+                  <Link
+                    href="/admin/products"
+                    className="inline-flex h-10 items-center justify-center rounded-xl border border-neutral-200 px-3 text-sm font-medium text-neutral-500 transition-colors hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </Link>
-              )}
+                    Reset
+                  </Link>
+                )}
+              </div>
             </form>
           </div>
 
           {/* Search result context */}
-          {search && (
+          {hasActiveFilters && (
             <p className="mb-3 text-sm text-neutral-500 dark:text-neutral-400">
               {total === 0
-                ? `No results for "${search}"`
-                : `${total} result${total !== 1 ? "s" : ""} for "${search}"`}
+                ? "No products match the current filters"
+                : `${total} product${total !== 1 ? "s" : ""} match the current filters`}
             </p>
           )}
 

@@ -24,7 +24,9 @@ export function ProductDescription({
 
   const urlSelection = useMemo(() => {
     const selection: Record<string, string> = {};
-    searchParams.forEach((value, key) => { selection[key] = value; });
+    searchParams.forEach((value, key) => {
+      selection[key] = value;
+    });
     return selection;
   }, [searchParams]);
 
@@ -38,7 +40,8 @@ export function ProductDescription({
         ...Object.keys(urlSelection),
       ]);
       for (const key of keys) {
-        if ((current[key] ?? "") !== (urlSelection[key] ?? "")) return urlSelection;
+        if ((current[key] ?? "") !== (urlSelection[key] ?? ""))
+          return urlSelection;
       }
       return current;
     });
@@ -300,7 +303,9 @@ export function ProductDescription({
           <h1 className="pd-title">{product.title}</h1>
 
           <div className="pd-pills">
-            <span className={`pd-pill ${product.availableForSale ? "pd-pill-active" : ""}`}>
+            <span
+              className={`pd-pill ${product.availableForSale ? "pd-pill-active" : ""}`}
+            >
               {product.availableForSale ? "In stock" : "Out of stock"}
             </span>
             <span className="pd-pill">{ratingLabel}</span>
@@ -334,7 +339,7 @@ export function ProductDescription({
           options={product.options}
           variants={product.variants}
           selectedOptions={selectedOptions}
-          onOptionChange={(name, value) =>
+          onOptionChangeAction={(name, value) =>
             setSelectedOptions((current) => ({ ...current, [name]: value }))
           }
         />
