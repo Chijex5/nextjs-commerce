@@ -1,19 +1,25 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { EditorContent, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import { toast } from "sonner";
 import {
-  generateSeoDescription,
-  generateSeoTitle,
-  generateSlug,
+    generateSeoDescription,
+    generateSeoTitle,
+    generateSlug,
 } from "@/lib/admin-utils";
 import {
-  PRODUCT_IMAGE_HEIGHT,
-  PRODUCT_IMAGE_WIDTH,
+    PRODUCT_IMAGE_HEIGHT,
+    PRODUCT_IMAGE_WIDTH,
 } from "@/lib/image-constants";
+import {
+    generateUniqueHandle,
+    validateCollectionIds,
+} from "@/lib/validation/product-helpers";
+import { CreateProductSchema } from "@/lib/validation/product-schema";
+import { validateAndSanitizeDescription } from "@/lib/validation/sanitize";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 interface Collection {
   id: string;
@@ -311,6 +317,10 @@ export default function BulkProductEditor({
   const [totalPages, setTotalPages] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
   const columnMenuRef = useRef<HTMLDivElement>(null);
+  const selectedIdsKey = useMemo(
+    () => selectedIds.slice().sort().join("|"),
+    [selectedIds],
+  );
 
   const activeProduct = useMemo(
     () => products.find((product) => product.id === activeProductId) || null,
@@ -318,6 +328,14 @@ export default function BulkProductEditor({
   );
 
   useEffect(() => {
+    console.debug("BulkProductEditor effect triggered", {
+      selectedIdsKey,
+      selectedIdsCount: selectedIds.length,
+      currentPage,
+      searchTerm,
+      isCreateMode,
+    });
+
     if (selectedIds.length > 0) {
       fetchSelectedProducts();
       return;
@@ -330,7 +348,7 @@ export default function BulkProductEditor({
     }
 
     fetchProducts();
-  }, [selectedIds, currentPage, searchTerm, isCreateMode]);
+  }, [selectedIdsKey, currentPage, searchTerm, isCreateMode]);
 
   useEffect(() => {
     fetchCollections();
@@ -798,28 +816,94 @@ export default function BulkProductEditor({
       return;
     }
 
+    // Validate all products before saving
     for (const product of modifiedProducts) {
+      // Basic field validation
       if (!product.title.trim()) {
-        toast.error("Product title is required");
+        toast.error(`[${product.title || "New"}] Product title is required`);
         return;
       }
       if (!product.handle.trim()) {
-        toast.error(`Product handle is required for ${product.title}`);
+        toast.error(`[${product.title}] Product handle is required`);
         return;
       }
       if (!product.price || Number(product.price) <= 0) {
-        toast.error(`Base price is required for ${product.title}`);
+        toast.error(`[${product.title}] Base price must be greater than 0`);
         return;
       }
       if (product.images.length < 1) {
-        toast.error(`At least one image is required for ${product.title}`);
-        return;
-      }
-      if (product.isNew && !product.generateVariants) {
-        toast.error(`New products must generate variants for ${product.title}`);
+        toast.error(`[${product.title}] At least one image is required`);
         return;
       }
 
+      // Zod schema validation
+      try {
+        const tags = product.tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean);
+
+        const colors = product.colors
+          .split(",")
+          .map((color) => color.trim())
+          .filter(Boolean);
+
+        CreateProductSchema.parse({
+          title: product.title,
+          handle: product.handle,
+          price: parseFloat(product.price),
+          description: product.description,
+          descriptionHtml: product.descriptionHtml || product.description,
+          availableForSale: product.availableForSale,
+          seoTitle: product.seoTitle,
+          seoDescription: product.seoDescription,
+          tags,
+          colors,
+          sizes: [],
+          collectionIds: product.collections,
+        });
+      } catch (error: any) {
+        const fieldError = error.errors?.[0]?.message || error.message;
+        toast.error(`[${product.title}] Validation: ${fieldError}`);
+        return;
+      }
+
+      // Validate collections exist
+      if (product.collections.length > 0) {
+        try {
+          const collectionResult = await validateCollectionIds(
+            product.collections,
+          );
+          if (!collectionResult.valid) {
+            toast.error(`[${product.title}] ${collectionResult.error}`);
+            return;
+          }
+        } catch (error) {
+          toast.error(
+            `[${product.title}] Failed to validate collections: ${error instanceof Error ? error.message : "Unknown error"}`,
+          );
+          return;
+        }
+      }
+
+      // Sanitize and validate description HTML
+      if (product.descriptionHtml) {
+        const sanitization = validateAndSanitizeDescription(
+          product.descriptionHtml,
+        );
+        if (!sanitization.valid) {
+          toast.error(`[${product.title}] ${sanitization.error}`);
+          return;
+        }
+      }
+
+      // Validate variant generation requirements
+      if (product.isNew && !product.generateVariants) {
+        toast.error(`[${product.title}] New products must generate variants`);
+        return;
+      }
+
+      // Validate size range and colors for variant generation
       if (product.generateVariants || product.isNew) {
         const sizeValues = buildSizesFromRange(
           product.sizeFrom,
@@ -830,10 +914,15 @@ export default function BulkProductEditor({
           .map((color) => color.trim())
           .filter(Boolean);
 
-        if (sizeValues.length === 0 || colorValues.length === 0) {
+        if (sizeValues.length === 0) {
           toast.error(
-            `Size range and colors are required for ${product.title}`,
+            `[${product.title}] Invalid size range (from must be ≤ to)`,
           );
+          return;
+        }
+
+        if (colorValues.length === 0) {
+          toast.error(`[${product.title}] At least one color is required`);
           return;
         }
       }
@@ -855,11 +944,26 @@ export default function BulkProductEditor({
       }
 
       for (const product of modifiedProducts) {
+        // Sanitize description HTML
+        let sanitizedHtml = product.descriptionHtml || product.description;
+        if (sanitizedHtml) {
+          const sanitization = validateAndSanitizeDescription(sanitizedHtml);
+          if (sanitization.valid) {
+            sanitizedHtml = sanitization.sanitized;
+          }
+        }
+
+        // Ensure handle is unique for new products
+        let finalHandle = product.handle;
+        if (product.isNew) {
+          finalHandle = await generateUniqueHandle(product.handle);
+        }
+
         const basePayload = {
           title: product.title,
-          handle: product.handle,
+          handle: finalHandle,
           description: product.description,
-          descriptionHtml: product.descriptionHtml || product.description,
+          descriptionHtml: sanitizedHtml,
           availableForSale: product.availableForSale,
           seoTitle: product.seoTitle,
           seoDescription: product.seoDescription,

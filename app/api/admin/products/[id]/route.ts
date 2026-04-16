@@ -11,7 +11,11 @@ import {
   productVariants,
   products,
 } from "lib/db/schema";
-import { eq, inArray, asc } from "drizzle-orm";
+import { CreateProductSchema } from "@/lib/validation/product-schema";
+import { validateAndSanitizeDescription } from "@/lib/validation/sanitize";
+import { validateCollectionIds, generateUniqueHandle } from "@/lib/validation/product-helpers";
+import { ZodError } from "zod";
+import { and, asc, eq, inArray, ne } from "drizzle-orm";
 
 export async function DELETE(
   request: Request,
@@ -130,28 +134,75 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
+    let validatedData;
+    try {
+      validatedData = CreateProductSchema.parse(body);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const messages = error.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join("; ");
+        return NextResponse.json(
+          { error: "Validation failed", details: messages },
+          { status: 400 },
+        );
+      }
+      throw error;
+    }
+
+    if (validatedData.collectionIds.length > 0) {
+      const collectionCheck = await validateCollectionIds(validatedData.collectionIds);
+      if (!collectionCheck.valid) {
+        return NextResponse.json({ error: collectionCheck.error }, { status: 400 });
+      }
+    }
+
+    let sanitizedHtml = validatedData.descriptionHtml;
+    if (sanitizedHtml) {
+      const sanitizationResult = validateAndSanitizeDescription(sanitizedHtml);
+      if (!sanitizationResult.valid) {
+        return NextResponse.json({ error: sanitizationResult.error }, { status: 400 });
+      }
+      sanitizedHtml = sanitizationResult.sanitized;
+    }
+
+    let finalHandle = validatedData.handle;
+    const handleConflict = await db
+      .select({ id: products.id })
+      .from(products)
+      .where(and(eq(products.handle, validatedData.handle), ne(products.id, id)))
+      .limit(1);
+
+    if (handleConflict.length > 0) {
+      finalHandle = await generateUniqueHandle(validatedData.handle);
+    }
+
+    const bodyWithSanitized = {
+      ...validatedData,
+      handle: finalHandle,
+      descriptionHtml: sanitizedHtml,
+    };
+
     const product = await db.transaction(async (tx) => {
       const [updatedProduct] = await tx
         .update(products)
         .set({
-          title: body.title,
-          handle: body.handle,
-          description: body.description,
-          descriptionHtml: body.descriptionHtml,
-          availableForSale: body.availableForSale,
-          seoTitle: body.seoTitle,
-          seoDescription: body.seoDescription,
-          tags: body.tags || [],
+          title: bodyWithSanitized.title,
+          handle: bodyWithSanitized.handle,
+          description: bodyWithSanitized.description,
+          descriptionHtml: bodyWithSanitized.descriptionHtml,
+          availableForSale: bodyWithSanitized.availableForSale,
+          seoTitle: bodyWithSanitized.seoTitle,
+          seoDescription: bodyWithSanitized.seoDescription,
+          tags: bodyWithSanitized.tags || [],
         })
         .where(eq(products.id, id))
         .returning();
 
-      if (body.images && Array.isArray(body.images)) {
+      if (bodyWithSanitized.images && Array.isArray(bodyWithSanitized.images)) {
         await tx.delete(productImages).where(eq(productImages.productId, id));
 
-        if (body.images.length > 0) {
+        if (bodyWithSanitized.images.length > 0) {
           await tx.insert(productImages).values(
-            body.images.map((img: any) => ({
+            bodyWithSanitized.images.map((img: any) => ({
               productId: id,
               url: img.url,
               altText: updatedProduct?.title,
@@ -164,7 +215,7 @@ export async function PUT(
         }
       }
 
-      if (body.sizes || body.colors) {
+      if (bodyWithSanitized.sizes || bodyWithSanitized.colors) {
         const variantRows = await tx
           .select({ id: productVariants.id })
           .from(productVariants)
@@ -184,8 +235,8 @@ export async function PUT(
           .delete(productOptions)
           .where(eq(productOptions.productId, id));
 
-        const sizes = body.sizes || [];
-        const colors = body.colors || [];
+        const sizes = bodyWithSanitized.sizes || [];
+        const colors = bodyWithSanitized.colors || [];
 
         if (sizes.length > 0) {
           await tx.insert(productOptions).values({
@@ -204,12 +255,12 @@ export async function PUT(
         }
 
         const getVariantPrice = (size: string, color: string): number => {
-          const basePrice = body.basePrice || 0;
-          const colorPrices = body.colorPrices || {};
-          const largeSizePrice = body.largeSizePrice;
-          const largeSizeFrom = body.largeSizeFrom;
-          const sizePriceRules = Array.isArray(body.sizePriceRules)
-            ? body.sizePriceRules
+          const basePrice = bodyWithSanitized.basePrice || 0;
+          const colorPrices = bodyWithSanitized.colorPrices || {};
+          const largeSizePrice = bodyWithSanitized.largeSizePrice;
+          const largeSizeFrom = bodyWithSanitized.largeSizeFrom;
+          const sizePriceRules = Array.isArray(bodyWithSanitized.sizePriceRules)
+            ? bodyWithSanitized.sizePriceRules
                 .map((rule: any) => ({
                   from: parseInt(rule.from, 10),
                   price: parseFloat(rule.price),
@@ -239,8 +290,8 @@ export async function PUT(
           }
 
           if (
-            largeSizeFrom !== null &&
-            largeSizePrice !== null &&
+            typeof largeSizeFrom === "number" &&
+            typeof largeSizePrice === "number" &&
             parseInt(size, 10) >= largeSizeFrom
           ) {
             return largeSizePrice;
@@ -259,7 +310,7 @@ export async function PUT(
                 title: `${size} / ${color}`,
                 price: String(getVariantPrice(size, color)),
                 currencyCode: "NGN",
-                availableForSale: body.availableForSale ?? true,
+                availableForSale: bodyWithSanitized.availableForSale ?? true,
                 selectedOptions: [
                   { name: "Size", value: size },
                   { name: "Color", value: color },
@@ -274,7 +325,7 @@ export async function PUT(
               title: `Size ${size}`,
               price: String(getVariantPrice(size, "")),
               currencyCode: "NGN",
-              availableForSale: body.availableForSale ?? true,
+              availableForSale: bodyWithSanitized.availableForSale ?? true,
               selectedOptions: [{ name: "Size", value: size }],
             });
           }
@@ -285,7 +336,7 @@ export async function PUT(
               title: color,
               price: String(getVariantPrice("", color)),
               currencyCode: "NGN",
-              availableForSale: body.availableForSale ?? true,
+              availableForSale: bodyWithSanitized.availableForSale ?? true,
               selectedOptions: [{ name: "Color", value: color }],
             });
           }
@@ -296,14 +347,17 @@ export async function PUT(
         }
       }
 
-      if (body.collectionIds !== undefined && Array.isArray(body.collectionIds)) {
+      if (
+        bodyWithSanitized.collectionIds !== undefined &&
+        Array.isArray(bodyWithSanitized.collectionIds)
+      ) {
         await tx
           .delete(productCollections)
           .where(eq(productCollections.productId, id));
 
-        if (body.collectionIds.length > 0) {
+        if (bodyWithSanitized.collectionIds.length > 0) {
           await tx.insert(productCollections).values(
-            body.collectionIds.map((collectionId: string, index: number) => ({
+            bodyWithSanitized.collectionIds.map((collectionId: string, index: number) => ({
               productId: id,
               collectionId,
               position: index,

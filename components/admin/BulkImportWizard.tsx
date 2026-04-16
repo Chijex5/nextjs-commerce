@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
 import { generateBulkImportTemplate, parseCSV } from "../../lib/admin-utils";
 
@@ -52,11 +52,28 @@ export default function BulkImportWizard() {
       return;
     }
 
+    // Validate file size (max 5MB)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      toast.error("File too large (max 5MB)");
+      return;
+    }
+
     setFile(selectedFile);
 
     try {
       const text = await selectedFile.text();
       const parsed = parseCSV(text);
+
+      // Validate max rows (1000 products per import)
+      const MAX_ROWS = 1000;
+      if (parsed.length > MAX_ROWS) {
+        toast.error(
+          `Too many rows (max ${MAX_ROWS}). Please split into multiple imports.`,
+        );
+        return;
+      }
+
       setProducts(parsed as ProductRow[]);
       setStep("preview");
       toast.success(`Loaded ${parsed.length} products`);
@@ -84,54 +101,46 @@ export default function BulkImportWizard() {
       setProgress({ current: i + 1, total: products.length });
 
       try {
+        // Validate required fields
+        if (!product.title || product.title.trim() === "") {
+          throw new Error("Title is required");
+        }
+        if (!product.price || parseFloat(product.price) <= 0) {
+          throw new Error("Valid price is required (must be > 0)");
+        }
+
         // Generate handle from title
-        const handle = product.title
+        const baseHandle = product.title
           .toLowerCase()
           .trim()
           .replace(/[^\w\s-]/g, "")
           .replace(/[\s_-]+/g, "-")
           .replace(/^-+|-+$/g, "");
 
-        // Prepare product data
+        if (!baseHandle) {
+          throw new Error("Title cannot generate a valid handle");
+        }
+
+        // Prepare product data with proper validation
         const productData = {
-          title: product.title,
-          handle: handle + `-${Date.now()}-${i}`, // Ensure unique handle
-          description: product.description || "",
+          title: product.title.trim(),
+          handle: baseHandle, // Let API handle uniqueness
+          description: product.description?.trim() || "",
           descriptionHtml: product.description
-            ? `<p>${product.description}</p>`
+            ? `<p>${product.description.trim()}</p>`
             : "",
           availableForSale: product.available_for_sale !== "false",
-          seoTitle: `${product.title} - D'FOOTPRINT`,
-          seoDescription: product.description?.substring(0, 160) || "",
+          seoTitle: `${product.title.trim()} - D'FOOTPRINT`,
+          seoDescription: product.description?.trim().substring(0, 160) || "",
           tags: product.tags
             ? product.tags
                 .split(",")
                 .map((t) => t.trim())
                 .filter((t) => t)
             : [],
-          image: product.image_url || undefined,
-          variant: {
-            title: product.variant_title || "Default",
-            price: parseFloat(product.price),
-            currencyCode: "NGN",
-            availableForSale: product.available_for_sale !== "false",
-            selectedOptions: [] as any[],
-          },
+          images: product.image_url ? [{ url: product.image_url }] : [],
+          basePrice: parseFloat(product.price),
         };
-
-        // Add size/color to selected options if provided
-        if (product.variant_size) {
-          productData.variant.selectedOptions.push({
-            name: "Size",
-            value: product.variant_size,
-          });
-        }
-        if (product.variant_color) {
-          productData.variant.selectedOptions.push({
-            name: "Color",
-            value: product.variant_color,
-          });
-        }
 
         const response = await fetch("/api/admin/products", {
           method: "POST",
@@ -142,19 +151,23 @@ export default function BulkImportWizard() {
         });
 
         if (!response.ok) {
-          throw new Error(`Failed to create ${product.title}`);
+          const errorData = await response.json().catch(() => ({}));
+          const errorMsg =
+            errorData.details || errorData.error || `HTTP ${response.status}`;
+          throw new Error(errorMsg);
         }
 
         importResults.success++;
       } catch (error: any) {
         importResults.failed++;
+        const errorMessage = error.message || "Unknown error";
         importResults.errors.push(
-          `Row ${i + 1} (${product.title}): ${error.message}`,
+          `Row ${i + 1} (${product.title || "unknown"}): ${errorMessage}`,
         );
       }
 
       // Small delay to avoid overwhelming the server
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 50));
     }
 
     setResults(importResults);

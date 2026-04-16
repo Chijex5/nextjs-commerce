@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import ProductsTable from "./ProductsTable";
 
 type Product = {
@@ -34,11 +34,12 @@ export default function ProductsListWithSelection({
   };
 
   const toggleSelectAll = () => {
-    if (selectedProducts.size === products.length) {
-      setSelectedProducts(new Set());
-    } else {
-      setSelectedProducts(new Set(products.map((p) => p.id)));
-    }
+    setSelectedProducts((prev) => {
+      if (prev.size === products.length) {
+        return new Set();
+      }
+      return new Set(products.map((p) => p.id));
+    });
   };
 
   const handleBulkAction = () => {
@@ -46,7 +47,7 @@ export default function ProductsListWithSelection({
       router.push("/admin/products/bulk-edit");
     } else {
       const ids = Array.from(selectedProducts).join(",");
-      router.push(`/admin/products/bulk-edit?ids=${ids}`);
+      router.push(`/admin/products/bulk-edit?ids=${encodeURIComponent(ids)}`);
     }
   };
 
@@ -73,7 +74,6 @@ export default function ProductsListWithSelection({
                   ? "border-neutral-900 bg-neutral-900 dark:border-neutral-100 dark:bg-neutral-100"
                   : "border-neutral-300 bg-white dark:border-neutral-600 dark:bg-neutral-800"
               }`}
-              onClick={toggleSelectAll}
             >
               {allSelected && (
                 <svg
@@ -83,15 +83,17 @@ export default function ProductsListWithSelection({
                   strokeWidth="2.5"
                   stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 6l3 3 6-6" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M1.5 6l3 3 6-6"
+                  />
                 </svg>
               )}
             </div>
           </div>
           <span className="text-sm text-neutral-500 dark:text-neutral-400">
-            {allSelected
-              ? "Deselect all"
-              : `Select all (${products.length})`}
+            {allSelected ? "Deselect all" : `Select all (${products.length})`}
           </span>
         </label>
 
@@ -150,7 +152,11 @@ export default function ProductsListWithSelection({
                 strokeWidth="2"
                 stroke="currentColor"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4.5v15m7.5-7.5h-15"
+                />
               </svg>
               Bulk Create
             </>

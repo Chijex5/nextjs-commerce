@@ -13,6 +13,7 @@ import { redirect } from "next/navigation";
 import AdminNav from "../../../components/admin/AdminNav";
 import GoogleMerchantSyncButton from "../../../components/admin/GoogleMerchantSyncButton";
 import ProductsListWithSelection from "../../../components/admin/ProductsListWithSelection";
+import ProductsPerPageSelect from "../../../components/admin/ProductsPerPageSelect";
 import { authOptions } from "../../../lib/auth";
 
 export default async function ProductsPage({
@@ -185,7 +186,6 @@ export default async function ProductsPage({
 
       <div className="py-8 sm:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-
           {/* ── Header ── */}
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -215,7 +215,11 @@ export default async function ProductsPage({
                   strokeWidth="2"
                   stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 4.5v15m7.5-7.5h-15"
+                  />
                 </svg>
                 Add Product
               </Link>
@@ -278,8 +282,18 @@ export default async function ProductsPage({
                   href="/admin/products"
                   className="absolute right-3.5 top-2.5 rounded-full p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
                 >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </Link>
               )}
@@ -312,22 +326,7 @@ export default async function ProductsPage({
                   </span>
                 </p>
 
-                <select
-                  defaultValue={perPage}
-                  onChange={(e) => {
-                    const p = new URLSearchParams();
-                    if (search) p.set("search", search);
-                    p.set("page", "1");
-                    p.set("perPage", e.target.value);
-                    window.location.href = `/admin/products?${p.toString()}`;
-                  }}
-                  className="rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-1.5 text-xs font-medium text-neutral-700 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-                >
-                  <option value="20">20 / page</option>
-                  <option value="40">40 / page</option>
-                  <option value="60">60 / page</option>
-                  <option value="100">100 / page</option>
-                </select>
+                <ProductsPerPageSelect perPage={perPage} />
               </div>
 
               <nav className="flex items-center gap-1">
@@ -339,8 +338,18 @@ export default async function ProductsPage({
                       : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
                   }`}
                 >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15.75 19.5L8.25 12l7.5-7.5"
+                    />
                   </svg>
                 </Link>
 
@@ -378,8 +387,18 @@ export default async function ProductsPage({
                       : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
                   }`}
                 >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                    />
                   </svg>
                 </Link>
               </nav>
