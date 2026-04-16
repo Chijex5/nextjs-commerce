@@ -128,6 +128,7 @@ export async function PUT(
     const session = await requireAdminSession();
 
     if (!session) {
+      console.log("Unauthorized attempt to update product");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
