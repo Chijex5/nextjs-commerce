@@ -2,9 +2,9 @@ import { randomUUID } from "crypto";
 import { asc, desc, eq } from "drizzle-orm";
 import { HIDDEN_PRODUCT_TAG, TAGS } from "lib/constants";
 import {
-    unstable_cacheLife as cacheLife,
-    unstable_cacheTag as cacheTag,
-    revalidateTag,
+  unstable_cacheLife as cacheLife,
+  unstable_cacheTag as cacheTag,
+  revalidateTag,
 } from "next/cache";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -64,11 +64,11 @@ async function resolveCartForSession(
 
 // Re-export types from shopify for compatibility
 export type {
-    Cart, CartItem,
-    CartProduct, Collection, Image, Menu, Money, Page,
-    Product,
-    ProductOption,
-    ProductVariant, SEO
+  Cart, CartItem,
+  CartProduct, Collection, Image, Menu, Money, Page,
+  Product,
+  ProductOption,
+  ProductVariant, SEO
 } from "../shopify/types";
 
 // Cart operations
@@ -154,10 +154,14 @@ export async function getCollectionProducts({
   collection,
   reverse,
   sortKey,
+  limit,
+  offset,
 }: {
   collection: string;
   reverse?: boolean;
   sortKey?: string;
+  limit?: number;
+  offset?: number;
 }): Promise<Product[]> {
   "use cache";
   cacheTag(TAGS.collections, TAGS.products);
@@ -167,10 +171,14 @@ export async function getCollectionProducts({
     collection,
     reverse,
     sortKey,
+    limit,
+    offset,
   });
 
   return products.filter(
-    (product) => !product.tags.includes(HIDDEN_PRODUCT_TAG),
+    (product) =>
+      product.availableForSale &&
+      !product.tags.includes(HIDDEN_PRODUCT_TAG),
   );
 }
 
@@ -189,7 +197,18 @@ export async function getCollectionsWithProducts(): Promise<
   cacheTag(TAGS.collections, TAGS.products);
   cacheLife("days");
 
-  return dbQueries.getCollectionsWithProducts();
+  const collectionsWithProducts = await dbQueries.getCollectionsWithProducts();
+
+  return collectionsWithProducts
+    .map((entry) => ({
+      ...entry,
+      products: entry.products.filter(
+        (product) =>
+          product.availableForSale &&
+          !product.tags.includes(HIDDEN_PRODUCT_TAG),
+      ),
+    }))
+    .filter((entry) => entry.products.length > 0);
 }
 
 // Product operations
@@ -201,7 +220,10 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
   const product = await dbQueries.getProduct(handle);
 
   // Filter out hidden products
-  if (product && product.tags.includes(HIDDEN_PRODUCT_TAG)) {
+  if (
+    product &&
+    (!product.availableForSale || product.tags.includes(HIDDEN_PRODUCT_TAG))
+  ) {
     return undefined;
   }
 
@@ -218,7 +240,9 @@ export async function getProductRecommendations(
   const products = await dbQueries.getProductRecommendations(productId);
 
   return products.filter(
-    (product) => !product.tags.includes(HIDDEN_PRODUCT_TAG),
+    (product) =>
+      product.availableForSale &&
+      !product.tags.includes(HIDDEN_PRODUCT_TAG),
   );
 }
 
@@ -236,10 +260,14 @@ export async function getProducts({
   query,
   reverse,
   sortKey,
+  limit,
+  offset,
 }: {
   query?: string;
   reverse?: boolean;
   sortKey?: string;
+  limit?: number;
+  offset?: number;
 }): Promise<Product[]> {
   "use cache";
   cacheTag(TAGS.products, TAGS.collections);
@@ -250,11 +278,20 @@ export async function getProducts({
     cacheLife("days");
   }
 
-  const products = await dbQueries.getProducts({ query, reverse, sortKey });
+  const products = await dbQueries.getProducts({
+    query,
+    reverse,
+    sortKey,
+    limit,
+    offset,
+    onlyAvailableForSale: true,
+  });
 
   // Filter out hidden products
   return products.filter(
-    (product) => !product.tags.includes(HIDDEN_PRODUCT_TAG),
+    (product) =>
+      product.availableForSale &&
+      !product.tags.includes(HIDDEN_PRODUCT_TAG),
   );
 }
 

@@ -249,7 +249,9 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
   const [dbProduct] = await db
     .select()
     .from(products)
-    .where(eq(products.handle, handle))
+    .where(
+      and(eq(products.handle, handle), eq(products.availableForSale, true)),
+    )
     .limit(1);
 
   return reshapeDbProduct(dbProduct);
@@ -259,14 +261,26 @@ export async function getProducts({
   query,
   reverse,
   sortKey,
+  limit = 100,
+  offset = 0,
+  onlyAvailableForSale = true,
 }: {
   query?: string;
   reverse?: boolean;
   sortKey?: string;
+  limit?: number;
+  offset?: number;
+  onlyAvailableForSale?: boolean;
 }): Promise<Product[]> {
   const filters: SQL[] = [];
+  const safeLimit = Math.max(1, Math.min(100, Math.trunc(limit)));
+  const safeOffset = Math.max(0, Math.trunc(offset));
   const sanitizedQuery = query?.trim();
   let relevanceScore = sql<number>`0`;
+
+  if (onlyAvailableForSale) {
+    filters.push(eq(products.availableForSale, true));
+  }
 
   if (sanitizedQuery) {
     const normalizedQuery = sanitizedQuery.toLowerCase();
@@ -518,64 +532,70 @@ export async function getProducts({
       .from(products)
       .where(filters.length ? and(...filters) : undefined)
       .orderBy(...orderByClauses)
-      .limit(100);
+      .limit(safeLimit)
+      .offset(safeOffset);
   } catch (error) {
     if (!sanitizedQuery) {
       throw error;
     }
 
     const fallbackPattern = `%${sanitizedQuery}%`;
+    const fallbackSearchFilter = or(
+      ilike(products.title, fallbackPattern),
+      ilike(products.handle, fallbackPattern),
+      ilike(products.description, fallbackPattern),
+      sql`${products.tags}::text ILIKE ${fallbackPattern}`,
+      sql<boolean>`
+        exists (
+          select 1
+          from ${productVariants}
+          where ${productVariants.productId} = ${products.id}
+            and (
+              ${productVariants.title} ILIKE ${fallbackPattern}
+              or ${productVariants.selectedOptions}::text ILIKE ${fallbackPattern}
+            )
+        )
+      `,
+      sql<boolean>`
+        exists (
+          select 1
+          from ${productOptions}
+          where ${productOptions.productId} = ${products.id}
+            and (
+              ${productOptions.name} ILIKE ${fallbackPattern}
+              or array_to_string(${productOptions.values}, ' ') ILIKE ${fallbackPattern}
+            )
+        )
+      `,
+      sql<boolean>`
+        exists (
+          select 1
+          from ${productCollections}
+          inner join ${collections}
+            on ${productCollections.collectionId} = ${collections.id}
+          where ${productCollections.productId} = ${products.id}
+            and (
+              ${collections.title} ILIKE ${fallbackPattern}
+              or ${collections.handle} ILIKE ${fallbackPattern}
+              or ${collections.description} ILIKE ${fallbackPattern}
+            )
+        )
+      `,
+    );
+
+    const fallbackWhere = onlyAvailableForSale
+      ? and(eq(products.availableForSale, true), fallbackSearchFilter)
+      : fallbackSearchFilter;
+
     dbProducts = await db
       .select({
         product: products,
       })
       .from(products)
-      .where(
-        or(
-          ilike(products.title, fallbackPattern),
-          ilike(products.handle, fallbackPattern),
-          ilike(products.description, fallbackPattern),
-          sql`${products.tags}::text ILIKE ${fallbackPattern}`,
-          sql<boolean>`
-            exists (
-              select 1
-              from ${productVariants}
-              where ${productVariants.productId} = ${products.id}
-                and (
-                  ${productVariants.title} ILIKE ${fallbackPattern}
-                  or ${productVariants.selectedOptions}::text ILIKE ${fallbackPattern}
-                )
-            )
-          `,
-          sql<boolean>`
-            exists (
-              select 1
-              from ${productOptions}
-              where ${productOptions.productId} = ${products.id}
-                and (
-                  ${productOptions.name} ILIKE ${fallbackPattern}
-                  or array_to_string(${productOptions.values}, ' ') ILIKE ${fallbackPattern}
-                )
-            )
-          `,
-          sql<boolean>`
-            exists (
-              select 1
-              from ${productCollections}
-              inner join ${collections}
-                on ${productCollections.collectionId} = ${collections.id}
-              where ${productCollections.productId} = ${products.id}
-                and (
-                  ${collections.title} ILIKE ${fallbackPattern}
-                  or ${collections.handle} ILIKE ${fallbackPattern}
-                  or ${collections.description} ILIKE ${fallbackPattern}
-                )
-            )
-          `,
-        ),
-      )
+      .where(fallbackWhere)
       .orderBy(primaryOrder, asc(products.id))
-      .limit(100);
+      .limit(safeLimit)
+      .offset(safeOffset);
   }
 
   return reshapeDbProducts(dbProducts.map(({ product }) => product));
@@ -605,6 +625,7 @@ export async function getProductRecommendations(
       .where(
         and(
           inArray(productCollections.collectionId, collectionIds),
+          eq(products.availableForSale, true),
           sql`${productCollections.productId} <> ${productId}`,
         ),
       )
@@ -621,7 +642,12 @@ export async function getProductRecommendations(
     const fallback = await db
       .select()
       .from(products)
-      .where(notInArray(products.id, excludeIds))
+      .where(
+        and(
+          notInArray(products.id, excludeIds),
+          eq(products.availableForSale, true),
+        ),
+      )
       .orderBy(desc(products.updatedAt), asc(products.id))
       .limit(remaining);
     relatedProducts = [...relatedProducts, ...fallback];
@@ -709,13 +735,20 @@ export async function getCollectionProducts({
   collection,
   reverse,
   sortKey,
+  limit,
+  offset,
 }: {
   collection: string;
   reverse?: boolean;
   sortKey?: string;
+  limit?: number;
+  offset?: number;
 }): Promise<Product[]> {
+  const safeLimit = limit == null ? undefined : Math.max(1, Math.min(100, Math.trunc(limit)));
+  const safeOffset = offset == null ? 0 : Math.max(0, Math.trunc(offset));
+
   if (!collection) {
-    return getProducts({ reverse, sortKey });
+    return getProducts({ reverse, sortKey, limit, offset });
   }
 
   const [dbCollection] = await db
@@ -728,11 +761,22 @@ export async function getCollectionProducts({
     return [];
   }
 
-  const productCollectionRows = await db
+  const productsQuery = db
     .select({ product: products })
     .from(productCollections)
     .innerJoin(products, eq(productCollections.productId, products.id))
-    .where(eq(productCollections.collectionId, dbCollection.id));
+    .where(
+      and(
+        eq(productCollections.collectionId, dbCollection.id),
+        eq(products.availableForSale, true),
+      ),
+    )
+    .orderBy(asc(productCollections.position), asc(products.id));
+
+  const productCollectionRows =
+    safeLimit !== undefined
+      ? await productsQuery.limit(safeLimit).offset(safeOffset)
+      : await productsQuery;
 
   if (!productCollectionRows.length) {
     return [];
@@ -764,7 +808,12 @@ export async function getCollectionsWithProducts(): Promise<
     .select({ product: products, collectionId: productCollections.collectionId, position: productCollections.position })
     .from(productCollections)
     .innerJoin(products, eq(productCollections.productId, products.id))
-    .where(inArray(productCollections.collectionId, collectionIds))
+    .where(
+      and(
+        inArray(productCollections.collectionId, collectionIds),
+        eq(products.availableForSale, true),
+      ),
+    )
     .orderBy(asc(productCollections.position));
 
   // Group raw product rows by collectionId, keeping max 8 per collection

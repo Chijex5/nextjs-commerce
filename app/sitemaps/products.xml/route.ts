@@ -3,7 +3,7 @@ import { db } from "lib/db";
 import { products } from "lib/db/schema";
 import { canonicalUrl } from "lib/seo";
 import { buildSitemapXml } from "lib/sitemap";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 export const revalidate = 86400;
 
@@ -11,6 +11,7 @@ export async function GET() {
   const productRows = await db
     .select({ handle: products.handle, updatedAt: products.updatedAt, tags: products.tags })
     .from(products)
+    .where(eq(products.availableForSale, true))
     .orderBy(desc(products.updatedAt));
 
   const entries = productRows

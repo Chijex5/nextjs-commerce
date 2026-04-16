@@ -1,17 +1,17 @@
-import Price from "components/price";
 import { defaultSort, sorting } from "lib/constants";
 import { getProducts } from "lib/database";
 import {
-  canonicalUrl,
-  hasContentAffectingSearchParams,
-  siteName,
+    canonicalUrl,
+    hasContentAffectingSearchParams,
+    siteName,
 } from "lib/seo";
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
+import InfiniteProductsGrid from "./infinite-products-grid";
 import ProductsFilterMenu from "./products-filter-menu";
 
 const description = "Browse all products in our store.";
+const PRODUCTS_PAGE_SIZE = 24;
 
 export async function generateMetadata(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -56,7 +56,12 @@ export default async function AllProductsPage(props: {
   const activeSort = sorting.find((item) => item.slug === sort) || defaultSort;
   const { sortKey, reverse } = activeSort;
 
-  const products = await getProducts({ sortKey, reverse });
+  const products = await getProducts({
+    sortKey,
+    reverse,
+    limit: PRODUCTS_PAGE_SIZE,
+    offset: 0,
+  });
 
   return (
     <section className="shop-root">
@@ -458,99 +463,11 @@ export default async function AllProductsPage(props: {
               <span className="section-title">All Products</span>
             </div>
 
-            <div className="products-grid">
-              {products.map((product) => {
-                const minPrice = parseFloat(
-                  product.priceRange.minVariantPrice.amount,
-                );
-                const maxPrice = parseFloat(
-                  product.priceRange.maxVariantPrice.amount,
-                );
-                const hasPriceRange = minPrice !== maxPrice;
-
-                return (
-                  <Link
-                    key={product.id}
-                    href={`/product/${product.handle}`}
-                    prefetch={true}
-                    className="product-card"
-                  >
-                    {/* Image */}
-                    <div className="card-image-wrap">
-                      {product.featuredImage?.url ? (
-                        <Image
-                          src={product.featuredImage.url}
-                          alt={product.featuredImage.altText || product.title}
-                          fill
-                          sizes="(min-width: 1600px) 16vw, (min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                        />
-                      ) : (
-                        <div className="card-image-empty">
-                          {/* Placeholder shoe silhouette */}
-                          <svg
-                            className="card-image-empty-icon"
-                            viewBox="0 0 120 80"
-                            width="120"
-                            height="80"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M8 60 Q6 70 20 72 L100 72 Q114 72 110 58 L104 44 Q100 36 88 36 L16 36 Q6 40 8 60 Z"
-                              fill="#F2E8D5"
-                            />
-                            <path
-                              d="M16 36 Q12 12 36 4 Q56 -2 80 6 Q100 14 108 36 Z"
-                              fill="#F2E8D5"
-                            />
-                          </svg>
-                        </div>
-                      )}
-                      <button className="card-quick-add" tabIndex={-1}>
-                        Quick Add
-                      </button>
-                    </div>
-
-                    {/* Info */}
-                    <div className="card-info">
-                      <h2 className="card-name">{product.title}</h2>
-                      <div className="card-price-row">
-                        {hasPriceRange ? (
-                          <>
-                            <Price
-                              amount={product.priceRange.minVariantPrice.amount}
-                              currencyCode={
-                                product.priceRange.minVariantPrice.currencyCode
-                              }
-                              currencyCodeClassName="hidden"
-                              className="inline"
-                            />
-                            <span className="card-price-separator">—</span>
-                            <Price
-                              amount={product.priceRange.maxVariantPrice.amount}
-                              currencyCode={
-                                product.priceRange.maxVariantPrice.currencyCode
-                              }
-                              currencyCodeClassName="hidden"
-                              className="inline"
-                            />
-                          </>
-                        ) : (
-                          <Price
-                            amount={product.priceRange.maxVariantPrice.amount}
-                            currencyCode={
-                              product.priceRange.maxVariantPrice.currencyCode
-                            }
-                            currencyCodeClassName="hidden"
-                            className="inline"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+            <InfiniteProductsGrid
+              initialProducts={products}
+              pageSize={PRODUCTS_PAGE_SIZE}
+              sortSlug={activeSort.slug ?? null}
+            />
 
             {/* Promo strip */}
             <div className="promo-strip">
