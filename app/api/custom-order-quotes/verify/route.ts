@@ -1,9 +1,8 @@
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { NextRequest } from "next/server";
+import { isCustomOrderFeatureEnabled } from "lib/custom-order-utils";
 import { verifyPaystackReference } from "lib/payments/paystack";
 import { reconcilePaystackPayment } from "lib/payments/paystack-reconcile";
-import { isCustomOrderFeatureEnabled } from "lib/custom-order-utils";
+import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -30,12 +29,16 @@ const toCustomOrderError = (conflictCode: string) => {
 export async function GET(request: NextRequest) {
   try {
     if (!isCustomOrderFeatureEnabled()) {
-      return redirect("/custom-orders?error=feature_disabled");
+      return NextResponse.redirect(
+        new URL("/custom-orders?error=feature_disabled", request.url),
+      );
     }
 
     const reference = request.nextUrl.searchParams.get("reference");
     if (!reference) {
-      return redirect("/custom-orders?error=invalid_reference");
+      return NextResponse.redirect(
+        new URL("/custom-orders?error=invalid_reference", request.url),
+      );
     }
 
     const verifyData = await verifyPaystackReference(reference);
@@ -104,19 +107,32 @@ export async function GET(request: NextRequest) {
     });
 
     if (result.status === "paid") {
-      cookieStore.delete("custom-quote-session");
-      return redirect(
-        `/checkout/success?order=${encodeURIComponent(result.orderNumber)}`,
+      const response = NextResponse.redirect(
+        new URL(
+          `/checkout/success?order=${encodeURIComponent(result.orderNumber)}`,
+          request.url,
+        ),
       );
+      response.cookies.delete("custom-quote-session");
+      return response;
     }
 
     if (result.status === "conflict") {
-      return redirect(`/custom-orders?error=${toCustomOrderError(result.conflictCode)}`);
+      return NextResponse.redirect(
+        new URL(
+          `/custom-orders?error=${toCustomOrderError(result.conflictCode)}`,
+          request.url,
+        ),
+      );
     }
 
-    return redirect("/custom-orders?error=payment_verification_failed");
+    return NextResponse.redirect(
+      new URL("/custom-orders?error=payment_verification_failed", request.url),
+    );
   } catch (error) {
     console.error("Failed to verify custom quote payment:", error);
-    return redirect("/custom-orders?error=payment_verification_failed");
+    return NextResponse.redirect(
+      new URL("/custom-orders?error=payment_verification_failed", request.url),
+    );
   }
 }

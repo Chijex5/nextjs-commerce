@@ -17,19 +17,22 @@ export default async function AdminCustomOrderRequestsPage() {
   const enabled = process.env.CUSTOM_ORDER_REQUESTS_ENABLED === "true";
   if (!enabled) {
     return (
-      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
         <AdminNav
           currentPage="custom-order-requests"
           userEmail={session.user?.email}
         />
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
             <h1 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-              Custom Requests
+              Custom requests
             </h1>
-            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-              Enable `CUSTOM_ORDER_REQUESTS_ENABLED=true` to manage custom
-              requests.
+            <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+              Set{" "}
+              <code className="rounded bg-neutral-100 px-1 py-0.5 text-xs dark:bg-neutral-800">
+                CUSTOM_ORDER_REQUESTS_ENABLED=true
+              </code>{" "}
+              in your environment to manage custom requests.
             </p>
           </div>
         </div>
@@ -103,7 +106,7 @@ export default async function AdminCustomOrderRequestsPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
       <AdminNav
         currentPage="custom-order-requests"
         userEmail={session.user?.email}
@@ -112,10 +115,10 @@ export default async function AdminCustomOrderRequestsPage() {
         <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-3xl">
-              Custom Requests
+              Custom requests
             </h1>
-            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-              Review requests, send quotes, and track quote/payment status.
+            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+              Review requests, send quotes, and track quote and payment status.
             </p>
           </div>
           <CustomOrderRequestsManagement requests={serializedRequests} />

@@ -4,12 +4,12 @@ import Price from "components/price";
 import { useUserSession } from "hooks/useUserSession";
 import { trackCustomOrderRequest } from "lib/analytics";
 import {
-    AlertCircle,
-    CheckCircle2,
-    ImagePlus,
-    Loader2,
-    Trash2,
-    UploadCloud,
+  AlertCircle,
+  CheckCircle2,
+  ImagePlus,
+  Loader2,
+  Trash2,
+  UploadCloud,
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -68,7 +68,7 @@ const parseErrorMessage = async (
       return payload.error;
     }
   } catch {
-    // Ignore parse issues and use fallback message.
+    // ignore
   }
   return fallback;
 };
@@ -84,8 +84,7 @@ export default function CustomOrderRequestSection() {
   const [submitting, setSubmitting] = useState(false);
   const [sendingMagicLink, setSendingMagicLink] = useState(false);
   const [uploadItems, setUploadItems] = useState<UploadedImage[]>([]);
-  const [submittedRequest, setSubmittedRequest] =
-    useState<SubmittedRequest | null>(null);
+  const [submittedRequest, setSubmittedRequest] = useState<SubmittedRequest | null>(null);
   const [quote, setQuote] = useState<QuoteDetails | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [payingQuote, setPayingQuote] = useState(false);
@@ -104,10 +103,7 @@ export default function CustomOrderRequestSection() {
 
   useEffect(() => {
     if (session?.email) {
-      setFormValues((prev) => ({
-        ...prev,
-        email: prev.email || session.email || "",
-      }));
+      setFormValues((prev) => ({ ...prev, email: prev.email || session.email || "" }));
     }
   }, [session?.email]);
 
@@ -117,32 +113,25 @@ export default function CustomOrderRequestSection() {
 
   useEffect(() => {
     return () => {
-      // Revoke any remaining local object URLs on unmount.
       for (const item of uploadItemsRef.current) {
-        if (isBlobUrl(item.previewUrl)) {
-          URL.revokeObjectURL(item.previewUrl);
-        }
+        if (isBlobUrl(item.previewUrl)) URL.revokeObjectURL(item.previewUrl);
       }
     };
   }, []);
 
   useEffect(() => {
     if (!quoteId || !token) return;
-
     const fetchQuote = async () => {
       setQuoteLoading(true);
       try {
         const response = await fetch(
-          `/api/custom-order-quotes/${encodeURIComponent(
-            quoteId,
-          )}?token=${encodeURIComponent(token)}`,
+          `/api/custom-order-quotes/${encodeURIComponent(quoteId)}?token=${encodeURIComponent(token)}`,
         );
         if (!response.ok) {
           const data = await response.json();
           toast.error(data.error || "Unable to load quote");
           return;
         }
-
         const data = await response.json();
         setQuote(data.quote || null);
       } catch {
@@ -151,7 +140,6 @@ export default function CustomOrderRequestSection() {
         setQuoteLoading(false);
       }
     };
-
     void fetchQuote();
   }, [quoteId, token]);
 
@@ -178,47 +166,28 @@ export default function CustomOrderRequestSection() {
     try {
       const payload = new FormData();
       payload.append("file", file);
-
       const response = await fetch("/api/custom-order-requests/upload", {
         method: "POST",
         body: payload,
       });
       if (!response.ok) {
-        throw new Error(
-          await parseErrorMessage(response, `Failed to upload ${file.name}`),
-        );
+        throw new Error(await parseErrorMessage(response, `Failed to upload ${file.name}`));
       }
-
       const data = await response.json();
       if (!data?.url || !data?.publicId) {
         throw new Error(`Upload response was invalid for ${file.name}`);
       }
-
       setUploadItems((prev) =>
         prev.map((item) => {
           if (item.id !== uploadId) return item;
-          if (isBlobUrl(item.previewUrl)) {
-            URL.revokeObjectURL(item.previewUrl);
-          }
-          return {
-            ...item,
-            status: "uploaded",
-            previewUrl: data.url,
-            url: data.url,
-            publicId: data.publicId,
-            error: undefined,
-          };
+          if (isBlobUrl(item.previewUrl)) URL.revokeObjectURL(item.previewUrl);
+          return { ...item, status: "uploaded", previewUrl: data.url, url: data.url, publicId: data.publicId, error: undefined };
         }),
       );
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to upload image";
+      const message = error instanceof Error ? error.message : "Failed to upload image";
       setUploadItems((prev) =>
-        prev.map((item) =>
-          item.id === uploadId
-            ? { ...item, status: "error", error: message }
-            : item,
-        ),
+        prev.map((item) => item.id === uploadId ? { ...item, status: "error", error: message } : item),
       );
       toast.error(message);
     }
@@ -227,39 +196,24 @@ export default function CustomOrderRequestSection() {
   const handleImageSelection = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const remainingSlots = MAX_IMAGES - uploadItems.length;
-    if (remainingSlots <= 0) {
-      toast.error(`Maximum ${MAX_IMAGES} images allowed.`);
-      return;
-    }
-
+    if (remainingSlots <= 0) { toast.error(`Maximum ${MAX_IMAGES} images allowed.`); return; }
     const selectedFiles = Array.from(files).slice(0, remainingSlots);
     const validFiles = selectedFiles.filter((file) => {
-      if (!file.type.startsWith("image/")) {
-        toast.error(`${file.name} is not an image file.`);
-        return false;
-      }
-      if (file.size > MAX_IMAGE_SIZE_BYTES) {
-        toast.error(`${file.name} is larger than 8MB.`);
-        return false;
-      }
+      if (!file.type.startsWith("image/")) { toast.error(`${file.name} is not an image file.`); return false; }
+      if (file.size > MAX_IMAGE_SIZE_BYTES) { toast.error(`${file.name} is larger than 8MB.`); return false; }
       return true;
     });
-
     if (validFiles.length === 0) return;
-
     const nextItems = validFiles.map((file) => ({
       id: createUploadId(),
       fileName: file.name,
       previewUrl: URL.createObjectURL(file),
       status: "uploading" as const,
     }));
-
     setUploadItems((prev) => [...prev, ...nextItems]);
     validFiles.forEach((file, index) => {
       const uploadId = nextItems[index]?.id;
-      if (uploadId) {
-        void startUpload(uploadId, file);
-      }
+      if (uploadId) void startUpload(uploadId, file);
     });
   };
 
@@ -272,69 +226,27 @@ export default function CustomOrderRequestSection() {
           body: JSON.stringify({ publicId: item.publicId }),
         });
         const data = await response.json();
-        if (!response.ok) {
-          toast.error(data.error || "Failed to delete image");
-          return;
-        }
+        if (!response.ok) { toast.error(data.error || "Failed to delete image"); return; }
       } catch {
-        toast.error("Failed to delete image");
-        return;
+        toast.error("Failed to delete image"); return;
       }
     }
-
-    if (isBlobUrl(item.previewUrl)) {
-      URL.revokeObjectURL(item.previewUrl);
-    }
-
+    if (isBlobUrl(item.previewUrl)) URL.revokeObjectURL(item.previewUrl);
     setUploadItems((prev) => prev.filter((entry) => entry.id !== item.id));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    if (!formValues.customerName.trim()) {
-      toast.error("Full name is required");
-      return;
+    if (!formValues.customerName.trim()) { toast.error("Full name is required"); return; }
+    if (!formValues.email.trim()) { toast.error("Email is required"); return; }
+    if (!formValues.title.trim()) { toast.error("Request title is required"); return; }
+    if (!formValues.description.trim()) { toast.error("Design brief is required"); return; }
+    const budgetMin = formValues.budgetMin ? Number(formValues.budgetMin) : undefined;
+    const budgetMax = formValues.budgetMax ? Number(formValues.budgetMax) : undefined;
+    if (budgetMin !== undefined && budgetMax !== undefined && Number.isFinite(budgetMin) && Number.isFinite(budgetMax) && budgetMin > budgetMax) {
+      toast.error("Budget min cannot be greater than budget max"); return;
     }
-
-    if (!formValues.email.trim()) {
-      toast.error("Email is required");
-      return;
-    }
-
-    if (!formValues.title.trim()) {
-      toast.error("Request title is required");
-      return;
-    }
-
-    if (!formValues.description.trim()) {
-      toast.error("Design brief is required");
-      return;
-    }
-
-    const budgetMin = formValues.budgetMin
-      ? Number(formValues.budgetMin)
-      : undefined;
-    const budgetMax = formValues.budgetMax
-      ? Number(formValues.budgetMax)
-      : undefined;
-
-    if (
-      budgetMin !== undefined &&
-      budgetMax !== undefined &&
-      Number.isFinite(budgetMin) &&
-      Number.isFinite(budgetMax) &&
-      budgetMin > budgetMax
-    ) {
-      toast.error("Budget min cannot be greater than budget max");
-      return;
-    }
-
-    if (isUploading) {
-      toast.error("Please wait for image uploads to finish.");
-      return;
-    }
-
+    if (isUploading) { toast.error("Please wait for image uploads to finish."); return; }
     setSubmitting(true);
     try {
       const response = await fetch("/api/custom-order-requests", {
@@ -354,33 +266,11 @@ export default function CustomOrderRequestSection() {
           referenceImages: uploadedImageUrls,
         }),
       });
-
-      if (!response.ok) {
-        toast.error(
-          await parseErrorMessage(response, "Failed to submit request"),
-        );
-        return;
-      }
-
+      if (!response.ok) { toast.error(await parseErrorMessage(response, "Failed to submit request")); return; }
       const data = await response.json();
-
       trackCustomOrderRequest();
-      setSubmittedRequest({
-        requestNumber: data.request.requestNumber,
-        email: data.request.email,
-      });
-      setFormValues({
-        customerName: "",
-        email: session?.email || "",
-        phone: "",
-        title: "",
-        description: "",
-        sizeNotes: "",
-        colorPreferences: "",
-        budgetMin: "",
-        budgetMax: "",
-        desiredDate: "",
-      });
+      setSubmittedRequest({ requestNumber: data.request.requestNumber, email: data.request.email });
+      setFormValues({ customerName: "", email: session?.email || "", phone: "", title: "", description: "", sizeNotes: "", colorPreferences: "", budgetMin: "", budgetMax: "", desiredDate: "" });
       setUploadItems([]);
       toast.success("Custom request submitted");
     } catch {
@@ -392,22 +282,16 @@ export default function CustomOrderRequestSection() {
 
   const sendMagicLinkForRequest = async () => {
     if (!submittedRequest) return;
-
     setSendingMagicLink(true);
     try {
-      const callbackUrl = `/orders?customRequest=${encodeURIComponent(
-        submittedRequest.requestNumber,
-      )}&email=${encodeURIComponent(submittedRequest.email)}`;
+      const callbackUrl = `/orders?customRequest=${encodeURIComponent(submittedRequest.requestNumber)}&email=${encodeURIComponent(submittedRequest.email)}`;
       const response = await fetch("/api/user-auth/magic-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: submittedRequest.email, callbackUrl }),
       });
       const data = await response.json();
-      if (!response.ok) {
-        toast.error(data.error || "Failed to send magic link");
-        return;
-      }
+      if (!response.ok) { toast.error(data.error || "Failed to send magic link"); return; }
       toast.success(data.message || "Magic link sent");
     } catch {
       toast.error("Failed to send magic link");
@@ -418,23 +302,14 @@ export default function CustomOrderRequestSection() {
 
   const handlePayQuote = async () => {
     if (!quote || !token) return;
-
     setPayingQuote(true);
     try {
       const response = await fetch(
         `/api/custom-order-quotes/${encodeURIComponent(quote.id)}/initialize`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token }),
-        },
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) },
       );
       const data = await response.json();
-      if (!response.ok || !data.authorizationUrl) {
-        toast.error(data.error || "Failed to start payment");
-        return;
-      }
-
+      if (!response.ok || !data.authorizationUrl) { toast.error(data.error || "Failed to start payment"); return; }
       window.location.href = data.authorizationUrl;
     } catch {
       toast.error("Failed to start payment");
@@ -444,331 +319,363 @@ export default function CustomOrderRequestSection() {
   };
 
   return (
-    <div className="space-y-8">
-      {quoteId && token ? (
-        <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
-          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-            Review your quote
-          </h2>
-          {quoteLoading ? (
-            <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-400">
-              Loading quote details...
-            </p>
-          ) : quote ? (
-            <div className="mt-5 space-y-4">
-              <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-900">
-                <p className="text-xs uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
-                  Request {quote.requestNumber}
-                </p>
-                <p className="mt-1 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                  {quote.title}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <span className="inline-flex rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium uppercase tracking-wide text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
-                    {quote.status}
-                  </span>
-                  <span className="inline-flex rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium uppercase tracking-wide text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
-                    {quote.requestStatus}
-                  </span>
-                </div>
-                <Price
-                  amount={quote.amount}
-                  currencyCode={quote.currencyCode}
-                  currencyCodeClassName="hidden"
-                  className="mt-3 text-2xl font-semibold text-neutral-900 dark:text-neutral-100"
-                />
-                {quote.note ? (
-                  <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                    {quote.note}
-                  </p>
-                ) : null}
-                {quote.expiresAt ? (
-                  <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
-                    Expires {new Date(quote.expiresAt).toLocaleString()}
-                  </p>
-                ) : null}
-              </div>
-              {quote.canPay ? (
-                <button
-                  onClick={handlePayQuote}
-                  disabled={payingQuote}
-                  className="rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-                >
-                  {payingQuote ? "Redirecting to payment..." : "Pay quote"}
-                </button>
-              ) : (
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  This quote is no longer payable.
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-400">
-              We could not load this quote.
-            </p>
-          )}
-        </section>
-      ) : null}
+    <>
+      <style>{`
+        .co-input {
+          width: 100%;
+          background: var(--dp-charcoal);
+          border: 1px solid var(--dp-border);
+          color: var(--dp-cream);
+          font-family: 'DM Sans', sans-serif;
+          font-size: .82rem;
+          padding: .8rem 1rem;
+          outline: none;
+          transition: border-color .22s;
+        }
+        .co-input::placeholder { color: var(--dp-muted); }
+        .co-input:focus { border-color: rgba(191,90,40,.6); }
+        .co-input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.4); }
 
-      <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-950 md:p-8">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500 dark:text-neutral-400">
-            Quote before payment
-          </p>
-          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 md:text-3xl">
+        .co-label {
+          font-family: 'DM Sans', sans-serif;
+          font-size: .58rem;
+          font-weight: 500;
+          letter-spacing: .2em;
+          text-transform: uppercase;
+          color: var(--dp-muted);
+          display: block;
+          margin-bottom: .4rem;
+        }
+
+        .co-card {
+          background: var(--dp-card);
+          border: 1px solid var(--dp-border);
+          padding: 2rem;
+        }
+
+        .dp-btn-solid {
+          display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+          background: var(--dp-cream); color: var(--dp-ink);
+          font-family: 'DM Sans', sans-serif; font-weight: 500;
+          font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+          padding: .9rem 2.1rem; border: none; cursor: pointer;
+          transition: background .22s, color .22s;
+        }
+        .dp-btn-solid:hover:not(:disabled) { background: var(--dp-ember); color: var(--dp-cream); }
+        .dp-btn-solid:disabled { opacity: .5; cursor: not-allowed; }
+
+        .dp-btn-ember {
+          display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+          background: var(--dp-ember); color: var(--dp-cream);
+          font-family: 'DM Sans', sans-serif; font-weight: 500;
+          font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+          padding: .9rem 2.1rem; border: none; cursor: pointer;
+          transition: opacity .22s;
+        }
+        .dp-btn-ember:hover:not(:disabled) { opacity: .88; }
+        .dp-btn-ember:disabled { opacity: .5; cursor: not-allowed; }
+
+        .dp-btn-ghost {
+          display: inline-flex; align-items: center; gap: .5rem;
+          border: 1px solid var(--dp-border); color: var(--dp-sand);
+          background: transparent;
+          font-family: 'DM Sans', sans-serif; font-weight: 500;
+          font-size: .65rem; letter-spacing: .14em; text-transform: uppercase;
+          padding: .65rem 1.25rem; cursor: pointer; text-decoration: none;
+          transition: border-color .22s, color .22s;
+        }
+        .dp-btn-ghost:hover { border-color: rgba(191,90,40,.4); color: var(--dp-cream); }
+
+        .upload-zone {
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          gap: .75rem; height: 9rem; width: 100%;
+          border: 1px dashed rgba(242,232,213,0.15);
+          background: var(--dp-charcoal);
+          color: var(--dp-muted);
+          cursor: pointer;
+          transition: border-color .22s, color .22s;
+        }
+        .upload-zone:hover { border-color: rgba(191,90,40,.4); color: var(--dp-sand); }
+
+        .img-card {
+          position: relative; overflow: hidden;
+          border: 1px solid var(--dp-border);
+          background: var(--dp-charcoal);
+        }
+
+        .status-chip {
+          display: inline-flex; align-items: center; gap: .35rem;
+          font-family: 'DM Sans', sans-serif;
+          font-size: .58rem; font-weight: 500;
+          letter-spacing: .1em; text-transform: uppercase;
+          padding: 2px 7px;
+        }
+      `}</style>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+
+        {/* ── Quote review panel ── */}
+        {quoteId && token && (
+          <section className="co-card">
+            <p className="dp-label" style={{ marginBottom: ".6rem" }}>Your quote</p>
+            <h2
+              className="dp-serif"
+              style={{ fontSize: "1.8rem", fontWeight: 600, color: "var(--dp-cream)", marginBottom: "1.5rem" }}
+            >
+              Review &amp; Pay
+            </h2>
+
+            {quoteLoading ? (
+              <div style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
+                <Loader2 size={16} style={{ color: "var(--dp-ember)", animation: "dp-spin .8s linear infinite" }} />
+                <style>{`@keyframes dp-spin { to { transform: rotate(360deg); } }`}</style>
+                <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".75rem", color: "var(--dp-muted)" }}>Loading quote details…</p>
+              </div>
+            ) : quote ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                {/* Quote detail block */}
+                <div style={{ background: "var(--dp-charcoal)", border: "1px solid var(--dp-border)", padding: "1.25rem" }}>
+                  <p className="dp-label" style={{ marginBottom: ".4rem" }}>Request {quote.requestNumber}</p>
+                  <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".9rem", fontWeight: 500, color: "var(--dp-cream)", marginBottom: ".75rem" }}>
+                    {quote.title}
+                  </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: ".4rem", marginBottom: "1rem" }}>
+                    {[quote.status, quote.requestStatus].map((s) => (
+                      <span key={s} className="status-chip" style={{ background: "var(--dp-card)", color: "var(--dp-sand)", border: "1px solid var(--dp-border)" }}>
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                  <Price
+                    amount={quote.amount}
+                    currencyCode={quote.currencyCode}
+                    currencyCodeClassName="hidden"
+                    className="dp-wordmark"
+                    style={{ fontSize: "2.2rem", color: "var(--dp-gold)", display: "block", marginBottom: ".5rem" } as React.CSSProperties}
+                  />
+                  {quote.note && (
+                    <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".75rem", color: "var(--dp-muted)", lineHeight: 1.6 }}>{quote.note}</p>
+                  )}
+                  {quote.expiresAt && (
+                    <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".62rem", color: "var(--dp-muted)", marginTop: ".5rem", letterSpacing: ".06em" }}>
+                      Expires {new Date(quote.expiresAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+
+                {quote.canPay ? (
+                  <button onClick={handlePayQuote} disabled={payingQuote} className="dp-btn-ember" style={{ alignSelf: "flex-start" }}>
+                    {payingQuote ? (
+                      <><Loader2 size={14} style={{ animation: "dp-spin .8s linear infinite" }} /> Redirecting…</>
+                    ) : (
+                      <>Pay quote <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></>
+                    )}
+                  </button>
+                ) : (
+                  <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".75rem", color: "var(--dp-muted)" }}>
+                    This quote is no longer payable.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".75rem", color: "var(--dp-muted)" }}>
+                We could not load this quote.
+              </p>
+            )}
+          </section>
+        )}
+
+        {/* ── Request form ── */}
+        <section className="co-card">
+          <p className="dp-label" style={{ marginBottom: ".6rem" }}>Quote before payment</p>
+          <h2
+            className="dp-serif"
+            style={{ fontSize: "clamp(1.5rem,3vw,2rem)", fontWeight: 600, color: "var(--dp-cream)", marginBottom: ".5rem" }}
+          >
             Start your custom order
           </h2>
-          <p className="max-w-2xl text-sm leading-6 text-neutral-600 dark:text-neutral-400">
-            Submit your request details and references. We review and send your
-            quote before any payment.
+          <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".75rem", color: "var(--dp-muted)", lineHeight: 1.7, maxWidth: 520, marginBottom: "2rem" }}>
+            Submit your request and references — we review and send a quote before any payment is taken.
           </p>
-        </div>
 
-        <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field
-              label="Full name"
-              required
-              value={formValues.customerName}
-              onChange={(value) =>
-                setFormValues((prev) => ({ ...prev, customerName: value }))
-              }
-              placeholder="Your full name"
-            />
-            <Field
-              label="Email"
-              type="email"
-              required
-              value={formValues.email}
-              onChange={(value) =>
-                setFormValues((prev) => ({ ...prev, email: value }))
-              }
-              placeholder="your@email.com"
-            />
-          </div>
+          <form onSubmit={handleSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field
-              label="Phone number"
-              value={formValues.phone}
-              onChange={(value) =>
-                setFormValues((prev) => ({ ...prev, phone: value }))
-              }
-              placeholder="+234..."
-            />
-            <Field
-              label="Request title"
-              required
-              value={formValues.title}
-              onChange={(value) =>
-                setFormValues((prev) => ({ ...prev, title: value }))
-              }
-              placeholder="e.g. Bridal block heel"
-            />
-          </div>
-
-          <TextAreaField
-            label="Design brief"
-            required
-            rows={6}
-            value={formValues.description}
-            onChange={(value) =>
-              setFormValues((prev) => ({ ...prev, description: value }))
-            }
-            placeholder="Describe the style, shape, material, and any must-have details."
-          />
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field
-              label="Size notes"
-              value={formValues.sizeNotes}
-              onChange={(value) =>
-                setFormValues((prev) => ({ ...prev, sizeNotes: value }))
-              }
-              placeholder="EU/UK size and fit notes"
-            />
-            <Field
-              label="Color preferences"
-              value={formValues.colorPreferences}
-              onChange={(value) =>
-                setFormValues((prev) => ({ ...prev, colorPreferences: value }))
-              }
-              placeholder="Preferred color(s)"
-            />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <Field
-              label="Budget min (NGN)"
-              type="number"
-              value={formValues.budgetMin}
-              onChange={(value) =>
-                setFormValues((prev) => ({ ...prev, budgetMin: value }))
-              }
-              placeholder="0"
-            />
-            <Field
-              label="Budget max (NGN)"
-              type="number"
-              value={formValues.budgetMax}
-              onChange={(value) =>
-                setFormValues((prev) => ({ ...prev, budgetMax: value }))
-              }
-              placeholder="0"
-            />
-            <Field
-              label="Desired date"
-              type="date"
-              value={formValues.desiredDate}
-              onChange={(value) =>
-                setFormValues((prev) => ({ ...prev, desiredDate: value }))
-              }
-            />
-          </div>
-
-          <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-900">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                  Reference images
-                </p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  Upload up to {MAX_IMAGES} images. Remove deletes from
-                  Cloudinary.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadItems.length >= MAX_IMAGES || isUploading}
-                className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:border-neutral-500"
-              >
-                <UploadCloud className="h-4 w-4" />
-                Add image
-              </button>
+            {/* Row 1: name + email */}
+            <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(1,1fr)" }} className="md:grid-cols-2">
+              <Field label="Full name" required value={formValues.customerName} onChange={(v) => setFormValues((p) => ({ ...p, customerName: v }))} placeholder="Your full name" />
+              <Field label="Email" type="email" required value={formValues.email} onChange={(v) => setFormValues((p) => ({ ...p, email: v }))} placeholder="your@email.com" />
             </div>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(event) => {
-                void handleImageSelection(event.target.files);
-                event.target.value = "";
-              }}
-              className="hidden"
+            {/* Row 2: phone + title */}
+            <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(1,1fr)" }} className="md:grid-cols-2">
+              <Field label="Phone number" value={formValues.phone} onChange={(v) => setFormValues((p) => ({ ...p, phone: v }))} placeholder="+234…" />
+              <Field label="Request title" required value={formValues.title} onChange={(v) => setFormValues((p) => ({ ...p, title: v }))} placeholder="e.g. Bridal block heel" />
+            </div>
+
+            {/* Design brief */}
+            <TextAreaField
+              label="Design brief"
+              required
+              rows={6}
+              value={formValues.description}
+              onChange={(v) => setFormValues((p) => ({ ...p, description: v }))}
+              placeholder="Describe the style, shape, material, and any must-have details."
             />
 
-            {uploadItems.length === 0 ? (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex h-36 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-300 bg-white text-neutral-500 transition hover:border-neutral-500 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-400 dark:hover:border-neutral-500 dark:hover:text-neutral-200"
-              >
-                <ImagePlus className="h-5 w-5" />
-                <span className="text-sm">Tap to upload reference images</span>
-              </button>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {uploadItems.map((item) => (
-                  <article
-                    key={item.id}
-                    className="relative overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-950"
-                  >
-                    <img
-                      src={item.previewUrl}
-                      alt={item.fileName}
-                      className="h-40 w-full object-cover"
-                    />
-                    <div className="absolute inset-x-0 bottom-0 bg-black/65 px-3 py-2 text-white">
-                      <p className="truncate text-xs">{item.fileName}</p>
-                      <div className="mt-1 flex items-center gap-1 text-[11px]">
-                        {item.status === "uploading" ? (
-                          <>
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            Uploading...
-                          </>
-                        ) : null}
-                        {item.status === "uploaded" ? (
-                          <>
-                            <CheckCircle2 className="h-3.5 w-3.5 text-green-300" />
-                            Uploaded
-                          </>
-                        ) : null}
-                        {item.status === "error" ? (
-                          <>
-                            <AlertCircle className="h-3.5 w-3.5 text-red-300" />
-                            {item.error || "Upload failed"}
-                          </>
-                        ) : null}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => void handleRemoveImage(item)}
-                      className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black"
-                      aria-label={`Remove ${item.fileName}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </article>
-                ))}
-              </div>
-            )}
-          </div>
+            {/* Row 3: size + colour */}
+            <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(1,1fr)" }} className="md:grid-cols-2">
+              <Field label="Size notes" value={formValues.sizeNotes} onChange={(v) => setFormValues((p) => ({ ...p, sizeNotes: v }))} placeholder="EU/UK size and fit notes" />
+              <Field label="Color preferences" value={formValues.colorPreferences} onChange={(v) => setFormValues((p) => ({ ...p, colorPreferences: v }))} placeholder="Preferred colour(s)" />
+            </div>
 
-          <button
-            type="submit"
-            disabled={submitting || isUploading}
-            className="rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-          >
-            {submitting ? (
-              <span className="inline-flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Submitting request...
-              </span>
-            ) : (
-              "Submit custom request"
-            )}
-          </button>
-        </form>
+            {/* Row 4: budget + date */}
+            <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(1,1fr)" }} className="md:grid-cols-3">
+              <Field label="Budget min (NGN)" type="number" value={formValues.budgetMin} onChange={(v) => setFormValues((p) => ({ ...p, budgetMin: v }))} placeholder="0" />
+              <Field label="Budget max (NGN)" type="number" value={formValues.budgetMax} onChange={(v) => setFormValues((p) => ({ ...p, budgetMax: v }))} placeholder="0" />
+              <Field label="Desired date" type="date" value={formValues.desiredDate} onChange={(v) => setFormValues((p) => ({ ...p, desiredDate: v }))} />
+            </div>
 
-        {submittedRequest ? (
-          <div className="mt-6 rounded-xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-900">
-            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-              Request submitted: {submittedRequest.requestNumber}
-            </p>
-            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-              You can track progress with your request number and email.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-3">
-              <Link
-                href={`/orders?customRequest=${encodeURIComponent(
-                  submittedRequest.requestNumber,
-                )}&email=${encodeURIComponent(submittedRequest.email)}`}
-                className="rounded-full border border-neutral-300 px-4 py-2 text-xs font-medium text-neutral-900 transition hover:border-neutral-500 dark:border-neutral-700 dark:text-neutral-100 dark:hover:border-neutral-500"
-              >
-                Track request
-              </Link>
-              {canSendMagicLink ? (
+            {/* Image upload */}
+            <div style={{ background: "var(--dp-charcoal)", border: "1px solid var(--dp-border)", padding: "1.25rem" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+                <div>
+                  <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".78rem", fontWeight: 500, color: "var(--dp-cream)", marginBottom: ".2rem" }}>
+                    Reference images
+                  </p>
+                  <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".65rem", color: "var(--dp-muted)" }}>
+                    Up to {MAX_IMAGES} images · max 8 MB each
+                  </p>
+                </div>
                 <button
-                  onClick={sendMagicLinkForRequest}
-                  disabled={sendingMagicLink}
-                  className="rounded-full bg-neutral-900 px-4 py-2 text-xs font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadItems.length >= MAX_IMAGES || isUploading}
+                  className="dp-btn-ghost"
+                  style={{ padding: ".55rem 1rem" }}
                 >
-                  {sendingMagicLink
-                    ? "Sending link..."
-                    : "Send magic login link"}
+                  <UploadCloud size={13} />
+                  Add image
                 </button>
-              ) : null}
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => { void handleImageSelection(e.target.files); e.target.value = ""; }}
+                className="hidden"
+              />
+
+              {uploadItems.length === 0 ? (
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="upload-zone">
+                  <ImagePlus size={22} />
+                  <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".72rem", letterSpacing: ".08em" }}>
+                    Tap to upload reference images
+                  </span>
+                </button>
+              ) : (
+                <div style={{ display: "grid", gap: ".5rem", gridTemplateColumns: "repeat(2,1fr)" }}>
+                  {uploadItems.map((item) => (
+                    <article key={item.id} className="img-card">
+                      <img src={item.previewUrl} alt={item.fileName} style={{ height: "10rem", width: "100%", objectFit: "cover", display: "block" }} />
+
+                      {/* Status overlay */}
+                      <div style={{ position: "absolute", insetInline: 0, bottom: 0, background: "rgba(6,4,2,0.82)", padding: ".5rem .75rem" }}>
+                        <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".65rem", color: "var(--dp-sand)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: ".25rem" }}>
+                          {item.fileName}
+                        </p>
+                        <div style={{ display: "flex", alignItems: "center", gap: ".35rem" }}>
+                          {item.status === "uploading" && (
+                            <span className="status-chip" style={{ color: "var(--dp-sand)" }}>
+                              <Loader2 size={10} style={{ animation: "dp-spin .8s linear infinite" }} /> Uploading…
+                            </span>
+                          )}
+                          {item.status === "uploaded" && (
+                            <span className="status-chip" style={{ color: "#6abf69" }}>
+                              <CheckCircle2 size={10} /> Uploaded
+                            </span>
+                          )}
+                          {item.status === "error" && (
+                            <span className="status-chip" style={{ color: "var(--dp-ember)" }}>
+                              <AlertCircle size={10} /> {item.error || "Failed"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Remove button */}
+                      <button
+                        type="button"
+                        onClick={() => void handleRemoveImage(item)}
+                        aria-label={`Remove ${item.fileName}`}
+                        style={{
+                          position: "absolute", top: ".5rem", right: ".5rem",
+                          width: "1.75rem", height: "1.75rem",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          background: "rgba(6,4,2,0.75)", border: "1px solid rgba(242,232,213,0.15)",
+                          color: "var(--dp-sand)", cursor: "pointer",
+                          transition: "background .2s, color .2s",
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--dp-ember)"; e.currentTarget.style.color = "var(--dp-cream)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(6,4,2,0.75)"; e.currentTarget.style.color = "var(--dp-sand)"; }}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        ) : null}
-      </section>
-    </div>
+
+            {/* Submit */}
+            <button type="submit" disabled={submitting || isUploading} className="dp-btn-solid" style={{ alignSelf: "flex-start" }}>
+              {submitting ? (
+                <><Loader2 size={14} style={{ animation: "dp-spin .8s linear infinite" }} /> Submitting…</>
+              ) : (
+                <>Submit custom request <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></>
+              )}
+            </button>
+          </form>
+
+          {/* Success banner */}
+          {submittedRequest && (
+            <div style={{ marginTop: "1.5rem", background: "var(--dp-charcoal)", border: "1px solid rgba(191,90,40,.3)", padding: "1.25rem", display: "flex", flexDirection: "column", gap: ".75rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: ".6rem" }}>
+                <CheckCircle2 size={16} style={{ color: "var(--dp-ember)", flexShrink: 0 }} />
+                <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".78rem", fontWeight: 500, color: "var(--dp-cream)" }}>
+                  Request submitted — {submittedRequest.requestNumber}
+                </p>
+              </div>
+              <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".72rem", color: "var(--dp-muted)", lineHeight: 1.6 }}>
+                You can track progress with your request number and email.
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+                <Link
+                  href={`/orders?customRequest=${encodeURIComponent(submittedRequest.requestNumber)}&email=${encodeURIComponent(submittedRequest.email)}`}
+                  className="dp-btn-ghost"
+                >
+                  Track request →
+                </Link>
+                {canSendMagicLink && (
+                  <button onClick={sendMagicLinkForRequest} disabled={sendingMagicLink} className="dp-btn-ember">
+                    {sendingMagicLink ? (
+                      <><Loader2 size={13} style={{ animation: "dp-spin .8s linear infinite" }} /> Sending…</>
+                    ) : (
+                      "Send magic login link"
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </section>
+      </div>
+    </>
   );
 }
+
+// ── Field components ──────────────────────────────────────────────────────────
 
 function Field({
   label,
@@ -786,18 +693,17 @@ function Field({
   type?: string;
 }) {
   return (
-    <label className="grid gap-1.5 text-sm">
-      <span className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
-        {label}
-        {required ? " *" : ""}
+    <label style={{ display: "grid", gap: ".4rem" }}>
+      <span className="co-label">
+        {label}{required ? " *" : ""}
       </span>
       <input
         type={type}
         required={required}
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm text-black transition focus:border-neutral-500 focus:outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+        className="co-input"
       />
     </label>
   );
@@ -819,18 +725,18 @@ function TextAreaField({
   rows?: number;
 }) {
   return (
-    <label className="grid gap-1.5 text-sm">
-      <span className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
-        {label}
-        {required ? " *" : ""}
+    <label style={{ display: "grid", gap: ".4rem" }}>
+      <span className="co-label">
+        {label}{required ? " *" : ""}
       </span>
       <textarea
         required={required}
         rows={rows || 4}
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="resize-none rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm text-black transition focus:border-neutral-500 focus:outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+        className="co-input"
+        style={{ resize: "none" }}
       />
     </label>
   );
