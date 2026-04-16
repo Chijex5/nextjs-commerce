@@ -13,9 +13,9 @@ function getGreeting(hour: number) {
   return "Good evening";
 }
 
-function getFirstName(email?: string | null) {
-  if (!email) return "there";
-  return email.split("@")[0];
+function getFirstName(name?: string | null) {
+  if (!name) return "there";
+  return name.split(" ")[0];
 }
 
 export default async function DashboardPage() {
