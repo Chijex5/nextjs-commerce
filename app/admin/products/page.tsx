@@ -39,19 +39,28 @@ export default async function ProductsPage({
       )
     : undefined;
 
-  const [productRows, totalResult] = await Promise.all([
-    db
-      .select()
-      .from(products)
-      .where(whereClause)
-      .orderBy(desc(products.createdAt))
-      .limit(perPage)
-      .offset((page - 1) * perPage),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(products)
-      .where(whereClause),
-  ]);
+  const [productRows, totalResult, activeCountResult, inactiveCountResult] =
+    await Promise.all([
+      db
+        .select()
+        .from(products)
+        .where(whereClause)
+        .orderBy(desc(products.createdAt))
+        .limit(perPage)
+        .offset((page - 1) * perPage),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(products)
+        .where(whereClause),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(products)
+        .where(eq(products.availableForSale, true)),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(products)
+        .where(eq(products.availableForSale, false)),
+    ]);
 
   const productIds = productRows.map((product) => product.id);
 
@@ -146,14 +155,16 @@ export default async function ProductsPage({
   );
 
   const total = Number(totalResult[0]?.count ?? 0);
+  const activeCount = Number(activeCountResult[0]?.count ?? 0);
+  const inactiveCount = Number(inactiveCountResult[0]?.count ?? 0);
   const totalPages = Math.ceil(total / perPage);
 
   const buildPageUrl = (pageNum: number) => {
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (perPage !== 20) params.set("perPage", perPage.toString());
-    params.set("page", pageNum.toString());
-    return `/admin/products?${params.toString()}`;
+    const p = new URLSearchParams();
+    if (search) p.set("search", search);
+    if (perPage !== 20) p.set("perPage", perPage.toString());
+    p.set("page", pageNum.toString());
+    return `/admin/products?${p.toString()}`;
   };
 
   const mappedProducts = productRows.map((product) => {
@@ -172,203 +183,206 @@ export default async function ProductsPage({
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <AdminNav currentPage="products" userEmail={session.user?.email} />
 
-      <div className="py-6 sm:py-10">
+      <div className="py-8 sm:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+          {/* ── Header ── */}
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-3xl">
+              <p className="text-xs font-medium uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+                Catalog
+              </p>
+              <h1 className="mt-1 text-2xl font-semibold text-neutral-900 dark:text-neutral-100 sm:text-3xl">
                 Products
               </h1>
-              <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-                Manage your product catalog ({total} total)
-              </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <GoogleMerchantSyncButton />
               <Link
                 href="/admin/products/bulk-import"
-                className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700 shadow-sm transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
               >
                 Bulk Import
               </Link>
               <Link
                 href="/admin/products/new"
-                className="inline-flex items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 px-3 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
               >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
                 Add Product
               </Link>
             </div>
           </div>
 
-          {/* Search */}
-          <div className="mb-6">
+          {/* ── Stats Strip ── */}
+          <div className="mb-6 grid grid-cols-3 gap-3">
+            <div className="rounded-xl border border-neutral-200 bg-white px-4 py-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-neutral-400 dark:text-neutral-500">
+                Total
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+                {total}
+              </p>
+            </div>
+            <div className="rounded-xl border border-neutral-200 bg-white px-4 py-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-neutral-400 dark:text-neutral-500">
+                Active
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-green-600 dark:text-green-400">
+                {activeCount}
+              </p>
+            </div>
+            <div className="rounded-xl border border-neutral-200 bg-white px-4 py-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-neutral-400 dark:text-neutral-500">
+                Inactive
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-red-500 dark:text-red-400">
+                {inactiveCount}
+              </p>
+            </div>
+          </div>
+
+          {/* ── Search ── */}
+          <div className="mb-4">
             <form action="/admin/products" method="get" className="relative">
               <input
                 type="search"
                 name="search"
-                placeholder="Search products by title, handle, or tag..."
+                placeholder="Search by title, handle, or tag…"
                 defaultValue={search}
-                className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 pl-10 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                className="w-full rounded-xl border border-neutral-200 bg-white py-2.5 pl-10 pr-4 text-sm text-neutral-900 shadow-sm placeholder:text-neutral-400 focus:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-neutral-600 dark:focus:ring-neutral-700"
               />
               <svg
-                className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400"
+                className="absolute left-3.5 top-3 h-4 w-4 text-neutral-400"
                 fill="none"
                 viewBox="0 0 24 24"
+                strokeWidth="2"
                 stroke="currentColor"
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
+              {search && (
+                <Link
+                  href="/admin/products"
+                  className="absolute right-3.5 top-2.5 rounded-full p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </Link>
+              )}
             </form>
           </div>
 
-          {/* Products Table/Cards */}
+          {/* Search result context */}
+          {search && (
+            <p className="mb-3 text-sm text-neutral-500 dark:text-neutral-400">
+              {total === 0
+                ? `No results for "${search}"`
+                : `${total} result${total !== 1 ? "s" : ""} for "${search}"`}
+            </p>
+          )}
+
+          {/* ── Product List ── */}
           <ProductsListWithSelection products={mappedProducts} />
 
-          {/* Pagination */}
+          {/* ── Pagination ── */}
           {totalPages > 1 && (
-            <div className="mt-6 flex flex-col gap-4 border-t border-neutral-200 bg-white px-4 py-3 dark:border-neutral-700 dark:bg-neutral-800 sm:px-6">
-              {/* Mobile View */}
-              <div className="flex flex-1 justify-between sm:hidden">
+            <div className="mt-6 flex flex-col items-center justify-between gap-4 rounded-xl border border-neutral-200 bg-white px-5 py-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:flex-row">
+              <div className="flex items-center gap-4">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                    {(page - 1) * perPage + 1}–{Math.min(page * perPage, total)}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                    {total}
+                  </span>
+                </p>
+
+                <select
+                  defaultValue={perPage}
+                  onChange={(e) => {
+                    const p = new URLSearchParams();
+                    if (search) p.set("search", search);
+                    p.set("page", "1");
+                    p.set("perPage", e.target.value);
+                    window.location.href = `/admin/products?${p.toString()}`;
+                  }}
+                  className="rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-1.5 text-xs font-medium text-neutral-700 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+                >
+                  <option value="20">20 / page</option>
+                  <option value="40">40 / page</option>
+                  <option value="60">60 / page</option>
+                  <option value="100">100 / page</option>
+                </select>
+              </div>
+
+              <nav className="flex items-center gap-1">
                 <Link
                   href={buildPageUrl(page - 1)}
-                  className={`relative inline-flex items-center rounded-md px-4 py-2 text-sm font-medium ${
+                  className={`flex h-8 w-8 items-center justify-center rounded-lg border text-sm transition-colors ${
                     page <= 1
-                      ? "pointer-events-none text-neutral-400"
-                      : "text-neutral-700 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                      ? "pointer-events-none border-neutral-100 text-neutral-300 dark:border-neutral-800 dark:text-neutral-600"
+                      : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
                   }`}
                 >
-                  Previous
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                  </svg>
                 </Link>
+
+                {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 7) {
+                    pageNum = i + 1;
+                  } else if (page <= 4) {
+                    pageNum = i + 1;
+                  } else if (page >= totalPages - 3) {
+                    pageNum = totalPages - 6 + i;
+                  } else {
+                    pageNum = page - 3 + i;
+                  }
+                  return (
+                    <Link
+                      key={pageNum}
+                      href={buildPageUrl(pageNum)}
+                      className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                        page === pageNum
+                          ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
+                          : "border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                      }`}
+                    >
+                      {pageNum}
+                    </Link>
+                  );
+                })}
+
                 <Link
                   href={buildPageUrl(page + 1)}
-                  className={`relative ml-3 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium ${
+                  className={`flex h-8 w-8 items-center justify-center rounded-lg border text-sm transition-colors ${
                     page >= totalPages
-                      ? "pointer-events-none text-neutral-400"
-                      : "text-neutral-700 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                      ? "pointer-events-none border-neutral-100 text-neutral-300 dark:border-neutral-800 dark:text-neutral-600"
+                      : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
                   }`}
                 >
-                  Next
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  </svg>
                 </Link>
-              </div>
-
-              {/* Desktop View */}
-              <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                <div className="flex items-center gap-4">
-                  <p className="text-sm text-neutral-700 dark:text-neutral-300">
-                    Showing{" "}
-                    <span className="font-medium">
-                      {(page - 1) * perPage + 1}
-                    </span>{" "}
-                    to{" "}
-                    <span className="font-medium">
-                      {Math.min(page * perPage, total)}
-                    </span>{" "}
-                    of <span className="font-medium">{total}</span> results
-                  </p>
-
-                  {/* Per Page Selector */}
-                  <div className="flex items-center gap-2">
-                    <label
-                      htmlFor="perPage"
-                      className="text-sm text-neutral-600 dark:text-neutral-400"
-                    >
-                      Show:
-                    </label>
-                    <select
-                      id="perPage"
-                      value={perPage}
-                      onChange={(e) => {
-                        const newPerPage = e.target.value;
-                        const params = new URLSearchParams();
-                        if (search) params.set("search", search);
-                        params.set("page", "1");
-                        params.set("perPage", newPerPage);
-                        window.location.href = `/admin/products?${params.toString()}`;
-                      }}
-                      className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                    >
-                      <option value="20">20 per page</option>
-                      <option value="40">40 per page</option>
-                      <option value="60">60 per page</option>
-                      <option value="100">100 per page</option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm">
-                    <Link
-                      href={buildPageUrl(page - 1)}
-                      className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-neutral-400 ring-1 ring-inset ring-neutral-300 hover:bg-neutral-50 focus:z-20 focus:outline-offset-0 dark:ring-neutral-700 dark:hover:bg-neutral-700 ${
-                        page <= 1 ? "pointer-events-none" : ""
-                      }`}
-                    >
-                      <span className="sr-only">Previous</span>
-                      <svg
-                        className="h-5 w-5"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </Link>
-                    {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 7) {
-                        pageNum = i + 1;
-                      } else if (page <= 4) {
-                        pageNum = i + 1;
-                      } else if (page >= totalPages - 3) {
-                        pageNum = totalPages - 6 + i;
-                      } else {
-                        pageNum = page - 3 + i;
-                      }
-
-                      return (
-                        <Link
-                          key={pageNum}
-                          href={buildPageUrl(pageNum)}
-                          className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-                            page === pageNum
-                              ? "z-10 bg-neutral-900 text-white"
-                              : "text-neutral-900 ring-1 ring-inset ring-neutral-300 hover:bg-neutral-50 dark:text-neutral-100 dark:ring-neutral-700 dark:hover:bg-neutral-700"
-                          }`}
-                        >
-                          {pageNum}
-                        </Link>
-                      );
-                    })}
-                    <Link
-                      href={buildPageUrl(page + 1)}
-                      className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-neutral-400 ring-1 ring-inset ring-neutral-300 hover:bg-neutral-50 focus:z-20 focus:outline-offset-0 dark:ring-neutral-700 dark:hover:bg-neutral-700 ${
-                        page >= totalPages ? "pointer-events-none" : ""
-                      }`}
-                    >
-                      <span className="sr-only">Next</span>
-                      <svg
-                        className="h-5 w-5"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </Link>
-                  </nav>
-                </div>
-              </div>
+              </nav>
             </div>
           )}
         </div>

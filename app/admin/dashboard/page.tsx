@@ -1,22 +1,17 @@
+import { getGreeting } from "@/lib/greetings";
 import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
 import { db } from "lib/db";
-import { collections, orders, products } from "lib/db/schema";
+import {
+  collections,
+  orders,
+  paymentTransactions,
+  products,
+} from "lib/db/schema";
 import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AdminNav from "../../../components/admin/AdminNav";
 import { authOptions } from "../../../lib/auth";
-
-function getGreeting(hour: number) {
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  return "Good evening";
-}
-
-function getFirstName(name?: string | null) {
-  if (!name) return "there";
-  return name.split(" ")[0];
-}
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -26,8 +21,10 @@ export default async function DashboardPage() {
   }
 
   const now = new Date();
-  const greeting = getGreeting(now.getHours());
-  const firstName = getFirstName(session.user?.name);
+  const greeting = getGreeting({
+    dateTime: now,
+    name: session.user?.name,
+  });
 
   // Date ranges
   const last7DaysStart = new Date(now);
@@ -40,14 +37,23 @@ export default async function DashboardPage() {
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);
 
+  const last24HoursStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+  const toDateKey = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
   // Build day labels for the last 7 days
   const dayLabels: string[] = [];
-  const dayStarts: Date[] = [];
+  const dayKeys: string[] = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
     d.setHours(0, 0, 0, 0);
-    dayStarts.push(d);
+    dayKeys.push(toDateKey(d));
     dayLabels.push(
       d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 3),
     );
@@ -66,6 +72,13 @@ export default async function DashboardPage() {
     prev7DaysOrdersCountResult,
     todayRevenueResult,
     completedOrdersResult,
+    dailyRevenueGroupedRows,
+    paymentTotal24hResult,
+    paymentFailed24hResult,
+    paymentConflict24hResult,
+    paymentFailureReasonsResult,
+    outOfStockProductsCountResult,
+    outOfStockProducts,
   ] = await Promise.all([
     db.select({ count: sql<number>`count(*)` }).from(products),
     db.select({ count: sql<number>`count(*)` }).from(collections),
@@ -150,26 +163,85 @@ export default async function DashboardPage() {
       .select({ count: sql<number>`count(*)` })
       .from(orders)
       .where(eq(orders.status, "completed")),
+
+    // Daily revenue aggregation (single query for chart)
+    db
+      .select({
+        day: sql<string>`to_char(date_trunc('day', ${orders.createdAt}), 'YYYY-MM-DD')`,
+        revenue: sql<string>`coalesce(sum(${orders.totalAmount}), 0)`,
+      })
+      .from(orders)
+      .where(gte(orders.createdAt, last7DaysStart))
+      .groupBy(sql`date_trunc('day', ${orders.createdAt})`)
+      .orderBy(sql`date_trunc('day', ${orders.createdAt}) asc`),
+
+    // Payment health (last 24h)
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(paymentTransactions)
+      .where(gte(paymentTransactions.createdAt, last24HoursStart)),
+
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(paymentTransactions)
+      .where(
+        and(
+          gte(paymentTransactions.createdAt, last24HoursStart),
+          eq(paymentTransactions.status, "failed"),
+        ),
+      ),
+
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(paymentTransactions)
+      .where(
+        and(
+          gte(paymentTransactions.createdAt, last24HoursStart),
+          eq(paymentTransactions.status, "conflict"),
+        ),
+      ),
+
+    db
+      .select({
+        reason: sql<string>`coalesce(${paymentTransactions.conflictCode}, ${paymentTransactions.paystackStatus}, ${paymentTransactions.status}, 'unknown')`,
+        count: sql<number>`count(*)`,
+      })
+      .from(paymentTransactions)
+      .where(
+        and(
+          gte(paymentTransactions.createdAt, last7DaysStart),
+          sql`${paymentTransactions.status} in ('failed', 'conflict')`,
+        ),
+      )
+      .groupBy(
+        sql`coalesce(${paymentTransactions.conflictCode}, ${paymentTransactions.paystackStatus}, ${paymentTransactions.status}, 'unknown')`,
+      )
+      .orderBy(desc(sql<number>`count(*)`))
+      .limit(3),
+
+    // Inventory risk (stock proxy via availability flag)
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(products)
+      .where(eq(products.availableForSale, false)),
+
+    db
+      .select({
+        id: products.id,
+        title: products.title,
+        updatedAt: products.updatedAt,
+      })
+      .from(products)
+      .where(eq(products.availableForSale, false))
+      .orderBy(desc(products.updatedAt))
+      .limit(5),
   ]);
 
-  // Per-day revenue for the bar chart
-  const dailyRevenues: number[] = await Promise.all(
-    dayStarts.map(async (dayStart, i) => {
-      const dayEnd = new Date(
-        i < dayStarts.length - 1 && dayStarts[i + 1]
-          ? dayStarts[i + 1]!.getTime()
-          : dayStart.getTime() + 24 * 60 * 60 * 1000,
-      );
-      const result = await db
-        .select({
-          revenue: sql<string>`coalesce(sum(${orders.totalAmount}), 0)`,
-        })
-        .from(orders)
-        .where(
-          and(gte(orders.createdAt, dayStart), lt(orders.createdAt, dayEnd)),
-        );
-      return Number(result[0]?.revenue ?? 0);
-    }),
+  const dailyRevenueByDate = new Map(
+    dailyRevenueGroupedRows.map((row) => [row.day, Number(row.revenue ?? 0)]),
+  );
+  const dailyRevenues: number[] = dayKeys.map(
+    (dayKey) => dailyRevenueByDate.get(dayKey) ?? 0,
   );
 
   // Derived values
@@ -189,6 +261,19 @@ export default async function DashboardPage() {
     prev7DaysOrdersCountResult[0]?.count ?? 0,
   );
   const todayRevenue = Number(todayRevenueResult[0]?.revenue ?? 0);
+  const paymentTotal24h = Number(paymentTotal24hResult[0]?.count ?? 0);
+  const paymentFailed24h = Number(paymentFailed24hResult[0]?.count ?? 0);
+  const paymentConflict24h = Number(paymentConflict24hResult[0]?.count ?? 0);
+  const paymentProblem24h = paymentFailed24h + paymentConflict24h;
+  const paymentFailureRate24h =
+    paymentTotal24h > 0
+      ? Math.round((paymentProblem24h / paymentTotal24h) * 100)
+      : 0;
+
+  const outOfStockCount = Number(outOfStockProductsCountResult[0]?.count ?? 0);
+  const inStockCount = Math.max(0, productsCount - outOfStockCount);
+  const outOfStockRate =
+    productsCount > 0 ? Math.round((outOfStockCount / productsCount) * 100) : 0;
 
   const revenueChange =
     prev7DaysRevenue > 0
@@ -255,7 +340,7 @@ export default async function DashboardPage() {
                 })}
               </p>
               <h1 className="mt-1 text-2xl font-semibold text-neutral-900 dark:text-neutral-100 sm:text-3xl">
-                {greeting}, {firstName}.
+                {greeting}
               </h1>
             </div>
             <div className="flex items-center gap-2">
@@ -549,6 +634,190 @@ export default async function DashboardPage() {
                     {collectionsCount}
                   </p>
                 </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Payment Health + Inventory Risk ── */}
+          <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+              <div className="mb-4 flex items-start justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                    Payment Health
+                  </h2>
+                  <p className="text-xs text-neutral-400">Last 24 hours</p>
+                </div>
+                <Link
+                  href="/admin/payments"
+                  className="text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100"
+                >
+                  Open ledger →
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-lg border border-neutral-100 p-3 dark:border-neutral-800">
+                  <p className="text-xs text-neutral-400">Transactions</p>
+                  <p className="mt-1 text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                    {paymentTotal24h}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-red-100 bg-red-50/60 p-3 dark:border-red-900/30 dark:bg-red-900/10">
+                  <p className="text-xs text-red-500">Failed</p>
+                  <p className="mt-1 text-xl font-semibold text-red-700 dark:text-red-300">
+                    {paymentFailed24h}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-amber-100 bg-amber-50/60 p-3 dark:border-amber-900/30 dark:bg-amber-900/10">
+                  <p className="text-xs text-amber-600">Conflicts</p>
+                  <p className="mt-1 text-xl font-semibold text-amber-700 dark:text-amber-300">
+                    {paymentConflict24h}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-lg border border-neutral-100 p-3 dark:border-neutral-800">
+                <div className="mb-1 flex items-center justify-between">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    Problem rate
+                  </p>
+                  <p className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    {paymentFailureRate24h}%
+                  </p>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+                  <div
+                    className={`h-full rounded-full ${
+                      paymentFailureRate24h >= 20
+                        ? "bg-red-500"
+                        : paymentFailureRate24h >= 10
+                          ? "bg-amber-500"
+                          : "bg-green-500"
+                    }`}
+                    style={{
+                      width: `${Math.min(paymentFailureRate24h, 100)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                  Top failure reasons · 7d
+                </p>
+                {paymentFailureReasonsResult.length === 0 ? (
+                  <p className="text-xs text-neutral-400">
+                    No failed/conflict payments in the last 7 days.
+                  </p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {paymentFailureReasonsResult.map((reason) => (
+                      <div
+                        key={reason.reason}
+                        className="flex items-center justify-between rounded-md border border-neutral-100 px-2.5 py-1.5 text-xs dark:border-neutral-800"
+                      >
+                        <span className="truncate text-neutral-600 dark:text-neutral-300">
+                          {reason.reason}
+                        </span>
+                        <span className="ml-2 shrink-0 font-semibold text-neutral-800 dark:text-neutral-100">
+                          {reason.count}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+              <div className="mb-4 flex items-start justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                    Inventory Risk
+                  </h2>
+                  <p className="text-xs text-neutral-400">
+                    Availability-based stock proxy
+                  </p>
+                </div>
+                <Link
+                  href="/admin/products"
+                  className="text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100"
+                >
+                  Manage products →
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-lg border border-neutral-100 p-3 dark:border-neutral-800">
+                  <p className="text-xs text-neutral-400">Catalog</p>
+                  <p className="mt-1 text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                    {productsCount}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-green-100 bg-green-50/60 p-3 dark:border-green-900/30 dark:bg-green-900/10">
+                  <p className="text-xs text-green-600">In stock</p>
+                  <p className="mt-1 text-xl font-semibold text-green-700 dark:text-green-300">
+                    {inStockCount}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-red-100 bg-red-50/60 p-3 dark:border-red-900/30 dark:bg-red-900/10">
+                  <p className="text-xs text-red-500">Out of stock</p>
+                  <p className="mt-1 text-xl font-semibold text-red-700 dark:text-red-300">
+                    {outOfStockCount}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-lg border border-neutral-100 p-3 dark:border-neutral-800">
+                <div className="mb-1 flex items-center justify-between">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    Out-of-stock rate
+                  </p>
+                  <p className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    {outOfStockRate}%
+                  </p>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+                  <div
+                    className={`h-full rounded-full ${
+                      outOfStockRate >= 30
+                        ? "bg-red-500"
+                        : outOfStockRate >= 15
+                          ? "bg-amber-500"
+                          : "bg-green-500"
+                    }`}
+                    style={{ width: `${Math.min(outOfStockRate, 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                  Recently unavailable
+                </p>
+                {outOfStockProducts.length === 0 ? (
+                  <p className="text-xs text-neutral-400">
+                    No unavailable products right now.
+                  </p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {outOfStockProducts.map((product) => (
+                      <Link
+                        key={product.id}
+                        href={`/admin/products/${product.id}/edit`}
+                        className="flex items-center justify-between rounded-md border border-neutral-100 px-2.5 py-1.5 text-xs transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800/60"
+                      >
+                        <span className="truncate text-neutral-700 dark:text-neutral-200">
+                          {product.title}
+                        </span>
+                        <span className="ml-2 shrink-0 text-neutral-400">
+                          {timeSince(product.updatedAt)}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

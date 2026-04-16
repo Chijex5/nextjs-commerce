@@ -16,6 +16,95 @@ type Product = {
   _count: { variants: number };
 };
 
+function ProductImage({
+  product,
+  size = "sm",
+}: {
+  product: Product;
+  size?: "sm" | "lg";
+}) {
+  const dim = size === "sm" ? 40 : 64;
+  const cls = size === "sm" ? "h-10 w-10" : "h-16 w-16";
+
+  return (
+    <div
+      className={`${cls} flex-shrink-0 overflow-hidden rounded-lg bg-neutral-100 dark:bg-neutral-800`}
+    >
+      {product.images[0] ? (
+        <Image
+          src={product.images[0].url}
+          alt={product.images[0].altText || product.title}
+          width={dim}
+          height={dim}
+          className={`${cls} object-cover`}
+        />
+      ) : (
+        <div className={`flex ${cls} items-center justify-center`}>
+          <svg
+            className="h-5 w-5 text-neutral-300 dark:text-neutral-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="1.5"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
+            />
+          </svg>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatusBadge({ active }: { active: boolean }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+        active
+          ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+          : "bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400"
+      }`}
+    >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          active ? "bg-green-500" : "bg-red-500"
+        }`}
+      />
+      {active ? "Active" : "Inactive"}
+    </span>
+  );
+}
+
+function CollectionChips({
+  collections,
+}: {
+  collections: { collection: { id: string; title: string } }[];
+}) {
+  if (!collections || collections.length === 0) {
+    return <span className="text-xs text-neutral-300 dark:text-neutral-600">—</span>;
+  }
+  return (
+    <div className="flex flex-wrap gap-1">
+      {collections.slice(0, 2).map((pc) => (
+        <span
+          key={pc.collection.id}
+          className="inline-flex rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
+        >
+          {pc.collection.title}
+        </span>
+      ))}
+      {collections.length > 2 && (
+        <span className="inline-flex rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-400 dark:bg-neutral-800">
+          +{collections.length - 2}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function ProductsTable({
   products,
   selectedProducts,
@@ -27,228 +116,203 @@ export default function ProductsTable({
 }) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
 
   const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`Are you sure you want to delete "${title}"?`)) {
-      return;
-    }
-
+    if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
     setDeletingId(id);
     try {
-      const res = await fetch(`/api/admin/products/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to delete product");
-      }
-
+      const res = await fetch(`/api/admin/products/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
       router.refresh();
-    } catch (error) {
+    } catch {
       alert("Failed to delete product");
-      console.error(error);
     } finally {
       setDeletingId(null);
     }
   };
 
   const handleDuplicate = async (id: string) => {
+    setDuplicatingId(id);
     try {
       const res = await fetch(`/api/admin/products/duplicate/${id}`, {
         method: "POST",
       });
-
-      if (!res.ok) {
-        throw new Error("Failed to duplicate product");
-      }
-
+      if (!res.ok) throw new Error();
       router.refresh();
-    } catch (error) {
+    } catch {
       alert("Failed to duplicate product");
-      console.error(error);
+    } finally {
+      setDuplicatingId(null);
     }
   };
 
+  // ── Empty State ──
   if (products.length === 0) {
     return (
-      <div className="rounded-lg border border-neutral-200 bg-white p-12 text-center dark:border-neutral-800 dark:bg-neutral-900">
-        <svg
-          className="mx-auto h-12 w-12 text-neutral-400"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-          />
-        </svg>
-        <h3 className="mt-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-neutral-200 bg-white py-20 dark:border-neutral-700 dark:bg-neutral-900">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
+          <svg
+            className="h-7 w-7 text-neutral-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="1.5"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
+            />
+          </svg>
+        </div>
+        <h3 className="mt-4 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
           No products found
         </h3>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          Get started by creating a new product.
+        <p className="mt-1 text-sm text-neutral-400">
+          Add your first product to get started.
         </p>
-        <div className="mt-6">
-          <Link
-            href="/admin/products/new"
-            className="inline-flex items-center rounded-md bg-neutral-900 px-3 py-2 text-sm font-semibold text-white hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
-          >
-            Add Product
-          </Link>
-        </div>
+        <Link
+          href="/admin/products/new"
+          className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Add Product
+        </Link>
       </div>
     );
   }
 
   return (
     <>
-      {/* Desktop Table */}
-      <div className="hidden overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 md:block">
-        <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-800">
-          <thead className="bg-neutral-50 dark:bg-neutral-800">
-            <tr>
+      {/* ── Desktop Table ── */}
+      <div className="hidden overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 lg:block">
+        <table className="min-w-full">
+          <thead>
+            <tr className="border-b border-neutral-100 dark:border-neutral-800">
               {selectedProducts !== undefined && (
-                <th className="w-12 px-3 py-3"></th>
+                <th className="w-10 px-4 py-3" />
               )}
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+              <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-neutral-400 dark:text-neutral-500">
                 Product
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+              <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-neutral-400 dark:text-neutral-500">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+              <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-neutral-400 dark:text-neutral-500">
                 Collections
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+              <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-neutral-400 dark:text-neutral-500">
                 Price
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+              <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-neutral-400 dark:text-neutral-500">
                 Variants
               </th>
-              <th className="relative px-6 py-3">
-                <span className="sr-only">Actions</span>
-              </th>
+              <th className="px-5 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-200 bg-white dark:divide-neutral-800 dark:bg-neutral-900">
+          <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
             {products.map((product) => (
               <tr
                 key={product.id}
-                className="hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                className={`group transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/60 ${
+                  selectedProducts?.has(product.id)
+                    ? "bg-neutral-50 dark:bg-neutral-800/40"
+                    : ""
+                }`}
               >
                 {selectedProducts !== undefined && onToggleProduct && (
-                  <td className="w-12 px-3 py-4">
-                    <input
-                      type="checkbox"
-                      checked={selectedProducts.has(product.id)}
-                      onChange={() => onToggleProduct(product.id)}
-                      className="h-4 w-4 rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </td>
-                )}
-                <td className="whitespace-nowrap px-6 py-4">
-                  <div className="flex items-center">
-                    <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded bg-neutral-100 dark:bg-neutral-800">
-                      {product.images[0] ? (
-                        <Image
-                          src={product.images[0].url}
-                          alt={product.images[0].altText || product.title}
-                          width={40}
-                          height={40}
-                          className="h-10 w-10 object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-10 w-10 items-center justify-center text-neutral-400">
-                          <svg
-                            className="h-6 w-6"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                          </svg>
-                        </div>
+                  <td className="w-10 px-4 py-3.5">
+                    <div
+                      className={`flex h-[18px] w-[18px] cursor-pointer items-center justify-center rounded border transition-colors ${
+                        selectedProducts.has(product.id)
+                          ? "border-neutral-900 bg-neutral-900 dark:border-neutral-100 dark:bg-neutral-100"
+                          : "border-neutral-300 bg-white group-hover:border-neutral-400 dark:border-neutral-600 dark:bg-neutral-800"
+                      }`}
+                      onClick={() => onToggleProduct(product.id)}
+                    >
+                      {selectedProducts.has(product.id) && (
+                        <svg
+                          className="h-2.5 w-2.5 text-white dark:text-neutral-900"
+                          fill="none"
+                          viewBox="0 0 12 12"
+                          strokeWidth="2.5"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 6l3 3 6-6" />
+                        </svg>
                       )}
                     </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                  </td>
+                )}
+
+                {/* Product */}
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <ProductImage product={product} size="sm" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
                         {product.title}
-                      </div>
-                      <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                        {product.handle}
-                      </div>
+                      </p>
+                      <p className="truncate text-xs text-neutral-400 dark:text-neutral-500">
+                        /{product.handle}
+                      </p>
                     </div>
                   </div>
                 </td>
-                <td className="whitespace-nowrap px-6 py-4">
-                  <span
-                    className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                      product.availableForSale
-                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                        : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                    }`}
-                  >
-                    {product.availableForSale ? "Active" : "Inactive"}
+
+                {/* Status */}
+                <td className="px-5 py-3.5">
+                  <StatusBadge active={product.availableForSale} />
+                </td>
+
+                {/* Collections */}
+                <td className="px-5 py-3.5">
+                  <CollectionChips
+                    collections={product.productCollections || []}
+                  />
+                </td>
+
+                {/* Price */}
+                <td className="px-5 py-3.5">
+                  <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                    {product.variants[0]
+                      ? `${product.variants[0].currencyCode} ${Number(product.variants[0].price).toLocaleString()}`
+                      : <span className="text-neutral-300 dark:text-neutral-600">—</span>}
                   </span>
                 </td>
-                <td className="px-6 py-4">
-                  {product.productCollections &&
-                  product.productCollections.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {product.productCollections.slice(0, 2).map((pc) => (
-                        <span
-                          key={pc.collection.id}
-                          className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-                        >
-                          {pc.collection.title}
-                        </span>
-                      ))}
-                      {product.productCollections.length > 2 && (
-                        <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                          +{product.productCollections.length - 2}
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-xs text-neutral-400">—</span>
-                  )}
+
+                {/* Variants */}
+                <td className="px-5 py-3.5">
+                  <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                    {product._count.variants}
+                  </span>
                 </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-900 dark:text-neutral-100">
-                  {product.variants[0]
-                    ? `${product.variants[0].currencyCode} ${Number(product.variants[0].price).toLocaleString()}`
-                    : "—"}
-                </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
-                  {product._count.variants}
-                </td>
-                <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                  <div className="flex items-center justify-end gap-2">
+
+                {/* Actions */}
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center justify-end gap-3 opacity-0 transition-opacity group-hover:opacity-100">
                     <Link
                       href={`/admin/products/${product.id}/edit`}
-                      className="text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+                      className="text-xs font-medium text-neutral-500 transition-colors hover:text-neutral-900 dark:hover:text-neutral-100"
                     >
                       Edit
                     </Link>
                     <button
                       onClick={() => handleDuplicate(product.id)}
-                      className="text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+                      disabled={duplicatingId === product.id}
+                      className="text-xs font-medium text-neutral-500 transition-colors hover:text-neutral-900 disabled:opacity-40 dark:hover:text-neutral-100"
                     >
-                      Duplicate
+                      {duplicatingId === product.id ? "…" : "Duplicate"}
                     </button>
                     <button
                       onClick={() => handleDelete(product.id, product.title)}
                       disabled={deletingId === product.id}
-                      className="text-red-600 hover:text-red-900 disabled:opacity-50 dark:text-red-400 dark:hover:text-red-300"
+                      className="text-xs font-medium text-red-500 transition-colors hover:text-red-700 disabled:opacity-40 dark:text-red-400 dark:hover:text-red-300"
                     >
-                      {deletingId === product.id ? "Deleting..." : "Delete"}
+                      {deletingId === product.id ? "…" : "Delete"}
                     </button>
                   </div>
                 </td>
@@ -258,115 +322,106 @@ export default function ProductsTable({
         </table>
       </div>
 
-      {/* Mobile Cards */}
-      <div className="space-y-4 md:hidden">
+      {/* ── Mobile / Tablet Cards ── */}
+      <div className="space-y-3 lg:hidden">
         {products.map((product) => (
           <div
             key={product.id}
-            className="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
+            className={`overflow-hidden rounded-xl border bg-white shadow-sm dark:bg-neutral-900 ${
+              selectedProducts?.has(product.id)
+                ? "border-neutral-400 dark:border-neutral-500"
+                : "border-neutral-200 dark:border-neutral-800"
+            }`}
           >
             <div className="p-4">
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-3">
+                {/* Checkbox */}
                 {selectedProducts !== undefined && onToggleProduct && (
-                  <input
-                    type="checkbox"
-                    checked={selectedProducts.has(product.id)}
-                    onChange={() => onToggleProduct(product.id)}
-                    className="mt-1 h-4 w-4 rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
-                  />
-                )}
-                <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded bg-neutral-100 dark:bg-neutral-800">
-                  {product.images[0] ? (
-                    <Image
-                      src={product.images[0].url}
-                      alt={product.images[0].altText || product.title}
-                      width={64}
-                      height={64}
-                      className="h-16 w-16 object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-16 w-16 items-center justify-center text-neutral-400">
+                  <div
+                    className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 cursor-pointer items-center justify-center rounded border transition-colors ${
+                      selectedProducts.has(product.id)
+                        ? "border-neutral-900 bg-neutral-900 dark:border-neutral-100 dark:bg-neutral-100"
+                        : "border-neutral-300 dark:border-neutral-600"
+                    }`}
+                    onClick={() => onToggleProduct(product.id)}
+                  >
+                    {selectedProducts.has(product.id) && (
                       <svg
-                        className="h-8 w-8"
+                        className="h-2.5 w-2.5 text-white dark:text-neutral-900"
                         fill="none"
-                        viewBox="0 0 24 24"
+                        viewBox="0 0 12 12"
+                        strokeWidth="2.5"
                         stroke="currentColor"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 6l3 3 6-6" />
                       </svg>
+                    )}
+                  </div>
+                )}
+
+                <ProductImage product={product} size="lg" />
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                        {product.title}
+                      </p>
+                      <p className="truncate text-xs text-neutral-400">
+                        /{product.handle}
+                      </p>
                     </div>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                    {product.title}
-                  </h3>
-                  <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                    {product.handle}
-                  </p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        product.availableForSale
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                          : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                      }`}
-                    >
-                      {product.availableForSale ? "Active" : "Inactive"}
-                    </span>
-                    <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                      {product._count.variants} variants
+                    <StatusBadge active={product.availableForSale} />
+                  </div>
+
+                  <div className="mt-2 flex items-center gap-3">
+                    {product.variants[0] && (
+                      <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                        {product.variants[0].currencyCode}{" "}
+                        {Number(product.variants[0].price).toLocaleString()}
+                      </span>
+                    )}
+                    <span className="text-xs text-neutral-400">
+                      {product._count.variants} variant{product._count.variants !== 1 ? "s" : ""}
                     </span>
                   </div>
+
                   {product.productCollections &&
                     product.productCollections.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {product.productCollections.map((pc) => (
-                          <span
-                            key={pc.collection.id}
-                            className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-                          >
-                            {pc.collection.title}
-                          </span>
-                        ))}
+                      <div className="mt-2">
+                        <CollectionChips
+                          collections={product.productCollections}
+                        />
                       </div>
                     )}
-                  {product.variants[0] && (
-                    <p className="mt-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                      {product.variants[0].currencyCode}{" "}
-                      {Number(product.variants[0].price).toLocaleString()}
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
-            <div className="border-t border-neutral-200 bg-neutral-50 px-4 py-3 dark:border-neutral-800 dark:bg-neutral-800">
-              <div className="flex gap-3 text-sm">
-                <Link
-                  href={`/admin/products/${product.id}/edit`}
-                  className="font-medium text-neutral-700 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
-                >
-                  Edit
-                </Link>
-                <button
-                  onClick={() => handleDuplicate(product.id)}
-                  className="font-medium text-neutral-700 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
-                >
-                  Duplicate
-                </button>
-                <button
-                  onClick={() => handleDelete(product.id, product.title)}
-                  disabled={deletingId === product.id}
-                  className="font-medium text-red-600 hover:text-red-900 disabled:opacity-50 dark:text-red-400 dark:hover:text-red-300"
-                >
-                  {deletingId === product.id ? "Deleting..." : "Delete"}
-                </button>
-              </div>
+
+            {/* Actions footer */}
+            <div className="flex items-center gap-1 border-t border-neutral-100 bg-neutral-50 px-4 py-2.5 dark:border-neutral-800 dark:bg-neutral-800/50">
+              <Link
+                href={`/admin/products/${product.id}/edit`}
+                className="flex-1 rounded-lg px-3 py-1.5 text-center text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-700"
+              >
+                Edit
+              </Link>
+              <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
+              <button
+                onClick={() => handleDuplicate(product.id)}
+                disabled={duplicatingId === product.id}
+                className="flex-1 rounded-lg px-3 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 disabled:opacity-40 dark:text-neutral-300 dark:hover:bg-neutral-700"
+              >
+                {duplicatingId === product.id ? "Duplicating…" : "Duplicate"}
+              </button>
+              <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
+              <button
+                onClick={() => handleDelete(product.id, product.title)}
+                disabled={deletingId === product.id}
+                className="flex-1 rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-900/20"
+              >
+                {deletingId === product.id ? "Deleting…" : "Delete"}
+              </button>
             </div>
           </div>
         ))}
