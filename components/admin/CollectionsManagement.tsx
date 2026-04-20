@@ -26,10 +26,223 @@ interface CollectionsManagementProps {
   totalPages: number;
   total: number;
   perPage: number;
-  searchParams: {
-    search?: string;
-  };
+  searchParams: { search?: string };
 }
+
+/* ─── Modal ─────────────────────────────────────────────────────────────── */
+
+function Modal({
+  heading,
+  formData,
+  setFormData,
+  onSubmit,
+  onClose,
+  isLoading,
+  submitLabel,
+}: {
+  heading: string;
+  formData: { handle: string; title: string; description: string; seoTitle: string; seoDescription: string };
+  setFormData: (d: typeof formData) => void;
+  onSubmit: (e: React.FormEvent) => void;
+  onClose: () => void;
+  isLoading: boolean;
+  submitLabel: string;
+}) {
+  const field =
+    "block w-full border-b border-neutral-300 bg-transparent py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:text-neutral-100 dark:focus:border-neutral-100";
+  const label =
+    "mb-1 block text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-neutral-950/60 backdrop-blur-sm" onClick={onClose} />
+
+      <div className="relative z-10 w-full max-w-xl border border-neutral-900 bg-white shadow-2xl dark:border-neutral-100 dark:bg-neutral-950">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-neutral-200 px-8 py-5 dark:border-neutral-800">
+          <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500 dark:text-neutral-400">
+            {heading}
+          </span>
+          <button
+            onClick={onClose}
+            className="text-neutral-400 transition-colors hover:text-neutral-900 dark:hover:text-neutral-100"
+            aria-label="Close"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form onSubmit={onSubmit} className="px-8 py-7">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+            <div className="col-span-2 sm:col-span-1">
+              <label className={label}>Title <span className="text-neutral-900 dark:text-neutral-100">*</span></label>
+              <input
+                required
+                type="text"
+                placeholder="e.g. Summer Picks"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className={field}
+              />
+            </div>
+
+            <div className="col-span-2 sm:col-span-1">
+              <label className={label}>Handle <span className="text-neutral-900 dark:text-neutral-100">*</span></label>
+              <div className="flex items-end gap-1">
+                <span className="pb-2.5 text-sm text-neutral-400">/</span>
+                <input
+                  required
+                  type="text"
+                  placeholder="summer-picks"
+                  value={formData.handle}
+                  onChange={(e) => setFormData({ ...formData, handle: e.target.value })}
+                  className={`${field} flex-1`}
+                />
+              </div>
+            </div>
+
+            <div className="col-span-2">
+              <label className={label}>Description</label>
+              <textarea
+                rows={2}
+                placeholder="Short description of this collection"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className={`${field} resize-none`}
+              />
+            </div>
+
+            <div className="col-span-2 border-t border-neutral-100 pt-5 dark:border-neutral-800">
+              <p className={`${label} mb-4`}>SEO</p>
+              <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                <div className="col-span-2 sm:col-span-1">
+                  <label className={label}>Meta Title</label>
+                  <input
+                    type="text"
+                    placeholder="Overrides title in search"
+                    value={formData.seoTitle}
+                    onChange={(e) => setFormData({ ...formData, seoTitle: e.target.value })}
+                    className={field}
+                  />
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <label className={label}>Meta Description</label>
+                  <input
+                    type="text"
+                    placeholder="Overrides description in search"
+                    value={formData.seoDescription}
+                    onChange={(e) => setFormData({ ...formData, seoDescription: e.target.value })}
+                    className={field}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2.5 text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900 dark:hover:text-neutral-100"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex min-w-[148px] items-center justify-center border border-neutral-900 bg-neutral-900 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white hover:text-neutral-900 disabled:opacity-50 dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-transparent dark:hover:text-neutral-100"
+            >
+              {isLoading ? <LoadingDots className="bg-white dark:bg-neutral-900" /> : submitLabel}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Row ────────────────────────────────────────────────────────────────── */
+
+function CollectionRow({
+  collection,
+  index,
+  onEdit,
+  onDelete,
+}: {
+  collection: Collection;
+  index: number;
+  onEdit: (c: Collection) => void;
+  onDelete: (id: string) => void;
+}) {
+  const pad = String(index + 1).padStart(2, "0");
+  const hasProducts = collection._count.productCollections > 0;
+  const updated = new Date(collection.updatedAt).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return (
+    <div className="group relative border-b border-neutral-200 dark:border-neutral-800">
+      <div className="flex items-center gap-6 px-6 py-5 transition-colors duration-150 group-hover:bg-neutral-900 dark:group-hover:bg-neutral-100">
+        {/* Index */}
+        <span className="w-8 shrink-0 font-mono text-xs text-neutral-300 transition-colors group-hover:text-neutral-500 dark:text-neutral-600 dark:group-hover:text-neutral-400">
+          {pad}
+        </span>
+
+        {/* Title + description */}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold tracking-tight text-neutral-900 transition-colors group-hover:text-white dark:text-neutral-100 dark:group-hover:text-neutral-900">
+            {collection.title}
+          </p>
+          {collection.description && (
+            <p className="mt-0.5 truncate text-xs text-neutral-400 transition-colors group-hover:text-neutral-400 dark:group-hover:text-neutral-500">
+              {collection.description}
+            </p>
+          )}
+        </div>
+
+        {/* Handle */}
+        <span className="hidden w-40 shrink-0 truncate font-mono text-xs text-neutral-400 transition-colors group-hover:text-neutral-500 dark:group-hover:text-neutral-500 sm:block">
+          /{collection.handle}
+        </span>
+
+        {/* Product count */}
+        <span className="hidden w-24 shrink-0 text-right text-xs text-neutral-500 transition-colors group-hover:text-neutral-400 dark:group-hover:text-neutral-500 md:block">
+          {collection._count.productCollections}{" "}
+          {collection._count.productCollections === 1 ? "product" : "products"}
+        </span>
+
+        {/* Updated */}
+        <span className="hidden w-28 shrink-0 text-right text-xs text-neutral-400 transition-colors group-hover:text-neutral-500 dark:group-hover:text-neutral-500 lg:block">
+          {updated}
+        </span>
+
+        {/* Actions */}
+        <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+          <button
+            onClick={() => onEdit(collection)}
+            className="rounded px-3 py-1.5 text-xs font-medium text-white ring-1 ring-white/30 transition-colors hover:bg-white hover:text-neutral-900 dark:text-neutral-900 dark:ring-neutral-900/30 dark:hover:bg-neutral-900 dark:hover:text-white"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => onDelete(collection.id)}
+            disabled={hasProducts}
+            title={hasProducts ? "Remove products first" : "Delete"}
+            className="rounded px-3 py-1.5 text-xs font-medium text-white/50 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-30 dark:text-neutral-900/50 dark:hover:text-neutral-900"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main ───────────────────────────────────────────────────────────────── */
 
 export default function CollectionsManagement({
   collections,
@@ -40,606 +253,249 @@ export default function CollectionsManagement({
   searchParams,
 }: CollectionsManagementProps) {
   const router = useRouter();
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedCollection, setSelectedCollection] =
-    useState<Collection | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    handle: "",
-    title: "",
-    description: "",
-    seoTitle: "",
-    seoDescription: "",
-  });
+  const [addOpen, setAddOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [selected, setSelected] = useState<Collection | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const buildQueryString = (page: number) => {
-    const params = new URLSearchParams();
-    if (searchParams.search) params.set("search", searchParams.search);
-    params.set("page", page.toString());
-    return params.toString();
+  const empty = { handle: "", title: "", description: "", seoTitle: "", seoDescription: "" };
+  const [form, setForm] = useState(empty);
+
+  const qs = (page: number) => {
+    const p = new URLSearchParams();
+    if (searchParams.search) p.set("search", searchParams.search);
+    p.set("page", String(page));
+    return p.toString();
   };
 
-  const handleAddCollection = async (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
+    setLoading(true);
     try {
-      const response = await fetch("/api/admin/collections", {
+      const res = await fetch("/api/admin/collections", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(form),
       });
-
-      if (response.ok) {
-        toast.success("Collection created successfully");
-        setIsAddModalOpen(false);
-        setFormData({
-          handle: "",
-          title: "",
-          description: "",
-          seoTitle: "",
-          seoDescription: "",
-        });
+      if (res.ok) {
+        toast.success("Collection created");
+        setAddOpen(false);
+        setForm(empty);
         router.refresh();
       } else {
-        const data = await response.json();
-        toast.error(data.error || "Failed to create collection");
+        const d = await res.json();
+        toast.error(d.error || "Failed to create");
       }
-    } catch (error) {
-      toast.error("Failed to create collection");
+    } catch {
+      toast.error("Failed to create");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleEditCollection = async (e: React.FormEvent) => {
+  const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCollection) return;
-
-    setIsLoading(true);
-
+    if (!selected) return;
+    setLoading(true);
     try {
-      const response = await fetch(
-        `/api/admin/collections/${selectedCollection.id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        },
-      );
-
-      if (response.ok) {
-        toast.success("Collection updated successfully");
-        setIsEditModalOpen(false);
-        setSelectedCollection(null);
-        router.refresh();
-      } else {
-        const data = await response.json();
-        toast.error(data.error || "Failed to update collection");
-      }
-    } catch (error) {
-      toast.error("Failed to update collection");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDeleteCollection = async (collectionId: string) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this collection? This action cannot be undone.",
-      )
-    )
-      return;
-
-    try {
-      const response = await fetch(`/api/admin/collections/${collectionId}`, {
-        method: "DELETE",
+      const res = await fetch(`/api/admin/collections/${selected.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
       });
-
-      if (response.ok) {
-        toast.success("Collection deleted successfully");
+      if (res.ok) {
+        toast.success("Collection updated");
+        setEditOpen(false);
+        setSelected(null);
         router.refresh();
       } else {
-        const data = await response.json();
-        toast.error(data.error || "Failed to delete collection");
+        const d = await res.json();
+        toast.error(d.error || "Failed to update");
       }
-    } catch (error) {
-      toast.error("Failed to delete collection");
+    } catch {
+      toast.error("Failed to update");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const openEditModal = (collection: Collection) => {
-    setSelectedCollection(collection);
-    setFormData({
-      handle: collection.handle,
-      title: collection.title,
-      description: collection.description || "",
-      seoTitle: collection.seoTitle || "",
-      seoDescription: collection.seoDescription || "",
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this collection? This cannot be undone.")) return;
+    try {
+      const res = await fetch(`/api/admin/collections/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        toast.success("Collection deleted");
+        router.refresh();
+      } else {
+        const d = await res.json();
+        toast.error(d.error || "Failed to delete");
+      }
+    } catch {
+      toast.error("Failed to delete");
+    }
+  };
+
+  const openEdit = (c: Collection) => {
+    setSelected(c);
+    setForm({
+      handle: c.handle,
+      title: c.title,
+      description: c.description || "",
+      seoTitle: c.seoTitle || "",
+      seoDescription: c.seoDescription || "",
     });
-    setIsEditModalOpen(true);
+    setEditOpen(true);
   };
 
   return (
-    <div>
-      {/* Search and Add Button */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <form action="/admin/collections" method="get" className="flex-1">
-          <div className="flex gap-4">
-            <input
-              type="search"
-              name="search"
-              placeholder="Search collections..."
-              defaultValue={searchParams.search}
-              className="flex-1 rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-            />
-            <button
-              type="submit"
-              className="rounded-md bg-neutral-900 px-6 py-2 text-sm font-medium text-white hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
-            >
-              Search
-            </button>
-          </div>
-        </form>
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center justify-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
-        >
-          <svg
-            className="mr-2 h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+    <>
+      {/* Toolbar */}
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <form action="/admin/collections" method="get" className="flex items-center gap-0">
+          <input
+            type="search"
+            name="search"
+            defaultValue={searchParams.search}
+            placeholder="Search…"
+            className="w-56 border-b border-neutral-300 bg-transparent py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:text-neutral-100 dark:focus:border-neutral-100"
+          />
+          <button
+            type="submit"
+            className="ml-4 border-b border-transparent py-2 text-sm font-medium text-neutral-500 transition-colors hover:border-neutral-900 hover:text-neutral-900 dark:hover:border-neutral-100 dark:hover:text-neutral-100"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
+            Search
+          </button>
+        </form>
+
+        <button
+          onClick={() => { setForm(empty); setAddOpen(true); }}
+          className="inline-flex items-center gap-2 border border-neutral-900 bg-neutral-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white hover:text-neutral-900 dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-transparent dark:hover:text-neutral-100"
+        >
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
-          Add Collection
+          New Collection
         </button>
       </div>
 
-      {/* Collections Grid */}
-      {collections.length === 0 ? (
-        <div className="rounded-lg border border-neutral-200 bg-white p-12 text-center dark:border-neutral-800 dark:bg-neutral-900">
-          <svg
-            className="mx-auto h-12 w-12 text-neutral-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-            />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
-            No collections found
-          </h3>
-          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-            Get started by creating a new collection.
-          </p>
-          <div className="mt-6">
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="inline-flex items-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
-            >
-              <svg
-                className="mr-2 h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+      {/* Index table */}
+      <div className="border border-neutral-200 dark:border-neutral-800">
+        {/* Column headers */}
+        <div className="flex items-center gap-6 border-b border-neutral-200 bg-neutral-50 px-6 py-2.5 dark:border-neutral-800 dark:bg-neutral-900/60">
+          <span className="w-8 shrink-0 text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-400">#</span>
+          <span className="flex-1 text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-400">Collection</span>
+          <span className="hidden w-40 shrink-0 text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-400 sm:block">Handle</span>
+          <span className="hidden w-24 shrink-0 text-right text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-400 md:block">Products</span>
+          <span className="hidden w-28 shrink-0 text-right text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-400 lg:block">Updated</span>
+          <span className="w-28 shrink-0" />
+        </div>
+
+        {collections.length === 0 ? (
+          <div className="flex flex-col items-center justify-center px-6 py-24 text-center">
+            <p className="text-sm font-medium text-neutral-500">No collections found</p>
+            <p className="mt-1 text-xs text-neutral-400">
+              {searchParams.search
+                ? "Try a different search term."
+                : "Create your first collection to get started."}
+            </p>
+            {!searchParams.search && (
+              <button
+                onClick={() => { setForm(empty); setAddOpen(true); }}
+                className="mt-6 border-b border-neutral-900 pb-0.5 text-sm font-medium text-neutral-900 transition-colors hover:border-transparent hover:text-neutral-500 dark:border-neutral-100 dark:text-neutral-100"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              Add Collection
-            </button>
+                Create collection →
+              </button>
+            )}
           </div>
-        </div>
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {collections.map((collection) => (
-            <div
-              key={collection.id}
-              className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900"
-            >
-              <div className="p-6">
-                <div className="mb-3 flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                      {collection.title}
-                    </h3>
-                    <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                      /{collection.handle}
-                    </p>
-                  </div>
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/20">
-                    <svg
-                      className="h-6 w-6 text-purple-600 dark:text-purple-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                      />
-                    </svg>
-                  </div>
-                </div>
-
-                {collection.description && (
-                  <p className="mb-4 line-clamp-2 text-sm text-neutral-600 dark:text-neutral-400">
-                    {collection.description}
-                  </p>
-                )}
-
-                <div className="mb-4 flex items-center justify-between text-sm">
-                  <span className="text-neutral-500 dark:text-neutral-400">
-                    Products:
-                  </span>
-                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">
-                    {collection._count.productCollections}
-                  </span>
-                </div>
-
-                <div className="mb-4 text-xs text-neutral-500 dark:text-neutral-400">
-                  <div>
-                    Created:{" "}
-                    {new Date(collection.createdAt).toLocaleDateString()}
-                  </div>
-                  <div>
-                    Updated:{" "}
-                    {new Date(collection.updatedAt).toLocaleDateString()}
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => openEditModal(collection)}
-                    className="flex-1 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDeleteCollection(collection.id)}
-                    className="flex-1 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
-                    disabled={collection._count.productCollections > 0}
-                    title={
-                      collection._count.productCollections > 0
-                        ? "Remove products before deleting"
-                        : "Delete collection"
-                    }
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+        ) : (
+          collections.map((c, i) => (
+            <CollectionRow
+              key={c.id}
+              collection={c}
+              index={(currentPage - 1) * perPage + i}
+              onEdit={openEdit}
+              onDelete={handleDelete}
+            />
+          ))
+        )}
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between border-t border-neutral-200 bg-white px-4 py-3 dark:border-neutral-700 dark:bg-neutral-800 sm:px-6">
-          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-neutral-700 dark:text-neutral-300">
-                Showing{" "}
-                <span className="font-medium">
-                  {(currentPage - 1) * perPage + 1}
-                </span>{" "}
-                to{" "}
-                <span className="font-medium">
-                  {Math.min(currentPage * perPage, total)}
-                </span>{" "}
-                of <span className="font-medium">{total}</span> results
-              </p>
-            </div>
-            <div>
-              <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm">
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            {(currentPage - 1) * perPage + 1}–{Math.min(currentPage * perPage, total)} of {total}
+          </p>
+
+          <div className="flex items-center gap-1">
+            <Link
+              href={`/admin/collections?${qs(currentPage - 1)}`}
+              aria-disabled={currentPage <= 1}
+              className={`flex h-8 w-8 items-center justify-center border border-neutral-200 text-neutral-600 transition-colors hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-800 dark:text-neutral-400 dark:hover:border-neutral-100 dark:hover:text-neutral-100 ${currentPage <= 1 ? "pointer-events-none opacity-25" : ""}`}
+            >
+              <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+              </svg>
+            </Link>
+
+            {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
+              let p: number;
+              if (totalPages <= 7) p = i + 1;
+              else if (currentPage <= 4) p = i + 1;
+              else if (currentPage >= totalPages - 3) p = totalPages - 6 + i;
+              else p = currentPage - 3 + i;
+
+              return (
                 <Link
-                  href={`/admin/collections?${buildQueryString(currentPage - 1)}`}
-                  className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-neutral-400 ring-1 ring-inset ring-neutral-300 hover:bg-neutral-50 focus:z-20 focus:outline-offset-0 dark:ring-neutral-700 dark:hover:bg-neutral-700 ${
-                    currentPage <= 1 ? "pointer-events-none" : ""
+                  key={p}
+                  href={`/admin/collections?${qs(p)}`}
+                  className={`flex h-8 w-8 items-center justify-center border text-xs font-medium transition-colors ${
+                    currentPage === p
+                      ? "border-neutral-900 bg-neutral-900 text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900"
+                      : "border-neutral-200 text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-800 dark:text-neutral-400 dark:hover:border-neutral-100 dark:hover:text-neutral-100"
                   }`}
                 >
-                  <span className="sr-only">Previous</span>
-                  <svg
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  {p}
                 </Link>
-                {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 7) {
-                    pageNum = i + 1;
-                  } else if (currentPage <= 4) {
-                    pageNum = i + 1;
-                  } else if (currentPage >= totalPages - 3) {
-                    pageNum = totalPages - 6 + i;
-                  } else {
-                    pageNum = currentPage - 3 + i;
-                  }
-                  return (
-                    <Link
-                      key={pageNum}
-                      href={`/admin/collections?${buildQueryString(pageNum)}`}
-                      className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-                        currentPage === pageNum
-                          ? "z-10 bg-neutral-900 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 dark:bg-neutral-100 dark:text-neutral-900"
-                          : "text-neutral-900 ring-1 ring-inset ring-neutral-300 hover:bg-neutral-50 focus:z-20 focus:outline-offset-0 dark:text-neutral-100 dark:ring-neutral-700 dark:hover:bg-neutral-700"
-                      }`}
-                    >
-                      {pageNum}
-                    </Link>
-                  );
-                })}
-                <Link
-                  href={`/admin/collections?${buildQueryString(currentPage + 1)}`}
-                  className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-neutral-400 ring-1 ring-inset ring-neutral-300 hover:bg-neutral-50 focus:z-20 focus:outline-offset-0 dark:ring-neutral-700 dark:hover:bg-neutral-700 ${
-                    currentPage >= totalPages ? "pointer-events-none" : ""
-                  }`}
-                >
-                  <span className="sr-only">Next</span>
-                  <svg
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </Link>
-              </nav>
-            </div>
+              );
+            })}
+
+            <Link
+              href={`/admin/collections?${qs(currentPage + 1)}`}
+              aria-disabled={currentPage >= totalPages}
+              className={`flex h-8 w-8 items-center justify-center border border-neutral-200 text-neutral-600 transition-colors hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-800 dark:text-neutral-400 dark:hover:border-neutral-100 dark:hover:text-neutral-100 ${currentPage >= totalPages ? "pointer-events-none opacity-25" : ""}`}
+            >
+              <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+              </svg>
+            </Link>
           </div>
         </div>
       )}
 
-      {/* Add Collection Modal */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex min-h-screen items-center justify-center p-4">
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50"
-              onClick={() => setIsAddModalOpen(false)}
-            ></div>
-            <div className="relative w-full max-w-lg rounded-lg border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
-              <h2 className="mb-4 text-xl font-bold text-neutral-900 dark:text-neutral-100">
-                Add New Collection
-              </h2>
-              <form onSubmit={handleAddCollection} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    Title *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.title}
-                    onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
-                    }
-                    className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    Handle (URL slug) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.handle}
-                    onChange={(e) =>
-                      setFormData({ ...formData, handle: e.target.value })
-                    }
-                    placeholder="e.g., summer-collection"
-                    className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    Description
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    SEO Title
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.seoTitle}
-                    onChange={(e) =>
-                      setFormData({ ...formData, seoTitle: e.target.value })
-                    }
-                    className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    SEO Description
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={formData.seoDescription}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        seoDescription: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                  />
-                </div>
-                <div className="flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsAddModalOpen(false)}
-                    className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="flex items-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
-                  >
-                    {isLoading ? (
-                      <LoadingDots className="bg-white" />
-                    ) : (
-                      "Create Collection"
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
+      {/* Modals */}
+      {addOpen && (
+        <Modal
+          heading="New Collection"
+          formData={form}
+          setFormData={setForm}
+          onSubmit={handleAdd}
+          onClose={() => setAddOpen(false)}
+          isLoading={loading}
+          submitLabel="Create Collection"
+        />
       )}
-
-      {/* Edit Collection Modal */}
-      {isEditModalOpen && selectedCollection && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex min-h-screen items-center justify-center p-4">
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50"
-              onClick={() => setIsEditModalOpen(false)}
-            ></div>
-            <div className="relative w-full max-w-lg rounded-lg border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
-              <h2 className="mb-4 text-xl font-bold text-neutral-900 dark:text-neutral-100">
-                Edit Collection
-              </h2>
-              <form onSubmit={handleEditCollection} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    Title *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.title}
-                    onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
-                    }
-                    className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    Handle (URL slug) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.handle}
-                    onChange={(e) =>
-                      setFormData({ ...formData, handle: e.target.value })
-                    }
-                    className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    Description
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    SEO Title
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.seoTitle}
-                    onChange={(e) =>
-                      setFormData({ ...formData, seoTitle: e.target.value })
-                    }
-                    className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    SEO Description
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={formData.seoDescription}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        seoDescription: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                  />
-                </div>
-                <div className="flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditModalOpen(false)}
-                    className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="flex items-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
-                  >
-                    {isLoading ? (
-                      <LoadingDots className="bg-white" />
-                    ) : (
-                      "Save Changes"
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
+      {editOpen && selected && (
+        <Modal
+          heading="Edit Collection"
+          formData={form}
+          setFormData={setForm}
+          onSubmit={handleEdit}
+          onClose={() => setEditOpen(false)}
+          isLoading={loading}
+          submitLabel="Save Changes"
+        />
       )}
-    </div>
+    </>
   );
 }

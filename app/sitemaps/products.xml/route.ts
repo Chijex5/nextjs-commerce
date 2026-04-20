@@ -1,9 +1,9 @@
+import { desc, eq } from "drizzle-orm";
 import { HIDDEN_PRODUCT_TAG } from "lib/constants";
 import { db } from "lib/db";
 import { products } from "lib/db/schema";
 import { canonicalUrl } from "lib/seo";
 import { buildSitemapXml } from "lib/sitemap";
-import { desc, eq } from "drizzle-orm";
 
 export const revalidate = 86400;
 
