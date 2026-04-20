@@ -1,6 +1,7 @@
+import { authSecret } from "lib/auth";
+import { canonicalHost } from "lib/seo";
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
-import { canonicalHost } from "lib/seo";
 
 const CANONICAL_HOST = canonicalHost();
 
@@ -48,13 +49,14 @@ export default withAuth(
     });
   },
   {
+    secret: authSecret,
     callbacks: {
       authorized: ({ token, req }) => {
         const isAdminPath = req.nextUrl.pathname.startsWith("/admin");
         const isLoginPage = req.nextUrl.pathname === "/admin/login";
 
         if (isLoginPage) return true;
-        if (isAdminPath) return !!token;
+        if (isAdminPath) return !!token && token.role === "admin";
         return true;
       },
     },

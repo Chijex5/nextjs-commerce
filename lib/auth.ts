@@ -1,9 +1,12 @@
+import { compare } from "bcryptjs";
+import { eq } from "drizzle-orm";
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { compare } from "bcryptjs";
 import { db } from "./db";
 import { adminUsers } from "./db/schema";
-import { eq } from "drizzle-orm";
+
+export const authSecret =
+  process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -73,5 +76,5 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: authSecret,
 };
