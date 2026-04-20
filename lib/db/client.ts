@@ -1,8 +1,14 @@
-import "dotenv/config";
-import fs from "node:fs";
-import path from "node:path";
-import postgres from "postgres";
+if (typeof process !== "undefined" && process.release?.name === "node") {
+  // Next.js already injects env vars for app runtime; this is only for direct Node scripts.
+  try {
+    const dotenv = require("dotenv");
+    dotenv.config();
+  } catch {
+    // Ignore dotenv load failures in non-script runtimes.
+  }
+}
 import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import * as schema from "./schema";
 
 const {
