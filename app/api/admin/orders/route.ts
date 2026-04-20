@@ -6,11 +6,25 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
+    console.log("[admin-orders][GET] request", {
+      url: request.url,
+      host: request.headers.get("host"),
+      cookieHeaderPresent: Boolean(request.headers.get("cookie")),
+    });
+
     const session = await requireAdminSession();
 
     if (!session) {
+      console.log("[admin-orders][GET] unauthorized", {
+        url: request.url,
+      });
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    console.log("[admin-orders][GET] authorized", {
+      email: session.user?.email,
+      role: session.user?.role,
+    });
 
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));

@@ -12,6 +12,16 @@ export default withAuth(
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set("x-is-admin-route", isAdminPath ? "1" : "0");
 
+    console.log("[admin-auth][middleware] request", {
+      path: req.nextUrl.pathname,
+      host: req.headers.get("host"),
+      forwardedProto: req.headers.get("x-forwarded-proto"),
+      isAdminPath,
+      isLoginPage,
+      hasToken: Boolean(req.nextauth.token),
+      tokenRole: req.nextauth.token?.role,
+    });
+
     if (process.env.NODE_ENV !== "development" && CANONICAL_HOST) {
       const host = req.headers.get("host") || "";
       const forwardedProto =
@@ -54,6 +64,15 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const isAdminPath = req.nextUrl.pathname.startsWith("/admin");
         const isLoginPage = req.nextUrl.pathname === "/admin/login";
+
+        console.log("[admin-auth][middleware][authorized] decision", {
+          path: req.nextUrl.pathname,
+          isAdminPath,
+          isLoginPage,
+          hasToken: Boolean(token),
+          tokenRole: token?.role,
+          result: isLoginPage ? true : !isAdminPath ? true : !!token && token.role === "admin",
+        });
 
         if (isLoginPage) return true;
         if (isAdminPath) return !!token && token.role === "admin";
