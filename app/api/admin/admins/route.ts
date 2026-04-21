@@ -159,7 +159,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (!emailResult.success) {
-      console.warn("Admin credentials email failed:", emailResult.error);
+      console.warn("Admin credentials email failed", {
+        adminId: admin?.id,
+        reason: emailResult.error || "unknown_error",
+      });
     }
 
     return NextResponse.json({
