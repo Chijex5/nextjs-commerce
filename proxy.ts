@@ -4,6 +4,7 @@ import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
 const CANONICAL_HOST = canonicalHost();
+const ADMIN_ROLES = new Set(["admin", "super_admin"]);
 
 export default withAuth(
   function proxy(req) {
@@ -64,6 +65,7 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const isAdminPath = req.nextUrl.pathname.startsWith("/admin");
         const isLoginPage = req.nextUrl.pathname === "/admin/login";
+        const hasAdminRole = ADMIN_ROLES.has((token?.role as string) || "");
 
         console.log("[admin-auth][middleware][authorized] decision", {
           path: req.nextUrl.pathname,
@@ -71,11 +73,11 @@ export default withAuth(
           isLoginPage,
           hasToken: Boolean(token),
           tokenRole: token?.role,
-          result: isLoginPage ? true : !isAdminPath ? true : !!token && token.role === "admin",
+          result: isLoginPage ? true : !isAdminPath ? true : !!token && hasAdminRole,
         });
 
         if (isLoginPage) return true;
-        if (isAdminPath) return !!token;
+        if (isAdminPath) return !!token && hasAdminRole;
         return true;
       },
     },

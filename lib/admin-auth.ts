@@ -1,6 +1,8 @@
 import { authOptions } from "lib/auth";
 import { getServerSession } from "next-auth";
 
+const ADMIN_ROLES = new Set(["admin", "super_admin"]);
+
 export async function requireAdminSession() {
   const session = await getServerSession(authOptions);
 
@@ -11,13 +13,13 @@ export async function requireAdminSession() {
     role: session?.user?.role,
   });
 
-  if (!session || !session.user || session.user.role !== "admin") {
+  if (!session || !session.user || !ADMIN_ROLES.has(session.user.role || "")) {
     console.log("[admin-auth][requireAdminSession] rejected", {
       reason: !session
         ? "no-session"
         : !session.user
           ? "no-user"
-          : session.user.role !== "admin"
+          : !ADMIN_ROLES.has(session.user.role || "")
             ? "non-admin-role"
             : "unknown",
     });
