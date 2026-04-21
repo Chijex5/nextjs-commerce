@@ -1,17 +1,17 @@
-import Link from "next/link";
-import { getServerSession } from "next-auth";
-import { authOptions } from "lib/auth";
-import { redirect } from "next/navigation";
 import AdminNav from "components/admin/AdminNav";
 import OrdersTable from "components/admin/OrdersTable";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { authOptions } from "lib/auth";
 import { db } from "lib/db";
 import {
-  customOrderRequests,
-  orderItems,
-  orders,
-  paymentTransactions,
+    customOrderRequests,
+    orderItems,
+    orders,
+    paymentTransactions,
 } from "lib/db/schema";
-import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { getServerSession } from "next-auth";
+import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export default async function AdminOrdersPage({
   searchParams,
@@ -27,7 +27,15 @@ export default async function AdminOrdersPage({
 }) {
   const session = await getServerSession(authOptions);
 
+  console.log("[admin-orders-page] session check", {
+    hasSession: Boolean(session),
+    email: session?.user?.email,
+    role: session?.user?.role,
+    id: session?.user?.id,
+  });
+
   if (!session) {
+    console.log("[admin-orders-page] redirecting to login");
     redirect("/admin/login");
   }
 
@@ -79,7 +87,10 @@ export default async function AdminOrdersPage({
       .from(orders)
       .where(whereClause),
     db
-      .select({ deliveryStatus: orders.deliveryStatus, count: sql<number>`count(*)` })
+      .select({
+        deliveryStatus: orders.deliveryStatus,
+        count: sql<number>`count(*)`,
+      })
       .from(orders)
       .groupBy(orders.deliveryStatus),
     db
@@ -92,8 +103,8 @@ export default async function AdminOrdersPage({
   const orderItemRows = orderIds.length
     ? await db
         .select({ orderId: orderItems.orderId, quantity: orderItems.quantity })
-      .from(orderItems)
-      .where(inArray(orderItems.orderId, orderIds))
+        .from(orderItems)
+        .where(inArray(orderItems.orderId, orderIds))
     : [];
 
   const customRequestIds = orderRows
@@ -112,14 +123,13 @@ export default async function AdminOrdersPage({
     customRequestRows.map((row) => [row.id, row.requestNumber]),
   );
 
-  const itemsByOrder = orderItemRows.reduce<Record<string, { quantity: number }[]>>(
-    (acc, item) => {
-      const items = (acc[item.orderId] ??= []);
-      items.push({ quantity: item.quantity });
-      return acc;
-    },
-    {},
-  );
+  const itemsByOrder = orderItemRows.reduce<
+    Record<string, { quantity: number }[]>
+  >((acc, item) => {
+    const items = (acc[item.orderId] ??= []);
+    items.push({ quantity: item.quantity });
+    return acc;
+  }, {});
 
   const deliveryStats = stats.reduce(
     (acc, item) => {

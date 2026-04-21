@@ -2,10 +2,10 @@ import { getGreeting } from "@/lib/greetings";
 import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
 import { db } from "lib/db";
 import {
-  collections,
-  orders,
-  paymentTransactions,
-  products,
+    collections,
+    orders,
+    paymentTransactions,
+    products,
 } from "lib/db/schema";
 import { getServerSession } from "next-auth";
 import Link from "next/link";
@@ -16,7 +16,15 @@ import { authOptions } from "../../../lib/auth";
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
+  console.log("[admin-dashboard] session check", {
+    hasSession: Boolean(session),
+    email: session?.user?.email,
+    role: session?.user?.role,
+    id: session?.user?.id,
+  });
+
   if (!session) {
+    console.log("[admin-dashboard] redirecting to login");
     redirect("/admin/login");
   }
 

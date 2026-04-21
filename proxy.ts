@@ -75,7 +75,7 @@ export default withAuth(
         });
 
         if (isLoginPage) return true;
-        if (isAdminPath) return !!token && token.role === "admin";
+        if (isAdminPath) return !!token;
         return true;
       },
     },

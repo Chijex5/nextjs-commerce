@@ -1,9 +1,9 @@
 "use client";
 
-import { signIn } from "next-auth/react";
-import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import LoadingDots from "components/loading-dots";
+import { getSession, signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,6 +17,12 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
+    console.log("[admin-login] submit", {
+      email,
+      path: window.location.pathname,
+      origin: window.location.origin,
+    });
+
     try {
       const result = await signIn("credentials", {
         email,
@@ -24,13 +30,29 @@ export default function LoginPage() {
         redirect: false,
       });
 
+      console.log("[admin-login] signIn result", {
+        ok: result?.ok,
+        error: result?.error,
+        status: result?.status,
+        url: result?.url,
+      });
+
       if (result?.error) {
+        console.log("[admin-login] signIn rejected", result.error);
         setError("Invalid email or password");
       } else {
+        const session = await getSession();
+        console.log("[admin-login] session after signIn", {
+          hasSession: Boolean(session),
+          email: session?.user?.email,
+          role: session?.user?.role,
+          id: session?.user?.id,
+        });
         router.push("/admin/dashboard");
         router.refresh();
       }
     } catch (err) {
+      console.log("[admin-login] submit error", err);
       setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
