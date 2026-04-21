@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
 import { adminUsers } from "lib/db/schema";
+import { sendAdminCredentialsEmail } from "lib/email/auth-emails";
 import bcrypt from "bcryptjs";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 
@@ -15,7 +16,10 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const perPage = Math.min(100, Math.max(1, parseInt(searchParams.get("perPage") || "20")));
+    const perPage = Math.min(
+      100,
+      Math.max(1, parseInt(searchParams.get("perPage") || "20")),
+    );
     const search = searchParams.get("search");
     const status = searchParams.get("status");
 
@@ -148,9 +152,22 @@ export async function POST(request: NextRequest) {
         createdAt: adminUsers.createdAt,
       });
 
+    const emailResult = await sendAdminCredentialsEmail({
+      email,
+      name: name || null,
+      password,
+    });
+
+    if (!emailResult.success) {
+      console.warn("Admin credentials email failed:", emailResult.error);
+    }
+
     return NextResponse.json({
       success: true,
-      message: "Admin created successfully",
+      message: emailResult.success
+        ? "Admin created successfully. Credentials email sent."
+        : "Admin created successfully, but credentials email could not be sent.",
+      emailSent: emailResult.success,
       admin: {
         id: admin?.id,
         email: admin?.email,
