@@ -4,15 +4,15 @@ import { ErrorState } from "components/layout/error-state";
 
 export default function AdminError({
   error,
-  reset,
+  resetAction,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  resetAction: () => void;
 }) {
   return (
     <ErrorState
       error={error}
-      reset={reset}
+      resetAction={resetAction}
       title="Admin action couldn’t be completed"
       message="Something interrupted the admin workflow."
       reassurance="No data was removed. Please retry the action or return to your dashboard."

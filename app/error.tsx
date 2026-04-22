@@ -12,7 +12,7 @@ export default function Error({
   return (
     <ErrorState
       error={error}
-      reset={reset}
+      resetAction={reset}
       title="Oops, something went wrong"
       message="We couldn’t complete that request right now."
       reassurance="Don’t worry — your progress is still intact, and a quick retry usually fixes this."

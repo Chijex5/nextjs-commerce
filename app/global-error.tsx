@@ -14,7 +14,7 @@ export default function GlobalError({
       <body>
         <ErrorState
           error={error}
-          reset={reset}
+          resetAction={reset}
           title="Oops, something went wrong"
           message="A critical issue interrupted this page."
           reassurance="Don’t worry — your information is safe. Please retry, or contact support if this keeps happening."

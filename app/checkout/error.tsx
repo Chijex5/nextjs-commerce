@@ -12,7 +12,7 @@ export default function CheckoutError({
   return (
     <ErrorState
       error={error}
-      reset={reset}
+      resetAction={reset}
       title="Checkout hit a temporary issue"
       message="Your checkout didn’t go through this time."
       reassurance="Don’t worry — your cart and details are still saved. Try again when you’re ready."
