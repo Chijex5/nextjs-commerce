@@ -1,20 +1,20 @@
 "use client";
 
 import type {
-  Cart,
-  CartItem,
-  Product,
-  ProductVariant,
+    Cart,
+    CartItem,
+    Product,
+    ProductVariant,
 } from "lib/shopify/types";
 import React, {
-  createContext,
-  use,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    createContext,
+    use,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
 
 type UpdateType = "plus" | "minus" | "delete";
@@ -117,10 +117,15 @@ export function CartProvider({
   const [cart, setCart] = useState<Cart | undefined>(() =>
     normalizeCart(serverCart),
   );
+  const cartRef = useRef<Cart | undefined>(normalizeCart(serverCart));
   const [syncPendingCount, setSyncPendingCount] = useState(0);
   const pendingQuantitiesRef = useRef<Map<string, number>>(new Map());
   const isSyncingRef = useRef(false);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    cartRef.current = cart;
+  }, [cart]);
 
   const flushSyncQueue = useCallback(async () => {
     if (isSyncingRef.current) return;
@@ -361,7 +366,7 @@ export function CartProvider({
   );
 
   const clearCart = useCallback(() => {
-    const lineIdsToClear = (cart?.lines || []).map(
+    const lineIdsToClear = (cartRef.current?.lines || []).map(
       (line) => line.merchandise.id,
     );
 
@@ -385,7 +390,7 @@ export function CartProvider({
       safeWriteLocalCart(undefined);
       return emptyCart;
     });
-  }, [cart?.lines, queueQuantitySync]);
+  }, [queueQuantitySync]);
 
   const replaceCart = useCallback((nextCart: Cart | undefined) => {
     if (syncTimerRef.current) {

@@ -1,7 +1,7 @@
 import { Analytics } from "@vercel/analytics/next";
 import AnalyticsPageView from "components/analytics/page-view";
-import AbandonedCartRecovery from "components/cart/abandoned-cart-recovery";
 import TikTokIdentify from "components/analytics/tiktok-identify";
+import AbandonedCartRecovery from "components/cart/abandoned-cart-recovery";
 import AbandonedCartTracker from "components/cart/abandoned-cart-tracker";
 import { CartProvider } from "components/cart/cart-context";
 import ExitIntentPopup from "components/exit-intent-popup";
@@ -11,10 +11,10 @@ import FirstVisitSignupPopup from "components/onboarding/first-visit-signup";
 import { WelcomeToast } from "components/welcome-toast";
 import { getCart } from "lib/database";
 import {
-  canonicalUrl,
-  organizationJsonLd,
-  siteName,
-  siteTagline,
+    canonicalUrl,
+    organizationJsonLd,
+    siteName,
+    siteTagline,
 } from "lib/seo";
 import { baseUrl } from "lib/utils";
 import type { Metadata } from "next";
@@ -74,7 +74,11 @@ export default async function RootLayout({
   const isAdminRoute = requestHeaders.get("x-is-admin-route") === "1";
 
   return (
-    <html lang="en" className={`${inter.variable} dark`}>
+    <html
+      lang="en"
+      className={`${inter.variable} dark`}
+      suppressHydrationWarning
+    >
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
