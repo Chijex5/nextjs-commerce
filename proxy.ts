@@ -8,9 +8,12 @@ const ADMIN_ROLES = new Set(["admin", "super_admin"]);
 
 export default withAuth(
   function proxy(req) {
+
+    
     const isAdminPath = req.nextUrl.pathname.startsWith("/admin");
     const isLoginPage = req.nextUrl.pathname === "/admin/login";
     const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-is-admin-route", isAdminPath ? "1" : "0");
 
     if (process.env.NODE_ENV !== "development" && CANONICAL_HOST) {
       const host = req.headers.get("host") || "";
