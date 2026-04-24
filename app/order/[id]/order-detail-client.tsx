@@ -104,6 +104,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
 
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [trackingCopiedState, setTrackingCopiedState] = useState<"idle" | "success" | "error">("idle");
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -119,6 +120,15 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
     };
     void fetchOrder();
   }, [orderId, orderNumber]);
+
+  useEffect(() => {
+    if (trackingCopiedState === "idle") return;
+    const resetTimer = window.setTimeout(() => {
+      setTrackingCopiedState("idle");
+    }, 2200);
+
+    return () => window.clearTimeout(resetTimer);
+  }, [trackingCopiedState]);
 
   if (isLoading) return <PageLoader size="lg" message="Loading order..." />;
 
@@ -181,6 +191,20 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
   const finalTotal = parsedTotal > 0 ? parsedTotal : computedTotal;
   const currentStep = order.deliveryStatus ? stepByDeliveryStatus[order.deliveryStatus] : 1;
   const deliveryState = order.shippingAddress?.state || order.shippingAddress?.lga || "Nigeria";
+  const normalizedTrackingNumber = order.trackingNumber?.trim() || "";
+  const showDispatchTracking =
+    order.deliveryStatus === "dispatch" && normalizedTrackingNumber.length > 0;
+
+  const handleCopyTrackingNumber = async () => {
+    if (!normalizedTrackingNumber) return;
+
+    try {
+      await navigator.clipboard.writeText(normalizedTrackingNumber);
+      setTrackingCopiedState("success");
+    } catch {
+      setTrackingCopiedState("error");
+    }
+  };
 
   return (
     <>
@@ -382,6 +406,87 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           color: var(--cream);
         }
 
+        /* ── TRACKING CALLOUT ── */
+        .od-tracking-wrap {
+          border: 1px solid rgba(191,90,40,0.35);
+          background:
+            radial-gradient(circle at 0% 0%, rgba(192,137,42,0.18) 0%, rgba(192,137,42,0) 45%),
+            rgba(242,232,213,0.04);
+          padding: 24px;
+        }
+        .od-tracking-eyebrow {
+          font-size: 10px;
+          font-weight: 600;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          color: var(--terra);
+          margin-bottom: 10px;
+        }
+        .od-tracking-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 28px;
+          font-weight: 400;
+          color: var(--cream);
+          margin-bottom: 14px;
+          line-height: 1;
+        }
+        .od-tracking-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          padding: 14px;
+          border: 1px solid var(--border-mid);
+          background: rgba(10,7,4,0.46);
+        }
+        .od-tracking-number {
+          margin: 0;
+          color: var(--gold);
+          font-size: clamp(18px, 2.1vw, 24px);
+          font-weight: 600;
+          letter-spacing: 0.12em;
+          line-height: 1.15;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+          overflow-wrap: anywhere;
+        }
+        .od-tracking-copy {
+          border: 1px solid rgba(192,137,42,0.7);
+          background: rgba(192,137,42,0.12);
+          color: var(--cream);
+          padding: 10px 14px;
+          font-size: 10px;
+          font-weight: 600;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          white-space: nowrap;
+          transition: background 0.2s, border-color 0.2s, color 0.2s;
+          cursor: pointer;
+        }
+        .od-tracking-copy:hover {
+          background: rgba(192,137,42,0.24);
+          border-color: rgba(192,137,42,0.95);
+        }
+        .od-tracking-copy:focus-visible {
+          outline: 2px solid var(--gold);
+          outline-offset: 2px;
+        }
+        .od-tracking-help {
+          margin: 14px 0 0;
+          font-size: 13px;
+          color: var(--sand);
+          line-height: 1.55;
+        }
+        .od-tracking-feedback {
+          margin: 8px 0 0;
+          min-height: 20px;
+          font-size: 12px;
+          letter-spacing: 0.03em;
+          color: var(--gold);
+        }
+        .od-tracking-feedback-error {
+          color: #f4b9a2;
+        }
+
         /* ── ITEMS ── */
         .od-item {
           display: flex;
@@ -463,6 +568,15 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           .od-panel { padding: 24px; }
           .od-meta-grid { grid-template-columns: 1fr; }
           .od-delivery-grid { grid-template-columns: 1fr; }
+          .od-tracking-wrap { padding: 18px; }
+          .od-tracking-row {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          .od-tracking-copy {
+            width: 100%;
+            text-align: center;
+          }
           .od-back-link { padding: 0 24px; }
         }
         @media (max-width: 480px) {
@@ -531,6 +645,41 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
             </div>
           </div>
         </section>
+
+        {showDispatchTracking ? (
+          <section className="od-panel" aria-label="Delivery tracking number">
+            <div className="od-accent-line" />
+            <h2 className="od-panel-title">Track delivery</h2>
+            <div className="od-tracking-wrap">
+              <p className="od-tracking-eyebrow">Tracking number</p>
+              <p className="od-tracking-title">Use this for courier tracking</p>
+              <div className="od-tracking-row">
+                <p className="od-tracking-number">{normalizedTrackingNumber}</p>
+                <button
+                  type="button"
+                  className="od-tracking-copy"
+                  onClick={() => void handleCopyTrackingNumber()}
+                >
+                  {trackingCopiedState === "success" ? "Copied" : "Copy tracking number"}
+                </button>
+              </div>
+              <p className="od-tracking-help">
+                Share this tracking number with our 3rd-party delivery service to monitor
+                your package in transit.
+              </p>
+              <p
+                className={`od-tracking-feedback${trackingCopiedState === "error" ? " od-tracking-feedback-error" : ""}`}
+                aria-live="polite"
+              >
+                {trackingCopiedState === "success"
+                  ? "Tracking number copied."
+                  : trackingCopiedState === "error"
+                    ? "Copy failed. Please select and copy the tracking number manually."
+                    : " "}
+              </p>
+            </div>
+          </section>
+        ) : null}
 
         {/* ── FINANCIAL SUMMARY ── */}
         <OrderFinancialSummary
