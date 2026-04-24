@@ -8,8 +8,8 @@ import { useEffect, useState } from "react";
 import PageLoader from "components/page-loader";
 import Price from "components/price";
 import {
-  formatEstimatedArrival,
-  type DeliveryStatus,
+    formatEstimatedArrival,
+    type DeliveryStatus,
 } from "lib/order-utils/delivery-tracking";
 import OrderActions from "./order-actions";
 import OrderFinancialSummary from "./order-financial-summary";
@@ -83,7 +83,7 @@ function parseMoney(value?: string | null) {
 
 function formatDeliveryWindow(estimatedArrival?: string | null) {
   if (!estimatedArrival) return "Delivery in 3–5 days";
-  return `Expected by ${formatEstimatedArrival(new Date(estimatedArrival))}`;
+  return `${formatEstimatedArrival(new Date(estimatedArrival))}`;
 }
 
 function getCurrentStatusLine(status?: DeliveryStatus) {
@@ -95,7 +95,9 @@ function getCurrentStatusLine(status?: DeliveryStatus) {
     paused: "Your order is on hold while we resolve a delivery issue.",
     cancelled: "This order was cancelled.",
   };
-  return status ? statusLine[status] : "We're currently crafting your pair by hand.";
+  return status
+    ? statusLine[status]
+    : "We're currently crafting your pair by hand.";
 }
 
 export default function OrderDetailClient({ orderId }: { orderId: string }) {
@@ -104,7 +106,9 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
 
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [trackingCopiedState, setTrackingCopiedState] = useState<"idle" | "success" | "error">("idle");
+  const [trackingCopiedState, setTrackingCopiedState] = useState<
+    "idle" | "success" | "error"
+  >("idle");
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -113,7 +117,11 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
         ? `?orderNumber=${encodeURIComponent(orderNumber)}`
         : "";
       const response = await fetch(`/api/orders/${orderId}${query}`);
-      if (!response.ok) { setOrder(null); setIsLoading(false); return; }
+      if (!response.ok) {
+        setOrder(null);
+        setIsLoading(false);
+        return;
+      }
       const data = await response.json();
       setOrder(data.order || null);
       setIsLoading(false);
@@ -170,7 +178,9 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
         `}</style>
         <div className="od-not-found">
           <p className="od-not-found-text">Order not found.</p>
-          <Link href="/orders" className="od-back-btn">← Back to orders</Link>
+          <Link href="/orders" className="od-back-btn">
+            ← Back to orders
+          </Link>
         </div>
       </>
     );
@@ -186,11 +196,18 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
       : parseMoney(item.price) * item.quantity;
     return sum + lineTotal;
   }, 0);
-  const summarySubtotal = parsedSubtotal > 0 ? parsedSubtotal : itemBasedSubtotal;
-  const computedTotal = Math.max(summarySubtotal + parsedShipping - parsedDiscount, 0);
+  const summarySubtotal =
+    parsedSubtotal > 0 ? parsedSubtotal : itemBasedSubtotal;
+  const computedTotal = Math.max(
+    summarySubtotal + parsedShipping - parsedDiscount,
+    0,
+  );
   const finalTotal = parsedTotal > 0 ? parsedTotal : computedTotal;
-  const currentStep = order.deliveryStatus ? stepByDeliveryStatus[order.deliveryStatus] : 1;
-  const deliveryState = order.shippingAddress?.state || order.shippingAddress?.lga || "Nigeria";
+  const currentStep = order.deliveryStatus
+    ? stepByDeliveryStatus[order.deliveryStatus]
+    : 1;
+  const deliveryState =
+    order.shippingAddress?.state || order.shippingAddress?.lga || "Nigeria";
   const normalizedTrackingNumber = order.trackingNumber?.trim() || "";
   const showDispatchTracking =
     order.deliveryStatus === "dispatch" && normalizedTrackingNumber.length > 0;
@@ -589,11 +606,16 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
         <header className="od-hero">
           <div className="od-hero-eyebrow">Order confirmed</div>
           <h1 className="od-hero-title">
-            Thank you — your<br />
+            Thank you — your
+            <br />
             payment was <em>successful</em>
           </h1>
-          <p className="od-hero-status-line">{getCurrentStatusLine(order.deliveryStatus)}</p>
-          <div className="od-delivery-badge">{formatDeliveryWindow(order.estimatedArrival)}</div>
+          <p className="od-hero-status-line">
+            {getCurrentStatusLine(order.deliveryStatus)}
+          </p>
+          <div className="od-delivery-badge">
+            {formatDeliveryWindow(order.estimatedArrival)}
+          </div>
 
           <div className="od-meta-grid">
             <div className="od-meta-cell">
@@ -624,7 +646,9 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
         <section id="status" className="od-panel">
           <div className="od-accent-line" />
           <h2 className="od-panel-title">Order status</h2>
-          <p className="od-panel-sub">{getCurrentStatusLine(order.deliveryStatus)}</p>
+          <p className="od-panel-sub">
+            {getCurrentStatusLine(order.deliveryStatus)}
+          </p>
           <OrderStatusStepper steps={deliverySteps} currentStep={currentStep} />
         </section>
 
@@ -660,12 +684,14 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                   className="od-tracking-copy"
                   onClick={() => void handleCopyTrackingNumber()}
                 >
-                  {trackingCopiedState === "success" ? "Copied" : "Copy tracking number"}
+                  {trackingCopiedState === "success"
+                    ? "Copied"
+                    : "Copy tracking number"}
                 </button>
               </div>
               <p className="od-tracking-help">
-                Share this tracking number with our 3rd-party delivery service to monitor
-                your package in transit.
+                Share this tracking number with our 3rd-party delivery service
+                to monitor your package in transit.
               </p>
               <p
                 className={`od-tracking-feedback${trackingCopiedState === "error" ? " od-tracking-feedback-error" : ""}`}
@@ -684,9 +710,13 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
         {/* ── FINANCIAL SUMMARY ── */}
         <OrderFinancialSummary
           items={order.items.map((item) => ({
-            id: item.id || `${item.productId || order.id}-${item.productVariantId || item.productTitle}`,
+            id:
+              item.id ||
+              `${item.productId || order.id}-${item.productVariantId || item.productTitle}`,
             name: `${item.productTitle} × ${item.quantity}`,
-            amount: item.totalAmount || (parseMoney(item.price) * item.quantity).toFixed(2),
+            amount:
+              item.totalAmount ||
+              (parseMoney(item.price) * item.quantity).toFixed(2),
           }))}
           currencyCode={order.currencyCode}
           shippingAmount={parsedShipping.toFixed(2)}
@@ -703,13 +733,17 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           <div className="od-accent-line" />
           <h2 className="od-panel-title">Purchased items</h2>
           <p className="od-panel-sub" style={{ marginBottom: "24px" }}>
-            {order.items.length} {order.items.length === 1 ? "item" : "items"} in this order
+            {order.items.length} {order.items.length === 1 ? "item" : "items"}{" "}
+            in this order
           </p>
 
           <div>
             {order.items.map((item) => (
               <article
-                key={item.id || `${order.id}-${item.productVariantId || item.productTitle}`}
+                key={
+                  item.id ||
+                  `${order.id}-${item.productVariantId || item.productTitle}`
+                }
                 className="od-item"
               >
                 <div className="od-item-img">
@@ -722,9 +756,20 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                     />
                   ) : (
                     <div className="od-item-img-empty">
-                      <svg viewBox="0 0 40 40" width="40" height="40" fill="none">
-                        <path d="M8 30 Q6 36 14 37 L34 37 Q42 37 40 30 L38 22 Q36 16 30 16 L10 16 Q4 18 8 30Z" fill="#F2E8D5" />
-                        <path d="M10 16 Q8 6 18 2 Q26 -1 34 3 Q40 7 40 16Z" fill="#F2E8D5" />
+                      <svg
+                        viewBox="0 0 40 40"
+                        width="40"
+                        height="40"
+                        fill="none"
+                      >
+                        <path
+                          d="M8 30 Q6 36 14 37 L34 37 Q42 37 40 30 L38 22 Q36 16 30 16 L10 16 Q4 18 8 30Z"
+                          fill="#F2E8D5"
+                        />
+                        <path
+                          d="M10 16 Q8 6 18 2 Q26 -1 34 3 Q40 7 40 16Z"
+                          fill="#F2E8D5"
+                        />
                       </svg>
                     </div>
                   )}
@@ -739,7 +784,10 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
 
                 <div className="od-item-price">
                   <Price
-                    amount={item.totalAmount || (parseMoney(item.price) * item.quantity).toFixed(2)}
+                    amount={
+                      item.totalAmount ||
+                      (parseMoney(item.price) * item.quantity).toFixed(2)
+                    }
                     currencyCode={order.currencyCode}
                     currencyCodeClassName="hidden"
                     className="inline"

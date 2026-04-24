@@ -150,26 +150,47 @@ export function getDeliveryStatusColor(status: DeliveryStatus): string {
  */
 export function formatEstimatedArrival(date: Date | null): string {
   if (!date) {
-    return "Not available";
+    return "We’re currently preparing your delivery time.";
   }
 
   const now = new Date();
-  const diffTime = date.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  if (diffDays < 0) {
-    return "Overdue";
-  } else if (diffDays === 0) {
-    return "Today";
-  } else if (diffDays === 1) {
-    return "Tomorrow";
-  } else {
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const targetDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  const diffDays =
+    (targetDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+
+  const isPast = date.getTime() < now.getTime();
+
+  // Format time nicely (e.g., 4:30 PM)
+  const timeString = date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  if (diffDays === 0) {
+    if (isPast) {
+      return "Your order should have arrived. We're checking on it now.";
+    }
+
+    return `Expected today by ${timeString}`;
+  }
+
+  if (diffDays === 1) {
+    return `Expected tomorrow by ${timeString}`;
+  }
+
+  if (diffDays > 1) {
+    return `Expected by ${date.toLocaleDateString("en-US", {
+      weekday: "long",
       month: "long",
       day: "numeric",
-    });
+    })} at ${timeString}`;
   }
+
+  // Past date (missed delivery)
+  return "Your delivery is delayed. We're working to get it to you as soon as possible.";
 }
 
 /**
