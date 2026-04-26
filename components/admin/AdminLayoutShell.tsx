@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import clsx from "clsx";
-import { getColorClassName } from "@/lib/color-system";
 
 type AdminLayoutShellProps = {
   children: React.ReactNode;
@@ -273,10 +271,7 @@ export default function AdminLayoutShell({
                 aria-haspopup="menu"
                 aria-expanded={profileMenuOpen}
                 onClick={() => setProfileMenuOpen((open) => !open)}
-                className={clsx(
-                  "inline-flex h-8 w-8 items-center justify-center rounded-full border px-2 text-[11px] font-semibold uppercase tracking-[0.1em] transition-colors",
-                  getColorClassName(adminProfile?.email)
-                )}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-neutral-800 bg-neutral-900 px-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-neutral-800 dark:border-neutral-200 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
               >
                 {initials}
               </button>

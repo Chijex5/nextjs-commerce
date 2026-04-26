@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import clsx from "clsx";
+import { getColorClassName } from "@/lib/color-system";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -143,12 +145,13 @@ function AdminAvatar({ name, email, size = 48 }: { name: string | null; email: s
 
   return (
     <div
-      className="relative flex flex-shrink-0 items-center justify-center rounded-full ring-2 ring-white dark:ring-neutral-900"
+      className={
+        clsx("relative flex flex-shrink-0 items-center justify-center rounded-full ring-2 ring-white dark:ring-neutral-900",
+        getColorClassName(email)
+      )}
       style={{
         width: size,
         height: size,
-        backgroundColor: bg,
-        color: fg,
         fontSize: size * 0.36,
         fontWeight: 600,
         letterSpacing: "-0.01em",
