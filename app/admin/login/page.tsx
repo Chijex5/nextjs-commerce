@@ -2,6 +2,7 @@
 
 import LoadingDots from "components/loading-dots";
 import { getSession, signIn } from "next-auth/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
@@ -169,6 +170,15 @@ export default function LoginPage() {
                   "Sign in"
                 )}
               </button>
+
+              <div className="mt-3 text-right">
+                <Link
+                  href="/admin/forgot-password"
+                  className="text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+                >
+                  Forgot password?
+                </Link>
+              </div>
             </div>
           </form>
 

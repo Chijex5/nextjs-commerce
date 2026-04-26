@@ -1,5 +1,6 @@
 import { sendEmail } from "./resend";
 import { adminAccountCreatedTemplate } from "./templates/admin-account-created";
+import { adminPasswordResetTemplate } from "./templates/admin-password-reset";
 import { magicLinkTemplate } from "./templates/magic-link";
 import { otpTemplate } from "./templates/otp";
 
@@ -38,6 +39,21 @@ export const sendAdminCredentialsEmail = async (data: {
       email: data.email,
       name: data.name,
       password: data.password,
+    }),
+  });
+};
+
+export const sendAdminPasswordResetEmail = async (data: {
+  email: string;
+  resetUrl: string;
+  expiresInMinutes: number;
+}) => {
+  return sendEmail({
+    to: data.email,
+    subject: "Reset your admin password - D'FOOTPRINT",
+    html: adminPasswordResetTemplate({
+      resetUrl: data.resetUrl,
+      expiresInMinutes: data.expiresInMinutes,
     }),
   });
 };

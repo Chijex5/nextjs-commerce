@@ -1,16 +1,16 @@
 import { relations } from "drizzle-orm";
 import {
-    boolean,
-    decimal,
-    index,
-    integer,
-    jsonb,
-    pgTable,
-    text,
-    timestamp,
-    uniqueIndex,
-    uuid,
-    varchar,
+  boolean,
+  decimal,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+  varchar,
 } from "drizzle-orm/pg-core";
 
 // Products table - stores the main product information
@@ -385,6 +385,32 @@ export const adminUsers = pgTable(
   },
   (table) => ({
     emailIdx: index("admin_users_email_idx").on(table.email),
+  }),
+);
+
+// One-time reset tokens for admin password recovery
+export const adminPasswordResets = pgTable(
+  "admin_password_resets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    adminId: uuid("admin_id")
+      .references(() => adminUsers.id, { onDelete: "cascade" })
+      .notNull(),
+    email: varchar("email", { length: 255 }).notNull(),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    usedAt: timestamp("used_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    adminIdIdx: index("admin_password_resets_admin_id_idx").on(table.adminId),
+    emailIdx: index("admin_password_resets_email_idx").on(table.email),
+    tokenHashIdx: index("admin_password_resets_token_hash_idx").on(
+      table.tokenHash,
+    ),
+    expiresAtIdx: index("admin_password_resets_expires_at_idx").on(
+      table.expiresAt,
+    ),
   }),
 );
 

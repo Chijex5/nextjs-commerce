@@ -3,6 +3,7 @@ import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
 import { adminUsers } from "lib/db/schema";
 import { eq } from "drizzle-orm";
+import { hasPermission } from "@/lib/permissions";
 
 export async function PUT(
   request: NextRequest,
@@ -13,6 +14,20 @@ export async function PUT(
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userRole = session.user.role;
+    if (!userRole) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const permission = hasPermission(userRole, "admin_dashboard", "update");
+    if (!permission.permitted) {
+      return NextResponse.json({ error: permission.reason ? permission.reason : "Forbidden" }, { status: 403 });
     }
 
     const { id } = await params;
@@ -67,6 +82,16 @@ export async function DELETE(
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const role = session.user.role;
+    if (!role) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const permission = hasPermission(role, "admin_dashboard", "delete");
+    if (!permission.permitted) {
+      return NextResponse.json({ error: permission.reason ? permission.reason : "Forbidden" }, { status: 403 });
     }
 
     const { id } = await params;

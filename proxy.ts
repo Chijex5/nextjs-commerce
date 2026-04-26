@@ -11,7 +11,10 @@ export default withAuth(
 
     
     const isAdminPath = req.nextUrl.pathname.startsWith("/admin");
-    const isLoginPage = req.nextUrl.pathname === "/admin/login";
+    const isPublicAdminPath =
+      req.nextUrl.pathname === "/admin/login" ||
+      req.nextUrl.pathname === "/admin/forgot-password" ||
+      req.nextUrl.pathname === "/admin/reset-password";
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set("x-is-admin-route", isAdminPath ? "1" : "0");
 
@@ -36,7 +39,7 @@ export default withAuth(
     const token = req.nextauth.token;
 
     // Allow access to login page
-    if (isLoginPage) {
+    if (isPublicAdminPath) {
       return NextResponse.next({
         request: { headers: requestHeaders },
       });
@@ -56,9 +59,12 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         const isAdminPath = req.nextUrl.pathname.startsWith("/admin");
-        const isLoginPage = req.nextUrl.pathname === "/admin/login";
+        const isPublicAdminPath =
+          req.nextUrl.pathname === "/admin/login" ||
+          req.nextUrl.pathname === "/admin/forgot-password" ||
+          req.nextUrl.pathname === "/admin/reset-password";
         const hasAdminRole = ADMIN_ROLES.has((token?.role as string) || "");
-        if (isLoginPage) return true;
+        if (isPublicAdminPath) return true;
         if (isAdminPath) return !!token && hasAdminRole;
         return true;
       },
