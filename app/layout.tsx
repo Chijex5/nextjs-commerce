@@ -7,18 +7,23 @@ import { CartProvider } from "components/cart/cart-context";
 import ExitIntentPopup from "components/exit-intent-popup";
 import { Navbar } from "components/layout/navbar";
 import PageTransition from "components/layout/page-transition";
-import FirstVisitSignupPopup from "components/onboarding/first-visit-signup";
 import { WelcomeToast } from "components/welcome-toast";
 import { getCart } from "lib/database";
 import {
-    canonicalUrl,
-    organizationJsonLd,
-    siteName,
-    siteTagline,
+  canonicalUrl,
+  localBusinessJsonLd,
+  organizationJsonLd,
+  siteName,
+  siteTagline,
 } from "lib/seo";
 import { baseUrl } from "lib/utils";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import {
+  Bebas_Neue,
+  Cormorant_Garamond,
+  DM_Sans,
+  Inter,
+} from "next/font/google";
 import { headers } from "next/headers";
 import Script from "next/script";
 import { ReactNode, Suspense } from "react";
@@ -63,6 +68,25 @@ const inter = Inter({
   display: "swap",
 });
 
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+  display: "swap",
+});
+
+const bebasNeue = Bebas_Neue({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-bebas-neue",
+  display: "swap",
+});
+
+const cormorantGaramond = Cormorant_Garamond({
+  subsets: ["latin"],
+  variable: "--font-cormorant-garamond",
+  display: "swap",
+});
+
 export default async function RootLayout({
   children,
 }: {
@@ -76,17 +100,9 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} dark`}
+      className={`${inter.variable} ${dmSans.variable} ${bebasNeue.variable} ${cormorantGaramond.variable} dark`}
       suppressHydrationWarning
     >
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-
       <Analytics />
       <body className="bg-neutral-50 font-sans text-black selection:bg-teal-300 dark:bg-neutral-900 dark:text-white dark:selection:bg-pink-500 dark:selection:text-white">
         {/* Temporary dark-mode lock until light theme redesign is complete */}
@@ -99,6 +115,12 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(organizationJsonLd()),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(localBusinessJsonLd()),
           }}
         />
         {/* Google Analytics */}
@@ -185,7 +207,6 @@ export default async function RootLayout({
           {!isAdminRoute ? <AbandonedCartTracker /> : null}
           {!isAdminRoute ? <TikTokIdentify /> : null}
           {!isAdminRoute ? <Navbar /> : null}
-          {!isAdminRoute ? <FirstVisitSignupPopup /> : null}
           {!isAdminRoute ? <ExitIntentPopup /> : null}
           <main>
             <PageTransition>{children}</PageTransition>

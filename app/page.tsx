@@ -96,7 +96,6 @@ export default async function HomePage() {
     <>
       {/* ─── FONTS + GLOBAL TOKENS ─────────────────────────────────────── */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --dp-void:    #06040200;
@@ -111,9 +110,9 @@ export default async function HomePage() {
           --dp-border:  rgba(242,232,213,0.09);
         }
 
-        .dp-wordmark   { font-family: 'Bebas Neue', sans-serif; }
-        .dp-serif      { font-family: 'Cormorant Garamond', serif; }
-        .dp-sans       { font-family: 'DM Sans', sans-serif; }
+        .dp-wordmark   { font-family: var(--font-bebas-neue), sans-serif; }
+        .dp-serif      { font-family: var(--font-cormorant-garamond), serif; }
+        .dp-sans       { font-family: var(--font-dm-sans), sans-serif; }
 
         /* ── Marquee ── */
         @keyframes dp-marquee {
@@ -151,7 +150,7 @@ export default async function HomePage() {
         .dp-btn-solid {
           display: inline-flex; align-items: center; gap: 0.5rem;
           background: var(--dp-cream); color: var(--dp-ink);
-          font-family: 'DM Sans', sans-serif; font-weight: 500;
+          font-family: var(--font-dm-sans), sans-serif; font-weight: 500;
           font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
           padding: 0.9rem 2.1rem; text-decoration: none;
           transition: background 0.22s, color 0.22s;
@@ -161,7 +160,7 @@ export default async function HomePage() {
         .dp-btn-ghost {
           display: inline-flex; align-items: center; gap: 0.5rem;
           border: 1px solid rgba(242,232,213,0.28); color: var(--dp-cream);
-          font-family: 'DM Sans', sans-serif; font-weight: 500;
+          font-family: var(--font-dm-sans), sans-serif; font-weight: 500;
           font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
           padding: 0.9rem 2.1rem; text-decoration: none;
           transition: border-color 0.22s, background 0.22s;
@@ -171,7 +170,7 @@ export default async function HomePage() {
         .dp-btn-ember {
           display: inline-flex; align-items: center; gap: 0.5rem;
           background: var(--dp-ember); color: var(--dp-cream);
-          font-family: 'DM Sans', sans-serif; font-weight: 500;
+          font-family: var(--font-dm-sans), sans-serif; font-weight: 500;
           font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
           padding: 0.9rem 2.1rem; text-decoration: none;
           transition: opacity 0.22s;
@@ -180,19 +179,19 @@ export default async function HomePage() {
 
         /* ── Misc ── */
         .dp-rule  { border: none; border-top: 1px solid var(--dp-border); }
-        .dp-label { font-family:'DM Sans',sans-serif; font-size:0.62rem; font-weight:500; letter-spacing:0.26em; text-transform:uppercase; color:var(--dp-ember); }
+        .dp-label { font-family:var(--font-dm-sans),sans-serif; font-size:0.62rem; font-weight:500; letter-spacing:0.26em; text-transform:uppercase; color:var(--dp-ember); }
         .dp-nav-link { color: var(--dp-muted); text-decoration: none; transition: color 0.2s; }
         .dp-nav-link:hover { color: var(--dp-cream); }
-        .dp-h2    { font-family:'Cormorant Garamond',serif; font-weight:600; color:var(--dp-cream); }
-        .dp-num   { font-family:'Bebas Neue',sans-serif; font-size:5.5rem; line-height:1; color:rgba(242,232,213,0.05); position:absolute; top:0.25rem; left:0.75rem; pointer-events:none; user-select:none; }
+        .dp-h2    { font-family:var(--font-cormorant-garamond),serif; font-weight:600; color:var(--dp-cream); }
+        .dp-num   { font-family:var(--font-bebas-neue),sans-serif; font-size:5.5rem; line-height:1; color:rgba(242,232,213,0.05); position:absolute; top:0.25rem; left:0.75rem; pointer-events:none; user-select:none; }
 
         /* Quick-view hover chip */
         .dp-qv { position:absolute; inset:0; display:flex; align-items:flex-end; padding:0.9rem; opacity:0; background:rgba(6,4,2,0.45); transition:opacity 0.3s; }
         .dp-zoom:hover .dp-qv { opacity:1; }
-        .dp-qv-label { font-family:'DM Sans',sans-serif; font-size:0.6rem; font-weight:500; letter-spacing:0.15em; text-transform:uppercase; color:var(--dp-cream); border-bottom:1px solid var(--dp-ember); padding-bottom:2px; }
+        .dp-qv-label { font-family:var(--font-dm-sans),sans-serif; font-size:0.6rem; font-weight:500; letter-spacing:0.15em; text-transform:uppercase; color:var(--dp-cream); border-bottom:1px solid var(--dp-ember); padding-bottom:2px; }
 
         /* Before/After pill */
-        .dp-pill { position:absolute; top:0.5rem; left:0.5rem; font-family:'DM Sans',sans-serif; font-size:0.5rem; font-weight:500; letter-spacing:0.16em; text-transform:uppercase; padding:2px 7px; }
+        .dp-pill { position:absolute; top:0.5rem; left:0.5rem; font-family:var(--font-dm-sans),sans-serif; font-size:0.5rem; font-weight:500; letter-spacing:0.16em; text-transform:uppercase; padding:2px 7px; }
 
         /* Noise grain */
         .dp-grain::after {
@@ -379,7 +378,7 @@ export default async function HomePage() {
                               style={{
                                 fontSize: "0.8rem",
                                 color: "var(--dp-sand)",
-                                fontFamily: "DM Sans, sans-serif",
+                                fontFamily: "var(--font-dm-sans), sans-serif",
                               }}
                             >
                               {product.title}
@@ -615,7 +614,7 @@ export default async function HomePage() {
                           fontSize: "0.78rem",
                           color: "var(--dp-sand)",
                           marginBottom: "0.875rem",
-                          fontFamily: "DM Sans, sans-serif",
+                          fontFamily: "var(--font-dm-sans), sans-serif",
                           lineHeight: 1.55,
                         }}
                       >
@@ -645,7 +644,7 @@ export default async function HomePage() {
                         <span
                           style={{
                             fontSize: "0.62rem",
-                            fontFamily: "DM Sans, sans-serif",
+                            fontFamily: "var(--font-dm-sans), sans-serif",
                             fontWeight: 500,
                             letterSpacing: "0.12em",
                             textTransform: "uppercase",
@@ -753,7 +752,7 @@ export default async function HomePage() {
                     style={{
                       fontSize: "0.78rem",
                       color: "var(--dp-sand)",
-                      fontFamily: "DM Sans, sans-serif",
+                      fontFamily: "var(--font-dm-sans), sans-serif",
                       lineHeight: 1.4,
                       marginBottom: "0.25rem",
                     }}
@@ -867,7 +866,7 @@ export default async function HomePage() {
                         style={{
                           fontSize: "0.78rem",
                           color: "var(--dp-sand)",
-                          fontFamily: "DM Sans, sans-serif",
+                          fontFamily: "var(--font-dm-sans), sans-serif",
                           marginBottom: "0.4rem",
                         }}
                       >
@@ -897,7 +896,7 @@ export default async function HomePage() {
                         <span
                           style={{
                             fontSize: "0.6rem",
-                            fontFamily: "DM Sans, sans-serif",
+                            fontFamily: "var(--font-dm-sans), sans-serif",
                             fontWeight: 500,
                             letterSpacing: "0.1em",
                             textTransform: "uppercase",
@@ -950,7 +949,7 @@ export default async function HomePage() {
                 </span>
                 <p
                   style={{
-                    fontFamily: "DM Sans, sans-serif",
+                    fontFamily: "var(--font-dm-sans), sans-serif",
                     fontWeight: 500,
                     fontSize: "0.82rem",
                     color: "var(--dp-cream)",
@@ -962,7 +961,7 @@ export default async function HomePage() {
                 </p>
                 <p
                   style={{
-                    fontFamily: "DM Sans, sans-serif",
+                    fontFamily: "var(--font-dm-sans), sans-serif",
                     fontSize: "0.72rem",
                     color: "var(--dp-muted)",
                     lineHeight: 1.55,
@@ -1099,7 +1098,7 @@ export default async function HomePage() {
                             color: "var(--dp-sand)",
                             marginTop: "0.5rem",
                             maxWidth: 480,
-                            fontFamily: "DM Sans, sans-serif",
+                            fontFamily: "var(--font-dm-sans), sans-serif",
                             lineHeight: 1.55,
                           }}
                         >
@@ -1248,7 +1247,7 @@ export default async function HomePage() {
                       style={{
                         marginTop: "0.875rem",
                         fontSize: "0.8rem",
-                        fontFamily: "DM Sans, sans-serif",
+                        fontFamily: "var(--font-dm-sans), sans-serif",
                         color: "var(--dp-sand)",
                       }}
                     >
@@ -1327,7 +1326,7 @@ export default async function HomePage() {
                 gap: "0.6rem",
                 background: "var(--dp-cream)",
                 color: "var(--dp-ember)",
-                fontFamily: "DM Sans, sans-serif",
+                fontFamily: "var(--font-dm-sans), sans-serif",
                 fontWeight: 500,
                 fontSize: "0.72rem",
                 letterSpacing: "0.12em",

@@ -67,3 +67,44 @@ export const organizationJsonLd = () => {
 
   return jsonLd;
 };
+
+export const localBusinessJsonLd = () => {
+  const businessPhone =
+    process.env.NEXT_PUBLIC_WHATSAPP_PHONE || process.env.BUSINESS_PHONE;
+  const businessEmail =
+    process.env.NEXT_PUBLIC_SUPPORT_EMAIL || process.env.BUSINESS_EMAIL;
+
+  const jsonLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "@id": `${canonicalUrl("/")}#local-business`,
+    name: siteName,
+    url: canonicalUrl("/"),
+    image: canonicalUrl("/opengraph-image"),
+    description: siteTagline,
+    areaServed: {
+      "@type": "Country",
+      name: "Nigeria",
+    },
+    address: {
+      "@type": "PostalAddress",
+      addressCountry: "NG",
+      addressRegion: process.env.BUSINESS_REGION || "Lagos",
+      addressLocality: process.env.BUSINESS_LOCALITY || "Lagos",
+    },
+  };
+
+  if (socialLinks.length > 0) {
+    jsonLd.sameAs = socialLinks;
+  }
+
+  if (businessPhone) {
+    jsonLd.telephone = businessPhone;
+  }
+
+  if (businessEmail) {
+    jsonLd.email = businessEmail;
+  }
+
+  return jsonLd;
+};

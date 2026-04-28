@@ -100,7 +100,6 @@ export default async function ProductPage(props: {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --espresso:   #0A0704;
@@ -117,7 +116,7 @@ export default async function ProductPage(props: {
         .pp-root {
           background: var(--espresso);
           min-height: 100vh;
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           color: var(--cream);
         }
 
@@ -190,7 +189,7 @@ export default async function ProductPage(props: {
           margin-bottom: 8px;
         }
         .pp-related-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: clamp(26px, 3vw, 36px);
           font-weight: 300;
           color: var(--cream);
@@ -259,7 +258,7 @@ export default async function ProductPage(props: {
           border-top: 1px solid var(--border);
         }
         .pp-related-name {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 18px;
           font-weight: 400;
           color: var(--cream);

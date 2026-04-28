@@ -205,7 +205,6 @@ export default function OrdersPageClient() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --espresso:   #0A0704;
@@ -220,7 +219,7 @@ export default function OrdersPageClient() {
         }
 
         .op-root {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           color: var(--cream);
           display: flex;
           flex-direction: column;
@@ -274,7 +273,7 @@ export default function OrdersPageClient() {
           background: var(--terra);
         }
         .op-hero-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: clamp(36px, 5vw, 64px);
           font-weight: 300;
           line-height: 1.0;
@@ -307,7 +306,7 @@ export default function OrdersPageClient() {
           background: var(--terra);
           border: none;
           color: var(--cream);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.2em;
@@ -324,7 +323,7 @@ export default function OrdersPageClient() {
           background: transparent;
           border: 1px solid var(--border-mid);
           color: var(--muted);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.2em;
@@ -356,7 +355,7 @@ export default function OrdersPageClient() {
           border-bottom: 1px solid var(--border);
         }
         .op-panel-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 26px;
           font-weight: 300;
           color: var(--cream);
@@ -403,7 +402,7 @@ export default function OrdersPageClient() {
           margin-bottom: 8px;
         }
         .op-card-number {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 22px;
           font-weight: 400;
           color: var(--cream);
@@ -471,7 +470,7 @@ export default function OrdersPageClient() {
           margin-bottom: 16px;
         }
         .op-cr-number {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 22px;
           font-weight: 400;
           color: var(--cream);
@@ -499,7 +498,7 @@ export default function OrdersPageClient() {
         .op-cr-price p,
         .op-cr-price span {
           color: var(--gold) !important;
-          font-family: 'Cormorant Garamond', serif !important;
+          font-family: var(--font-cormorant-garamond), serif !important;
           font-size: 20px !important;
           font-weight: 400 !important;
         }
@@ -541,7 +540,7 @@ export default function OrdersPageClient() {
           text-align: center;
         }
         .op-empty-text {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 20px;
           font-weight: 300;
           font-style: italic;
@@ -555,7 +554,7 @@ export default function OrdersPageClient() {
           background: var(--terra);
           border: none;
           color: var(--cream);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.2em;
@@ -572,7 +571,7 @@ export default function OrdersPageClient() {
           background: transparent;
           border: 1px solid var(--border-mid);
           color: var(--muted);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.2em;
@@ -636,7 +635,7 @@ export default function OrdersPageClient() {
           border-bottom: 1px solid var(--border);
         }
         .op-modal-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 28px;
           font-weight: 300;
           color: var(--cream);
@@ -651,7 +650,7 @@ export default function OrdersPageClient() {
           background: transparent;
           border: 1px solid var(--border-mid);
           color: var(--muted);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 9px;
           letter-spacing: 0.2em;
           text-transform: uppercase;
@@ -675,7 +674,7 @@ export default function OrdersPageClient() {
           background: transparent;
           border: none;
           color: var(--muted);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.16em;
@@ -696,7 +695,7 @@ export default function OrdersPageClient() {
           background: rgba(10,7,4,0.7);
           border: 1px solid rgba(242,232,213,0.09);
           color: var(--cream);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 13px;
           padding: 12px 16px;
           outline: none;
@@ -710,7 +709,7 @@ export default function OrdersPageClient() {
           background: var(--terra);
           border: none;
           color: var(--cream);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.22em;
@@ -758,7 +757,7 @@ export default function OrdersPageClient() {
           <div className="op-panel">
             <div className="op-accent" />
             <div className="op-track-result-header">
-              <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "26px", fontWeight: 300, color: "var(--cream)" }}>
+              <h2 style={{ fontFamily: "var(--font-cormorant-garamond), serif", fontSize: "26px", fontWeight: 300, color: "var(--cream)" }}>
                 Tracking result
               </h2>
               <button type="button" onClick={() => setIsTrackingModalOpen(true)} className="op-track-another">

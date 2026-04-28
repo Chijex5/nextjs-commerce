@@ -30,7 +30,6 @@ export default function AboutUsPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --dp-ink:     #0A0704;
@@ -44,11 +43,11 @@ export default function AboutUsPage() {
           --dp-border:  rgba(242,232,213,0.09);
         }
 
-        .dp-wordmark { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.1em; }
-        .dp-serif    { font-family: 'Cormorant Garamond', serif; }
-        .dp-sans     { font-family: 'DM Sans', sans-serif; }
+        .dp-wordmark { font-family: var(--font-bebas-neue), sans-serif; letter-spacing: 0.1em; }
+        .dp-serif    { font-family: var(--font-cormorant-garamond), serif; }
+        .dp-sans     { font-family: var(--font-dm-sans), sans-serif; }
         .dp-label    {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 0.6rem; font-weight: 500;
           letter-spacing: 0.26em; text-transform: uppercase;
           color: var(--dp-ember);
@@ -77,7 +76,7 @@ export default function AboutUsPage() {
         /* Contact link */
         .dp-contact-link {
           display: inline-flex; align-items: center; gap: 0.4rem;
-          font-family: 'DM Sans', sans-serif; font-size: 0.68rem; font-weight: 500;
+          font-family: var(--font-dm-sans), sans-serif; font-size: 0.68rem; font-weight: 500;
           letter-spacing: 0.14em; text-transform: uppercase;
           color: var(--dp-cream); text-decoration: none;
           border-bottom: 1px solid var(--dp-ember); padding-bottom: 2px;
@@ -90,7 +89,7 @@ export default function AboutUsPage() {
 
         /* Prose paragraph */
         .dp-prose p {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 0.88rem; line-height: 1.85;
           color: var(--dp-muted);
         }
@@ -163,7 +162,7 @@ export default function AboutUsPage() {
             <p
               className="dp-rise-3"
               style={{
-                fontFamily: "DM Sans, sans-serif", fontSize: "0.88rem",
+                fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.88rem",
                 lineHeight: 1.75, color: "var(--dp-muted)",
                 maxWidth: 580, marginTop: "1.25rem",
               }}
@@ -204,7 +203,7 @@ export default function AboutUsPage() {
               </p>
               <p
                 style={{
-                  fontFamily: "DM Sans, sans-serif", fontSize: "0.68rem",
+                  fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.68rem",
                   color: "var(--dp-muted)", marginTop: "0.35rem",
                 }}
               >
@@ -323,7 +322,7 @@ export default function AboutUsPage() {
                     </span>
                     <span
                       style={{
-                        fontFamily: "DM Sans, sans-serif",
+                        fontFamily: "var(--font-dm-sans), sans-serif",
                         fontSize: "0.8rem", color: "var(--dp-muted)", lineHeight: 1.65,
                       }}
                     >
@@ -348,7 +347,7 @@ export default function AboutUsPage() {
                 <p className="dp-label" style={{ marginBottom: "1rem" }}>Need help before ordering?</p>
                 <p
                   style={{
-                    fontFamily: "DM Sans, sans-serif", fontSize: "0.82rem",
+                    fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.82rem",
                     color: "var(--dp-muted)", lineHeight: 1.75,
                   }}
                 >
@@ -409,7 +408,7 @@ export default function AboutUsPage() {
               <p className="dp-serif" style={{ fontSize: "clamp(1.2rem,2.5vw,1.75rem)", fontWeight: 600, color: "var(--dp-cream)", lineHeight: 1.3 }}>
                 Ready to find your pair?
               </p>
-              <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.78rem", color: "rgba(242,232,213,0.7)", marginTop: "0.3rem" }}>
+              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.78rem", color: "rgba(242,232,213,0.7)", marginTop: "0.3rem" }}>
                 Browse our full collection of handcrafted slippers and slides.
               </p>
             </div>
@@ -419,7 +418,7 @@ export default function AboutUsPage() {
                 style={{
                   display: "inline-flex", alignItems: "center", gap: "0.4rem",
                   background: "var(--dp-cream)", color: "var(--dp-ink)",
-                  fontFamily: "DM Sans, sans-serif", fontWeight: 500,
+                  fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 500,
                   fontSize: "0.68rem", letterSpacing: "0.14em", textTransform: "uppercase",
                   padding: "0.8rem 1.75rem", textDecoration: "none",
                   transition: "opacity 0.2s",
@@ -435,7 +434,7 @@ export default function AboutUsPage() {
                 style={{
                   display: "inline-flex", alignItems: "center",
                   border: "1px solid rgba(242,232,213,0.4)", color: "var(--dp-cream)",
-                  fontFamily: "DM Sans, sans-serif", fontWeight: 500,
+                  fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 500,
                   fontSize: "0.68rem", letterSpacing: "0.14em", textTransform: "uppercase",
                   padding: "0.8rem 1.75rem", textDecoration: "none",
                   transition: "border-color 0.2s",

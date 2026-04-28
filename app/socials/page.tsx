@@ -38,7 +38,6 @@ export default function SocialsPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --dp-ink:     #0A0704;
@@ -52,10 +51,10 @@ export default function SocialsPage() {
           --dp-border:  rgba(242,232,213,0.09);
         }
 
-        .dp-wordmark { font-family:'Bebas Neue',sans-serif; }
-        .dp-serif    { font-family:'Cormorant Garamond',serif; }
-        .dp-sans     { font-family:'DM Sans',sans-serif; }
-        .dp-label    { font-family:'DM Sans',sans-serif;font-size:.62rem;font-weight:500;letter-spacing:.26em;text-transform:uppercase;color:var(--dp-ember); }
+        .dp-wordmark { font-family:var(--font-bebas-neue),sans-serif; }
+        .dp-serif    { font-family:var(--font-cormorant-garamond),serif; }
+        .dp-sans     { font-family:var(--font-dm-sans),sans-serif; }
+        .dp-label    { font-family:var(--font-dm-sans),sans-serif;font-size:.62rem;font-weight:500;letter-spacing:.26em;text-transform:uppercase;color:var(--dp-ember); }
 
         @keyframes dp-rise {
           from { opacity:0; transform:translateY(22px); }
@@ -187,7 +186,7 @@ export default function SocialsPage() {
                 {[["5", "Platforms"], ["Daily", "New content"], ["Fast", "Response time"]].map(([num, label]) => (
                   <div key={label}>
                     <p className="dp-wordmark" style={{ fontSize: "2.2rem", color: "var(--dp-gold)", lineHeight: 1 }}>{num}</p>
-                    <p style={{ fontSize: ".65rem", color: "var(--dp-muted)", marginTop: ".3rem", fontFamily: "DM Sans, sans-serif", letterSpacing: ".08em" }}>{label}</p>
+                    <p style={{ fontSize: ".65rem", color: "var(--dp-muted)", marginTop: ".3rem", fontFamily: "var(--font-dm-sans), sans-serif", letterSpacing: ".08em" }}>{label}</p>
                   </div>
                 ))}
               </div>
@@ -236,7 +235,7 @@ export default function SocialsPage() {
                       style={{
                         fontSize: ".72rem",
                         color: "var(--dp-muted)",
-                        fontFamily: "DM Sans, sans-serif",
+                        fontFamily: "var(--font-dm-sans), sans-serif",
                         lineHeight: 1.55,
                         marginBottom: "1.5rem",
                       }}
@@ -247,7 +246,7 @@ export default function SocialsPage() {
                       <span
                         style={{
                           fontSize: ".6rem",
-                          fontFamily: "DM Sans, sans-serif",
+                          fontFamily: "var(--font-dm-sans), sans-serif",
                           fontWeight: 500,
                           letterSpacing: ".14em",
                           textTransform: "uppercase",
@@ -321,7 +320,7 @@ export default function SocialsPage() {
                       style={{
                         fontSize: ".75rem",
                         color: "var(--dp-muted)",
-                        fontFamily: "DM Sans, sans-serif",
+                        fontFamily: "var(--font-dm-sans), sans-serif",
                         lineHeight: 1.6,
                         maxWidth: 560,
                       }}
@@ -343,7 +342,7 @@ export default function SocialsPage() {
                     <span
                       style={{
                         fontSize: ".65rem",
-                        fontFamily: "DM Sans, sans-serif",
+                        fontFamily: "var(--font-dm-sans), sans-serif",
                         fontWeight: 500,
                         letterSpacing: ".14em",
                         textTransform: "uppercase",
@@ -414,7 +413,7 @@ export default function SocialsPage() {
                 style={{
                   display: "inline-flex", alignItems: "center", gap: ".5rem",
                   background: "var(--dp-cream)", color: "var(--dp-ink)",
-                  fontFamily: "DM Sans, sans-serif", fontWeight: 500,
+                  fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 500,
                   fontSize: ".72rem", letterSpacing: ".12em", textTransform: "uppercase",
                   padding: ".9rem 2rem", textDecoration: "none",
                   transition: "background .22s, color .22s",
@@ -428,7 +427,7 @@ export default function SocialsPage() {
                 style={{
                   display: "inline-flex", alignItems: "center", gap: ".5rem",
                   border: "1px solid rgba(242,232,213,.28)", color: "var(--dp-cream)",
-                  fontFamily: "DM Sans, sans-serif", fontWeight: 500,
+                  fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 500,
                   fontSize: ".72rem", letterSpacing: ".12em", textTransform: "uppercase",
                   padding: ".9rem 2rem", textDecoration: "none",
                   transition: "border-color .22s, background .22s",
