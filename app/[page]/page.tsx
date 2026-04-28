@@ -53,7 +53,6 @@ export default async function Page(props: {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --espresso:   #0A0704;
@@ -69,7 +68,7 @@ export default async function Page(props: {
 
         /* ── PAGE ROOT ── */
         .pg-root {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           color: var(--cream);
           display: flex;
           flex-direction: column;
@@ -122,7 +121,7 @@ export default async function Page(props: {
           background: var(--terra);
         }
         .pg-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: clamp(36px, 6vw, 72px);
           font-weight: 300;
           line-height: 1.0;
@@ -186,7 +185,7 @@ export default async function Page(props: {
         .pg-body-panel .prose,
         .pg-body-panel [class*="prose"] {
           color: var(--sand);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 15px;
           line-height: 1.85;
           max-width: none;
@@ -203,7 +202,7 @@ export default async function Page(props: {
         .pg-body-panel .prose h2,
         .pg-body-panel .prose h3,
         .pg-body-panel .prose h4 {
-          font-family: 'Cormorant Garamond', serif !important;
+          font-family: var(--font-cormorant-garamond), serif !important;
           font-weight: 300 !important;
           color: var(--cream) !important;
           line-height: 1.1 !important;
@@ -219,7 +218,7 @@ export default async function Page(props: {
         .pg-body-panel h3, .pg-body-panel .prose h3 { font-size: clamp(18px, 2.2vw, 26px) !important; }
         .pg-body-panel h4, .pg-body-panel .prose h4 {
           font-size: 16px !important;
-          font-family: 'DM Sans', sans-serif !important;
+          font-family: var(--font-dm-sans), sans-serif !important;
           font-weight: 500 !important;
           letter-spacing: 0.08em;
           text-transform: uppercase;
@@ -248,7 +247,7 @@ export default async function Page(props: {
         .pg-body-panel .prose em {
           color: var(--terra) !important;
           font-style: italic !important;
-          font-family: 'Cormorant Garamond', serif !important;
+          font-family: var(--font-cormorant-garamond), serif !important;
           font-size: 1.08em;
         }
 
@@ -320,7 +319,7 @@ export default async function Page(props: {
           position: absolute;
           left: 0;
           top: 10px;
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 16px;
           font-weight: 400;
           color: var(--terra);
@@ -335,7 +334,7 @@ export default async function Page(props: {
           background: rgba(191,90,40,0.05) !important;
           margin: 2rem 0 !important;
           padding: 20px 28px !important;
-          font-family: 'Cormorant Garamond', serif !important;
+          font-family: var(--font-cormorant-garamond), serif !important;
           font-size: clamp(18px, 2vw, 24px) !important;
           font-style: italic !important;
           color: var(--cream) !important;
@@ -346,7 +345,7 @@ export default async function Page(props: {
         .pg-body-panel .prose blockquote p {
           color: var(--cream) !important;
           margin-bottom: 0 !important;
-          font-family: 'Cormorant Garamond', serif !important;
+          font-family: var(--font-cormorant-garamond), serif !important;
           font-style: italic !important;
         }
 

@@ -101,7 +101,7 @@ const INPUT_STYLE: React.CSSProperties = {
   background: "rgba(242,232,213,0.04)",
   border: "1px solid rgba(242,232,213,0.09)",
   color: "var(--dp-cream)",
-  fontFamily: "DM Sans, sans-serif",
+  fontFamily: "var(--font-dm-sans), sans-serif",
   fontSize: "0.82rem",
   padding: "0.65rem 0.75rem",
   outline: "none",
@@ -117,7 +117,7 @@ const PHONE_PREFIX_STYLE: React.CSSProperties = {
   background: "rgba(242,232,213,0.03)",
   border: "1px solid rgba(242,232,213,0.09)",
   borderRight: "none",
-  fontFamily: "DM Sans, sans-serif",
+  fontFamily: "var(--font-dm-sans), sans-serif",
   fontSize: "0.78rem",
   color: "var(--dp-muted)",
 };
@@ -156,7 +156,7 @@ function SectionCard({
     >
       <p
         style={{
-          fontFamily: "DM Sans, sans-serif",
+          fontFamily: "var(--font-dm-sans), sans-serif",
           fontSize: "0.6rem",
           fontWeight: 500,
           letterSpacing: "0.26em",
@@ -183,7 +183,7 @@ function FieldLabel({
     <label
       style={{
         display: "block",
-        fontFamily: "DM Sans, sans-serif",
+        fontFamily: "var(--font-dm-sans), sans-serif",
         fontSize: "0.68rem",
         fontWeight: 500,
         letterSpacing: "0.08em",
@@ -612,7 +612,6 @@ export default function CheckoutPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
         :root {
           --dp-ink:     #0A0704;
           --dp-charcoal:#191209;
@@ -633,7 +632,7 @@ export default function CheckoutPage() {
           border: 1px solid rgba(242,232,213,0.09) !important;
           border-radius: 0 !important;
           color: var(--dp-cream) !important;
-          font-family: 'DM Sans', sans-serif !important;
+          font-family: var(--font-dm-sans), sans-serif !important;
           font-size: 0.82rem !important;
           padding: 0.65rem 0.75rem !important;
           outline: none !important;
@@ -674,7 +673,7 @@ export default function CheckoutPage() {
           display: flex; align-items: center; justify-content: space-between;
           padding: 0.5rem 0;
           border-bottom: 1px solid var(--dp-border);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 0.75rem;
           color: var(--dp-muted);
         }
@@ -692,7 +691,7 @@ export default function CheckoutPage() {
           background: "var(--dp-ink)",
           color: "var(--dp-cream)",
           minHeight: "100vh",
-          fontFamily: "DM Sans, sans-serif",
+          fontFamily: "var(--font-dm-sans), sans-serif",
         }}
       >
         {/* Accent line */}
@@ -715,7 +714,7 @@ export default function CheckoutPage() {
           <div className="dp-rise" style={{ marginBottom: "2.5rem" }}>
             <p
               style={{
-                fontFamily: "DM Sans, sans-serif",
+                fontFamily: "var(--font-dm-sans), sans-serif",
                 fontSize: "0.6rem",
                 fontWeight: 500,
                 letterSpacing: "0.26em",
@@ -728,7 +727,7 @@ export default function CheckoutPage() {
             </p>
             <h1
               style={{
-                fontFamily: "Bebas Neue, sans-serif",
+                fontFamily: "var(--font-bebas-neue), sans-serif",
                 fontSize: "clamp(2rem,5vw,3.5rem)",
                 letterSpacing: "0.08em",
                 color: "var(--dp-cream)",
@@ -839,7 +838,7 @@ export default function CheckoutPage() {
                     />
                     <span
                       style={{
-                        fontFamily: "DM Sans, sans-serif",
+                        fontFamily: "var(--font-dm-sans), sans-serif",
                         fontSize: "0.78rem",
                         color: "var(--dp-sand)",
                       }}
@@ -887,7 +886,7 @@ export default function CheckoutPage() {
                       />
                       <span
                         style={{
-                          fontFamily: "DM Sans, sans-serif",
+                          fontFamily: "var(--font-dm-sans), sans-serif",
                           fontSize: "0.78rem",
                           color: "var(--dp-sand)",
                         }}
@@ -919,7 +918,7 @@ export default function CheckoutPage() {
                   <div style={{ padding: "1.5rem" }}>
                     <p
                       style={{
-                        fontFamily: "DM Sans, sans-serif",
+                        fontFamily: "var(--font-dm-sans), sans-serif",
                         fontSize: "0.6rem",
                         fontWeight: 500,
                         letterSpacing: "0.26em",
@@ -973,7 +972,7 @@ export default function CheckoutPage() {
                                 right: 2,
                                 background: "var(--dp-ember)",
                                 color: "var(--dp-cream)",
-                                fontFamily: "DM Sans, sans-serif",
+                                fontFamily: "var(--font-dm-sans), sans-serif",
                                 fontSize: "0.55rem",
                                 fontWeight: 600,
                                 padding: "1px 5px",
@@ -987,7 +986,7 @@ export default function CheckoutPage() {
                             <p
                               className="line-clamp-1"
                               style={{
-                                fontFamily: "DM Sans, sans-serif",
+                                fontFamily: "var(--font-dm-sans), sans-serif",
                                 fontSize: "0.75rem",
                                 color: "var(--dp-sand)",
                                 lineHeight: 1.35,
@@ -999,7 +998,7 @@ export default function CheckoutPage() {
                               item.merchandise.title !== "Default Title" && (
                                 <p
                                   style={{
-                                    fontFamily: "DM Sans, sans-serif",
+                                    fontFamily: "var(--font-dm-sans), sans-serif",
                                     fontSize: "0.65rem",
                                     color: "var(--dp-muted)",
                                     marginTop: "0.15rem",
@@ -1016,7 +1015,7 @@ export default function CheckoutPage() {
                             className="dp-wordmark"
                             style={
                               {
-                                fontFamily: "Bebas Neue, sans-serif",
+                                fontFamily: "var(--font-bebas-neue), sans-serif",
                                 fontSize: "0.9rem",
                                 color: "var(--dp-cream)",
                                 flexShrink: 0,
@@ -1052,7 +1051,7 @@ export default function CheckoutPage() {
                           </span>
                           <span
                             style={{
-                              fontFamily: "Bebas Neue, sans-serif",
+                              fontFamily: "var(--font-bebas-neue), sans-serif",
                               fontSize: "0.85rem",
                               color: "var(--dp-green)",
                               letterSpacing: "0.04em",
@@ -1079,7 +1078,7 @@ export default function CheckoutPage() {
                             {shippingDiscountAmount > 0 && (
                               <p
                                 style={{
-                                  fontFamily: "DM Sans, sans-serif",
+                                  fontFamily: "var(--font-dm-sans), sans-serif",
                                   fontSize: "0.62rem",
                                   color: "var(--dp-green)",
                                   marginTop: 2,
@@ -1107,7 +1106,7 @@ export default function CheckoutPage() {
                       >
                         <span
                           style={{
-                            fontFamily: "DM Sans, sans-serif",
+                            fontFamily: "var(--font-dm-sans), sans-serif",
                             fontWeight: 500,
                             fontSize: "0.8rem",
                             color: "var(--dp-cream)",
@@ -1117,7 +1116,7 @@ export default function CheckoutPage() {
                         </span>
                         <span
                           style={{
-                            fontFamily: "Bebas Neue, sans-serif",
+                            fontFamily: "var(--font-bebas-neue), sans-serif",
                             fontSize: "1.2rem",
                             color: "var(--dp-cream)",
                             letterSpacing: "0.06em",
@@ -1133,7 +1132,7 @@ export default function CheckoutPage() {
                       {isFreeCheckout && (
                         <p
                           style={{
-                            fontFamily: "DM Sans, sans-serif",
+                            fontFamily: "var(--font-dm-sans), sans-serif",
                             fontSize: "0.65rem",
                             color: "var(--dp-green)",
                             marginTop: "0.4rem",
@@ -1149,7 +1148,7 @@ export default function CheckoutPage() {
                     {/* Shipping note */}
                     <p
                       style={{
-                        fontFamily: "DM Sans, sans-serif",
+                        fontFamily: "var(--font-dm-sans), sans-serif",
                         fontSize: "0.65rem",
                         color: "var(--dp-muted)",
                         lineHeight: 1.65,
@@ -1176,7 +1175,7 @@ export default function CheckoutPage() {
                         border: "none",
                         cursor: submitting ? "not-allowed" : "pointer",
                         padding: "0.9rem",
-                        fontFamily: "DM Sans, sans-serif",
+                        fontFamily: "var(--font-dm-sans), sans-serif",
                         fontWeight: 500,
                         fontSize: "0.72rem",
                         letterSpacing: "0.14em",
@@ -1243,7 +1242,7 @@ export default function CheckoutPage() {
                       </svg>
                       <span
                         style={{
-                          fontFamily: "DM Sans, sans-serif",
+                          fontFamily: "var(--font-dm-sans), sans-serif",
                           fontSize: "0.62rem",
                           color: "var(--dp-muted)",
                           letterSpacing: "0.08em",

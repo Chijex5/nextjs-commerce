@@ -6,7 +6,6 @@ export default async function SearchLayout({ children }: { children: React.React
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --dp-ink:     #0A0704;
@@ -20,10 +19,10 @@ export default async function SearchLayout({ children }: { children: React.React
           --dp-border:  rgba(242,232,213,0.09);
         }
 
-        .dp-wordmark { font-family:'Bebas Neue',sans-serif; }
-        .dp-serif    { font-family:'Cormorant Garamond',serif; }
-        .dp-sans     { font-family:'DM Sans',sans-serif; }
-        .dp-label    { font-family:'DM Sans',sans-serif;font-size:.62rem;font-weight:500;letter-spacing:.26em;text-transform:uppercase;color:var(--dp-ember); }
+        .dp-wordmark { font-family:var(--font-bebas-neue),sans-serif; }
+        .dp-serif    { font-family:var(--font-cormorant-garamond),serif; }
+        .dp-sans     { font-family:var(--font-dm-sans),sans-serif; }
+        .dp-label    { font-family:var(--font-dm-sans),sans-serif;font-size:.62rem;font-weight:500;letter-spacing:.26em;text-transform:uppercase;color:var(--dp-ember); }
 
         .dp-grain::after {
           content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
