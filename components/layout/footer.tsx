@@ -48,7 +48,6 @@ export default async function Footer() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;1,300&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --dp-ink:     #0A0704;
@@ -62,12 +61,12 @@ export default async function Footer() {
           --dp-border:  rgba(242,232,213,0.09);
         }
 
-        .dp-footer-wordmark { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.1em; }
-        .dp-footer-serif    { font-family: 'Cormorant Garamond', serif; }
-        .dp-footer-sans     { font-family: 'DM Sans', sans-serif; }
+        .dp-footer-wordmark { font-family: var(--font-bebas-neue), sans-serif; letter-spacing: 0.1em; }
+        .dp-footer-serif    { font-family: var(--font-cormorant-garamond), serif; }
+        .dp-footer-sans     { font-family: var(--font-dm-sans), sans-serif; }
 
         .dp-footer-link {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 0.78rem;
           color: var(--dp-muted);
           text-decoration: none;
@@ -104,7 +103,7 @@ export default async function Footer() {
         }
 
         .dp-footer-label {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 0.6rem;
           font-weight: 500;
           letter-spacing: 0.26em;
@@ -122,7 +121,7 @@ export default async function Footer() {
           border-bottom: 1px solid var(--dp-border) !important;
           border-radius: 0 !important;
           color: var(--dp-cream) !important;
-          font-family: 'DM Sans', sans-serif !important;
+          font-family: var(--font-dm-sans), sans-serif !important;
           font-size: 0.8rem !important;
           padding: 0.6rem 0 !important;
           outline: none !important;
@@ -137,7 +136,7 @@ export default async function Footer() {
           color: var(--dp-cream) !important;
           border: none !important;
           border-radius: 0 !important;
-          font-family: 'DM Sans', sans-serif !important;
+          font-family: var(--font-dm-sans), sans-serif !important;
           font-size: 0.68rem !important;
           font-weight: 500 !important;
           letter-spacing: 0.14em !important;

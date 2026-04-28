@@ -229,7 +229,6 @@ export default function CartModal() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;1,300&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
         :root {
           --dp-ink:     #0A0704;
           --dp-charcoal:#191209;
@@ -242,8 +241,8 @@ export default function CartModal() {
           --dp-green:   #4A8C5C;
           --dp-border:  rgba(242,232,213,0.09);
         }
-        .dp-cart-wordmark { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.1em; }
-        .dp-cart-sans     { font-family: 'DM Sans', sans-serif; }
+        .dp-cart-wordmark { font-family: var(--font-bebas-neue), sans-serif; letter-spacing: 0.1em; }
+        .dp-cart-sans     { font-family: var(--font-dm-sans), sans-serif; }
 
         .dp-cart-action-btn {
           display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
@@ -267,7 +266,7 @@ export default function CartModal() {
           display: flex; align-items: center; justify-content: space-between;
           padding: 0.55rem 1rem;
           border-bottom: 1px solid var(--dp-border);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 0.75rem;
           color: var(--dp-muted);
         }
@@ -367,7 +366,7 @@ export default function CartModal() {
                   {cart && cart.lines.length > 0 && (
                     <span
                       style={{
-                        fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", fontWeight: 500,
+                        fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.6rem", fontWeight: 500,
                         letterSpacing: "0.1em", color: "var(--dp-ember)",
                         border: "1px solid var(--dp-ember)", padding: "1px 7px",
                       }}
@@ -419,7 +418,7 @@ export default function CartModal() {
                       marginTop: "0.5rem",
                       display: "inline-flex", alignItems: "center", gap: "0.4rem",
                       background: "var(--dp-ember)", color: "var(--dp-cream)",
-                      fontFamily: "DM Sans, sans-serif", fontWeight: 500,
+                      fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 500,
                       fontSize: "0.68rem", letterSpacing: "0.14em", textTransform: "uppercase",
                       padding: "0.75rem 1.75rem", textDecoration: "none",
                       transition: "opacity 0.2s",
@@ -480,12 +479,12 @@ export default function CartModal() {
                               >
                                 <p
                                   className="line-clamp-2"
-                                  style={{ fontSize: "0.78rem", color: "var(--dp-sand)", lineHeight: 1.4, fontFamily: "DM Sans, sans-serif" }}
+                                  style={{ fontSize: "0.78rem", color: "var(--dp-sand)", lineHeight: 1.4, fontFamily: "var(--font-dm-sans), sans-serif" }}
                                 >
                                   {item.merchandise.product.title}
                                 </p>
                                 {item.merchandise.title !== DEFAULT_OPTION && (
-                                  <p style={{ fontSize: "0.68rem", color: "var(--dp-muted)", marginTop: "0.2rem", fontFamily: "DM Sans, sans-serif" }}>
+                                  <p style={{ fontSize: "0.68rem", color: "var(--dp-muted)", marginTop: "0.2rem", fontFamily: "var(--font-dm-sans), sans-serif" }}>
                                     {item.merchandise.title}
                                   </p>
                                 )}
@@ -511,7 +510,7 @@ export default function CartModal() {
                                 <span
                                   style={{
                                     width: "1.6rem", textAlign: "center",
-                                    fontSize: "0.72rem", fontFamily: "DM Sans, sans-serif", color: "var(--dp-sand)",
+                                    fontSize: "0.72rem", fontFamily: "var(--font-dm-sans), sans-serif", color: "var(--dp-sand)",
                                   }}
                                 >
                                   {item.quantity}
@@ -595,7 +594,7 @@ export default function CartModal() {
                         <div>
                           <p
                             style={{
-                              fontFamily: "DM Sans, sans-serif", fontSize: "0.58rem", fontWeight: 500,
+                              fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.58rem", fontWeight: 500,
                               letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--dp-ember)",
                               marginBottom: "0.2rem",
                             }}
@@ -610,7 +609,7 @@ export default function CartModal() {
                             >
                               {formattedSummaryTotal}
                             </span>
-                            <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", color: "var(--dp-muted)", letterSpacing: "0.08em" }}>
+                            <span style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.6rem", color: "var(--dp-muted)", letterSpacing: "0.08em" }}>
                               {summaryCurrency}
                             </span>
                           </div>
@@ -639,12 +638,12 @@ export default function CartModal() {
                             <div className="dp-summary-row">
                               <span style={{ color: "var(--dp-green)" }}>Discount ({couponCode})</span>
                               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                                <span style={{ color: "var(--dp-green)", fontFamily: "DM Sans, sans-serif" }}>-₦{discountAmount.toFixed(2)}</span>
+                                <span style={{ color: "var(--dp-green)", fontFamily: "var(--font-dm-sans), sans-serif" }}>-₦{discountAmount.toFixed(2)}</span>
                                 <button
                                   type="button"
                                   onClick={handleRemoveCoupon}
                                   style={{
-                                    fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", fontWeight: 500,
+                                    fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.6rem", fontWeight: 500,
                                     color: "var(--dp-ember)", background: "none", border: "none", cursor: "pointer",
                                     textDecoration: "underline", letterSpacing: "0.06em",
                                   }}
@@ -667,19 +666,19 @@ export default function CartModal() {
                             <span>Shipping</span>
                             {shippingPreview !== null ? (
                               <div style={{ textAlign: "right" }}>
-                                <p style={{ color: "var(--dp-sand)", fontFamily: "DM Sans, sans-serif" }}>₦{(netShippingPreview ?? 0).toLocaleString()}</p>
+                                <p style={{ color: "var(--dp-sand)", fontFamily: "var(--font-dm-sans), sans-serif" }}>₦{(netShippingPreview ?? 0).toLocaleString()}</p>
                                 {effectiveShippingDiscount > 0 && (
-                                  <p style={{ fontSize: "0.65rem", color: "var(--dp-green)", fontFamily: "DM Sans, sans-serif" }}>
+                                  <p style={{ fontSize: "0.65rem", color: "var(--dp-green)", fontFamily: "var(--font-dm-sans), sans-serif" }}>
                                     Saved ₦{effectiveShippingDiscount.toFixed(2)}
                                   </p>
                                 )}
                               </div>
                             ) : (
-                              <span style={{ fontSize: "0.68rem", color: "var(--dp-muted)", fontFamily: "DM Sans, sans-serif" }}>At checkout</span>
+                              <span style={{ fontSize: "0.68rem", color: "var(--dp-muted)", fontFamily: "var(--font-dm-sans), sans-serif" }}>At checkout</span>
                             )}
                           </div>
                           <div className="dp-summary-row" style={{ borderTop: "1px solid var(--dp-border)" }}>
-                            <span style={{ fontFamily: "DM Sans, sans-serif", fontWeight: 500, color: "var(--dp-cream)", fontSize: "0.8rem" }}>Total</span>
+                            <span style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 500, color: "var(--dp-cream)", fontSize: "0.8rem" }}>Total</span>
                             <Price
                               amount={Math.max(
                                 parseFloat(cart.cost.totalAmount.amount) - discountAmount + (netShippingPreview ?? 0),
@@ -703,10 +702,10 @@ export default function CartModal() {
                           border: "1px solid var(--dp-border)", background: "var(--dp-card)",
                         }}
                       >
-                        <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.72rem", fontWeight: 500, color: "var(--dp-sand)" }}>
+                        <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.72rem", fontWeight: 500, color: "var(--dp-sand)" }}>
                           Save your cart &amp; track orders
                         </p>
-                        <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.65rem", color: "var(--dp-muted)", marginTop: "0.2rem", lineHeight: 1.5 }}>
+                        <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.65rem", color: "var(--dp-muted)", marginTop: "0.2rem", lineHeight: 1.5 }}>
                           Create an account for faster checkout.
                         </p>
                         <Link
@@ -714,7 +713,7 @@ export default function CartModal() {
                           onClick={closeCart}
                           style={{
                             display: "inline-block", marginTop: "0.5rem",
-                            fontFamily: "DM Sans, sans-serif", fontSize: "0.62rem", fontWeight: 500,
+                            fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.62rem", fontWeight: 500,
                             letterSpacing: "0.1em", textTransform: "uppercase",
                             color: "var(--dp-ember)", textDecoration: "none",
                             borderBottom: "1px solid var(--dp-ember)", paddingBottom: 1,
@@ -771,7 +770,7 @@ export default function CartModal() {
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
                     <label
                       htmlFor="order-note"
-                      style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.72rem", fontWeight: 500, color: "var(--dp-sand)", letterSpacing: "0.06em" }}
+                      style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.72rem", fontWeight: 500, color: "var(--dp-sand)", letterSpacing: "0.06em" }}
                     >
                       Special instructions
                     </label>
@@ -786,7 +785,7 @@ export default function CartModal() {
                         background: "rgba(242,232,213,0.04)",
                         border: "1px solid var(--dp-border)",
                         color: "var(--dp-cream)",
-                        fontFamily: "DM Sans, sans-serif",
+                        fontFamily: "var(--font-dm-sans), sans-serif",
                         fontSize: "0.78rem",
                         padding: "0.75rem",
                         resize: "none",
@@ -797,7 +796,7 @@ export default function CartModal() {
                       onFocus={(e) => (e.currentTarget.style.borderColor = "var(--dp-ember)")}
                       onBlur={(e) => (e.currentTarget.style.borderColor = "var(--dp-border)")}
                     />
-                    <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.62rem", color: "var(--dp-muted)" }}>
+                    <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.62rem", color: "var(--dp-muted)" }}>
                       Up to 500 characters. Saved with your order.
                     </p>
                     <button
@@ -806,7 +805,7 @@ export default function CartModal() {
                       style={{
                         background: "var(--dp-ember)", color: "var(--dp-cream)",
                         border: "none", cursor: "pointer", padding: "0.75rem",
-                        fontFamily: "DM Sans, sans-serif", fontWeight: 500,
+                        fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 500,
                         fontSize: "0.68rem", letterSpacing: "0.14em", textTransform: "uppercase",
                         transition: "opacity 0.2s",
                       }}
@@ -819,12 +818,12 @@ export default function CartModal() {
                 )}
                 {activeSheet === "shipping" && (
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-                    <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.78rem", fontWeight: 500, color: "var(--dp-sand)" }}>
+                    <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.78rem", fontWeight: 500, color: "var(--dp-sand)" }}>
                       {shippingPreview !== null
                         ? "Shipping preview from your saved address."
                         : "Shipping is calculated at checkout."}
                     </p>
-                    <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.75rem", color: "var(--dp-muted)", lineHeight: 1.65 }}>
+                    <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.75rem", color: "var(--dp-muted)", lineHeight: 1.65 }}>
                       {shippingPreview !== null
                         ? `Estimated shipping: ₦${shippingPreview.toLocaleString()}. Final pricing confirmed after payment.`
                         : "Select your delivery address during checkout to see your shipping fee."}
@@ -852,7 +851,7 @@ function CheckoutButton() {
         color: "var(--dp-ink)",
         border: "none", cursor: pending ? "not-allowed" : "pointer",
         padding: "0.9rem",
-        fontFamily: "DM Sans, sans-serif", fontWeight: 500,
+        fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 500,
         fontSize: "0.72rem", letterSpacing: "0.14em", textTransform: "uppercase",
         transition: "background 0.2s, opacity 0.2s",
       }}
@@ -922,7 +921,7 @@ function CartSheet({
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.1rem" }}>
               <span
                 style={{
-                  fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", fontWeight: 500,
+                  fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.6rem", fontWeight: 500,
                   letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--dp-ember)",
                 }}
               >

@@ -390,7 +390,6 @@ function AccountPageContent() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --espresso:   #0A0704;
@@ -405,7 +404,7 @@ function AccountPageContent() {
         }
 
         .ac-root {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           color: var(--cream);
           display: flex;
           flex-direction: column;
@@ -453,7 +452,7 @@ function AccountPageContent() {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 24px;
           font-weight: 400;
           color: var(--terra);
@@ -461,7 +460,7 @@ function AccountPageContent() {
           letter-spacing: 0.05em;
         }
         .ac-hero-name {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: clamp(28px, 4vw, 48px);
           font-weight: 300;
           line-height: 1.0;
@@ -500,7 +499,7 @@ function AccountPageContent() {
           margin-bottom: 6px;
         }
         .ac-stat-value {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 18px;
           font-weight: 400;
           color: var(--cream);
@@ -558,7 +557,7 @@ function AccountPageContent() {
           margin-bottom: 28px;
         }
         .ac-panel-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 26px;
           font-weight: 300;
           color: var(--cream);
@@ -566,7 +565,7 @@ function AccountPageContent() {
         .ac-panel-action {
           background: none;
           border: none;
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.18em;
@@ -618,7 +617,7 @@ function AccountPageContent() {
           background: rgba(10,7,4,0.7);
           border: 1px solid rgba(242,232,213,0.09);
           color: var(--cream);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 13px;
           padding: 12px 16px;
           outline: none;
@@ -643,7 +642,7 @@ function AccountPageContent() {
           background: var(--terra);
           border: none;
           color: var(--cream);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.2em;
@@ -662,7 +661,7 @@ function AccountPageContent() {
           background: transparent;
           border: 1px solid var(--border-mid);
           color: var(--muted);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.2em;
@@ -675,7 +674,7 @@ function AccountPageContent() {
         .ac-btn-text {
           background: none;
           border: none;
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 11px;
           color: var(--muted);
           cursor: pointer;
@@ -805,7 +804,7 @@ function AccountPageContent() {
           background: rgba(10,7,4,0.9);
           border: 1px solid rgba(191,90,40,0.35);
           color: var(--cream);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 12px;
           letter-spacing: 0.14em;
           text-transform: uppercase;
@@ -817,7 +816,7 @@ function AccountPageContent() {
           background: transparent;
           border: 1px solid rgba(191,90,40,0.45);
           color: #f0b08b;
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.2em;
@@ -843,7 +842,7 @@ function AccountPageContent() {
         }
         .ac-right-panel:last-child { border-bottom: none; }
         .ac-right-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 20px;
           font-weight: 300;
           color: var(--cream);
@@ -934,7 +933,7 @@ function AccountPageContent() {
           padding: 6px 12px;
           cursor: pointer;
           transition: color 0.2s, border-color 0.2s;
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
         }
         .ac-modal-close:hover { color: var(--cream); border-color: var(--border-mid); }
         .ac-modal-eyebrow {
@@ -955,7 +954,7 @@ function AccountPageContent() {
           background: var(--terra);
         }
         .ac-modal-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 34px;
           font-weight: 300;
           line-height: 1.05;
@@ -978,7 +977,7 @@ function AccountPageContent() {
           padding: 16px 20px;
         }
         .ac-coupon-code {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 28px;
           font-weight: 400;
           color: var(--gold);
@@ -988,7 +987,7 @@ function AccountPageContent() {
           background: transparent;
           border: 1px solid rgba(192,137,42,0.4);
           color: var(--gold);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 9px;
           font-weight: 500;
           letter-spacing: 0.2em;

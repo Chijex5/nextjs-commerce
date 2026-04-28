@@ -67,7 +67,6 @@ export default function ContactForm() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --espresso:   #0A0704;
@@ -83,7 +82,7 @@ export default function ContactForm() {
         .cf-root {
           border: 1px solid var(--border);
           background: rgba(16,12,6,0.96);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           position: relative;
           overflow: hidden;
         }
@@ -133,7 +132,7 @@ export default function ContactForm() {
           background: var(--terra);
         }
         .cf-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: clamp(26px, 3.5vw, 38px);
           font-weight: 300;
           line-height: 1.05;
@@ -186,7 +185,7 @@ export default function ContactForm() {
           border: none;
           outline: none;
           color: var(--cream);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 14px;
           line-height: 1.6;
           padding: 0;
@@ -233,7 +232,7 @@ export default function ContactForm() {
           background: var(--terra);
           border: none;
           color: var(--cream);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.22em;
