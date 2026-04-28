@@ -85,6 +85,7 @@ const cormorantGaramond = Cormorant_Garamond({
   subsets: ["latin"],
   variable: "--font-cormorant-garamond",
   display: "swap",
+  style: ["normal", "italic"],
 });
 
 export default async function RootLayout({
