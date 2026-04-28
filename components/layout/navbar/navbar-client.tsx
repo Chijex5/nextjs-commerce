@@ -49,7 +49,6 @@ export default function NavbarClient({
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --dp-ink:    #0A0704;
@@ -61,11 +60,11 @@ export default function NavbarClient({
         }
 
         .dp-nav-wordmark {
-          font-family: 'Bebas Neue', sans-serif;
+          font-family: var(--font-bebas-neue), sans-serif;
           letter-spacing: 0.1em;
         }
         .dp-nav-link {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 0.68rem;
           font-weight: 500;
           letter-spacing: 0.14em;
@@ -110,7 +109,7 @@ export default function NavbarClient({
           border: none;
           border-bottom: 1px solid var(--dp-border);
           color: var(--dp-cream);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 0.82rem;
           padding: 0.5rem 0;
           outline: none;
@@ -148,7 +147,7 @@ export default function NavbarClient({
           background: "var(--dp-ink)",
           borderBottom: "1px solid var(--dp-border)",
           transition: "padding 0.3s cubic-bezier(0.16,1,0.3,1)",
-          fontFamily: "DM Sans, sans-serif",
+          fontFamily: "var(--font-dm-sans), sans-serif",
         }}
       >
         {/* ── DESKTOP ───────────────────────────────────────────── */}
@@ -310,7 +309,7 @@ export default function NavbarClient({
                 type="button"
                 onClick={() => setIsSearchOpen(false)}
                 style={{
-                  fontFamily: "DM Sans, sans-serif",
+                  fontFamily: "var(--font-dm-sans), sans-serif",
                   fontSize: "0.7rem",
                   fontWeight: 500,
                   letterSpacing: "0.1em",

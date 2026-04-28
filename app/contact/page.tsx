@@ -134,7 +134,6 @@ export default function ContactPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --dp-ink:     #0A0704;
@@ -148,11 +147,11 @@ export default function ContactPage() {
           --dp-border:  rgba(242,232,213,0.09);
         }
 
-        .dp-wordmark { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.1em; }
-        .dp-serif    { font-family: 'Cormorant Garamond', serif; }
-        .dp-sans     { font-family: 'DM Sans', sans-serif; }
+        .dp-wordmark { font-family: var(--font-bebas-neue), sans-serif; letter-spacing: 0.1em; }
+        .dp-serif    { font-family: var(--font-cormorant-garamond), serif; }
+        .dp-sans     { font-family: var(--font-dm-sans), sans-serif; }
         .dp-label    {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 0.6rem; font-weight: 500;
           letter-spacing: 0.26em; text-transform: uppercase;
           color: var(--dp-ember);
@@ -179,7 +178,7 @@ export default function ContactPage() {
         .dp-rule { border: none; border-top: 1px solid var(--dp-border); margin: 0; }
 
         .dp-prose p {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 0.88rem; line-height: 1.85;
           color: var(--dp-muted);
         }
@@ -200,7 +199,7 @@ export default function ContactPage() {
 
         .dp-contact-link {
           display: inline-flex; align-items: center; gap: 0.4rem;
-          font-family: 'DM Sans', sans-serif; font-size: 0.68rem; font-weight: 500;
+          font-family: var(--font-dm-sans), sans-serif; font-size: 0.68rem; font-weight: 500;
           letter-spacing: 0.14em; text-transform: uppercase;
           color: var(--dp-cream); text-decoration: none;
           border-bottom: 1px solid var(--dp-ember); padding-bottom: 2px;
@@ -284,7 +283,7 @@ export default function ContactPage() {
             <p
               className="dp-rise-3"
               style={{
-                fontFamily: "DM Sans, sans-serif",
+                fontFamily: "var(--font-dm-sans), sans-serif",
                 fontSize: "0.88rem",
                 lineHeight: 1.75,
                 color: "var(--dp-muted)",
@@ -345,7 +344,7 @@ export default function ContactPage() {
               </p>
               <p
                 style={{
-                  fontFamily: "DM Sans, sans-serif",
+                  fontFamily: "var(--font-dm-sans), sans-serif",
                   fontSize: "0.68rem",
                   color: "var(--dp-muted)",
                   marginTop: "0.35rem",
@@ -603,7 +602,7 @@ export default function ContactPage() {
               </p>
               <p
                 style={{
-                  fontFamily: "DM Sans, sans-serif",
+                  fontFamily: "var(--font-dm-sans), sans-serif",
                   fontSize: "0.78rem",
                   color: "rgba(242,232,213,0.7)",
                   marginTop: "0.3rem",
@@ -630,7 +629,7 @@ export default function ContactPage() {
                   gap: "0.4rem",
                   background: "var(--dp-cream)",
                   color: "var(--dp-ink)",
-                  fontFamily: "DM Sans, sans-serif",
+                  fontFamily: "var(--font-dm-sans), sans-serif",
                   fontWeight: 500,
                   fontSize: "0.68rem",
                   letterSpacing: "0.14em",
@@ -658,7 +657,7 @@ export default function ContactPage() {
                   alignItems: "center",
                   border: "1px solid rgba(242,232,213,0.4)",
                   color: "var(--dp-cream)",
-                  fontFamily: "DM Sans, sans-serif",
+                  fontFamily: "var(--font-dm-sans), sans-serif",
                   fontWeight: 500,
                   fontSize: "0.68rem",
                   letterSpacing: "0.14em",

@@ -78,7 +78,6 @@ export default async function CustomOrdersPage() {
     <>
       {/* Reuse every token from the homepage <style> block; add only page-specific rules */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --dp-void:    #060402;
@@ -93,9 +92,9 @@ export default async function CustomOrdersPage() {
           --dp-border:  rgba(242,232,213,0.09);
         }
 
-        .dp-wordmark { font-family:'Bebas Neue',sans-serif; }
-        .dp-serif    { font-family:'Cormorant Garamond',serif; }
-        .dp-sans     { font-family:'DM Sans',sans-serif; }
+        .dp-wordmark { font-family:var(--font-bebas-neue),sans-serif; }
+        .dp-serif    { font-family:var(--font-cormorant-garamond),serif; }
+        .dp-sans     { font-family:var(--font-dm-sans),sans-serif; }
 
         @keyframes dp-marquee {
           0%   { transform:translateX(0); }
@@ -119,36 +118,36 @@ export default async function CustomOrdersPage() {
         .dp-zoom img { transition:transform .7s cubic-bezier(.16,1,.3,1); }
         .dp-zoom:hover img { transform:scale(1.07); }
 
-        .dp-btn-solid  { display:inline-flex;align-items:center;gap:.5rem;background:var(--dp-cream);color:var(--dp-ink);font-family:'DM Sans',sans-serif;font-weight:500;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;padding:.9rem 2.1rem;text-decoration:none;transition:background .22s,color .22s; }
+        .dp-btn-solid  { display:inline-flex;align-items:center;gap:.5rem;background:var(--dp-cream);color:var(--dp-ink);font-family:var(--font-dm-sans),sans-serif;font-weight:500;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;padding:.9rem 2.1rem;text-decoration:none;transition:background .22s,color .22s; }
         .dp-btn-solid:hover  { background:var(--dp-ember);color:var(--dp-cream); }
 
-        .dp-btn-ghost  { display:inline-flex;align-items:center;gap:.5rem;border:1px solid rgba(242,232,213,.28);color:var(--dp-cream);font-family:'DM Sans',sans-serif;font-weight:500;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;padding:.9rem 2.1rem;text-decoration:none;transition:border-color .22s,background .22s; }
+        .dp-btn-ghost  { display:inline-flex;align-items:center;gap:.5rem;border:1px solid rgba(242,232,213,.28);color:var(--dp-cream);font-family:var(--font-dm-sans),sans-serif;font-weight:500;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;padding:.9rem 2.1rem;text-decoration:none;transition:border-color .22s,background .22s; }
         .dp-btn-ghost:hover  { border-color:var(--dp-cream);background:rgba(242,232,213,.06); }
 
-        .dp-btn-ember  { display:inline-flex;align-items:center;gap:.5rem;background:var(--dp-ember);color:var(--dp-cream);font-family:'DM Sans',sans-serif;font-weight:500;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;padding:.9rem 2.1rem;text-decoration:none;transition:opacity .22s; }
+        .dp-btn-ember  { display:inline-flex;align-items:center;gap:.5rem;background:var(--dp-ember);color:var(--dp-cream);font-family:var(--font-dm-sans),sans-serif;font-weight:500;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;padding:.9rem 2.1rem;text-decoration:none;transition:opacity .22s; }
         .dp-btn-ember:hover  { opacity:.88; }
 
         .dp-rule  { border:none;border-top:1px solid var(--dp-border); }
-        .dp-label { font-family:'DM Sans',sans-serif;font-size:.62rem;font-weight:500;letter-spacing:.26em;text-transform:uppercase;color:var(--dp-ember); }
+        .dp-label { font-family:var(--font-dm-sans),sans-serif;font-size:.62rem;font-weight:500;letter-spacing:.26em;text-transform:uppercase;color:var(--dp-ember); }
         .dp-nav-link { color:var(--dp-muted);text-decoration:none;transition:color .2s; }
         .dp-nav-link:hover { color:var(--dp-cream); }
-        .dp-h2  { font-family:'Cormorant Garamond',serif;font-weight:600;color:var(--dp-cream); }
-        .dp-num { font-family:'Bebas Neue',sans-serif;font-size:5.5rem;line-height:1;color:rgba(242,232,213,.05);position:absolute;top:.25rem;left:.75rem;pointer-events:none;user-select:none; }
-        .dp-pill { position:absolute;top:.5rem;left:.5rem;font-family:'DM Sans',sans-serif;font-size:.5rem;font-weight:500;letter-spacing:.16em;text-transform:uppercase;padding:2px 7px; }
+        .dp-h2  { font-family:var(--font-cormorant-garamond),serif;font-weight:600;color:var(--dp-cream); }
+        .dp-num { font-family:var(--font-bebas-neue),sans-serif;font-size:5.5rem;line-height:1;color:rgba(242,232,213,.05);position:absolute;top:.25rem;left:.75rem;pointer-events:none;user-select:none; }
+        .dp-pill { position:absolute;top:.5rem;left:.5rem;font-family:var(--font-dm-sans),sans-serif;font-size:.5rem;font-weight:500;letter-spacing:.16em;text-transform:uppercase;padding:2px 7px; }
 
         .dp-grain::after { content:'';position:absolute;inset:0;pointer-events:none;z-index:5;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E"); }
 
         /* ── Page-specific ── */
         .co-input {
           width:100%; background:var(--dp-card); border:1px solid var(--dp-border);
-          color:var(--dp-cream); font-family:'DM Sans',sans-serif; font-size:.82rem;
+          color:var(--dp-cream); font-family:var(--font-dm-sans),sans-serif; font-size:.82rem;
           padding:.85rem 1rem; outline:none; resize:none;
           transition:border-color .22s;
         }
         .co-input::placeholder { color:var(--dp-muted); }
         .co-input:focus { border-color:rgba(191,90,40,.55); }
 
-        .co-label { font-family:'DM Sans',sans-serif; font-size:.62rem; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--dp-muted); display:block; margin-bottom:.5rem; }
+        .co-label { font-family:var(--font-dm-sans),sans-serif; font-size:.62rem; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--dp-muted); display:block; margin-bottom:.5rem; }
 
         .co-step-line { position:absolute; top:2.6rem; left:1.35rem; bottom:0; width:1px; background:var(--dp-border); }
 
@@ -165,7 +164,7 @@ export default async function CustomOrdersPage() {
         .faq-body.open { max-height:200px; padding-bottom:1rem; }
 
         .co-before-after { position:relative; }
-        .co-ba-label { position:absolute; top:.5rem; left:.5rem; font-family:'DM Sans',sans-serif; font-size:.5rem; font-weight:500; letter-spacing:.16em; text-transform:uppercase; padding:2px 7px; }
+        .co-ba-label { position:absolute; top:.5rem; left:.5rem; font-family:var(--font-dm-sans),sans-serif; font-size:.5rem; font-weight:500; letter-spacing:.16em; text-transform:uppercase; padding:2px 7px; }
       `}</style>
 
       <div
@@ -323,7 +322,7 @@ export default async function CustomOrdersPage() {
                         fontSize: ".7rem",
                         color: "var(--dp-muted)",
                         marginTop: ".35rem",
-                        fontFamily: "DM Sans, sans-serif",
+                        fontFamily: "var(--font-dm-sans), sans-serif",
                         lineHeight: 1.4,
                       }}
                     >
@@ -492,7 +491,7 @@ export default async function CustomOrdersPage() {
                     fontSize: ".78rem",
                     color: "var(--dp-muted)",
                     lineHeight: 1.6,
-                    fontFamily: "DM Sans, sans-serif",
+                    fontFamily: "var(--font-dm-sans), sans-serif",
                     maxWidth: 240,
                   }}
                 >
@@ -672,7 +671,7 @@ export default async function CustomOrdersPage() {
                       <p
                         style={{
                           fontSize: ".85rem",
-                          fontFamily: "DM Sans, sans-serif",
+                          fontFamily: "var(--font-dm-sans), sans-serif",
                           color: "var(--dp-cream)",
                           fontWeight: 500,
                         }}
@@ -685,7 +684,7 @@ export default async function CustomOrdersPage() {
                             fontSize: ".72rem",
                             color: "var(--dp-muted)",
                             marginTop: ".3rem",
-                            fontFamily: "DM Sans, sans-serif",
+                            fontFamily: "var(--font-dm-sans), sans-serif",
                             lineHeight: 1.5,
                           }}
                         >
@@ -698,7 +697,7 @@ export default async function CustomOrdersPage() {
                         <p
                           style={{
                             fontSize: ".5rem",
-                            fontFamily: "DM Sans, sans-serif",
+                            fontFamily: "var(--font-dm-sans), sans-serif",
                             letterSpacing: ".14em",
                             textTransform: "uppercase",
                             color: "var(--dp-muted)",
@@ -762,7 +761,7 @@ export default async function CustomOrdersPage() {
                   <p
                     style={{
                       fontSize: ".82rem",
-                      fontFamily: "DM Sans, sans-serif",
+                      fontFamily: "var(--font-dm-sans), sans-serif",
                       fontWeight: 500,
                       color: "var(--dp-cream)",
                     }}
@@ -772,7 +771,7 @@ export default async function CustomOrdersPage() {
                   <p
                     style={{
                       fontSize: ".68rem",
-                      fontFamily: "DM Sans, sans-serif",
+                      fontFamily: "var(--font-dm-sans), sans-serif",
                       color: "var(--dp-muted)",
                     }}
                   >
@@ -785,7 +784,7 @@ export default async function CustomOrdersPage() {
               style={{
                 marginTop: "1.5rem",
                 fontSize: ".72rem",
-                fontFamily: "DM Sans, sans-serif",
+                fontFamily: "var(--font-dm-sans), sans-serif",
                 color: "var(--dp-muted)",
               }}
             >
@@ -828,7 +827,7 @@ export default async function CustomOrdersPage() {
                 style={{
                   fontSize: ".78rem",
                   color: "var(--dp-muted)",
-                  fontFamily: "DM Sans, sans-serif",
+                  fontFamily: "var(--font-dm-sans), sans-serif",
                   lineHeight: 1.6,
                   maxWidth: 400,
                 }}
@@ -920,7 +919,7 @@ export default async function CustomOrdersPage() {
                 gap: ".6rem",
                 background: "var(--dp-cream)",
                 color: "var(--dp-ember)",
-                fontFamily: "DM Sans, sans-serif",
+                fontFamily: "var(--font-dm-sans), sans-serif",
                 fontWeight: 500,
                 fontSize: ".72rem",
                 letterSpacing: ".12em",

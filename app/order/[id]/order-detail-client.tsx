@@ -149,10 +149,10 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
             background: rgba(242,232,213,0.02);
             padding: 64px 40px;
             text-align: center;
-            font-family: 'DM Sans', sans-serif;
+            font-family: var(--font-dm-sans), sans-serif;
           }
           .od-not-found-text {
-            font-family: 'Cormorant Garamond', serif;
+            font-family: var(--font-cormorant-garamond), serif;
             font-size: 24px;
             font-weight: 300;
             font-style: italic;
@@ -165,7 +165,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
             gap: 8px;
             background: var(--terra, #BF5A28);
             color: var(--cream, #F2E8D5);
-            font-family: 'DM Sans', sans-serif;
+            font-family: var(--font-dm-sans), sans-serif;
             font-size: 10px;
             font-weight: 500;
             letter-spacing: 0.2em;
@@ -226,7 +226,6 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --espresso:   #0A0704;
@@ -241,7 +240,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
         }
 
         .od-root {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           color: var(--cream);
           display: flex;
           flex-direction: column;
@@ -293,7 +292,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           background: var(--terra);
         }
         .od-hero-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: clamp(28px, 4vw, 48px);
           font-weight: 300;
           line-height: 1.05;
@@ -360,7 +359,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           overflow-wrap: anywhere;
         }
         .od-meta-value-gold {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 20px;
           font-weight: 400;
           color: var(--gold);
@@ -368,7 +367,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
         .od-meta-value-gold p,
         .od-meta-value-gold span {
           color: var(--gold) !important;
-          font-family: 'Cormorant Garamond', serif !important;
+          font-family: var(--font-cormorant-garamond), serif !important;
           font-size: 20px !important;
           font-weight: 400 !important;
         }
@@ -381,7 +380,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           padding: 36px 48px;
         }
         .od-panel-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 26px;
           font-weight: 300;
           color: var(--cream);
@@ -440,7 +439,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           margin-bottom: 10px;
         }
         .od-tracking-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 28px;
           font-weight: 400;
           color: var(--cream);
@@ -534,7 +533,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
         }
         .od-item-body { flex: 1; min-width: 0; }
         .od-item-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 18px;
           font-weight: 400;
           color: var(--cream);
