@@ -155,10 +155,9 @@ export default function AddressesPage() {
   return (
     <div className="ad-root">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         .ad-root {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           color: #F2E8D5;
           display: flex;
           flex-direction: column;
@@ -182,7 +181,7 @@ export default function AddressesPage() {
         }
 
         .ad-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: clamp(1.75rem, 2.5vw, 2.3rem);
           font-weight: 300;
           color: #F2E8D5;
@@ -204,7 +203,7 @@ export default function AddressesPage() {
         }
 
         .ad-panel-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 1.55rem;
           font-weight: 300;
           color: #F2E8D5;
@@ -245,7 +244,7 @@ export default function AddressesPage() {
           background: rgba(10,7,4,0.8);
           border: 1px solid rgba(242,232,213,0.09);
           color: #F2E8D5;
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 0.82rem;
           padding: 0.72rem 0.85rem;
           outline: none;
@@ -318,7 +317,7 @@ export default function AddressesPage() {
         }
 
         .ad-address-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 1.3rem;
           font-weight: 300;
           color: #F2E8D5;

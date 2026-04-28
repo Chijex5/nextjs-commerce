@@ -67,7 +67,6 @@ export default async function AllProductsPage(props: {
     <section className="shop-root">
       {/* ── Google Fonts + Global Styles ── */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --espresso: #0A0704;
@@ -86,7 +85,7 @@ export default async function AllProductsPage(props: {
           background: var(--espresso);
           min-height: 100vh;
           color: var(--cream);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           padding-bottom: 100px;
         }
 
@@ -124,7 +123,7 @@ export default async function AllProductsPage(props: {
           flex-shrink: 0;
         }
         .hero-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: clamp(52px, 8vw, 92px);
           font-weight: 300;
           line-height: 0.95;
@@ -201,7 +200,7 @@ export default async function AllProductsPage(props: {
           border-bottom: 1px solid var(--border);
         }
         .section-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 30px;
           font-weight: 300;
           color: var(--cream);
@@ -255,7 +254,7 @@ export default async function AllProductsPage(props: {
           background: var(--espresso);
           border: 1px solid var(--border-mid);
           color: var(--cream);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 9px;
           font-weight: 500;
           letter-spacing: 0.2em;
@@ -277,7 +276,7 @@ export default async function AllProductsPage(props: {
           border-top: 1px solid var(--border);
         }
         .card-name {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 20px;
           font-weight: 400;
           line-height: 1.2;
@@ -315,14 +314,14 @@ export default async function AllProductsPage(props: {
           padding: 80px 40px;
           text-align: center;
           color: var(--muted);
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 22px;
           font-weight: 300;
           font-style: italic;
           margin-top: 40px;
         }
         .empty-state-sub {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 11px;
           letter-spacing: 0.18em;
           text-transform: uppercase;
@@ -374,7 +373,7 @@ export default async function AllProductsPage(props: {
           margin-bottom: 8px;
         }
         .promo-headline {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--font-cormorant-garamond), serif;
           font-size: 34px;
           font-weight: 300;
           line-height: 1.1;
@@ -388,7 +387,7 @@ export default async function AllProductsPage(props: {
           background: var(--terra);
           border: none;
           color: var(--cream);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.2em;

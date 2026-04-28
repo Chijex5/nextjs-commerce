@@ -56,7 +56,6 @@ export default function CheckoutSuccess() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
         :root {
           --dp-ink:     #0A0704;
           --dp-charcoal:#191209;
@@ -104,7 +103,7 @@ export default function CheckoutSuccess() {
         .dp-btn-primary {
           display: inline-flex; align-items: center; gap: 0.4rem;
           background: var(--dp-cream); color: var(--dp-ink);
-          font-family: 'DM Sans', sans-serif; font-weight: 500;
+          font-family: var(--font-dm-sans), sans-serif; font-weight: 500;
           font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase;
           padding: 0.85rem 1.75rem; text-decoration: none;
           transition: background 0.2s, color 0.2s;
@@ -114,7 +113,7 @@ export default function CheckoutSuccess() {
         .dp-btn-ghost {
           display: inline-flex; align-items: center; gap: 0.4rem;
           border: 1px solid var(--dp-border); color: var(--dp-muted);
-          font-family: 'DM Sans', sans-serif; font-weight: 500;
+          font-family: var(--font-dm-sans), sans-serif; font-weight: 500;
           font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase;
           padding: 0.85rem 1.75rem; text-decoration: none;
           transition: border-color 0.2s, color 0.2s;
@@ -125,7 +124,7 @@ export default function CheckoutSuccess() {
       <div
         style={{
           background: "var(--dp-ink)", color: "var(--dp-cream)",
-          minHeight: "100vh", fontFamily: "DM Sans, sans-serif",
+          minHeight: "100vh", fontFamily: "var(--font-dm-sans), sans-serif",
         }}
       >
         {/* Top accent line */}
@@ -168,12 +167,12 @@ export default function CheckoutSuccess() {
 
           {/* ── Headline ── */}
           <div className="dp-rise-2" style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.26em", textTransform: "uppercase", color: "var(--dp-ember)", marginBottom: "0.6rem" }}>
+            <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.26em", textTransform: "uppercase", color: "var(--dp-ember)", marginBottom: "0.6rem" }}>
               Order Confirmed
             </p>
             <h1
               style={{
-                fontFamily: "Cormorant Garamond, serif",
+                fontFamily: "var(--font-cormorant-garamond), serif",
                 fontSize: "clamp(1.8rem, 5vw, 3rem)",
                 fontWeight: 600, lineHeight: 1.2,
                 color: "var(--dp-cream)",
@@ -182,7 +181,7 @@ export default function CheckoutSuccess() {
             >
               Your pair is on its way.
             </h1>
-            <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.82rem", color: "var(--dp-muted)", lineHeight: 1.7, maxWidth: 440, margin: "0 auto" }}>
+            <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.82rem", color: "var(--dp-muted)", lineHeight: 1.7, maxWidth: 440, margin: "0 auto" }}>
               Thank you for your purchase. Your order has been confirmed and is being prepared with care.
             </p>
           </div>
@@ -200,21 +199,21 @@ export default function CheckoutSuccess() {
               }}
             >
               <div>
-                <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--dp-muted)", marginBottom: "0.3rem" }}>
+                <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--dp-muted)", marginBottom: "0.3rem" }}>
                   Order Number
                 </p>
-                <p style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: "1.4rem", letterSpacing: "0.12em", color: "var(--dp-cream)" }}>
+                <p style={{ fontFamily: "var(--font-bebas-neue), sans-serif", fontSize: "1.4rem", letterSpacing: "0.12em", color: "var(--dp-cream)" }}>
                   {orderNumber}
                 </p>
               </div>
               <div style={{ width: 2, height: 40, background: "var(--dp-border)" }} />
               <div style={{ textAlign: "right" }}>
-                <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--dp-muted)", marginBottom: "0.3rem" }}>
+                <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--dp-muted)", marginBottom: "0.3rem" }}>
                   Status
                 </p>
                 <span
                   style={{
-                    fontFamily: "DM Sans, sans-serif", fontSize: "0.62rem", fontWeight: 500,
+                    fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.62rem", fontWeight: 500,
                     letterSpacing: "0.12em", textTransform: "uppercase",
                     color: "var(--dp-green)",
                     border: "1px solid rgba(74,140,92,0.35)",
@@ -231,7 +230,7 @@ export default function CheckoutSuccess() {
           <p
             className="dp-rise-3"
             style={{
-              fontFamily: "DM Sans, sans-serif", fontSize: "0.75rem",
+              fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.75rem",
               color: "var(--dp-muted)", lineHeight: 1.65,
               borderLeft: "2px solid var(--dp-ember)", paddingLeft: "0.875rem",
               marginBottom: "1.75rem",
@@ -251,16 +250,16 @@ export default function CheckoutSuccess() {
                 marginBottom: "1.75rem",
               }}
             >
-              <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.78rem", fontWeight: 500, color: "var(--dp-sand)", marginBottom: "0.3rem" }}>
+              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.78rem", fontWeight: 500, color: "var(--dp-sand)", marginBottom: "0.3rem" }}>
                 Create an account to track this order
               </p>
-              <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.7rem", color: "var(--dp-muted)", lineHeight: 1.6, marginBottom: "0.75rem" }}>
+              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.7rem", color: "var(--dp-muted)", lineHeight: 1.6, marginBottom: "0.75rem" }}>
                 Save your details for faster checkout and see updates in one place.
               </p>
               <Link
                 href={`/auth/register?callbackUrl=${encodeURIComponent(`/orders?orderNumber=${orderNumber || ""}`)}`}
                 style={{
-                  fontFamily: "DM Sans, sans-serif", fontSize: "0.62rem", fontWeight: 500,
+                  fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.62rem", fontWeight: 500,
                   letterSpacing: "0.12em", textTransform: "uppercase",
                   color: "var(--dp-ember)", textDecoration: "none",
                   borderBottom: "1px solid var(--dp-ember)", paddingBottom: 2,
@@ -289,14 +288,14 @@ export default function CheckoutSuccess() {
           <div className="dp-rise-5" style={{ background: "var(--dp-charcoal)", border: "1px solid var(--dp-border)" }}>
             <div style={{ height: 2, background: "linear-gradient(90deg, var(--dp-ember), transparent 70%)" }} />
             <div style={{ padding: "1.5rem" }}>
-              <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.26em", textTransform: "uppercase", color: "var(--dp-ember)", marginBottom: "1rem" }}>
+              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.26em", textTransform: "uppercase", color: "var(--dp-ember)", marginBottom: "1rem" }}>
                 What&apos;s Next
               </p>
               <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
                 {NEXT_STEPS.map(({ icon, text }) => (
                   <li key={text} className="dp-step-item">
                     <span style={{ fontSize: "0.9rem", color: "var(--dp-ember)", flexShrink: 0, lineHeight: 1.6 }}>{icon}</span>
-                    <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.78rem", color: "var(--dp-muted)", lineHeight: 1.65 }}>
+                    <span style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.78rem", color: "var(--dp-muted)", lineHeight: 1.65 }}>
                       {text}
                     </span>
                   </li>
@@ -309,7 +308,7 @@ export default function CheckoutSuccess() {
           <div style={{ textAlign: "center", marginTop: "3rem", overflow: "hidden" }}>
             <span
               style={{
-                fontFamily: "Bebas Neue, sans-serif",
+                fontFamily: "var(--font-bebas-neue), sans-serif",
                 fontSize: "clamp(3rem,10vw,7rem)",
                 letterSpacing: "0.12em",
                 color: "rgba(242,232,213,0.04)",
