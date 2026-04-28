@@ -66,7 +66,7 @@ export default function NavbarClient({
         }
         .dp-nav-link {
           font-family: 'DM Sans', sans-serif;
-          font-size: 0.68rem;
+          font-size: 0.75rem;
           font-weight: 500;
           letter-spacing: 0.14em;
           text-transform: uppercase;
@@ -311,7 +311,7 @@ export default function NavbarClient({
                 onClick={() => setIsSearchOpen(false)}
                 style={{
                   fontFamily: "DM Sans, sans-serif",
-                  fontSize: "0.7rem",
+                  fontSize: "0.75rem",
                   fontWeight: 500,
                   letterSpacing: "0.1em",
                   textTransform: "uppercase",

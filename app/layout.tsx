@@ -9,6 +9,7 @@ import { Navbar } from "components/layout/navbar";
 import PageTransition from "components/layout/page-transition";
 import FirstVisitSignupPopup from "components/onboarding/first-visit-signup";
 import { WelcomeToast } from "components/welcome-toast";
+import WhatsAppButton from "components/whatsapp-button";
 import { getCart } from "lib/database";
 import {
     canonicalUrl,
@@ -187,6 +188,7 @@ export default async function RootLayout({
           {!isAdminRoute ? <Navbar /> : null}
           {!isAdminRoute ? <FirstVisitSignupPopup /> : null}
           {!isAdminRoute ? <ExitIntentPopup /> : null}
+          {!isAdminRoute ? <WhatsAppButton /> : null}
           <main>
             <PageTransition>{children}</PageTransition>
             <Toaster closeButton />

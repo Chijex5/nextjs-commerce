@@ -152,7 +152,7 @@ export default async function HomePage() {
           display: inline-flex; align-items: center; gap: 0.5rem;
           background: var(--dp-cream); color: var(--dp-ink);
           font-family: 'DM Sans', sans-serif; font-weight: 500;
-          font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
+          font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase;
           padding: 0.9rem 2.1rem; text-decoration: none;
           transition: background 0.22s, color 0.22s;
         }
@@ -162,7 +162,7 @@ export default async function HomePage() {
           display: inline-flex; align-items: center; gap: 0.5rem;
           border: 1px solid rgba(242,232,213,0.28); color: var(--dp-cream);
           font-family: 'DM Sans', sans-serif; font-weight: 500;
-          font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
+          font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase;
           padding: 0.9rem 2.1rem; text-decoration: none;
           transition: border-color 0.22s, background 0.22s;
         }
@@ -172,7 +172,7 @@ export default async function HomePage() {
           display: inline-flex; align-items: center; gap: 0.5rem;
           background: var(--dp-ember); color: var(--dp-cream);
           font-family: 'DM Sans', sans-serif; font-weight: 500;
-          font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
+          font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase;
           padding: 0.9rem 2.1rem; text-decoration: none;
           transition: opacity 0.22s;
         }
@@ -180,7 +180,7 @@ export default async function HomePage() {
 
         /* ── Misc ── */
         .dp-rule  { border: none; border-top: 1px solid var(--dp-border); }
-        .dp-label { font-family:'DM Sans',sans-serif; font-size:0.62rem; font-weight:500; letter-spacing:0.26em; text-transform:uppercase; color:var(--dp-ember); }
+        .dp-label { font-family:'DM Sans',sans-serif; font-size:0.75rem; font-weight:500; letter-spacing:0.26em; text-transform:uppercase; color:var(--dp-ember); }
         .dp-nav-link { color: var(--dp-muted); text-decoration: none; transition: color 0.2s; }
         .dp-nav-link:hover { color: var(--dp-cream); }
         .dp-h2    { font-family:'Cormorant Garamond',serif; font-weight:600; color:var(--dp-cream); }
@@ -189,10 +189,10 @@ export default async function HomePage() {
         /* Quick-view hover chip */
         .dp-qv { position:absolute; inset:0; display:flex; align-items:flex-end; padding:0.9rem; opacity:0; background:rgba(6,4,2,0.45); transition:opacity 0.3s; }
         .dp-zoom:hover .dp-qv { opacity:1; }
-        .dp-qv-label { font-family:'DM Sans',sans-serif; font-size:0.6rem; font-weight:500; letter-spacing:0.15em; text-transform:uppercase; color:var(--dp-cream); border-bottom:1px solid var(--dp-ember); padding-bottom:2px; }
+        .dp-qv-label { font-family:'DM Sans',sans-serif; font-size:0.75rem; font-weight:500; letter-spacing:0.15em; text-transform:uppercase; color:var(--dp-cream); border-bottom:1px solid var(--dp-ember); padding-bottom:2px; }
 
         /* Before/After pill */
-        .dp-pill { position:absolute; top:0.5rem; left:0.5rem; font-family:'DM Sans',sans-serif; font-size:0.5rem; font-weight:500; letter-spacing:0.16em; text-transform:uppercase; padding:2px 7px; }
+        .dp-pill { position:absolute; top:0.5rem; left:0.5rem; font-family:'DM Sans',sans-serif; font-size:0.75rem; font-weight:500; letter-spacing:0.16em; text-transform:uppercase; padding:2px 7px; }
 
         /* Noise grain */
         .dp-grain::after {

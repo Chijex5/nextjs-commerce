@@ -173,7 +173,7 @@ export default function AddressesPage() {
         }
 
         .ad-eyebrow {
-          font-size: 0.6rem;
+          font-size: 0.75rem;
           font-weight: 500;
           letter-spacing: 0.24em;
           text-transform: uppercase;
@@ -234,7 +234,7 @@ export default function AddressesPage() {
           display: block;
           margin-bottom: 0.35rem;
           color: #8A7762;
-          font-size: 0.62rem;
+          font-size: 0.75rem;
           font-weight: 500;
           letter-spacing: 0.2em;
           text-transform: uppercase;
@@ -278,7 +278,7 @@ export default function AddressesPage() {
           border: none;
           background: #BF5A28;
           color: #F2E8D5;
-          font-size: 0.62rem;
+          font-size: 0.75rem;
           font-weight: 500;
           letter-spacing: 0.2em;
           text-transform: uppercase;
@@ -295,7 +295,7 @@ export default function AddressesPage() {
           border: 1px solid rgba(242,232,213,0.2);
           background: transparent;
           color: #C9B99A;
-          font-size: 0.62rem;
+          font-size: 0.75rem;
           font-weight: 500;
           letter-spacing: 0.2em;
           text-transform: uppercase;
@@ -328,7 +328,7 @@ export default function AddressesPage() {
           border: none;
           background: none;
           color: #BF5A28;
-          font-size: 0.62rem;
+          font-size: 0.75rem;
           font-weight: 500;
           letter-spacing: 0.2em;
           text-transform: uppercase;

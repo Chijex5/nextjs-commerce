@@ -105,7 +105,7 @@ export default async function Footer() {
 
         .dp-footer-label {
           font-family: 'DM Sans', sans-serif;
-          font-size: 0.6rem;
+          font-size: 0.75rem;
           font-weight: 500;
           letter-spacing: 0.26em;
           text-transform: uppercase;
@@ -138,7 +138,7 @@ export default async function Footer() {
           border: none !important;
           border-radius: 0 !important;
           font-family: 'DM Sans', sans-serif !important;
-          font-size: 0.68rem !important;
+          font-size: 0.75rem !important;
           font-weight: 500 !important;
           letter-spacing: 0.14em !important;
           text-transform: uppercase !important;
@@ -264,7 +264,7 @@ export default async function Footer() {
               <span className="dp-footer-label">Info</span>
               <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "0.65rem" }}>
                 {[
-                  { title: "About Us", path: "/about" },
+                  { title: "About Us", path: "/about-us" },
                   { title: "Sizing Guide", path: "/sizing" },
                   { title: "Care Instructions", path: "/care" },
                   { title: "FAQ", path: "/faq" },
@@ -351,7 +351,7 @@ export default async function Footer() {
               gap: "0.75rem",
             }}
           >
-            <p style={{ fontSize: "0.65rem", color: "var(--dp-muted)", letterSpacing: "0.06em" }}>
+            <p style={{ fontSize: "0.75rem", color: "var(--dp-muted)", letterSpacing: "0.06em" }}>
               &copy; {copyrightDate}{" "}
               <span style={{ color: "var(--dp-sand)" }}>
                 {copyrightName}
@@ -373,7 +373,7 @@ export default async function Footer() {
               D&apos;FOOTPRINT
             </span>
 
-            <p style={{ fontSize: "0.65rem", color: "var(--dp-muted)", letterSpacing: "0.06em" }}>
+            <p style={{ fontSize: "0.75rem", color: "var(--dp-muted)", letterSpacing: "0.06em" }}>
               Quality handmade footwear for every occasion.
             </p>
           </div>
