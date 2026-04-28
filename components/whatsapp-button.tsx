@@ -24,7 +24,7 @@ export default function WhatsAppButton() {
           border-radius: 9999px;
           padding: 0.75rem 1.25rem 0.75rem 1rem;
           box-shadow: 0 4px 24px rgba(0,0,0,0.35);
-          font-family: 'DM Sans', system-ui, sans-serif;
+          font-family: var(--font-dm-sans), system-ui, sans-serif;
           font-size: 0.82rem;
           font-weight: 500;
           letter-spacing: 0.02em;

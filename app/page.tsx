@@ -96,7 +96,6 @@ export default async function HomePage() {
     <>
       {/* ─── FONTS + GLOBAL TOKENS ─────────────────────────────────────── */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --dp-void:    #06040200;
