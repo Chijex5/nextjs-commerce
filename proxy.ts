@@ -24,8 +24,13 @@ export default withAuth(
         req.headers.get("x-forwarded-proto") ||
         req.nextUrl.protocol.replace(":", "");
 
+      const isPreview = host.includes(".vercel.app");
+
       const shouldRedirectHost =
-        !host.includes("localhost") && host !== CANONICAL_HOST;
+      !host.includes("localhost") &&
+      !isPreview &&
+        host !== CANONICAL_HOST;
+
       const shouldRedirectProtocol = forwardedProto !== "https";
 
       if (shouldRedirectHost || shouldRedirectProtocol) {

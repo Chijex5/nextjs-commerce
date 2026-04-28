@@ -29,7 +29,7 @@ export default function AccountNav() {
         .ac-nav-top {
           padding: 0.9rem 1rem;
           border-bottom: 1px solid rgba(242,232,213,0.09);
-          font-size: 0.6rem;
+          font-size: 0.75rem;
           font-weight: 500;
           letter-spacing: 0.24em;
           text-transform: uppercase;
@@ -71,7 +71,7 @@ export default function AccountNav() {
         }
 
         .ac-nav-arrow {
-          font-size: 0.68rem;
+          font-size: 0.75rem;
           color: rgba(242,232,213,0.45);
         }
 

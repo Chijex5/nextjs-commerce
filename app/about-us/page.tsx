@@ -30,7 +30,6 @@ export default function AboutUsPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --dp-ink:     #0A0704;
@@ -49,7 +48,7 @@ export default function AboutUsPage() {
         .dp-sans     { font-family: 'DM Sans', sans-serif; }
         .dp-label    {
           font-family: 'DM Sans', sans-serif;
-          font-size: 0.6rem; font-weight: 500;
+          font-size: 0.75rem; font-weight: 500;
           letter-spacing: 0.26em; text-transform: uppercase;
           color: var(--dp-ember);
         }
@@ -77,7 +76,7 @@ export default function AboutUsPage() {
         /* Contact link */
         .dp-contact-link {
           display: inline-flex; align-items: center; gap: 0.4rem;
-          font-family: 'DM Sans', sans-serif; font-size: 0.68rem; font-weight: 500;
+          font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 500;
           letter-spacing: 0.14em; text-transform: uppercase;
           color: var(--dp-cream); text-decoration: none;
           border-bottom: 1px solid var(--dp-ember); padding-bottom: 2px;

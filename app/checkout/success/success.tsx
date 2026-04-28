@@ -56,7 +56,6 @@ export default function CheckoutSuccess() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
         :root {
           --dp-ink:     #0A0704;
           --dp-charcoal:#191209;
@@ -105,7 +104,7 @@ export default function CheckoutSuccess() {
           display: inline-flex; align-items: center; gap: 0.4rem;
           background: var(--dp-cream); color: var(--dp-ink);
           font-family: 'DM Sans', sans-serif; font-weight: 500;
-          font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase;
+          font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase;
           padding: 0.85rem 1.75rem; text-decoration: none;
           transition: background 0.2s, color 0.2s;
         }
@@ -115,7 +114,7 @@ export default function CheckoutSuccess() {
           display: inline-flex; align-items: center; gap: 0.4rem;
           border: 1px solid var(--dp-border); color: var(--dp-muted);
           font-family: 'DM Sans', sans-serif; font-weight: 500;
-          font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase;
+          font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase;
           padding: 0.85rem 1.75rem; text-decoration: none;
           transition: border-color 0.2s, color 0.2s;
         }
