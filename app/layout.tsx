@@ -83,6 +83,7 @@ const bebasNeue = Bebas_Neue({
 
 const cormorantGaramond = Cormorant_Garamond({
   subsets: ["latin"],
+  style: ["normal", "italic"],
   variable: "--font-cormorant-garamond",
   display: "swap",
 });
