@@ -159,7 +159,7 @@ function normalizeGuide(guide: PublishedSizeGuide): GuideViewModel {
     id: guide.id,
     productType: guide.productType,
     title: guide.title,
-    summary: `${guide.title} for ${guide.productType}.`,
+    summary: "Size chart, measurements, and fit notes.",
     measurements:
       measurementItems.length > 0
         ? measurementItems
