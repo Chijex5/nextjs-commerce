@@ -2,15 +2,15 @@ import { randomUUID } from "crypto";
 import { asc, desc, eq } from "drizzle-orm";
 import { HIDDEN_PRODUCT_TAG, TAGS } from "lib/constants";
 import {
-  unstable_cacheLife as cacheLife,
-  unstable_cacheTag as cacheTag,
-  revalidateTag,
+    unstable_cacheLife as cacheLife,
+    unstable_cacheTag as cacheTag,
+    revalidateTag,
 } from "next/cache";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "../db/client";
 import * as dbQueries from "../db/queries";
-import { customOrders } from "../db/schema";
+import { customOrders, sizeGuides } from "../db/schema";
 import type { Cart, Collection, Menu, Page, Product } from "../shopify/types";
 
 const CART_SESSION_COOKIE = "cartSessionId";
@@ -64,11 +64,11 @@ async function resolveCartForSession(
 
 // Re-export types from shopify for compatibility
 export type {
-  Cart, CartItem,
-  CartProduct, Collection, Image, Menu, Money, Page,
-  Product,
-  ProductOption,
-  ProductVariant, SEO
+    Cart, CartItem,
+    CartProduct, Collection, Image, Menu, Money, Page,
+    Product,
+    ProductOption,
+    ProductVariant, SEO
 } from "../shopify/types";
 
 // Cart operations
@@ -346,8 +346,29 @@ export async function getPublishedCustomOrders(
     .limit(limit);
 }
 
+export type PublishedSizeGuide = typeof sizeGuides.$inferSelect;
+
+export async function getPublishedSizeGuides(
+  limit: number = 6,
+): Promise<PublishedSizeGuide[]> {
+  "use cache";
+  cacheTag(TAGS.sizeGuides);
+  cacheLife("hours");
+
+  return db
+    .select()
+    .from(sizeGuides)
+    .where(eq(sizeGuides.isActive, true))
+    .orderBy(asc(sizeGuides.productType), asc(sizeGuides.title))
+    .limit(limit);
+}
+
 export function revalidateCustomOrders(): void {
   revalidateTag(TAGS.customOrders, "seconds");
+}
+
+export function revalidateSizeGuides(): void {
+  revalidateTag(TAGS.sizeGuides, "seconds");
 }
 
 // Revalidation webhook handler (for potential future use with admin dashboard)
