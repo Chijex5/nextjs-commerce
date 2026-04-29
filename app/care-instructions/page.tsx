@@ -456,7 +456,7 @@ export default async function CareInstructionsPage() {
                   ],
                 },
                 {
-                  material: "Fabric &amp; textiles",
+                  material: "Fabric & textiles",
                   description:
                     "Ankara, adire, linen, and other woven fabrics used in custom pairs.",
                   steps: [
