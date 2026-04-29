@@ -300,8 +300,8 @@ export default async function Footer() {
               >
                 {[
                   { title: "About Us", path: "/about-us" },
-                  { title: "Sizing Guide", path: "/sizing" },
-                  { title: "Care Instructions", path: "/care" },
+                  { title: "Sizing Guide", path: "/sizing-guide" },
+                  { title: "Care Instructions", path: "/care-instructions" },
                   { title: "FAQ", path: "/faq" },
                   { title: "Privacy Policy", path: "/privacy" },
                   { title: "Shipping Returns", path: "/shipping-returns" },
