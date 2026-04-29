@@ -383,8 +383,9 @@ export default async function CareInstructionsPage() {
               <p className="ci-label">Care instructions</p>
               <h1 className="ci-title">Keep your pair in perfect condition.</h1>
               <p className="ci-copy">
-                Handmade footwear improves with age. Learn how to clean, protect,
-                and store your D'FOOTPRINT so it lasts for years of everyday wear.
+                Handmade footwear improves with age. Learn how to clean,
+                protect, and store your D'FOOTPRINT so it lasts for years of
+                everyday wear.
               </p>
               <div className="ci-actions">
                 <Link className="ci-btn ci-btn-primary" href="/contact">
@@ -419,11 +420,14 @@ export default async function CareInstructionsPage() {
             <div className="ci-section-head">
               <div>
                 <p className="ci-label">By material</p>
-                <h2 className="ci-section-title">Cleaning guides for each material</h2>
+                <h2 className="ci-section-title">
+                  Cleaning guides for each material
+                </h2>
               </div>
               <p className="ci-section-note">
-                Each material responds differently to moisture, oils, and light. Follow
-                the guide for your pair to keep it looking and feeling fresh.
+                Each material responds differently to moisture, oils, and light.
+                Follow the guide for your pair to keep it looking and feeling
+                fresh.
               </p>
             </div>
 
@@ -431,7 +435,8 @@ export default async function CareInstructionsPage() {
               {[
                 {
                   material: "Full-grain leather",
-                  description: "Premium durable leather that develops a natural patina over time.",
+                  description:
+                    "Premium durable leather that develops a natural patina over time.",
                   steps: [
                     "Brush off dirt with a soft, dry cloth or soft-bristled brush after each wear.",
                     "For stains, mix equal parts white vinegar and water; dab gently with a clean cloth.",
@@ -441,7 +446,8 @@ export default async function CareInstructionsPage() {
                 },
                 {
                   material: "Suede",
-                  description: "Soft, delicate finish that requires gentle care and protection.",
+                  description:
+                    "Soft, delicate finish that requires gentle care and protection.",
                   steps: [
                     "Brush with a dedicated suede brush to restore the nap (direction of the fibers).",
                     "For fresh stains, use a suede eraser or a pencil eraser gently.",
@@ -451,7 +457,8 @@ export default async function CareInstructionsPage() {
                 },
                 {
                   material: "Fabric &amp; textiles",
-                  description: "Ankara, adire, linen, and other woven fabrics used in custom pairs.",
+                  description:
+                    "Ankara, adire, linen, and other woven fabrics used in custom pairs.",
                   steps: [
                     "Vacuum or brush gently to remove dust and loose dirt.",
                     "For stains, blot (don't rub) with a damp cloth and mild soap solution.",
@@ -461,7 +468,8 @@ export default async function CareInstructionsPage() {
                 },
                 {
                   material: "Patent leather",
-                  description: "Glossy, waterproof finish that demands minimal care but shines with attention.",
+                  description:
+                    "Glossy, waterproof finish that demands minimal care but shines with attention.",
                   steps: [
                     "Wipe with a soft, damp cloth immediately after wear to remove dust.",
                     "For shine, use a microfiber cloth or dedicated patent leather cleaner.",
@@ -476,7 +484,10 @@ export default async function CareInstructionsPage() {
                   <p className="ci-card-copy">{guide.description}</p>
                   <div className="ci-steps">
                     {guide.steps.map((step, idx) => (
-                      <div key={`${guide.material}-${idx}`} className="ci-step-item">
+                      <div
+                        key={`${guide.material}-${idx}`}
+                        className="ci-step-item"
+                      >
                         <div className="ci-step-num">{idx + 1}</div>
                         <div>{step}</div>
                       </div>
@@ -491,7 +502,9 @@ export default async function CareInstructionsPage() {
             <div className="ci-section-head">
               <div>
                 <p className="ci-label">Storage &amp; preservation</p>
-                <h2 className="ci-section-title">Long-term care between wears</h2>
+                <h2 className="ci-section-title">
+                  Long-term care between wears
+                </h2>
               </div>
             </div>
 
@@ -553,7 +566,9 @@ export default async function CareInstructionsPage() {
             <div className="ci-section-head">
               <div>
                 <p className="ci-label">Best practices</p>
-                <h2 className="ci-section-title">Do's and don'ts by material</h2>
+                <h2 className="ci-section-title">
+                  Do's and don'ts by material
+                </h2>
               </div>
             </div>
 
@@ -680,8 +695,8 @@ export default async function CareInstructionsPage() {
 
             <div className="ci-footer-cta">
               <p className="ci-section-note" style={{ margin: 0 }}>
-                Still have questions about care? Our team is happy to help you get the
-                most out of your pair.
+                Still have questions about care? Our team is happy to help you
+                get the most out of your pair.
               </p>
               <Link className="ci-btn ci-btn-primary" href="/contact">
                 Get in touch
