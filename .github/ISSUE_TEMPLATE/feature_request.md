@@ -1,53 +1,53 @@
 ---
-name: "✨ Feature Request"
-about: "Suggest a new feature or enhancement"
+name: "Feature Request"
+about: "Propose a new feature or enhancement to the codebase"
 title: "[FEATURE] "
 labels: ["enhancement"]
 assignees: []
 ---
 
-## ✨ Feature Description
-<!-- Provide a clear and concise description of the feature you want -->
+## Summary
+<!-- A concise, one or two sentence description of the feature. -->
 
-## 🎯 Use Case / Problem Statement
-<!-- Describe the problem this feature would solve or the use case it addresses -->
-- What problem does this solve?
-- Who would benefit from this feature?
+## Problem Statement
+<!--
+What problem does this address? Describe the limitation or gap in current functionality.
+Focus on the problem, not the solution.
+-->
 
-## 💡 Proposed Solution
-<!-- Describe how you think this feature should work -->
+## Proposed Solution
+<!-- Describe your proposed approach. Be specific about behavior and expected outcomes. -->
 
-## 🤔 Alternative Solutions
-<!-- Have you considered any alternatives? Describe them here -->
+## Alternatives Considered
+<!-- List any alternative approaches you evaluated and why they were ruled out. -->
 
-## 📋 Acceptance Criteria
-<!-- What would make this feature "done"? -->
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
+## Acceptance Criteria
+<!--
+Define what "done" looks like. Each item should be independently testable.
+-->
+- [ ] 
+- [ ] 
+- [ ] 
 
-## 🏗️ Technical Considerations
-<!-- Any technical aspects to consider -->
-- **Component/Module:** (e.g., Checkout, Admin, API)
-- **Database Changes:** (if applicable)
-- **Dependencies:** (if any new libraries needed)
-- **Breaking Changes:** (if any)
+## Technical Scope
+| Area | Details |
+|---|---|
+| Component / Module | |
+| Database Changes | |
+| New Dependencies | |
+| Breaking Changes | |
 
-## 📊 User Impact
-<!-- How would this affect users? -->
-- User Experience: 
-- Performance Impact: 
-- Accessibility Considerations: 
+## Impact Assessment
+| Dimension | Notes |
+|---|---|
+| User Experience | |
+| Performance | |
+| Accessibility | |
 
-## 📎 Related Issues
-<!-- Link any related issues or PRs -->
+## Priority
+`Low` / `Medium` / `High` / `Critical`
+
+## References
+<!-- Related issues, PRs, designs, or external documentation. -->
 - Relates to: #
 - Depends on: #
-
-## ⚡ Priority
-<!-- How important is this feature? -->
-- Priority: Low / Medium / High / Critical
-
-## 📝 Additional Context
-<!-- Add any other context, mockups, or references here -->
-

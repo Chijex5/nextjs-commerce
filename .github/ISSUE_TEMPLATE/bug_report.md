@@ -1,48 +1,49 @@
 ---
-name: "🐛 Bug Report"
-about: "Report a bug or unexpected behavior"
+name: "Bug Report"
+about: "Report a reproducible defect or unexpected behavior"
 title: "[BUG] "
 labels: ["bug"]
 assignees: []
 ---
 
-## 🐛 Bug Description
-<!-- Provide a clear and concise description of what the bug is -->
+## Description
+<!-- Concise summary of the defect. State what is broken and what was expected. -->
 
-## 🔍 Reproduction Steps
-<!-- Steps to reproduce the behavior -->
-1. Go to '...'
-2. Click on '...'
-3. Scroll down to '...'
-4. See error
+## Reproduction Steps
+<!-- Provide the minimum steps to reliably reproduce the issue. -->
+1. 
+2. 
+3. 
 
-## ✅ Expected Behavior
-<!-- Describe what you expected to happen -->
+## Expected Behavior
+<!-- What should happen. -->
 
-## ❌ Actual Behavior
-<!-- Describe what actually happened -->
+## Actual Behavior
+<!-- What actually happens. Include any error messages verbatim. -->
 
-## 📸 Screenshots / Videos
-<!-- If applicable, add screenshots or videos to help explain your problem -->
+## Evidence
+<!-- Attach screenshots, screen recordings, or console output where applicable. -->
 
-## 🌍 Environment
-<!-- Fill in relevant details -->
-- **Browser:** (e.g., Chrome 120, Firefox 121)
-- **OS:** (e.g., Windows 11, macOS 14.2, Ubuntu 22.04)
-- **Device:** (e.g., Desktop, Mobile, Tablet)
-- **URL/Page:** (e.g., https://example.com/products)
+## Environment
+| Field | Value |
+|---|---|
+| Browser | (e.g. Chrome 124, Firefox 125) |
+| Operating System | (e.g. macOS 14.4, Windows 11, Ubuntu 22.04) |
+| Device | (e.g. Desktop, Mobile — iPhone 15) |
+| URL / Page | |
 
-## 💻 Technical Details
-- **Component/Feature Affected:** (e.g., Checkout, Product Search, Admin Dashboard)
-- **API Endpoint (if applicable):** (e.g., GET /api/products)
-- **Database Table (if applicable):** (e.g., products, orders)
+## Technical Details
+| Field | Value |
+|---|---|
+| Component / Feature | |
+| API Endpoint | (e.g. `GET /api/products`) |
+| Database Table | (e.g. `orders`, `products`) |
 
-## 🔧 Additional Context
-<!-- Add any other context about the problem here -->
-- Error messages or logs
-- Recent changes that might be related
-- Severity level: Critical / High / Medium / Low
+## Severity
+`Critical` / `High` / `Medium` / `Low`
 
-## ⚠️ Impact
-<!-- Who or what is affected by this bug? -->
+## Impact
+<!-- Who or what is affected? Quantify if possible (e.g. affects all checkout users on mobile). -->
 
+## Additional Context
+<!-- Recent deployments, related changes, or anything else that could be relevant. -->
