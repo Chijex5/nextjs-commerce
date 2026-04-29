@@ -578,9 +578,8 @@ export default async function SizingGuidePage() {
                 <h2 className="sg-section-title">Charts by product type</h2>
               </div>
               <p className="sg-section-note">
-                This page is already wired to the live size_guides table, so the
-                page can grow from static guidance into a source of truth
-                without a redesign.
+                Product size charts are kept up to date so you can compare fits
+                with confidence as more styles are added.
               </p>
             </div>
 
