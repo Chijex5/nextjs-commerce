@@ -552,7 +552,9 @@ export default async function CareInstructionsPage() {
                   <ul className="ci-list">
                     {section.items.map((item) => (
                       <li key={item} className="ci-list-item">
-                        <span className="ci-list-check">✓</span>
+                        <span className="ci-list-check" aria-hidden="true">
+                          ✓
+                        </span>
                         <span>{item}</span>
                       </li>
                     ))}
