@@ -677,7 +677,7 @@ export default async function CareInstructionsPage() {
                 },
                 {
                   q: "What should I do if my pair gets wet?",
-                  a: "Remove insoles and stuff with newspaper; change it every few hours. Let air-dry at room temperature away from heat. Never use a hairdryer or heater.",
+                  a: "Remove insoles and stuff with plain tissue paper or paper towels; change them every few hours. Let air-dry at room temperature away from heat. Never use a hairdryer or heater.",
                 },
                 {
                   q: "How often should I condition my leather pair?",
