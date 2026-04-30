@@ -45,13 +45,13 @@ export async function generateMetadata(props: {
       description,
       url: canonicalUrl(canonicalPath),
       type: "website",
-      images: ["/opengraph-image"],
+      images: [`${canonicalUrl("/opengraph-image")}`],
     },
     twitter: {
       card: "summary_large_image",
       title: `${title} | ${siteName}`,
       description,
-      images: ["/opengraph-image"],
+      images: [`${canonicalUrl("/opengraph-image")}`],
     },
   };
 }
