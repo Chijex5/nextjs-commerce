@@ -192,7 +192,7 @@ export default async function OpengraphImage(
               letterSpacing: "1px",
               padding: "14px 28px",
               borderRadius: "8px",
-              width: "fit-content",
+              width: "auto",
             }}
           >
             Shop Collection

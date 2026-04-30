@@ -25,7 +25,11 @@ export default async function Image(props: Props) {
       })}`
     : undefined;
 
-  const productImage = product.images?.[0]?.url ?? null;
+  // next/og ImageResponse does not support WebP — rewrite Cloudinary URLs to JPEG
+  const rawImage = product.images?.[0]?.url ?? null;
+  const productImage = rawImage
+    ? rawImage.replace("/image/upload/", "/image/upload/f_jpg,q_auto/")
+    : null;
 
   // Truncate description to keep layout clean
   const description =
@@ -46,7 +50,7 @@ export default async function Image(props: Props) {
           overflow: "hidden",
         }}
       >
-        {/* ── Subtle grain overlay via radial gradient ── */}
+        {/* Subtle grain overlay via radial gradient */}
         <div
           style={{
             position: "absolute",
@@ -76,7 +80,6 @@ export default async function Image(props: Props) {
               marginBottom: "32px",
             }}
           >
-            {/* D' monogram */}
             <div
               style={{
                 display: "flex",
@@ -188,7 +191,7 @@ export default async function Image(props: Props) {
               letterSpacing: "1px",
               padding: "14px 28px",
               borderRadius: "8px",
-              width: "fit-content",
+              width: "auto",
             }}
           >
             Shop Collection
@@ -208,7 +211,7 @@ export default async function Image(props: Props) {
             position: "relative",
           }}
         >
-          {/* "Handcrafted in Nigeria" badge — top right */}
+          {/* "Handcrafted in Nigeria" badge */}
           <div
             style={{
               display: "flex",
@@ -252,7 +255,6 @@ export default async function Image(props: Props) {
                 style={{ objectFit: "cover", width: "100%", height: "100%" }}
               />
             ) : (
-              /* Fallback placeholder */
               <div
                 style={{
                   display: "flex",
@@ -286,6 +288,6 @@ export default async function Image(props: Props) {
     ),
     {
       ...size,
-    }
+    },
   );
 }
