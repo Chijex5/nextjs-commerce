@@ -72,6 +72,7 @@ const dmSans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-dm-sans",
   display: "swap",
+  axes: ["opsz"],
 });
 
 const bebasNeue = Bebas_Neue({
@@ -83,9 +84,9 @@ const bebasNeue = Bebas_Neue({
 
 const cormorantGaramond = Cormorant_Garamond({
   subsets: ["latin"],
-  style: ["normal", "italic"],
   variable: "--font-cormorant-garamond",
   display: "swap",
+  style: ["normal", "italic"],
 });
 
 export default async function RootLayout({

@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: "Discussions"
+    url: "https://github.com/Chijex5/nextjs-commerce/discussions"
+    about: "Ask questions and discuss with the community"
+  - name: "Email Support"
+    url: "mailto:support@dfootprint.me"
+    about: "Contact the maintainers directly for non-public matters"
+  - name: "Security Vulnerabilities"
+    url: "https://github.com/Chijex5/nextjs-commerce/security/advisories"
+    about: "Report security issues privately — do not open a public issue"

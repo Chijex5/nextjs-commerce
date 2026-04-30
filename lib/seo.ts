@@ -73,10 +73,13 @@ export const localBusinessJsonLd = () => {
     process.env.NEXT_PUBLIC_WHATSAPP_PHONE || process.env.BUSINESS_PHONE;
   const businessEmail =
     process.env.NEXT_PUBLIC_SUPPORT_EMAIL || process.env.BUSINESS_EMAIL;
+  const businessStreetAddress =
+    process.env.BUSINESS_STREET_ADDRESS ||
+    "17 peace estate road along lasu road Iba Ipaye Lagos";
 
   const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
+    "@type": "ShoeStore",
     "@id": `${canonicalUrl("/")}#local-business`,
     name: siteName,
     url: canonicalUrl("/"),
@@ -88,6 +91,7 @@ export const localBusinessJsonLd = () => {
     },
     address: {
       "@type": "PostalAddress",
+      streetAddress: businessStreetAddress,
       addressCountry: "NG",
       addressRegion: process.env.BUSINESS_REGION || "Lagos",
       addressLocality: process.env.BUSINESS_LOCALITY || "Lagos",

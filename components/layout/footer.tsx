@@ -1,6 +1,7 @@
 import FooterMenu from "components/layout/footer-menu";
 import LogoSquare from "components/logo-square";
 import NewsletterForm from "components/newsletter-form";
+import { FaTiktok, FaWhatsapp, FaInstagram, FaSnapchat } from "react-icons/fa";
 import { getMenu } from "lib/database";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -10,31 +11,30 @@ const { COMPANY_NAME, SITE_NAME } = process.env;
 const SOCIAL_LINKS = [
   {
     label: "Instagram",
-    href: "https://instagram.com",
+    href: "https://instagram.com/d__footprint",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-        <circle cx="12" cy="12" r="4"/>
-        <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
-      </svg>
+      <FaInstagram />
     ),
   },
   {
     label: "WhatsApp",
-    href: "https://wa.me",
+    href: "https://wa.me/2348121993874",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-      </svg>
+      <FaWhatsapp />
     ),
   },
   {
-    label: "Twitter / X",
-    href: "https://twitter.com",
+    label: "TikTok",
+    href: "https://tiktok.com/@d_footprint",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-      </svg>
+      <FaTiktok />
+    ),
+  },
+  {
+    label: "Snapchat",
+    href: "https://snapchat.com/t/To9LQPVS",
+    icon: (
+      <FaSnapchat />
     ),
   },
 ];
@@ -263,12 +263,12 @@ export default async function Footer() {
               <span className="dp-footer-label">Info</span>
               <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "0.65rem" }}>
                 {[
-                  { title: "About Us", path: "/about" },
+                  { title: "About Us", path: "/about-us" },
                   { title: "Sizing Guide", path: "/sizing" },
                   { title: "Care Instructions", path: "/care" },
                   { title: "FAQ", path: "/faq" },
                   { title: "Privacy Policy", path: "/privacy" },
-                  { title: "Returns", path: "/returns" },
+                  { title: "Shipping Returns", path: "/shipping-returns" },
                 ].map(({ title, path }) => (
                   <li key={title}>
                     <Link href={path} className="dp-footer-link">
@@ -322,13 +322,11 @@ export default async function Footer() {
                   hello@dfootprint.me
                 </a>
                 <a
-                  href="https://wa.me/2340000000000"
+                  href="https://wa.me/2348121993874"
                   className="dp-footer-link"
                   style={{ fontSize: "0.74rem" }}
                 >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-                  </svg>
+                  <FaWhatsapp style={{ marginRight: "0.3rem" }} />
                   WhatsApp us
                 </a>
               </div>
