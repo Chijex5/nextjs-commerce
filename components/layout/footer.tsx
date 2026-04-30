@@ -44,7 +44,7 @@ export default async function Footer() {
         :root {
           --dp-ink:     #0A0704;
           --dp-void:    #06040200;
-          --dp-charcoal:#191209;
+          --dp-charcoal: #191209;
           --dp-cream:   #F2E8D5;
           --dp-sand:    #C9B99A;
           --dp-muted:   #6A5A48;
