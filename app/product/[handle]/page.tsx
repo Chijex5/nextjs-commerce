@@ -359,6 +359,58 @@ export default async function ProductPage(props: {
                   reviewAggregate={reviewAggregate}
                 />
               </Suspense>
+              <div
+                style={{
+                  marginTop: 20,
+                  paddingTop: 20,
+                  borderTop: "1px solid var(--border)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 16,
+                  flexWrap: "wrap",
+                }}
+              >
+                <div>
+                  <p
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 500,
+                      letterSpacing: "0.22em",
+                      textTransform: "uppercase",
+                      color: "var(--terra)",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Sizing help
+                  </p>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: "var(--muted)",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    Use the guide before checkout if you want a second opinion
+                    on fit.
+                  </p>
+                </div>
+                <Link
+                  href="/sizing-guide"
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 500,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: "var(--cream)",
+                    textDecoration: "none",
+                    borderBottom: "1px solid var(--terra)",
+                    paddingBottom: 2,
+                  }}
+                >
+                  Open sizing guide
+                </Link>
+              </div>
             </div>
           </div>
         </div>

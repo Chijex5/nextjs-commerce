@@ -46,6 +46,7 @@ export const TAGS = {
   cart: "cart",
   pages: "pages",
   customOrders: "customOrders",
+  sizeGuides: "sizeGuides",
 };
 
 export const HIDDEN_PRODUCT_TAG = "nextjs-frontend-hidden";

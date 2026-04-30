@@ -1,10 +1,10 @@
 import FooterMenu from "components/layout/footer-menu";
 import LogoSquare from "components/logo-square";
 import NewsletterForm from "components/newsletter-form";
-import { FaTiktok, FaWhatsapp, FaInstagram, FaSnapchat } from "react-icons/fa";
 import { getMenu } from "lib/database";
 import Link from "next/link";
 import { Suspense } from "react";
+import { FaInstagram, FaSnapchat, FaTiktok, FaWhatsapp } from "react-icons/fa";
 
 const { COMPANY_NAME, SITE_NAME } = process.env;
 
@@ -12,30 +12,22 @@ const SOCIAL_LINKS = [
   {
     label: "Instagram",
     href: "https://instagram.com/d__footprint",
-    icon: (
-      <FaInstagram />
-    ),
+    icon: <FaInstagram />,
   },
   {
     label: "WhatsApp",
     href: "https://wa.me/2348121993874",
-    icon: (
-      <FaWhatsapp />
-    ),
+    icon: <FaWhatsapp />,
   },
   {
     label: "TikTok",
     href: "https://tiktok.com/@d_footprint",
-    icon: (
-      <FaTiktok />
-    ),
+    icon: <FaTiktok />,
   },
   {
     label: "Snapchat",
     href: "https://snapchat.com/t/To9LQPVS",
-    icon: (
-      <FaSnapchat />
-    ),
+    icon: <FaSnapchat />,
   },
 ];
 
@@ -152,10 +144,20 @@ export default async function Footer() {
 
       <footer
         className="dp-footer-sans"
-        style={{ background: "var(--dp-charcoal)", color: "var(--dp-muted)", borderTop: "1px solid var(--dp-border)" }}
+        style={{
+          background: "var(--dp-charcoal)",
+          color: "var(--dp-muted)",
+          borderTop: "1px solid var(--dp-border)",
+        }}
       >
         {/* ── TOP ACCENT LINE ─────────────────────────────────── */}
-        <div style={{ height: 2, background: "linear-gradient(90deg, var(--dp-ember) 0%, var(--dp-gold) 50%, transparent 100%)" }} />
+        <div
+          style={{
+            height: 2,
+            background:
+              "linear-gradient(90deg, var(--dp-ember) 0%, var(--dp-gold) 50%, transparent 100%)",
+          }}
+        />
 
         {/* ── MAIN FOOTER GRID ────────────────────────────────── */}
         <div
@@ -177,10 +179,21 @@ export default async function Footer() {
             className="md:grid-cols-[1.4fr_0.9fr_0.9fr_1.3fr]"
           >
             {/* ── COL 1: Brand ──────────────────────────────────── */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "1.25rem",
+              }}
+            >
               <Link
                 href="/"
-                style={{ display: "flex", alignItems: "center", gap: "0.6rem", textDecoration: "none" }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.6rem",
+                  textDecoration: "none",
+                }}
               >
                 <LogoSquare size="sm" />
                 <span
@@ -213,11 +226,19 @@ export default async function Footer() {
                   maxWidth: 300,
                 }}
               >
-                Built for daily comfort and timeless style. Every pair shaped by hand, designed to last.
+                Built for daily comfort and timeless style. Every pair shaped by
+                hand, designed to last.
               </p>
 
               {/* Socials */}
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", paddingTop: "0.25rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  paddingTop: "0.25rem",
+                }}
+              >
                 {SOCIAL_LINKS.map(({ label, href, icon }) => (
                   <a
                     key={label}
@@ -238,7 +259,13 @@ export default async function Footer() {
               <span className="dp-footer-label">Navigate</span>
               <Suspense
                 fallback={
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.6rem",
+                    }}
+                  >
                     {[80, 60, 90, 70].map((w) => (
                       <div
                         key={w}
@@ -261,11 +288,20 @@ export default async function Footer() {
             {/* ── COL 3: Info ───────────────────────────────────── */}
             <div>
               <span className="dp-footer-label">Info</span>
-              <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "0.65rem" }}>
+              <ul
+                style={{
+                  listStyle: "none",
+                  margin: 0,
+                  padding: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.65rem",
+                }}
+              >
                 {[
                   { title: "About Us", path: "/about-us" },
-                  { title: "Sizing Guide", path: "/sizing" },
-                  { title: "Care Instructions", path: "/care" },
+                  { title: "Sizing Guide", path: "/sizing-guide" },
+                  { title: "Care Instructions", path: "/care-instructions" },
                   { title: "FAQ", path: "/faq" },
                   { title: "Privacy Policy", path: "/privacy" },
                   { title: "Shipping Returns", path: "/shipping-returns" },
@@ -290,7 +326,8 @@ export default async function Footer() {
                   marginBottom: "1.25rem",
                 }}
               >
-                New drops, restocks, and exclusive offers — straight to your inbox.
+                New drops, restocks, and exclusive offers — straight to your
+                inbox.
               </p>
               <div className="dp-newsletter-wrap">
                 <NewsletterForm />
@@ -307,7 +344,10 @@ export default async function Footer() {
                   gap: "0.35rem",
                 }}
               >
-                <span className="dp-footer-label" style={{ marginBottom: "0.4rem" }}>
+                <span
+                  className="dp-footer-label"
+                  style={{ marginBottom: "0.4rem" }}
+                >
                   Get in touch
                 </span>
                 <a
@@ -315,9 +355,18 @@ export default async function Footer() {
                   className="dp-footer-link"
                   style={{ fontSize: "0.74rem" }}
                 >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                    <polyline points="22,6 12,13 2,6"/>
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" />
                   </svg>
                   hello@dfootprint.me
                 </a>
@@ -348,11 +397,19 @@ export default async function Footer() {
               gap: "0.75rem",
             }}
           >
-            <p style={{ fontSize: "0.65rem", color: "var(--dp-muted)", letterSpacing: "0.06em" }}>
+            <p
+              style={{
+                fontSize: "0.65rem",
+                color: "var(--dp-muted)",
+                letterSpacing: "0.06em",
+              }}
+            >
               &copy; {copyrightDate}{" "}
               <span style={{ color: "var(--dp-sand)" }}>
                 {copyrightName}
-                {copyrightName.length && !copyrightName.endsWith(".") ? "." : ""}
+                {copyrightName.length && !copyrightName.endsWith(".")
+                  ? "."
+                  : ""}
               </span>{" "}
               All rights reserved.
             </p>
@@ -370,7 +427,13 @@ export default async function Footer() {
               D&apos;FOOTPRINT
             </span>
 
-            <p style={{ fontSize: "0.65rem", color: "var(--dp-muted)", letterSpacing: "0.06em" }}>
+            <p
+              style={{
+                fontSize: "0.65rem",
+                color: "var(--dp-muted)",
+                letterSpacing: "0.06em",
+              }}
+            >
               Quality handmade footwear for every occasion.
             </p>
           </div>
