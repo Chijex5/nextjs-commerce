@@ -20,7 +20,7 @@ export default async function Image(props: Props) {
   }
 
   const price = product.priceRange?.minVariantPrice
-    ? `₦${Number(product.priceRange.minVariantPrice).toLocaleString("en-NG", {
+    ? `NGN ${Number(product.priceRange.minVariantPrice.amount).toLocaleString("en-NG", {
         minimumFractionDigits: 2,
       })}`
     : undefined;
@@ -231,7 +231,7 @@ export default async function Image(props: Props) {
               fontWeight: 500,
             }}
           >
-            <span style={{ color: "#d97b3a", fontSize: "11px" }}>✦</span>
+            <span style={{ color: "#d97b3a", fontSize: "11px" }}>•</span>
             Handcrafted in Nigeria
           </div>
 

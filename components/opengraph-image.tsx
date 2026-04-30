@@ -230,7 +230,7 @@ export default async function OpengraphImage(
               fontWeight: 600,
             }}
           >
-            <span style={{ color: "#d97b3a", fontSize: "10px" }}>✦</span>
+            <span style={{ color: "#d97b3a", fontSize: "10px" }}>•</span>
             Handcrafted in Nigeria
           </div>
 
