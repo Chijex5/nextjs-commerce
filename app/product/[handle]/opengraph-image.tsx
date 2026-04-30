@@ -25,6 +25,8 @@ export default async function Image(props: Props) {
       })}`
     : undefined;
 
+    console.log("Generating OG image for product:", product);
+
   // next/og ImageResponse does not support WebP — rewrite Cloudinary URLs to JPEG
   const rawImage = product.images?.[0]?.url ?? null;
   const productImage = rawImage
