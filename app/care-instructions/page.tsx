@@ -456,7 +456,7 @@ export default async function CareInstructionsPage() {
                   ],
                 },
                 {
-                  material: "Fabric &amp; textiles",
+                  material: "Fabric & textiles",
                   description:
                     "Ankara, adire, linen, and other woven fabrics used in custom pairs.",
                   steps: [
@@ -552,7 +552,9 @@ export default async function CareInstructionsPage() {
                   <ul className="ci-list">
                     {section.items.map((item) => (
                       <li key={item} className="ci-list-item">
-                        <span className="ci-list-check">✓</span>
+                        <span className="ci-list-check" aria-hidden="true">
+                          ✓
+                        </span>
                         <span>{item}</span>
                       </li>
                     ))}
@@ -605,7 +607,7 @@ export default async function CareInstructionsPage() {
                   ],
                 },
                 {
-                  material: "Fabric &amp; Textile",
+                  material: "Fabric & Textile",
                   dos: [
                     "Vacuum gently or brush away dust regularly.",
                     "Blot liquid spills immediately.",
@@ -675,7 +677,7 @@ export default async function CareInstructionsPage() {
                 },
                 {
                   q: "What should I do if my pair gets wet?",
-                  a: "Remove insoles and stuff with newspaper; change it every few hours. Let air-dry at room temperature away from heat. Never use a hairdryer or heater.",
+                  a: "Remove insoles and stuff with plain tissue paper or paper towels; change them every few hours. Let air-dry at room temperature away from heat. Never use a hairdryer or heater.",
                 },
                 {
                   q: "How often should I condition my leather pair?",
