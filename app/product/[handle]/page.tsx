@@ -40,7 +40,19 @@ export async function generateMetadata(props: {
       follow: indexable,
       googleBot: { index: indexable, follow: indexable },
     },
-
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl(canonicalPath),
+      type: "website",
+      images: ["/opengraph-image"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} | ${siteName}`,
+      description,
+      images: ["/opengraph-image"],
+    },
   };
 }
 
