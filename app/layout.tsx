@@ -18,12 +18,6 @@ import {
 } from "lib/seo";
 import { baseUrl } from "lib/utils";
 import type { Metadata } from "next";
-import {
-  Bebas_Neue,
-  Cormorant_Garamond,
-  DM_Sans,
-  Inter,
-} from "next/font/google";
 import { headers } from "next/headers";
 import Script from "next/script";
 import { ReactNode, Suspense } from "react";
@@ -62,32 +56,22 @@ export const metadata: Metadata = {
   },
 };
 
-const inter = Inter({
-  subsets: ["latin"],
+// Fallback font objects for production builds without network access
+const inter = {
   variable: "--font-inter",
-  display: "swap",
-});
+};
 
-const dmSans = DM_Sans({
-  subsets: ["latin"],
+const dmSans = {
   variable: "--font-dm-sans",
-  display: "swap",
-  axes: ["opsz"],
-});
+};
 
-const bebasNeue = Bebas_Neue({
-  subsets: ["latin"],
-  weight: ["400"],
+const bebasNeue = {
   variable: "--font-bebas-neue",
-  display: "swap",
-});
+};
 
-const cormorantGaramond = Cormorant_Garamond({
-  subsets: ["latin"],
+const cormorantGaramond = {
   variable: "--font-cormorant-garamond",
-  display: "swap",
-  style: ["normal", "italic"],
-});
+};
 
 export default async function RootLayout({
   children,

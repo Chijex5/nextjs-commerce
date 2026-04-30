@@ -16,6 +16,14 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
   }
+
+  /* Fallback font definitions using system fonts */
+  :root {
+    --font-inter: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-dm-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-bebas-neue: "Trebuchet MS", sans-serif;
+    --font-cormorant-garamond: Georgia, serif;
+  }
 }
 
 @theme {
