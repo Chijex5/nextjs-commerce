@@ -4,6 +4,9 @@ import { canonicalUrl, siteName } from "lib/seo";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+// Disable static prerendering - render on-demand at request time
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata(props: {
   params: Promise<{ page: string }>;
 }): Promise<Metadata> {
