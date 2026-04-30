@@ -603,9 +603,9 @@ export default async function SizingGuidePage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {guide.chartRows.map((row) => (
+                      {guide.chartRows.map((row, index) => (
                         <tr
-                          key={`${guide.id}-${row.size}-${row.footLength || row.notes || "row"}`}
+                          key={`${guide.id}-${row.size}-${index}`}
                         >
                           <td>{row.size}</td>
                           <td>{row.footLength || "—"}</td>
