@@ -607,7 +607,7 @@ export default async function CareInstructionsPage() {
                   ],
                 },
                 {
-                  material: "Fabric &amp; Textile",
+                  material: "Fabric & Textile",
                   dos: [
                     "Vacuum gently or brush away dust regularly.",
                     "Blot liquid spills immediately.",
