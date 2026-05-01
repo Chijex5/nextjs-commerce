@@ -8,8 +8,8 @@ import { useEffect, useState } from "react";
 import PageLoader from "components/page-loader";
 import Price from "components/price";
 import {
-    formatEstimatedArrival,
-    type DeliveryStatus,
+  formatEstimatedArrival,
+  type DeliveryStatus,
 } from "lib/order-utils/delivery-tracking";
 import OrderActions from "./order-actions";
 import OrderFinancialSummary from "./order-financial-summary";
@@ -81,7 +81,13 @@ function parseMoney(value?: string | null) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function formatDeliveryWindow(estimatedArrival?: string | null) {
+function formatDeliveryWindow(
+  estimatedArrival?: string | null,
+  status?: DeliveryStatus,
+) {
+  if (status === "cancelled") return "Delivery cancelled";
+  if (status === "paused") return "Delivery paused";
+  if (status === "completed") return "Delivered";
   if (!estimatedArrival) return "Delivery in 3–5 days";
   return `${formatEstimatedArrival(new Date(estimatedArrival))}`;
 }
@@ -97,7 +103,67 @@ function getCurrentStatusLine(status?: DeliveryStatus) {
   };
   return status
     ? statusLine[status]
-    : "We're currently crafting your pair by hand.";
+    : `We're currently crafting your pair by hand.`;
+}
+
+function getHeroEyebrow(status?: string, deliveryStatus?: DeliveryStatus) {
+  if (deliveryStatus === "cancelled") return "Order cancelled";
+  if (deliveryStatus === "paused") return "Order paused";
+  if (deliveryStatus === "completed") return "Order delivered";
+  if (deliveryStatus === "dispatch") return "Order in transit";
+  if (deliveryStatus === "sorting") return "Order packed";
+  if (deliveryStatus === "production") return "Order confirmed";
+  return "Order confirmed";
+}
+
+
+
+function getHeroTitle(status?: string, deliveryStatus?: DeliveryStatus) {
+  const titleMap: Record<
+    string,
+    { line1: string; line2: string; emphasis: string }
+  > = {
+    cancelled: {
+      line1: "Order",
+      line2: "cancelled",
+      emphasis: "cancelled",
+    },
+    paused: {
+      line1: "Order",
+      line2: "on hold",
+      emphasis: "on hold",
+    },
+    completed: {
+      line1: "Thank you —",
+      line2: "order ",
+      emphasis: "delivered",
+    },
+    dispatch: {
+      line1: "Thank you —",
+      line2: "order ",
+      emphasis: "in transit",
+    },
+    production: {
+      line1: "Thank you —",
+      line2: "order confirmed",
+      emphasis: "confirmed",
+    },
+    sorting: {
+      line1: "Thank you —",
+      line2: "order packed",
+      emphasis: "packed",
+    },
+    paid: {
+      line1: "Thank you —",
+      line2: "payment successful",
+      emphasis: "successful",
+    },
+  };
+
+  const key = deliveryStatus || status?.toLowerCase() || "paid";
+  const title = titleMap[key] || titleMap.paid;
+
+  return title;
 }
 
 export default function OrderDetailClient({ orderId }: { orderId: string }) {
@@ -603,17 +669,22 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
       <div className="od-root">
         {/* ── HERO ── */}
         <header className="od-hero">
-          <div className="od-hero-eyebrow">Order confirmed</div>
-          <h1 className="od-hero-title">
-            Thank you — your
-            <br />
-            payment was <em>successful</em>
-          </h1>
+          <div className="od-hero-eyebrow">{getHeroEyebrow(order.status, order.deliveryStatus)}</div>
+          {(() => {
+            const heroTitle = getHeroTitle(order.status, order.deliveryStatus);
+            return (
+              <h1 className="od-hero-title">
+                {heroTitle.line1}
+                <br />
+                {heroTitle.line2} <em>{heroTitle.emphasis}</em>
+              </h1>
+            );
+          })()}
           <p className="od-hero-status-line">
             {getCurrentStatusLine(order.deliveryStatus)}
           </p>
           <div className="od-delivery-badge">
-            {formatDeliveryWindow(order.estimatedArrival)}
+            {formatDeliveryWindow(order.estimatedArrival, order.deliveryStatus)}
           </div>
 
           <div className="od-meta-grid">

@@ -1,7 +1,10 @@
 type Step = { id: string; label: string };
 type OrderStatusStepperProps = { steps: Step[]; currentStep: number };
 
-export default function OrderStatusStepper({ steps, currentStep }: OrderStatusStepperProps) {
+export default function OrderStatusStepper({
+  steps,
+  currentStep,
+}: OrderStatusStepperProps) {
   return (
     <>
       <style>{`
@@ -103,8 +106,17 @@ export default function OrderStatusStepper({ steps, currentStep }: OrderStatusSt
 
       <ol className="oss-list" aria-label="Order status progression">
         {steps.map((step, index) => {
-          const isComplete = index < currentStep;
-          const isCurrent = index === currentStep;
+          const isLastStep = index === steps.length - 1;
+          const isFinalCompleted = currentStep === steps.length - 1;
+
+          // Treat earlier steps as complete when their index is less than currentStep.
+          // If we're on the final step, treat the final step as complete (so it shows "Done").
+          const isComplete =
+            index < currentStep || (isLastStep && isFinalCompleted);
+
+          // Show "current" only for non-final steps that match currentStep.
+          const isCurrent =
+            index === currentStep && !(isLastStep && isFinalCompleted);
 
           return (
             <li

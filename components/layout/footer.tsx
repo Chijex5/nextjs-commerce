@@ -1,4 +1,4 @@
-import FooterMenu from "components/layout/footer-menu";
+import FooterMenu, { FooterMenuItem } from "components/layout/footer-menu";
 import LogoSquare from "components/logo-square";
 import NewsletterForm from "components/newsletter-form";
 import { getMenu } from "lib/database";
@@ -298,20 +298,15 @@ export default async function Footer() {
                   gap: "0.65rem",
                 }}
               >
-                {[
+                  <FooterMenu menu={[
                   { title: "About Us", path: "/about-us" },
                   { title: "Sizing Guide", path: "/sizing-guide" },
                   { title: "Care Instructions", path: "/care-instructions" },
                   { title: "FAQ", path: "/faq" },
-                  { title: "Privacy Policy", path: "/privacy" },
+                  { title: "Privacy Policy", path: "/privacy-policy" },
                   { title: "Shipping Returns", path: "/shipping-returns" },
-                ].map(({ title, path }) => (
-                  <li key={title}>
-                    <Link href={path} className="dp-footer-link">
-                      {title}
-                    </Link>
-                  </li>
-                ))}
+                ]} />
+                
               </ul>
             </div>
 
