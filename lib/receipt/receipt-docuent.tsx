@@ -7,10 +7,9 @@ import {
   StyleSheet,
   Font,
 } from "@react-pdf/renderer";
+import { type DeliveryStatus } from "lib/order-utils/delivery-tracking";
 
 // ── Types ────────────────────────────────────────────────────────────────────
-
-export type DeliveryStatus = "production" | "sorting" | "dispatch" | "completed";
 
 export type ReceiptItem = {
   title: string;
@@ -22,7 +21,7 @@ export type ReceiptItem = {
 export type ReceiptData = {
   orderNum: string;
   orderDate: string; // ISO string e.g. "2025-05-01"
-  status: DeliveryStatus;
+  status: DeliveryStatus; // Imported from lib/order-utils/delivery-tracking
   tracking?: string | null;
   // Customer
   fname: string;
@@ -50,6 +49,8 @@ const STATUS_LABELS: Record<DeliveryStatus, string> = {
   sorting: "Packed",
   dispatch: "Dispatched",
   completed: "Delivered",
+  paused: "Temporarily paused",
+  cancelled: "Cancelled",
 };
 
 function fmtNGN(n: number): string {
@@ -99,7 +100,7 @@ const normalisePhone = (phone: string): string => {
     return "0" + phone;
   }
   return phone;
-}
+};
 
 // ── Styles ───────────────────────────────────────────────────────────────────
 
@@ -151,7 +152,11 @@ const s = StyleSheet.create({
   statusText: { fontSize: 8, letterSpacing: 1.5, color: C.cream },
   statusBold: { fontFamily: "Helvetica-Bold", color: "#ffffff" },
   trackingText: { fontSize: 8, color: C.cream },
-  trackingBold: { fontFamily: "Helvetica-Bold", color: "#ffffff", letterSpacing: 0.5 },
+  trackingBold: {
+    fontFamily: "Helvetica-Bold",
+    color: "#ffffff",
+    letterSpacing: 0.5,
+  },
 
   // 2-col info row
   infoRow: {
@@ -176,7 +181,12 @@ const s = StyleSheet.create({
   },
   infoCellLabelTerra: { color: C.terra },
   infoCellLabelGold: { color: C.gold },
-  customerName: { fontSize: 14, fontFamily: "Helvetica-Bold", color: C.cream, marginBottom: 6 },
+  customerName: {
+    fontSize: 14,
+    fontFamily: "Helvetica-Bold",
+    color: C.cream,
+    marginBottom: 6,
+  },
   infoValue: { fontSize: 10, color: C.sand, lineHeight: 1.7 },
 
   // Items table
@@ -208,7 +218,11 @@ const s = StyleSheet.create({
   cellQty: { flex: 0.8, textAlign: "center" },
   cellUnit: { flex: 1.8, textAlign: "right" },
   cellTotal: { flex: 1.8, textAlign: "right" },
-  cellTextPrimary: { fontSize: 10, fontFamily: "Helvetica-Bold", color: C.cream },
+  cellTextPrimary: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    color: C.cream,
+  },
   cellTextSecondary: { fontSize: 9, color: C.sand },
   cellTextGold: { fontSize: 10, fontFamily: "Helvetica-Bold", color: C.gold },
 
@@ -222,7 +236,11 @@ const s = StyleSheet.create({
     alignItems: "flex-end",
   },
   totalsTable: { width: 240 },
-  totalsRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 5 },
+  totalsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 5,
+  },
   totalsLabel: { fontSize: 10, color: C.muted },
   totalsValue: { fontSize: 10, fontFamily: "Helvetica-Bold", color: C.sand },
   totalsDivider: {
@@ -234,7 +252,12 @@ const s = StyleSheet.create({
   grandValue: { fontSize: 14, fontFamily: "Helvetica-Bold", color: C.gold },
   discountLabel: { fontSize: 10, color: C.green },
   discountValue: { fontSize: 10, fontFamily: "Helvetica-Bold", color: C.green },
-  currencyNote: { fontSize: 8, color: C.muted, marginTop: 4, textAlign: "right" },
+  currencyNote: {
+    fontSize: 8,
+    color: C.muted,
+    marginTop: 4,
+    textAlign: "right",
+  },
 
   // Notes strip
   notesStrip: {
@@ -263,10 +286,21 @@ const s = StyleSheet.create({
     alignItems: "flex-end",
   },
   footerLeft: {},
-  footerOrderNum: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.sand, marginBottom: 3 },
+  footerOrderNum: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: C.sand,
+    marginBottom: 3,
+  },
   footerMeta: { fontSize: 8, color: C.muted, lineHeight: 1.7 },
   footerRight: { alignItems: "flex-end" },
-  footerPoweredBy: { fontSize: 7, letterSpacing: 1.5, textTransform: "uppercase", color: C.muted, marginBottom: 5 },
+  footerPoweredBy: {
+    fontSize: 7,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+    color: C.muted,
+    marginBottom: 5,
+  },
   footerLogo: { width: 52, height: 22, objectFit: "contain", opacity: 0.45 },
 });
 
@@ -294,7 +328,6 @@ export function ReceiptDocument({ data }: { data: ReceiptData }) {
       subject="Order Receipt"
     >
       <Page size="A4" style={s.page}>
-
         {/* ── HEADER ── */}
         <View style={s.header}>
           <Image src="/d.png" style={s.logo} />
@@ -308,12 +341,12 @@ export function ReceiptDocument({ data }: { data: ReceiptData }) {
         {/* ── STATUS BAR ── */}
         <View style={s.statusBar}>
           <Text style={s.statusText}>
-            Status: <Text style={s.statusBold}>{STATUS_LABELS[data.status]}</Text>
+            Status:{" "}
+            <Text style={s.statusBold}>{STATUS_LABELS[data.status]}</Text>
           </Text>
           {data.tracking ? (
             <Text style={s.trackingText}>
-              Tracking:{" "}
-              <Text style={s.trackingBold}>{data.tracking}</Text>
+              Tracking: <Text style={s.trackingBold}>{data.tracking}</Text>
             </Text>
           ) : null}
         </View>
@@ -321,13 +354,21 @@ export function ReceiptDocument({ data }: { data: ReceiptData }) {
         {/* ── CUSTOMER + ADDRESS ── */}
         <View style={s.infoRow}>
           <View style={[s.infoCell, s.infoCellLeft]}>
-            <Text style={[s.infoCellLabel, s.infoCellLabelTerra]}>Customer</Text>
-            <Text style={s.customerName}>{data.fname} {data.lname}</Text>
+            <Text style={[s.infoCellLabel, s.infoCellLabelTerra]}>
+              Customer
+            </Text>
+            <Text style={s.customerName}>
+              {data.fname} {data.lname}
+            </Text>
             <Text style={s.infoValue}>{normalisePhone(data.phone1)}</Text>
-            {data.phone2 ? <Text style={s.infoValue}>{normalisePhone(data.phone2)}</Text> : null}
+            {data.phone2 ? (
+              <Text style={s.infoValue}>{normalisePhone(data.phone2)}</Text>
+            ) : null}
           </View>
           <View style={[s.infoCell, s.infoCellRight]}>
-            <Text style={[s.infoCellLabel, s.infoCellLabelGold]}>Delivery address</Text>
+            <Text style={[s.infoCellLabel, s.infoCellLabelGold]}>
+              Delivery address
+            </Text>
             <Text style={s.infoValue}>{fullAddr || "Not provided"}</Text>
           </View>
         </View>
@@ -335,8 +376,12 @@ export function ReceiptDocument({ data }: { data: ReceiptData }) {
         {/* ── ITEMS TABLE ── */}
         <View style={s.tableWrap}>
           {/* Table section label */}
-          <View style={{ paddingHorizontal: 24, paddingTop: 14, paddingBottom: 10 }}>
-            <Text style={[s.infoCellLabel, s.infoCellLabelTerra]}>Order items</Text>
+          <View
+            style={{ paddingHorizontal: 24, paddingTop: 14, paddingBottom: 10 }}
+          >
+            <Text style={[s.infoCellLabel, s.infoCellLabelTerra]}>
+              Order items
+            </Text>
           </View>
 
           {/* Column headers */}
@@ -354,11 +399,19 @@ export function ReceiptDocument({ data }: { data: ReceiptData }) {
               key={i}
               style={[s.tableRow, i % 2 === 0 ? s.tableRowEven : s.tableRowOdd]}
             >
-              <Text style={[s.cellTextPrimary, s.cellItem]}>{item.title || "—"}</Text>
-              <Text style={[s.cellTextSecondary, s.cellVariant]}>{item.variant || "—"}</Text>
+              <Text style={[s.cellTextPrimary, s.cellItem]}>
+                {item.title || "—"}
+              </Text>
+              <Text style={[s.cellTextSecondary, s.cellVariant]}>
+                {item.variant || "—"}
+              </Text>
               <Text style={[s.cellTextSecondary, s.cellQty]}>{item.qty}</Text>
-              <Text style={[s.cellTextSecondary, s.cellUnit]}>{fmtNGN(item.price)}</Text>
-              <Text style={[s.cellTextGold, s.cellTotal]}>{fmtNGN(item.qty * item.price)}</Text>
+              <Text style={[s.cellTextSecondary, s.cellUnit]}>
+                {fmtNGN(item.price)}
+              </Text>
+              <Text style={[s.cellTextGold, s.cellTotal]}>
+                {fmtNGN(item.qty * item.price)}
+              </Text>
             </View>
           ))}
         </View>
@@ -395,7 +448,9 @@ export function ReceiptDocument({ data }: { data: ReceiptData }) {
         <View style={s.notesStrip}>
           <Text style={s.notesText}>Thank you for your order.</Text>
           <Text style={s.notesDot}>·</Text>
-          <Text style={s.notesText}>Contact us with your order number for any support.</Text>
+          <Text style={s.notesText}>
+            Contact us with your order number for any support.
+          </Text>
         </View>
 
         {/* ── FOOTER ── */}
@@ -412,7 +467,6 @@ export function ReceiptDocument({ data }: { data: ReceiptData }) {
             <Image src="/d.png" style={s.footerLogo} />
           </View>
         </View>
-
       </Page>
     </Document>
   );

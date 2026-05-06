@@ -1,6 +1,7 @@
 import React from "react";
-import { pdf } from "@react-pdf/renderer";
-import { ReceiptDocument, type ReceiptData, type DeliveryStatus, type ReceiptItem } from "./receipt-docuent";
+import { pdf, type DocumentProps } from "@react-pdf/renderer";
+import { type DeliveryStatus } from "lib/order-utils/delivery-tracking";
+import { ReceiptDocument, type ReceiptData, type ReceiptItem } from "./receipt-docuent";
 
 /**
  * Transform order data from the API to ReceiptData format for PDF generation
@@ -47,7 +48,7 @@ export function transformOrderToReceiptData(order: any): ReceiptData {
 export async function downloadReceiptPdf(order: any): Promise<void> {
   try {
     const receiptData = transformOrderToReceiptData(order);
-    const doc = React.createElement(ReceiptDocument, { data: receiptData });
+    const doc = ReceiptDocument({ data: receiptData }) as unknown as React.ReactElement<DocumentProps>;
 
     // Generate PDF blob
     const blob = await pdf(doc).toBlob();
