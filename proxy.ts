@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 
 const CANONICAL_HOST = canonicalHost();
 const ADMIN_ROLES = new Set(["admin", "super_admin"]);
+const ALLOWED_PREVIEW_HOSTS = new Set(["dev.dfootprint.me"]);
 
 export default withAuth(
   function proxy(req) {
@@ -20,12 +21,15 @@ export default withAuth(
 
     if (process.env.NODE_ENV !== "development" && CANONICAL_HOST) {
       const host = req.headers.get("host") || "";
+      const hostWithoutPort = host.split(":")[0];
       const forwardedProto =
         req.headers.get("x-forwarded-proto") ||
         req.nextUrl.protocol.replace(":", "");
 
       const shouldRedirectHost =
-        !host.includes("localhost") && host !== CANONICAL_HOST;
+        !host.includes("localhost") &&
+        hostWithoutPort !== CANONICAL_HOST &&
+        !ALLOWED_PREVIEW_HOSTS.has(hostWithoutPort);
       const shouldRedirectProtocol = forwardedProto !== "https";
 
       if (shouldRedirectHost || shouldRedirectProtocol) {
