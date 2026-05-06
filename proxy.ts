@@ -21,7 +21,7 @@ export default withAuth(
 
     if (process.env.NODE_ENV !== "development" && CANONICAL_HOST) {
       const host = req.headers.get("host") || "";
-      const hostWithoutPort = host.split(":")[0];
+      const hostWithoutPort = host.split(":")[0] || "";
       const forwardedProto =
         req.headers.get("x-forwarded-proto") ||
         req.nextUrl.protocol.replace(":", "");
