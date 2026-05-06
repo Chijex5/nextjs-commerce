@@ -86,82 +86,82 @@ function formatDeliveryWindow(
   status?: DeliveryStatus,
 ) {
   if (status === "cancelled") return "Delivery cancelled";
-  if (status === "paused") return "Delivery paused";
-  if (status === "completed") return "Delivered";
-  if (!estimatedArrival) return "Delivery in 3–5 days";
+  if (status === "paused") return "Delivery temporarily on hold";
+  if (status === "completed") return "Successfully delivered";
+  if (!estimatedArrival) return "Estimated arrival in 3–5 days";
   return `${formatEstimatedArrival(new Date(estimatedArrival))}`;
 }
 
 function getCurrentStatusLine(status?: DeliveryStatus) {
   const statusLine: Record<DeliveryStatus, string> = {
-    production: "We're currently crafting your pair by hand.",
-    sorting: "Your order has been finished and is now packed with care.",
-    dispatch: "Your order is on the way to you.",
-    completed: "Delivered. We hope you love your pair.",
-    paused: "Your order is on hold while we resolve a delivery issue.",
-    cancelled: "This order was cancelled.",
+    production:
+      "Your pair is being handcrafted by our artisans. Good things take time.",
+    sorting:
+      "Crafting complete. Your pair is packed and preparing to leave our hands.",
+    dispatch: "Your pair is on its way. It won't be long now.",
+    completed: "Your pair has arrived. We hope it exceeds every expectation.",
+    paused:
+      "There's a brief hold on your delivery. Our team is looking into it.",
+    cancelled:
+      "This order has been cancelled. Reach out if you have any questions.",
   };
   return status
     ? statusLine[status]
-    : `We're currently crafting your pair by hand.`;
+    : "Your pair is being handcrafted by our artisans. Good things take time.";
 }
 
 function getHeroEyebrow(status?: string, deliveryStatus?: DeliveryStatus) {
   if (deliveryStatus === "cancelled") return "Order cancelled";
-  if (deliveryStatus === "paused") return "Order paused";
-  if (deliveryStatus === "completed") return "Order delivered";
-  if (deliveryStatus === "dispatch") return "Order in transit";
-  if (deliveryStatus === "sorting") return "Order packed";
-  if (deliveryStatus === "production") return "Order confirmed";
+  if (deliveryStatus === "paused") return "Delivery on hold";
+  if (deliveryStatus === "completed") return "Delivery complete";
+  if (deliveryStatus === "dispatch") return "Out for delivery";
+  if (deliveryStatus === "sorting") return "Packed & ready";
+  if (deliveryStatus === "production") return "In production";
   return "Order confirmed";
 }
 
-
-
 function getHeroTitle(status?: string, deliveryStatus?: DeliveryStatus) {
-  const titleMap: Record<
-    string,
-    { line1: string; line2: string; emphasis: string }
-  > = {
+  type HeroTitle = { line1: string; line2: string; emphasis: string };
+  const titleMap: Record<string, HeroTitle> = {
     cancelled: {
-      line1: "Order",
-      line2: "cancelled",
+      line1: "We're sorry —",
+      line2: "this order was",
       emphasis: "cancelled",
     },
     paused: {
-      line1: "Order",
-      line2: "on hold",
+      line1: "Your order is",
+      line2: "currently",
       emphasis: "on hold",
     },
     completed: {
-      line1: "Thank you —",
-      line2: "order ",
+      line1: "With compliments —",
+      line2: "your pair has been",
       emphasis: "delivered",
     },
     dispatch: {
-      line1: "Thank you —",
-      line2: "order ",
+      line1: "On the move —",
+      line2: "your pair is",
       emphasis: "in transit",
     },
     production: {
-      line1: "Thank you —",
-      line2: "order confirmed",
-      emphasis: "confirmed",
+      line1: "With gratitude —",
+      line2: "your pair is being",
+      emphasis: "handcrafted",
     },
     sorting: {
-      line1: "Thank you —",
-      line2: "order packed",
+      line1: "Nearly there —",
+      line2: "your pair has been",
       emphasis: "packed",
     },
     paid: {
-      line1: "Thank you —",
-      line2: "payment successful",
-      emphasis: "successful",
+      line1: "With gratitude —",
+      line2: "payment",
+      emphasis: "received",
     },
   };
 
   const key = deliveryStatus || status?.toLowerCase() || "paid";
-  const title = titleMap[key] || titleMap.paid;
+  const title = titleMap[key] ?? titleMap.paid;
 
   return title;
 }
@@ -669,14 +669,16 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
       <div className="od-root">
         {/* ── HERO ── */}
         <header className="od-hero">
-          <div className="od-hero-eyebrow">{getHeroEyebrow(order.status, order.deliveryStatus)}</div>
+          <div className="od-hero-eyebrow">
+            {getHeroEyebrow(order.status, order.deliveryStatus)}
+          </div>
           {(() => {
             const heroTitle = getHeroTitle(order.status, order.deliveryStatus);
             return (
               <h1 className="od-hero-title">
-                {heroTitle.line1}
+                {heroTitle?.line1}
                 <br />
-                {heroTitle.line2} <em>{heroTitle.emphasis}</em>
+                {heroTitle?.line2} <em>{heroTitle?.emphasis}</em>
               </h1>
             );
           })()}
@@ -796,7 +798,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
         />
 
         {/* ── ACTIONS ── */}
-        <OrderActions orderNumber={order.orderNumber} />
+        <OrderActions orderNumber={order.orderNumber} order={order} />
 
         {/* ── ITEMS ── */}
         <section className="od-panel">

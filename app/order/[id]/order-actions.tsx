@@ -1,10 +1,33 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { downloadReceiptPdf } from "lib/receipt/generate-receipt-pdf";
 
-type OrderActionsProps = { orderNumber: string };
+type OrderActionsProps = {
+  orderNumber: string;
+  order: any; // Full order data for PDF generation
+};
 
-export default function OrderActions({ orderNumber }: OrderActionsProps) {
+export default function OrderActions({
+  orderNumber,
+  order,
+}: OrderActionsProps) {
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+
+  const handleDownloadReceipt = async () => {
+    setIsGeneratingPdf(true);
+    setPdfError(null);
+    try {
+      await downloadReceiptPdf(order);
+    } catch (error) {
+      console.error("Failed to generate receipt:", error);
+      setPdfError("Failed to generate receipt. Please try again.");
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
   return (
     <>
       <style>{`
@@ -115,11 +138,20 @@ export default function OrderActions({ orderNumber }: OrderActionsProps) {
           </Link>
           <button
             type="button"
-            onClick={() => window.print()}
+            onClick={() => void handleDownloadReceipt()}
+            disabled={isGeneratingPdf}
             className="oa-btn-secondary"
+            title={pdfError ? "Error generating receipt" : ""}
           >
-            Download receipt
+            {isGeneratingPdf ? "Generating..." : "Download receipt"}
           </button>
+          {pdfError && (
+            <div
+              style={{ fontSize: "12px", color: "#f4b9a2", marginTop: "8px" }}
+            >
+              {pdfError}
+            </div>
+          )}
         </div>
       </section>
     </>
