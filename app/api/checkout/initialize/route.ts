@@ -19,6 +19,8 @@ type LegacyCheckoutAddress = {
   state?: string;
   postalCode?: string;
   postcode?: string;
+  phone1?: string;
+  phone2?: string;
   country?: string;
 };
 
@@ -39,6 +41,8 @@ type CheckoutAddress = {
 interface CheckoutData {
   email: string;
   phone: string;
+  phone1?: string;
+  phone2?: string;
   shippingAddress: CheckoutAddress | LegacyCheckoutAddress;
   billingAddress?: CheckoutAddress | LegacyCheckoutAddress | null;
   saveAddress: boolean;
@@ -73,6 +77,8 @@ const normalizeCheckoutAddress = (
     streetAddress: legacy.address,
     lga: legacy.city,
     state: legacy.state,
+    phone1: legacy.phone1,
+    phone2: legacy.phone2,
     country: legacy.country,
   };
 };
@@ -93,6 +99,8 @@ export async function POST(request: NextRequest) {
     const billingAddress = body.billingAddress
       ? normalizeCheckoutAddress(body.billingAddress)
       : shippingAddress;
+    const primaryPhone = body.phone1 || shippingAddress.phone1 || body.phone;
+    const secondaryPhone = body.phone2 || shippingAddress.phone2;
 
     // Get cart
     const cart = await getCart();
@@ -148,7 +156,9 @@ export async function POST(request: NextRequest) {
 
     const checkoutMetadata = {
       customer_name: `${shippingAddress.firstName || ""} ${shippingAddress.lastName || ""}`.trim(),
-      phone: body.phone,
+      phone: primaryPhone,
+      phone1: primaryPhone,
+      phone2: secondaryPhone || null,
       cart_id: cart.id,
       checkout_session_id: checkoutSessionId,
       checkout_user_id: session?.id || null,
@@ -170,7 +180,9 @@ export async function POST(request: NextRequest) {
     // Store checkout data in a cookie temporarily (will be retrieved after payment)
     const checkoutSession = {
       email: body.email,
-      phone: body.phone,
+      phone: primaryPhone,
+      phone1: primaryPhone,
+      phone2: secondaryPhone || null,
       shippingAddress,
       billingAddress,
       saveAddress: body.saveAddress,
@@ -206,7 +218,9 @@ export async function POST(request: NextRequest) {
           JSON.stringify({
             cartId: cart.id,
             email: body.email.trim().toLowerCase(),
-            phone: body.phone.trim(),
+            phone: primaryPhone.trim(),
+            phone1: primaryPhone.trim(),
+            phone2: secondaryPhone?.trim() || null,
             shippingAddress,
             billingAddress,
             subtotal,
@@ -234,7 +248,7 @@ export async function POST(request: NextRequest) {
           email: body.email,
           first_name: shippingAddress.firstName || undefined,
           last_name: shippingAddress.lastName || undefined,
-          phone: body.phone,
+          phone: primaryPhone,
         },
         payload: {
           source: "free_checkout",

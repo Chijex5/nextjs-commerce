@@ -750,6 +750,8 @@ export default function CheckoutPage() {
           : formData.billingAddress,
         saveAddress: formData.saveAddress,
         couponCode: couponData?.code,
+        phone1: formData.shippingAddress.phone1,
+        phone2: formData.shippingAddress.phone2,
         phone: formData.shippingAddress.phone1,
         notes: orderNote.trim() || undefined,
       };
