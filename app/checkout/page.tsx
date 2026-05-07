@@ -750,6 +750,7 @@ export default function CheckoutPage() {
           : formData.billingAddress,
         saveAddress: formData.saveAddress,
         couponCode: couponData?.code,
+        phone: formData.shippingAddress.phone1,
         notes: orderNote.trim() || undefined,
       };
       const response = await fetch("/api/checkout/initialize", {
