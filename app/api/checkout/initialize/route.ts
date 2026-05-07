@@ -83,12 +83,16 @@ const normalizeCheckoutAddress = (
   };
 };
 
+const normalizePhone = (value?: string) => {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+};
+
 export async function POST(request: NextRequest) {
   try {
     const body: CheckoutData = await request.json();
 
-    // Validate required fields
-    if (!body.email || !body.phone || !body.shippingAddress) {
+    if (!body.shippingAddress) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
@@ -99,8 +103,20 @@ export async function POST(request: NextRequest) {
     const billingAddress = body.billingAddress
       ? normalizeCheckoutAddress(body.billingAddress)
       : shippingAddress;
-    const primaryPhone = body.phone1 || shippingAddress.phone1 || body.phone;
-    const secondaryPhone = body.phone2 || shippingAddress.phone2;
+    const primaryPhone =
+      normalizePhone(body.phone1) ??
+      normalizePhone(shippingAddress.phone1) ??
+      normalizePhone(body.phone);
+    const secondaryPhone =
+      normalizePhone(body.phone2) ?? normalizePhone(shippingAddress.phone2);
+
+    // Validate required fields
+    if (!body.email?.trim() || !primaryPhone) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
+    }
 
     // Get cart
     const cart = await getCart();
@@ -218,9 +234,9 @@ export async function POST(request: NextRequest) {
           JSON.stringify({
             cartId: cart.id,
             email: body.email.trim().toLowerCase(),
-            phone: primaryPhone.trim(),
-            phone1: primaryPhone.trim(),
-            phone2: secondaryPhone?.trim() || null,
+            phone: primaryPhone,
+            phone1: primaryPhone,
+            phone2: secondaryPhone || null,
             shippingAddress,
             billingAddress,
             subtotal,
