@@ -95,7 +95,7 @@ function DonutChart({ slices, size = 120 }: { slices: DonutSlice[]; size?: numbe
   }
 
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+<svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Review status distribution">
       {segments.map((seg, i) => (
         <circle
           key={i}
