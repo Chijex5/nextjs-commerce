@@ -30,7 +30,7 @@ export const authOptions: NextAuthOptions = {
           .limit(1);
 
         if (!user || !user.isActive) {
-          throw new Error("Invalid credentials");
+          throw new Error("Your account is inactive. Please contact support.");
         }
 
         const isPasswordValid = await compare(
