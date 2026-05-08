@@ -29,7 +29,7 @@ export const authOptions: NextAuthOptions = {
           .where(eq(adminUsers.email, credentials.email))
           .limit(1);
 
-        if (!user || !user.isActive) {
+        if (!user) {
           throw new Error("Invalid credentials");
         }
 
@@ -40,6 +40,10 @@ export const authOptions: NextAuthOptions = {
 
         if (!isPasswordValid) {
           throw new Error("Invalid credentials");
+        }
+
+        if (!user.isActive) {
+          throw new Error("Your account is inactive. Please contact support.");
         }
 
         await db
