@@ -716,7 +716,7 @@ export default function CheckoutPage() {
       a.nearestBusStop.trim() &&
       a.landmark.trim() &&
       a.phone1.length === 10 &&
-      a.phone2.length === 10
+      (!a.phone2 || a.phone2.length === 10)
     );
   };
 
