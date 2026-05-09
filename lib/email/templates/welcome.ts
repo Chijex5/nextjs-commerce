@@ -45,8 +45,8 @@ export const welcomeEmailTemplate = (data: WelcomeEmailData) => {
   const firstName = data.name?.trim().split(/\s+/)[0] || "there";
 
   // Hosted image URLs — update once generated and uploaded
-  const heroImageUrl = "https://www.dfootprint.me/welcome-hero.jpg";
-  const craftImageUrl = "https://www.dfootprint.me/welcome-craft.jpg";
+  const heroImageUrl = "https://www.dfootprint.me/8D5A3D65-CEF8-4037-B693-D905381F84CC.png";
+  const craftImageUrl = "https://www.dfootprint.me/EC4CE566-C882-4B4A-8F1E-BEBF6E8CD8C2.png";
 
   // ── 2×2 Subscriber benefit grid ─────────────────────────────────────────
   const features = [
@@ -77,32 +77,43 @@ export const welcomeEmailTemplate = (data: WelcomeEmailData) => {
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin: 0;">
       <tr>
         <td width="50%" style="padding: 0 16px 20px 0; vertical-align: top;">
-          <p style="margin: 0 0 5px; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #c4c4c4; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[0].number}</p>
-          <p style="margin: 0 0 5px; font-size: 13px; font-weight: 700; color: #111111; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[0].title}</p>
-          <p style="margin: 0; font-size: 13px; color: #6b7280; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; line-height: 1.65;">${features[0].body}</p>
+          <p style="margin: 0 0 5px; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #c4c4c4; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[0]?.number}</p>
+          <p style="margin: 0 0 5px; font-size: 13px; font-weight: 700; color: #111111; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[0]?.title}</p>
+          <p style="margin: 0; font-size: 13px; color: #6b7280; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; line-height: 1.65;">${features[0]?.body}</p>
         </td>
         <td width="50%" style="padding: 0 0 20px 0; vertical-align: top;">
-          <p style="margin: 0 0 5px; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #c4c4c4; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[1].number}</p>
-          <p style="margin: 0 0 5px; font-size: 13px; font-weight: 700; color: #111111; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[1].title}</p>
-          <p style="margin: 0; font-size: 13px; color: #6b7280; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; line-height: 1.65;">${features[1].body}</p>
+          <p style="margin: 0 0 5px; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #c4c4c4; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[1]?.number}</p>
+          <p style="margin: 0 0 5px; font-size: 13px; font-weight: 700; color: #111111; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[1]?.title}</p>
+          <p style="margin: 0; font-size: 13px; color: #6b7280; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; line-height: 1.65;">${features[1]?.body}</p>
         </td>
       </tr>
       <tr>
         <td width="50%" style="padding: 0 16px 0 0; vertical-align: top;">
-          <p style="margin: 0 0 5px; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #c4c4c4; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[2].number}</p>
-          <p style="margin: 0 0 5px; font-size: 13px; font-weight: 700; color: #111111; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[2].title}</p>
-          <p style="margin: 0; font-size: 13px; color: #6b7280; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; line-height: 1.65;">${features[2].body}</p>
+          <p style="margin: 0 0 5px; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #c4c4c4; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[2]?.number}</p>
+          <p style="margin: 0 0 5px; font-size: 13px; font-weight: 700; color: #111111; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[2]?.title}</p>
+          <p style="margin: 0; font-size: 13px; color: #6b7280; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; line-height: 1.65;">${features[2]?.body}</p>
         </td>
         <td width="50%" style="padding: 0; vertical-align: top;">
-          <p style="margin: 0 0 5px; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #c4c4c4; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[3].number}</p>
-          <p style="margin: 0 0 5px; font-size: 13px; font-weight: 700; color: #111111; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[3].title}</p>
-          <p style="margin: 0; font-size: 13px; color: #6b7280; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; line-height: 1.65;">${features[3].body}</p>
+          <p style="margin: 0 0 5px; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #c4c4c4; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[3]?.number}</p>
+          <p style="margin: 0 0 5px; font-size: 13px; font-weight: 700; color: #111111; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[3]?.title}</p>
+          <p style="margin: 0; font-size: 13px; color: #6b7280; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; line-height: 1.65;">${features[3]?.body}</p>
         </td>
       </tr>
     </table>
   `;
 
   const content = `
+    <p style="margin: 0 0 10px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #9ca3af; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">Welcome</p>
+    <h2 style="margin: 0 0 20px;">A quick thank you from Chika, ${firstName}.</h2>
+
+    <p>
+      Hi ${firstName}, I'm Chika, founder of D'FOOTPRINT. Thank you for joining us and for trusting us with a place in your wardrobe.
+    </p>
+    <p>
+      Every pair that leaves our workshop started as a conversation — a shape someone imagined, a fit they needed, a story worth wearing. That's what D'FOOTPRINT is. We make leather footwear by hand, right here in Lagos, and we take our time with every single one.
+    </p>
+    <p>
+      If you just created your account, you're all set to explore, order, and come back whenever you need us. If you subscribed for updates, you'll be the first to hear when something new arrives.
     <!--
       HERO IMAGE — bleeds to the edges of the content zone.
       The negative margin pulls it past the 40px content padding so it sits

@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
+import { eq } from "drizzle-orm";
 import { db } from "lib/db";
 import { users } from "lib/db/schema";
-import { deriveNameFromEmail } from "lib/user-utils";
-import { eq } from "drizzle-orm";
+import { sendWelcomeEmail } from "lib/email/auth-emails";
 import { handleApiError } from "lib/errors";
+import { deriveNameFromEmail } from "lib/user-utils";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,6 +60,15 @@ export async function POST(request: NextRequest) {
         { error: "Failed to create user" },
         { status: 500 },
       );
+    }
+
+    const welcomeResult = await sendWelcomeEmail({
+      email: user.email,
+      name: user.name,
+    });
+
+    if (!welcomeResult.success) {
+      console.error("Failed to send welcome email after registration");
     }
       
     return NextResponse.json(

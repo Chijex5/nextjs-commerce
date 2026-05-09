@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import LoadingDots from "components/loading-dots";
 import { useUserSession } from "hooks/useUserSession";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const COOKIE_NAME = "first_visit_signup_shown";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
@@ -58,6 +57,7 @@ export default function FirstVisitSignupPopup() {
         body: JSON.stringify({
           email: formData.email,
           callbackUrl: "/account?welcome=1",
+          purpose: "signup",
         }),
       });
 
@@ -66,7 +66,9 @@ export default function FirstVisitSignupPopup() {
       if (!response.ok) {
         toast.error(data.error || "Failed to send magic link");
       } else {
-        toast.success(data.message || "Check your email for the sign-in link.");
+        toast.success(
+          data.message || "Check your email to finish setting up your account.",
+        );
         setSent(true);
       }
     } catch (error) {
@@ -174,7 +176,7 @@ export default function FirstVisitSignupPopup() {
 
         {sent ? (
           <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300">
-            Check your inbox for the magic link to finish signing in.
+            Check your inbox for the magic link to finish creating your account.
           </div>
         ) : (
           <form
@@ -308,7 +310,8 @@ export default function FirstVisitSignupPopup() {
             </button>
             {!usePassword && (
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                We&apos;ll email a one-time sign-in link.
+                We&apos;ll email a one-time link to finish setting up your
+                account.
               </p>
             )}
           </form>

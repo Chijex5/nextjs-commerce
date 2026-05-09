@@ -14,7 +14,6 @@ export default function AuthLayout({
   return (
     <>
       <style>{`
-
         :root {
           --dp-ink:     #0A0704;
           --dp-charcoal:#191209;
@@ -32,27 +31,59 @@ export default function AuthLayout({
           to   { opacity:1; transform:translateY(0); }
         }
         .dp-rise-1 { animation:dp-rise 1s cubic-bezier(.16,1,.3,1) .05s both; }
-        .dp-rise-2 { animation:dp-rise 1s cubic-bezier(.16,1,.3,1) .2s both; }
+        .dp-rise-2 { animation:dp-rise 1s cubic-bezier(.16,1,.3,1) .2s  both; }
         .dp-rise-3 { animation:dp-rise 1s cubic-bezier(.16,1,.3,1) .35s both; }
 
         .dp-wordmark { font-family:var(--font-bebas-neue),sans-serif; }
         .dp-serif    { font-family:var(--font-cormorant-garamond),serif; }
         .dp-sans     { font-family:var(--font-dm-sans),sans-serif; }
-        .dp-label    { font-family:var(--font-dm-sans),sans-serif;font-size:.62rem;font-weight:500;letter-spacing:.26em;text-transform:uppercase;color:var(--dp-ember); }
+        .dp-label    {
+          font-family:var(--font-dm-sans),sans-serif;
+          font-size:.62rem; font-weight:500;
+          letter-spacing:.26em; text-transform:uppercase;
+          color:var(--dp-ember);
+        }
 
         .dp-grain::after {
-          content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+          content:''; position:absolute; inset:0;
+          pointer-events:none; z-index:0;
           background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
         }
 
         .auth-top-link {
-          color: var(--dp-muted);
-          text-decoration: none;
+          color: var(--dp-muted); text-decoration: none;
           transition: color .2s;
         }
+        .auth-top-link:hover { color: var(--dp-cream); }
 
-        .auth-top-link:hover {
-          color: var(--dp-cream);
+        /* ── content grid ── */
+        .auth-grid {
+          width: 100%;
+          max-width: 1100px;
+          display: grid;
+          grid-template-columns: 1fr;   /* mobile: single column = just the form */
+          gap: 3rem;
+          align-items: start;
+        }
+
+        /* left brand panel: hidden on mobile, shown on desktop */
+        .auth-brand-col {
+          display: none;
+        }
+
+        /* form col: full width on mobile, constrained on desktop */
+        .auth-form-col {
+          width: 100%;
+        }
+
+        @media (min-width: 960px) {
+          .auth-grid {
+            grid-template-columns: 1fr 420px;
+          }
+          .auth-brand-col {
+            display: block;
+            padding-top: .5rem;
+          }
         }
       `}</style>
 
@@ -80,7 +111,7 @@ export default function AuthLayout({
           }}
         />
 
-        {/* Top nav bar */}
+        {/* Top nav */}
         <header
           className="dp-rise-1"
           style={{
@@ -120,29 +151,23 @@ export default function AuthLayout({
           </Link>
         </header>
 
-        {/* Main content */}
+        {/* Main */}
         <main
           style={{
             flex: 1,
             position: "relative",
             zIndex: 10,
-            display: "grid",
-            placeItems: "start center",
-            padding: "3rem clamp(1.5rem,4vw,4rem) 5rem",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "flex-start",
+            /* tighter on mobile, generous on desktop */
+            padding: "clamp(1.75rem,5vw,3rem) clamp(1.25rem,4vw,4rem) 5rem",
           }}
         >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: 1100,
-              display: "grid",
-              gap: "3rem",
-              gridTemplateColumns: "1fr",
-            }}
-            className="lg:grid-cols-[1fr_420px] lg:items-start"
-          >
-            {/* Left: brand copy */}
-            <div className="dp-rise-2" style={{ paddingTop: ".5rem" }}>
+          <div className="auth-grid">
+
+            {/* ── LEFT: brand copy — desktop only ── */}
+            <div className="auth-brand-col dp-rise-2">
               <p className="dp-label" style={{ marginBottom: "1.25rem" }}>
                 Your Account
               </p>
@@ -156,9 +181,7 @@ export default function AuthLayout({
                   marginBottom: "2rem",
                 }}
               >
-                <span style={{ color: "var(--dp-cream)", display: "block" }}>
-                  SIGN
-                </span>
+                <span style={{ color: "var(--dp-cream)", display: "block" }}>SIGN</span>
                 <span
                   style={{
                     WebkitTextStroke: "1.5px rgba(242,232,213,0.22)",
@@ -186,54 +209,24 @@ export default function AuthLayout({
                 in one place.
               </p>
 
-              {/* Feature list */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: ".85rem",
-                }}
-              >
+              <div style={{ display: "flex", flexDirection: "column", gap: ".85rem" }}>
                 {[
                   { icon: "✦", text: "Track every order in real time" },
-                  {
-                    icon: "◈",
-                    text: "Save delivery addresses for faster checkout",
-                  },
+                  { icon: "◈", text: "Save delivery addresses for faster checkout" },
                   { icon: "⟡", text: "Manage your custom order requests" },
                   { icon: "⊛", text: "Secure across all your devices" },
                 ].map(({ icon, text }) => (
-                  <div
-                    key={text}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: ".75rem",
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: "var(--dp-ember)",
-                        fontSize: ".9rem",
-                        flexShrink: 0,
-                      }}
-                    >
+                  <div key={text} style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
+                    <span style={{ color: "var(--dp-ember)", fontSize: ".9rem", flexShrink: 0 }}>
                       {icon}
                     </span>
-                    <p
-                      style={{
-                        fontSize: ".78rem",
-                        color: "var(--dp-muted)",
-                        fontFamily: "var(--font-dm-sans), sans-serif",
-                      }}
-                    >
+                    <p style={{ fontSize: ".78rem", color: "var(--dp-muted)", fontFamily: "var(--font-dm-sans), sans-serif", margin: 0 }}>
                       {text}
                     </p>
                   </div>
                 ))}
               </div>
 
-              {/* Decorative wordmark */}
               <div
                 aria-hidden
                 className="dp-wordmark"
@@ -250,8 +243,11 @@ export default function AuthLayout({
               </div>
             </div>
 
-            {/* Right: auth form slot */}
-            <div className="dp-rise-3">{children}</div>
+            {/* ── RIGHT: form slot ── */}
+            <div className="auth-form-col dp-rise-3">
+              {children}
+            </div>
+
           </div>
         </main>
       </div>

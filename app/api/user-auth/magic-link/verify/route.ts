@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import { hash } from "bcryptjs";
+import crypto from "crypto";
+import { and, eq, gt, ilike, isNull } from "drizzle-orm";
 import { db } from "lib/db";
-import { customOrderRequests, magicLinkTokens, orders, users } from "lib/db/schema";
+import { customOrderRequests, magicLinkTokens, users } from "lib/db/schema";
+import { sendWelcomeEmail } from "lib/email/auth-emails";
 import { createUserSession, setUserSessionCookie } from "lib/user-session";
 import { deriveNameFromEmail } from "lib/user-utils";
-import { and, eq, gt, ilike, isNull } from "drizzle-orm";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -64,6 +65,17 @@ export async function GET(request: NextRequest) {
         })
         .returning();
       user = created;
+
+      if (user) {
+        const welcomeResult = await sendWelcomeEmail({
+          email: user.email,
+          name: user.name,
+        });
+
+        if (!welcomeResult.success) {
+          console.error("Failed to send welcome email after magic-link signup");
+        }
+      }
     }
 
     if (!user) {
@@ -77,21 +89,15 @@ export async function GET(request: NextRequest) {
       .set({ lastLoginAt: new Date() })
       .where(eq(users.id, user.id));
 
-    await Promise.all([
-      db
-        .update(orders)
-        .set({ userId: user.id })
-        .where(and(ilike(orders.email, user.email), isNull(orders.userId))),
-      db
-        .update(customOrderRequests)
-        .set({ userId: user.id, updatedAt: new Date() })
-        .where(
-          and(
-            ilike(customOrderRequests.email, user.email),
-            isNull(customOrderRequests.userId),
-          ),
+    await db
+      .update(customOrderRequests)
+      .set({ userId: user.id, updatedAt: new Date() })
+      .where(
+        and(
+          ilike(customOrderRequests.email, user.email),
+          isNull(customOrderRequests.userId),
         ),
-    ]);
+      );
 
     const sessionToken = await createUserSession({
       id: user.id,
