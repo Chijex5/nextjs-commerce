@@ -171,6 +171,8 @@ function AccountPageContent() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deletingAccount, setDeletingAccount] = useState(false);
 
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
   const [profile, setProfile] = useState({ name: "", email: "", phone: "" });
 
   const loadAccountSummary = async () => {
@@ -212,7 +214,7 @@ function AccountPageContent() {
         derivedName &&
         session.name?.trim().toLowerCase() === derivedName.toLowerCase();
       setShowProfilePrompt(!!needsNameReview);
-      if (needsNameReview) setIsEditing(true);
+      if (needsNameReview) setShowProfileModal(true);
     }
   }, [status, router, session, showWelcome, derivedName]);
 
@@ -388,6 +390,44 @@ function AccountPageContent() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleProfileModalSave = async () => {
+    if (!profile.name.trim()) {
+      toast.error("Name is required");
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch("/api/user-auth/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: profile.name, phone: profile.phone }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Failed to update profile");
+        return;
+      }
+      toast.success("Profile updated successfully");
+      setShowProfileModal(false);
+      setShowProfilePrompt(false);
+      setIsEditing(false);
+      await refetch();
+      router.replace("/account");
+      router.refresh();
+    } catch {
+      toast.error("Failed to update profile");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSkipProfileModal = () => {
+    setShowProfileModal(false);
+    setShowProfilePrompt(false);
+    setIsEditing(false);
+    router.replace("/account");
   };
 
   const handleChangePassword = async () => {
@@ -1321,6 +1361,86 @@ function AccountPageContent() {
           </div>
         )}
 
+        {/* ── FIRST-LOGIN PROFILE SETUP MODAL ── */}
+        {showProfileModal && !showWelcomeGift && !showOrderLinkPrompt && (
+          <div
+            className="ac-modal-backdrop"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) handleSkipProfileModal();
+            }}
+          >
+            <div className="ac-modal">
+              <button
+                className="ac-modal-close"
+                onClick={handleSkipProfileModal}
+                aria-label="Close"
+              >
+                Close ✕
+              </button>
+              <div className="ac-modal-eyebrow">Complete your profile</div>
+              <h2 className="ac-modal-title">
+                Welcome — one
+                <br />
+                quick step
+              </h2>
+              <p className="ac-modal-sub">
+                We set your name from your email address. Update it below and
+                add your phone number so we can reach you about your orders.
+              </p>
+              <div className="ac-form">
+                <div>
+                  <label className="ac-field-label">Full name</label>
+                  <input
+                    value={profile.name}
+                    onChange={(e) =>
+                      setProfile((p) => ({ ...p, name: e.target.value }))
+                    }
+                    className="ac-input"
+                    placeholder="Your full name"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="ac-field-label">
+                    Phone number{" "}
+                    <span style={{ color: "var(--muted)", fontWeight: 400 }}>
+                      (optional)
+                    </span>
+                  </label>
+                  <input
+                    value={profile.phone}
+                    onChange={(e) =>
+                      setProfile((p) => ({ ...p, phone: e.target.value }))
+                    }
+                    className="ac-input"
+                    placeholder="e.g. +2348012345678"
+                  />
+                </div>
+                <div className="ac-form-actions">
+                  <button
+                    onClick={handleProfileModalSave}
+                    disabled={saving}
+                    className="ac-btn-primary"
+                  >
+                    {saving ? (
+                      <LoadingDots className="bg-[#F2E8D5]" />
+                    ) : (
+                      "Save profile"
+                    )}
+                  </button>
+                  <button
+                    onClick={handleSkipProfileModal}
+                    disabled={saving}
+                    className="ac-btn-ghost"
+                  >
+                    Skip for now
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── HERO ── */}
         <header className="ac-hero">
           <div className="ac-hero-left">
@@ -1358,7 +1478,7 @@ function AccountPageContent() {
         </div>
 
         {/* ── PROFILE PROMPT ── */}
-        {showProfilePrompt && (
+        {showProfilePrompt && !showProfileModal && (
           <div className="ac-prompt">
             Please confirm your profile details before continuing.
           </div>
