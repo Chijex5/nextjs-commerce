@@ -13,6 +13,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [magicLoading, setMagicLoading] = useState(false);
   const [usePassword, setUsePassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,233 +66,242 @@ export default function Login() {
   return (
     <>
       <style>{`
-        .co-input {
-          width: 100%;
+        @keyframes dp-spin { to { transform: rotate(360deg); } }
+
+        /* ── card ── */
+        .login-card {
           background: var(--dp-card);
+          border: 1px solid var(--dp-border);
+          padding: 2rem 1.75rem;
+        }
+        @media (min-width: 960px) {
+          .login-card { padding: 2.25rem 2rem; }
+        }
+
+        /* tiny heading — same weight as the layout's left-column eyebrow */
+        .lc-heading {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 1.35rem; font-weight: 600;
+          color: var(--dp-cream); line-height: 1.1;
+          margin-bottom: 1.5rem;
+        }
+
+        /* ── fields ── */
+        .lc-fields { display: flex; flex-direction: column; gap: .85rem; }
+        .lc-field  { display: flex; flex-direction: column; gap: .38rem; }
+        .lc-label {
+          font-family: 'DM Sans', sans-serif;
+          font-size: .55rem; font-weight: 500;
+          letter-spacing: .2em; text-transform: uppercase;
+          color: var(--dp-muted);
+        }
+        .lc-wrap { position: relative; }
+        .lc-input {
+          width: 100%; box-sizing: border-box;
+          background: transparent;
           border: 1px solid var(--dp-border);
           color: var(--dp-cream);
-          font-family: 'DM Sans', sans-serif;
-          font-size: .82rem;
-          padding: .85rem 1rem;
-          outline: none;
-          transition: border-color .22s;
+          font-family: 'DM Sans', sans-serif; font-size: .82rem;
+          padding: .74rem .9rem; outline: none;
+          transition: border-color .2s, background .18s;
+          -webkit-appearance: none;
         }
-        .co-input::placeholder { color: var(--dp-muted); }
-        .co-input:focus { border-color: rgba(191,90,40,.6); }
-
-        .co-label {
-          font-family: 'DM Sans', sans-serif;
-          font-size: .6rem;
-          font-weight: 500;
-          letter-spacing: .2em;
-          text-transform: uppercase;
-          color: var(--dp-muted);
-          display: block;
-          margin-bottom: .45rem;
+        .lc-input::placeholder { color: var(--dp-muted); opacity: .5; }
+        .lc-input:focus {
+          border-color: rgba(191,90,40,.65);
+          background: rgba(191,90,40,.03);
         }
+        .lc-input.has-eye { padding-right: 2.7rem; }
 
-        .dp-btn-solid {
-          display: flex; align-items: center; justify-content: center; gap: .5rem;
-          width: 100%;
+        /* eye toggle */
+        .lc-eye {
+          position: absolute; right: .78rem; top: 50%; transform: translateY(-50%);
+          background: none; border: none; padding: 0; cursor: pointer;
+          color: var(--dp-muted); display: flex; align-items: center;
+          transition: color .18s; line-height: 1;
+        }
+        .lc-eye:hover { color: var(--dp-sand); }
+
+        /* password field — CSS grid reveal, no layout jump */
+        .lc-pw-slide {
+          display: grid; grid-template-rows: 0fr; opacity: 0;
+          transition: grid-template-rows .25s ease, opacity .22s ease;
+        }
+        .lc-pw-slide.open { grid-template-rows: 1fr; opacity: 1; }
+        .lc-pw-slide > div { overflow: hidden; }
+
+        /* ── buttons ── */
+        .lc-btn-primary {
+          display: flex; align-items: center; justify-content: center; gap: .45rem;
+          width: 100%; margin-top: .3rem;
           background: var(--dp-cream); color: var(--dp-ink);
-          font-family: 'DM Sans', sans-serif; font-weight: 500;
-          font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
-          padding: .95rem 2rem; border: none; cursor: pointer;
-          transition: background .22s, color .22s;
+          font-family: 'DM Sans', sans-serif; font-weight: 600;
+          font-size: .67rem; letter-spacing: .14em; text-transform: uppercase;
+          padding: .9rem 1.5rem; border: none; cursor: pointer;
+          transition: background .2s, color .2s;
         }
-        .dp-btn-solid:hover:not(:disabled) { background: var(--dp-ember); color: var(--dp-cream); }
-        .dp-btn-solid:disabled { opacity: .5; cursor: not-allowed; }
+        .lc-btn-primary:hover:not(:disabled) { background: var(--dp-ember); color: var(--dp-cream); }
+        .lc-btn-primary:disabled { opacity: .4; cursor: not-allowed; }
 
-        .dp-btn-ghost {
-          display: flex; align-items: center; justify-content: center; gap: .5rem;
-          width: 100%;
-          border: 1px solid rgba(242,232,213,.18); color: var(--dp-sand);
-          background: transparent;
-          font-family: 'DM Sans', sans-serif; font-weight: 500;
-          font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
-          padding: .95rem 2rem; cursor: pointer;
-          transition: border-color .22s, color .22s;
+        .lc-btn-toggle {
+          display: flex; align-items: center; justify-content: center;
+          width: 100%; background: transparent; border: none;
+          font-family: 'DM Sans', sans-serif; font-size: .65rem;
+          color: var(--dp-muted); cursor: pointer; padding: .38rem 0;
+          transition: color .2s;
         }
-        .dp-btn-ghost:hover { border-color: rgba(242,232,213,.45); color: var(--dp-cream); }
-
-        .auth-card {
-          background: var(--dp-card);
-          border: 1px solid var(--dp-border);
-          padding: 2rem;
-        }
-
-        .auth-divider {
-          display: flex; align-items: center; gap: 1rem;
-          margin: 1.5rem 0;
-        }
-        .auth-divider::before,
-        .auth-divider::after {
-          content: ''; flex: 1; height: 1px; background: var(--dp-border);
-        }
-        .auth-divider span {
-          font-family: 'DM Sans', sans-serif;
-          font-size: .6rem;
-          letter-spacing: .2em;
-          text-transform: uppercase;
-          color: var(--dp-muted);
-          white-space: nowrap;
-        }
-
-        .auth-link {
-          color: var(--dp-ember);
-          text-decoration: none;
-          font-weight: 500;
-          border-bottom: 1px solid transparent;
+        .lc-btn-toggle:hover { color: var(--dp-sand); }
+        .lc-btn-toggle span {
+          border-bottom: 1px solid var(--dp-border);
           transition: border-color .2s;
         }
-        .auth-link:hover { border-color: var(--dp-ember); }
+        .lc-btn-toggle:hover span { border-color: var(--dp-sand); }
+
+        /* ── divider ── */
+        .lc-divider {
+          display: flex; align-items: center; gap: .8rem;
+          margin: .85rem 0 .7rem;
+        }
+        .lc-divider::before,
+        .lc-divider::after { content:''; flex:1; height:1px; background: var(--dp-border); }
+        .lc-divider span {
+          font-family: 'DM Sans', sans-serif; font-size: .55rem;
+          letter-spacing: .18em; text-transform: uppercase;
+          color: var(--dp-muted); white-space: nowrap;
+        }
+
+        /* ── footer ── */
+        .lc-footer {
+          margin-top: 1.35rem; padding-top: 1rem;
+          border-top: 1px solid var(--dp-border);
+          display: flex; align-items: center;
+          justify-content: space-between; flex-wrap: wrap; gap: .4rem;
+        }
+        .lc-footer-text {
+          font-family: 'DM Sans', sans-serif;
+          font-size: .65rem; color: var(--dp-muted); margin: 0;
+        }
+        .lc-link {
+          color: var(--dp-ember); text-decoration: none;
+          border-bottom: 1px solid transparent; transition: border-color .18s;
+        }
+        .lc-link:hover { border-color: var(--dp-ember); }
+        .lc-skip {
+          font-family: 'DM Sans', sans-serif; font-size: .65rem;
+          color: var(--dp-muted); text-decoration: none; transition: color .18s;
+        }
+        .lc-skip:hover { color: var(--dp-sand); }
+
+        /* spinner */
+        .lc-spin { animation: dp-spin .7s linear infinite; display: inline-flex; }
       `}</style>
 
-      <div className="auth-card">
-        {/* Header */}
-        <p className="dp-label" style={{ marginBottom: ".6rem" }}>Welcome back</p>
-        <h2
-          className="dp-serif"
-          style={{
-            fontSize: "1.9rem",
-            fontWeight: 600,
-            color: "var(--dp-cream)",
-            lineHeight: 1.15,
-            marginBottom: ".5rem",
-          }}
-        >
-          Sign in to your account
-        </h2>
-        <p
-          style={{
-            fontFamily: "DM Sans, sans-serif",
-            fontSize: ".75rem",
-            color: "var(--dp-muted)",
-            marginBottom: "2rem",
-            lineHeight: 1.6,
-          }}
-        >
-          {usePassword
-            ? "Enter your email and password below."
-            : "Enter your email and we'll send a one-time sign-in link."}
+      <div className="login-card">
+
+        {/* compact heading */}
+        <p className="lc-heading">
+          {usePassword ? "Sign in" : "Welcome back"}
         </p>
 
         <form onSubmit={usePassword ? handleSubmit : handleMagicLink}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="co-label">Email Address</label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="co-input"
-                placeholder="you@example.com"
-              />
-            </div>
+          <div className="lc-fields">
 
-            {/* Password (conditional) */}
-            {usePassword && (
-              <div>
-                <label htmlFor="password" className="co-label">Password</label>
+            {/* Email */}
+            <div className="lc-field">
+              <label htmlFor="email" className="lc-label">Email Address</label>
+              <div className="lc-wrap">
                 <input
-                  type="password"
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="co-input"
-                  placeholder="••••••••"
+                  type="email" id="email" value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required className="lc-input"
+                  placeholder="you@example.com"
+                  autoComplete="email"
                 />
               </div>
-            )}
+            </div>
 
-            {/* Primary action */}
+            {/* Password — smooth CSS grid reveal */}
+            <div className={`lc-pw-slide${usePassword ? " open" : ""}`}>
+              <div>
+                <div className="lc-field" style={{ paddingBottom: ".04rem" }}>
+                  <label htmlFor="password" className="lc-label">Password</label>
+                  <div className="lc-wrap">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      id="password" value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required={usePassword}
+                      className="lc-input has-eye"
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button" className="lc-eye"
+                      onClick={() => setShowPassword((v) => !v)}
+                      tabIndex={-1}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        /* eye open */
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      ) : (
+                        /* eye off */
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                          <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Primary CTA */}
             <button
               type="submit"
               disabled={usePassword ? isLoading : magicLoading}
-              className="dp-btn-solid"
-              style={{ marginTop: ".4rem" }}
+              className="lc-btn-primary"
             >
-              {usePassword
-                ? isLoading ? "Signing in…" : "Sign In"
-                : magicLoading ? "Sending link…" : "Send Magic Link"}
-              {!isLoading && !magicLoading && (
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                  <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+              {usePassword ? (
+                isLoading ? (
+                  <><span className="lc-spin"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></span>Signing in…</>
+                ) : (
+                  <>Sign In<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></>
+                )
+              ) : (
+                magicLoading ? (
+                  <><span className="lc-spin"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></span>Sending…</>
+                ) : (
+                  <>Send Magic Link<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></>
+                )
               )}
             </button>
           </div>
 
           {!usePassword && (
-            <p
-              style={{
-                fontFamily: "DM Sans, sans-serif",
-                fontSize: ".65rem",
-                color: "var(--dp-muted)",
-                marginTop: ".75rem",
-                textAlign: "center",
-                lineHeight: 1.5,
-              }}
-            >
-              We&apos;ll email you a one-time sign-in link. No password needed.
+            <p style={{ fontFamily:"DM Sans,sans-serif", fontSize:".6rem", color:"var(--dp-muted)", marginTop:".5rem", textAlign:"center", lineHeight:1.5 }}>
+              One-time link sent to your inbox — no password needed.
             </p>
           )}
 
-          <div className="auth-divider">
-            <span>or</span>
-          </div>
+          <div className="lc-divider"><span>or</span></div>
 
-          {/* Toggle auth mode */}
-          <button
-            type="button"
-            onClick={() => setUsePassword((v) => !v)}
-            className="dp-btn-ghost"
-          >
-            {usePassword ? "Use magic link instead" : "Use password instead"}
+          <button type="button" onClick={() => setUsePassword((v) => !v)} className="lc-btn-toggle">
+            <span>{usePassword ? "Use a magic link instead" : "Sign in with password instead"}</span>
           </button>
         </form>
 
-        {/* Footer links */}
-        <div
-          style={{
-            marginTop: "2rem",
-            paddingTop: "1.5rem",
-            borderTop: "1px solid var(--dp-border)",
-            display: "flex",
-            flexDirection: "column",
-            gap: ".6rem",
-          }}
-        >
-          <p
-            style={{
-              fontFamily: "DM Sans, sans-serif",
-              fontSize: ".72rem",
-              color: "var(--dp-muted)",
-            }}
-          >
-            Don&apos;t have an account?{" "}
-            <Link href="/auth/register" className="auth-link">
-              Create one
-            </Link>
+        <div className="lc-footer">
+          <p className="lc-footer-text">
+            No account?{" "}
+            <Link href="/auth/register" className="lc-link">Create one</Link>
           </p>
-          <Link
-            href="/"
-            style={{
-              fontFamily: "DM Sans, sans-serif",
-              fontSize: ".72rem",
-              color: "var(--dp-muted)",
-              textDecoration: "none",
-              transition: "color .2s",
-            }}
-            onMouseEnter={e => (e.currentTarget.style.color = "var(--dp-sand)")}
-            onMouseLeave={e => (e.currentTarget.style.color = "var(--dp-muted)")}
-          >
-            Continue without login →
-          </Link>
+          <Link href="/" className="lc-skip">Continue as guest →</Link>
         </div>
       </div>
     </>
