@@ -1,9 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { newsletterSubscribers } from "@/lib/db/schema";
-import { sendEmail } from "@/lib/email/resend";
-import { welcomeEmailTemplate } from "@/lib/email/templates/welcome";
+import { sendNewsletterWelcomeEmail } from "@/lib/email/newsletter-emails";
 import { eq } from "drizzle-orm";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,11 +43,14 @@ export async function POST(request: NextRequest) {
       await db.insert(newsletterSubscribers).values({ email, name });
     }
 
-    await sendEmail({
-      to: email,
-      subject: "Welcome to D'FOOTPRINT! 👋",
-      html: welcomeEmailTemplate({ name: name || "Friend" }),
+    const welcomeResult = await sendNewsletterWelcomeEmail({
+      email,
+      name: name || "Friend",
     });
+
+    if (!welcomeResult.success) {
+      console.error("Failed to send newsletter welcome email");
+    }
 
     return NextResponse.json(
       {
