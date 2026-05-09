@@ -79,7 +79,7 @@ export const welcomeEmailTemplate = (data: WelcomeEmailData) => {
         <td width="50%" style="padding: 0 16px 20px 0; vertical-align: top;">
           <p style="margin: 0 0 5px; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #c4c4c4; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[0]?.number}</p>
           <p style="margin: 0 0 5px; font-size: 13px; font-weight: 700; color: #111111; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[0]?.title}</p>
-          <p style="margin: 0; font-size: 13px; color: #6b7280; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; line-height: 1.65;">${features[0].body}</p>
+          <p style="margin: 0; font-size: 13px; color: #6b7280; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; line-height: 1.65;">${features[0]?.body}</p>
         </td>
         <td width="50%" style="padding: 0 0 20px 0; vertical-align: top;">
           <p style="margin: 0 0 5px; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #c4c4c4; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${features[1]?.number}</p>
