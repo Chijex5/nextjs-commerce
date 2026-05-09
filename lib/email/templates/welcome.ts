@@ -45,8 +45,8 @@ export const welcomeEmailTemplate = (data: WelcomeEmailData) => {
   const firstName = data.name?.trim().split(/\s+/)[0] || "there";
 
   // Hosted image URLs — update once generated and uploaded
-  const heroImageUrl = "https://www.dfootprint.me/welcome-hero.jpg";
-  const craftImageUrl = "https://www.dfootprint.me/welcome-craft.jpg";
+  const heroImageUrl = "https://www.dfootprint.me/8D5A3D65-CEF8-4037-B693-D905381F84CC.png";
+  const craftImageUrl = "https://www.dfootprint.me/EC4CE566-C882-4B4A-8F1E-BEBF6E8CD8C2.png";
 
   // ── 2×2 Subscriber benefit grid ─────────────────────────────────────────
   const features = [
