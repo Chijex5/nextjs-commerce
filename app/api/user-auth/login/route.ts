@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
 import { compare } from "bcryptjs";
-import { db } from "lib/db";
-import { customOrderRequests, orders, users } from "lib/db/schema";
-import { createUserSession, setUserSessionCookie } from "lib/user-session";
 import { and, eq, ilike, isNull } from "drizzle-orm";
+import { db } from "lib/db";
+import { customOrderRequests, users } from "lib/db/schema";
 import { handleApiError } from "lib/errors";
+import { createUserSession, setUserSessionCookie } from "lib/user-session";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,22 +44,15 @@ export async function POST(request: NextRequest) {
       .set({ lastLoginAt: new Date() })
       .where(eq(users.id, user.id));
 
-    // Claim guest orders/requests that share this verified email.
-    await Promise.all([
-      db
-        .update(orders)
-        .set({ userId: user.id })
-        .where(and(ilike(orders.email, user.email), isNull(orders.userId))),
-      db
-        .update(customOrderRequests)
-        .set({ userId: user.id, updatedAt: new Date() })
-        .where(
-          and(
-            ilike(customOrderRequests.email, user.email),
-            isNull(customOrderRequests.userId),
-          ),
+    await db
+      .update(customOrderRequests)
+      .set({ userId: user.id, updatedAt: new Date() })
+      .where(
+        and(
+          ilike(customOrderRequests.email, user.email),
+          isNull(customOrderRequests.userId),
         ),
-    ]);
+      );
 
     const token = await createUserSession({
       id: user.id,

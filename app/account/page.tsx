@@ -38,6 +38,15 @@ type ActivityItem = {
   meta?: string;
 };
 
+type PendingOrderMatch = {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: string;
+  currencyCode: string;
+  createdAt: string;
+};
+
 type AccountSummary = {
   accountCreatedAt: string;
   lastLoginAt: string | null;
@@ -82,6 +91,12 @@ function formatCurrency(value: number, currencyCode: string) {
     currency: currencyCode || "NGN",
     maximumFractionDigits: 2,
   }).format(value || 0);
+}
+
+function getOrderPromptStorageKey(email: string, orderIds: string[]) {
+  return `order-link-prompt:${email.trim().toLowerCase()}:${[...orderIds]
+    .sort()
+    .join(",")}`;
 }
 
 // ─── sub-components ──────────────────────────────────────────────────────────
@@ -133,6 +148,11 @@ function AccountPageContent() {
 
   const [showWelcomeGift, setShowWelcomeGift] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [pendingOrderMatches, setPendingOrderMatches] = useState<
+    PendingOrderMatch[]
+  >([]);
+  const [showOrderLinkPrompt, setShowOrderLinkPrompt] = useState(false);
+  const [linkingOrders, setLinkingOrders] = useState(false);
 
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordData, setPasswordData] = useState(emptyPasswordData());
@@ -152,6 +172,24 @@ function AccountPageContent() {
   const [deletingAccount, setDeletingAccount] = useState(false);
 
   const [profile, setProfile] = useState({ name: "", email: "", phone: "" });
+
+  const loadAccountSummary = async () => {
+    if (status !== "authenticated" || !session?.id) return;
+
+    setSummaryLoading(true);
+    try {
+      const res = await fetch("/api/user-auth/account", {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setSummary(data.summary || null);
+    } catch {
+      setSummary(null);
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
 
   const derivedName = useMemo(() => {
     if (!session?.email) return "";
@@ -188,25 +226,67 @@ function AccountPageContent() {
 
   useEffect(() => {
     if (status !== "authenticated" || !session?.id) return;
+    void loadAccountSummary();
+  }, [status, session?.id]);
 
-    const fetchAccountSummary = async () => {
-      setSummaryLoading(true);
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.email) {
+      setPendingOrderMatches([]);
+      setShowOrderLinkPrompt(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchPendingOrderMatches = async () => {
       try {
-        const res = await fetch("/api/user-auth/account", {
+        const res = await fetch("/api/user-auth/order-links", {
           cache: "no-store",
         });
-        if (!res.ok) return;
+
+        if (!res.ok) {
+          if (!cancelled) {
+            setPendingOrderMatches([]);
+            setShowOrderLinkPrompt(false);
+          }
+          return;
+        }
+
         const data = await res.json();
-        setSummary(data.summary || null);
+        const matches = Array.isArray(data.orders)
+          ? (data.orders as PendingOrderMatch[])
+          : [];
+
+        if (cancelled) return;
+
+        setPendingOrderMatches(matches);
+
+        if (!matches.length || typeof window === "undefined") {
+          setShowOrderLinkPrompt(false);
+          return;
+        }
+
+        const storageKey = getOrderPromptStorageKey(
+          session.email,
+          matches.map((order) => order.id),
+        );
+        setShowOrderLinkPrompt(
+          window.localStorage.getItem(storageKey) !== "dismissed",
+        );
       } catch {
-        setSummary(null);
-      } finally {
-        setSummaryLoading(false);
+        if (!cancelled) {
+          setPendingOrderMatches([]);
+          setShowOrderLinkPrompt(false);
+        }
       }
     };
 
-    void fetchAccountSummary();
-  }, [status, session?.id]);
+    void fetchPendingOrderMatches();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status, session?.email]);
 
   const handleCopyCoupon = async () => {
     try {
@@ -216,6 +296,68 @@ function AccountPageContent() {
     } catch {
       toast.error("Failed to copy code");
     }
+  };
+
+  const handleLinkPendingOrders = async () => {
+    if (!pendingOrderMatches.length) return;
+
+    setLinkingOrders(true);
+    try {
+      const orderIds = pendingOrderMatches.map((order) => order.id);
+      const res = await fetch("/api/user-auth/order-links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderIds }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        toast.error(data.error || "Failed to link orders");
+        return;
+      }
+
+      if (typeof window !== "undefined" && session?.email) {
+        window.localStorage.removeItem(
+          getOrderPromptStorageKey(session.email, orderIds),
+        );
+      }
+
+      toast.success(
+        pendingOrderMatches.length === 1
+          ? `Linked ${pendingOrderMatches[0]?.orderNumber} to your account`
+          : `Linked ${pendingOrderMatches.length} orders to your account`,
+      );
+
+      setPendingOrderMatches([]);
+      setShowOrderLinkPrompt(false);
+      await loadAccountSummary();
+      await refetch();
+      router.refresh();
+    } catch {
+      toast.error("Failed to link orders");
+    } finally {
+      setLinkingOrders(false);
+    }
+  };
+
+  const handleIgnorePendingOrders = () => {
+    if (!pendingOrderMatches.length || !session?.email) {
+      setShowOrderLinkPrompt(false);
+      return;
+    }
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        getOrderPromptStorageKey(
+          session.email,
+          pendingOrderMatches.map((order) => order.id),
+        ),
+        "dismissed",
+      );
+    }
+
+    setShowOrderLinkPrompt(false);
   };
 
   const handleEditProfile = async () => {
@@ -922,6 +1064,7 @@ function AccountPageContent() {
           padding: 40px;
           position: relative;
         }
+        .ac-order-modal { max-width: 560px; }
         .ac-modal-close {
           position: absolute;
           top: 16px; right: 16px;
@@ -967,6 +1110,49 @@ function AccountPageContent() {
           margin-bottom: 28px;
           line-height: 1.5;
         }
+        .ac-order-list {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .ac-order-item {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 18px;
+          border: 1px solid var(--border);
+          background: rgba(242,232,213,0.02);
+          padding: 14px 16px;
+        }
+        .ac-order-number {
+          color: var(--cream);
+          font-size: 14px;
+          font-weight: 500;
+          letter-spacing: 0.04em;
+        }
+        .ac-order-meta {
+          margin-top: 4px;
+          color: var(--muted);
+          font-size: 11px;
+          line-height: 1.4;
+        }
+        .ac-order-amount {
+          color: var(--terra);
+          font-size: 13px;
+          font-weight: 500;
+          white-space: nowrap;
+        }
+        .ac-order-actions {
+          display: flex;
+          gap: 12px;
+          margin-top: 28px;
+          flex-wrap: wrap;
+        }
+        .ac-order-actions .ac-btn-primary,
+        .ac-order-actions .ac-btn-ghost {
+          flex: 1;
+          min-width: 150px;
+        }
         .ac-coupon-box {
           display: flex;
           align-items: center;
@@ -1005,6 +1191,8 @@ function AccountPageContent() {
           .ac-panel { border-right: none; border-bottom: 1px solid var(--border); }
           .ac-panel-last { border-bottom: none; }
           .ac-stats-bar { grid-template-columns: 1fr 1fr; }
+          .ac-order-actions .ac-btn-primary,
+          .ac-order-actions .ac-btn-ghost { flex: 1 1 100%; }
         }
         @media (max-width: 640px) {
           .ac-hero { padding: 28px 24px; }
@@ -1013,14 +1201,85 @@ function AccountPageContent() {
           .ac-modal { padding: 28px 24px; }
           .ac-info-grid { grid-template-columns: 1fr; }
           .ac-stats-bar { grid-template-columns: 1fr; }
+          .ac-order-item { flex-direction: column; }
           .ac-summary-strip { grid-template-columns: 1fr; }
           .ac-insight-grid { grid-template-columns: 1fr; }
         }
       `}</style>
 
       <div className="ac-root">
+        {/* ── ORDER LINK PROMPT ── */}
+        {showOrderLinkPrompt && pendingOrderMatches.length > 0 && (
+          <div
+            className="ac-modal-backdrop"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                handleIgnorePendingOrders();
+              }
+            }}
+          >
+            <div className="ac-modal ac-order-modal">
+              <button
+                className="ac-modal-close"
+                onClick={handleIgnorePendingOrders}
+                aria-label="Close"
+              >
+                Close ✕
+              </button>
+              <div className="ac-modal-eyebrow">Order match found</div>
+              <h2 className="ac-modal-title">Link these orders?</h2>
+              <p className="ac-modal-sub">
+                We found {pendingOrderMatches.length} order
+                {pendingOrderMatches.length === 1 ? "" : "s"} that share your
+                login email and are not linked to your account yet.
+              </p>
+
+              <div className="ac-order-list">
+                {pendingOrderMatches.map((order) => {
+                  const amount = Number(order.totalAmount);
+                  return (
+                    <div key={order.id} className="ac-order-item">
+                      <div>
+                        <div className="ac-order-number">
+                          {order.orderNumber}
+                        </div>
+                        <div className="ac-order-meta">
+                          {formatDate(order.createdAt)} · {order.status}
+                        </div>
+                      </div>
+                      <div className="ac-order-amount">
+                        {formatCurrency(amount, order.currencyCode)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="ac-order-actions">
+                <button
+                  className="ac-btn-primary"
+                  onClick={handleLinkPendingOrders}
+                  disabled={linkingOrders}
+                >
+                  {linkingOrders ? (
+                    <LoadingDots className="bg-[#F2E8D5]" />
+                  ) : (
+                    "Link orders"
+                  )}
+                </button>
+                <button
+                  className="ac-btn-ghost"
+                  onClick={handleIgnorePendingOrders}
+                >
+                  Ignore for now
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── WELCOME GIFT MODAL ── */}
-        {showWelcomeGift && (
+        {showWelcomeGift && !showOrderLinkPrompt && (
           <div
             className="ac-modal-backdrop"
             onClick={(e) => {
