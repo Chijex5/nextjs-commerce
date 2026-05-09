@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { and, eq, gt, ilike, isNull } from "drizzle-orm";
 import { db } from "lib/db";
 import { customOrderRequests, magicLinkTokens, users } from "lib/db/schema";
+import { sendWelcomeEmail } from "lib/email/auth-emails";
 import { createUserSession, setUserSessionCookie } from "lib/user-session";
 import { deriveNameFromEmail } from "lib/user-utils";
 import { NextRequest, NextResponse } from "next/server";
@@ -64,6 +65,17 @@ export async function GET(request: NextRequest) {
         })
         .returning();
       user = created;
+
+      if (user) {
+        const welcomeResult = await sendWelcomeEmail({
+          email: user.email,
+          name: user.name,
+        });
+
+        if (!welcomeResult.success) {
+          console.error("Failed to send welcome email after magic-link signup");
+        }
+      }
     }
 
     if (!user) {

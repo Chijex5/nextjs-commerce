@@ -3,15 +3,38 @@ import { adminAccountCreatedTemplate } from "./templates/admin-account-created";
 import { adminPasswordResetTemplate } from "./templates/admin-password-reset";
 import { magicLinkTemplate } from "./templates/magic-link";
 import { otpTemplate } from "./templates/otp";
+import { welcomeEmailTemplate } from "./templates/welcome";
 
 export const sendMagicLinkEmail = async (data: {
   email: string;
   loginUrl: string;
+  purpose?: "signin" | "signup";
+}) => {
+  const purpose = data.purpose ?? "signin";
+
+  return sendEmail({
+    to: data.email,
+    subject:
+      purpose === "signup"
+        ? "Finish setting up your D'FOOTPRINT account"
+        : "Your sign-in link - D'FOOTPRINT",
+    html: magicLinkTemplate({
+      loginUrl: data.loginUrl,
+      purpose,
+    }),
+  });
+};
+
+export const sendWelcomeEmail = async (data: {
+  email: string;
+  name?: string | null;
 }) => {
   return sendEmail({
     to: data.email,
-    subject: "Your sign-in link - D'FOOTPRINT",
-    html: magicLinkTemplate({ loginUrl: data.loginUrl }),
+    from: "Chika <chika@dfootprint.me>",
+    replyTo: "chika@dfootprint.me",
+    subject: "Welcome to D'FOOTPRINT",
+    html: welcomeEmailTemplate({ name: data.name || "there" }),
   });
 };
 

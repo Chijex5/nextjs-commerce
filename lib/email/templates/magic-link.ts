@@ -3,6 +3,7 @@ import { baseTemplate } from "./base";
 interface MagicLinkData {
   loginUrl: string;
   name?: string;
+  purpose?: "signin" | "signup";
 }
 
 /**
@@ -10,19 +11,26 @@ interface MagicLinkData {
  * Sent when user requests a passwordless sign-in link
  */
 export const magicLinkTemplate = (data: MagicLinkData) => {
+  const isSignup = data.purpose === "signup";
   const firstName = data.name?.trim().split(/\s+/)[0];
   const greeting = firstName ? `Hi ${firstName},` : `Hi,`;
+  const eyebrow = isSignup ? "Create account" : "Sign in";
+  const heading = isSignup
+    ? "Finish creating your D'FOOTPRINT account."
+    : "Your sign-in link is ready.";
+  const bodyCopy = isSignup
+    ? "Use the button below to create your account and continue into D'FOOTPRINT. This link is valid for <strong style=\"color: #111111;\">15 minutes</strong> and can only be used once."
+    : "Use the button below to sign in to your D'FOOTPRINT account. This link is valid for <strong style=\"color: #111111;\">15 minutes</strong> and can only be used once.";
+  const ctaLabel = isSignup ? "Finish Setup" : "Sign In to My Account";
 
   const content = `
-    <p style="margin: 0 0 10px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #9ca3af; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">Sign in</p>
-    <h2 style="margin: 0 0 20px;">Your sign-in link is ready.</h2>
+    <p style="margin: 0 0 10px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #9ca3af; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">${eyebrow}</p>
+    <h2 style="margin: 0 0 20px;">${heading}</h2>
 
     <p>${greeting}</p>
-    <p>
-      Use the button below to sign in to your D'FOOTPRINT account. This link is valid for <strong style="color: #111111;">15 minutes</strong> and can only be used once.
-    </p>
+    <p>${bodyCopy}</p>
 
-    <a href="${data.loginUrl}" class="button" style="margin-top: 24px;">Sign In to My Account</a>
+    <a href="${data.loginUrl}" class="button" style="margin-top: 24px;">${ctaLabel}</a>
 
     <hr style="border: none; border-top: 1px solid #e8e8e6; margin: 32px 0 24px;">
 

@@ -6,7 +6,7 @@ interface WelcomeEmailData {
 
 /**
  * Welcome email template
- * Sent when user subscribes to newsletter or creates account
+ * Sent when a user creates an account
  */
 export const welcomeEmailTemplate = (data: WelcomeEmailData) => {
   const siteUrl =
@@ -18,13 +18,16 @@ export const welcomeEmailTemplate = (data: WelcomeEmailData) => {
 
   const content = `
     <p style="margin: 0 0 10px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #9ca3af; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">Welcome</p>
-    <h2 style="margin: 0 0 20px;">Good to have you here, ${firstName}.</h2>
+    <h2 style="margin: 0 0 20px;">A quick thank you from Chika, ${firstName}.</h2>
 
+    <p>
+      Hi ${firstName}, I'm Chika, founder of D'FOOTPRINT. Thank you for joining us and for trusting us with a place in your wardrobe.
+    </p>
     <p>
       Every pair that leaves our workshop started as a conversation — a shape someone imagined, a fit they needed, a story worth wearing. That's what D'FOOTPRINT is. We make leather footwear by hand, right here in Lagos, and we take our time with every single one.
     </p>
     <p>
-      You're now the first to know when something new comes off the bench.
+      If you just created your account, you're all set to explore, order, and come back whenever you need us. If you subscribed for updates, you'll be the first to hear when something new arrives.
     </p>
 
     <hr style="border: none; border-top: 1px solid #e8e8e6; margin: 28px 0;">
@@ -65,12 +68,13 @@ export const welcomeEmailTemplate = (data: WelcomeEmailData) => {
     <a href="${siteUrl}/custom-orders" class="button-secondary" style="margin-top: 10px;">Enquire About Custom Orders</a>
 
     <p style="margin: 28px 0 6px; font-size: 14px; color: #374151; line-height: 1.7; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">
-      Questions about sizing, materials, or delivery? Reply directly to this email — it goes straight to us.
+      Questions about sizing, materials, or delivery? Reply directly to this email — it comes straight to me.
     </p>
 
     <p style="font-size: 14px; color: #374151; margin: 20px 0 0; line-height: 1.7; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">
-      Glad you're here,<br>
-      <strong style="color: #111111;">The D'FOOTPRINT Team</strong>
+      With gratitude,<br>
+      <strong style="color: #111111;">Chika</strong><br>
+      Founder, D'FOOTPRINT
     </p>
   `;
 
