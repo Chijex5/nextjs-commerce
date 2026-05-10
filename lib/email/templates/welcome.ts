@@ -1,41 +1,8 @@
 import { baseTemplate } from "./base";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// IMAGE GENERATION PROMPTS
-// Generate these with Midjourney / DALL-E 3 / Ideogram, then upload to:
-//   https://www.dfootprint.me/emails/
-//
-// welcome-hero.jpg  (export at 1200 × 560px, 85% JPEG quality)
-//   "Editorial product photography of a finished pair of handcrafted dark cognac
-//    leather Oxford shoes resting on an aged dark oak workbench, single warm
-//    amber lamp lighting from the left, artisan leather tools and thread softly
-//    blurred in background bokeh, luxury fashion brand aesthetic, cinematic
-//    depth of field, muted earthy tones, no text, no people, no watermarks,
-//    4:2 aspect ratio"
-//
-// welcome-craft.jpg  (export at 1200 × 480px, 85% JPEG quality)
-//   "Extreme macro photography of fine hand-stitching on dark cognac leather
-//    shoe upper, warm directional side-lighting revealing grain texture and
-//    cream-coloured thread detail, shallow depth of field, luxury craftsmanship
-//    close-up, muted dark background, no text, no people, no watermarks"
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface WelcomeEmailData {
   name: string;
 }
 
-/**
- * Welcome email template — flagship / CEO standard
- * Sent when a user creates an account or subscribes to the newsletter.
- *
- * Structure:
- *   1. Full-width hero image (workshop / finished product)
- *   2. Editorial headline + brand story
- *   3. Craft detail image with caption
- *   4. 2×2 subscriber benefit grid
- *   5. Dual CTA
- *   6. Personal sign-off
- */
 export const welcomeEmailTemplate = (data: WelcomeEmailData) => {
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||

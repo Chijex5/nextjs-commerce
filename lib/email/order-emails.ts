@@ -12,12 +12,12 @@ import { customOrderQuoteReminderTemplate } from "./templates/custom-order-quote
 import { customOrderQuoteExpiredTemplate } from "./templates/custom-order-quote-expired";
 import { adminNewCustomOrderRequestTemplate } from "./templates/admin-new-custom-order-request";
 
-const ORDER_FROM_EMAIL = "order@dfootprint.me";
-const STATUS_UPDATE_FROM_EMAIL = "notification@dfootprint.me";
-const ADMIN_NOTIFICATION_FROM_EMAIL = "admin@dfootprint.me";
+const ORDER_FROM_EMAIL = "D'FOOTPRINT <order@dfootprint.me>";
+const STATUS_UPDATE_FROM_EMAIL = "D'FOOTPRINT <notification@dfootprint.me>";
+const ADMIN_NOTIFICATION_FROM_EMAIL = "D'FOOTPRINT <admin@dfootprint.me>";
 const ORDER_REPLY_TO = "support@dfootprint.me";
 const CUSTOM_ORDER_FROM_EMAIL =
-  process.env.CUSTOM_ORDER_FROM_EMAIL || "custom-orders@dfootprint.me";
+  process.env.CUSTOM_ORDER_FROM_EMAIL || "D'FOOTPRINT <custom-orders@dfootprint.me>";
 
 interface OrderData {
   orderNumber: string;
@@ -151,6 +151,7 @@ export const sendAbandonedCartEmail = async (data: {
 }) => {
   return sendEmail({
     to: data.email,
+    from: "D'FOOTPRINT <noreply@yourdomain.com>",
     subject: `You Left Something Behind - D'FOOTPRINT`,
     html: abandonedCartTemplate(data),
   });

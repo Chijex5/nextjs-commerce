@@ -24,7 +24,7 @@ export const sendEmail = async ({
   to,
   subject,
   html,
-  from = process.env.SMTP_FROM_EMAIL || "noreply@yourdomain.com",
+  from = process.env.SMTP_FROM_EMAIL || "D'FOOTPRINT <noreply@yourdomain.com>",
   replyTo = process.env.SUPPORT_EMAIL || "support@dfootprint.me",
 }: {
   to: string | string[];

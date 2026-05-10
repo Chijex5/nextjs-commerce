@@ -31,7 +31,7 @@ export const sendWelcomeEmail = async (data: {
 }) => {
   return sendEmail({
     to: data.email,
-    from: "Chika <chika@dfootprint.me>",
+    from: "Chika from D'FOOTPRINT <chika@dfootprint.me>",
     replyTo: "chika@dfootprint.me",
     subject: "Welcome to D'FOOTPRINT",
     html: welcomeEmailTemplate({ name: data.name || "there" }),

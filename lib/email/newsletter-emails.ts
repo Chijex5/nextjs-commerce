@@ -7,7 +7,7 @@ export const sendNewsletterWelcomeEmail = async (data: {
 }) => {
   return sendEmail({
     to: data.email,
-    from: "Chika <chika@dfootprint.me>",
+    from: "Chika from D'FOOTPRINT <chika@dfootprint.me>",
     replyTo: "chika@dfootprint.me",
     subject: "Welcome to the D'FOOTPRINT newsletter",
     html: newsletterWelcomeEmailTemplate({ name: data.name }),
