@@ -1,7 +1,16 @@
 /**
  * Base email template — D'FOOTPRINT
  * Editorial quiet-luxury aesthetic.
- * Dark header for brand weight on open. Clean content zone. Minimal footer.
+ *
+ * LOGO REQUIREMENTS:
+ *   File:        d-light.png  (already hosted at /d-light.png)
+ *   Format:      PNG, transparent background
+ *   Mark colour: #FFFFFF (pure white) — renders cleanly on the dark header
+ *   Size:        Export at 120×120px minimum for retina sharpness
+ *
+ *   No dark variant needed. Gmail ignores prefers-color-scheme on images,
+ *   so dual-logo switching adds complexity with no reliable benefit.
+ *   One white-on-transparent logo works across every client.
  */
 export const baseTemplate = (content: string) => {
   const siteUrl =
@@ -9,10 +18,7 @@ export const baseTemplate = (content: string) => {
     process.env.NEXTAUTH_URL ||
     "https://yourdomain.com";
 
-  // Light logo = white/light variant (used on dark header bg)
-  // Dark logo  = dark variant (used in dark-mode content area, if needed)
-  const lightLogoUrl = "https://www.dfootprint.me/d-light.png";
-  const darkLogoUrl = "https://www.dfootprint.me/d.png";
+  const logoUrl = "https://www.dfootprint.me/d-light.png";
 
   return `
 <!DOCTYPE html>
@@ -24,11 +30,11 @@ export const baseTemplate = (content: string) => {
   <meta name="supported-color-schemes" content="light dark">
   <title>D'FOOTPRINT</title>
   <style>
-    /* ── Reset ─────────────────────────────────────────────────────────────── */
+    /* ── Reset ──────────────────────────────────────────────────────────────── */
     * { box-sizing: border-box; }
 
     body {
-      font-family: Georgia, 'Times New Roman', Times, serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
       line-height: 1.65;
       color: #1a1a1a;
       margin: 0;
@@ -38,13 +44,13 @@ export const baseTemplate = (content: string) => {
       -ms-text-size-adjust: 100%;
     }
 
-    /* ── Outer wrapper ──────────────────────────────────────────────────────── */
+    /* ── Outer wrapper ───────────────────────────────────────────────────────── */
     .email-wrapper {
       max-width: 600px;
       margin: 0 auto;
     }
 
-    /* ── Container card ─────────────────────────────────────────────────────── */
+    /* ── Container card ──────────────────────────────────────────────────────── */
     .email-container {
       background-color: #ffffff;
       border-radius: 4px;
@@ -52,12 +58,16 @@ export const baseTemplate = (content: string) => {
       box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
     }
 
-    /* ── Header — dark panel, brand weight on open ──────────────────────────── */
+    /* ── Header ──────────────────────────────────────────────────────────────── */
+    /*
+     * Dark panel — brand weight on open.
+     * Logo sits on pure black, no border/box-shadow on the img tag.
+     * White transparent-bg PNG logo renders cleanly here.
+     */
     .header {
       background-color: #111111;
-      padding: 36px 40px 32px;
+      padding: 32px 40px 28px;
       text-align: center;
-      border-bottom: none;
     }
     .header a {
       display: inline-block;
@@ -65,29 +75,30 @@ export const baseTemplate = (content: string) => {
     }
     .header-logo {
       display: block;
-      width: 48px;
-      height: 48px;
-      margin: 0 auto 14px;
+      width: 52px;
+      height: 52px;
+      margin: 0 auto 12px;
       border: 0;
+      /* No background, no border-radius — transparent PNG sits directly on dark bg */
     }
     .header-wordmark {
       display: block;
       font-family: Georgia, 'Times New Roman', Times, serif;
-      font-size: 11px;
-      letter-spacing: 0.25em;
+      font-size: 10px;
+      letter-spacing: 0.3em;
       text-transform: uppercase;
-      color: #a3a3a3;
+      color: #737373;
       font-weight: 400;
-      text-decoration: none;
       margin: 0;
+      text-decoration: none;
     }
 
-    /* ── Content zone ───────────────────────────────────────────────────────── */
+    /* ── Content zone ────────────────────────────────────────────────────────── */
     .content {
       padding: 36px 40px 40px;
     }
 
-    /* ── Typography ─────────────────────────────────────────────────────────── */
+    /* ── Typography ──────────────────────────────────────────────────────────── */
     h2 {
       font-family: Georgia, 'Times New Roman', Times, serif;
       color: #111111;
@@ -114,7 +125,7 @@ export const baseTemplate = (content: string) => {
       line-height: 1.7;
     }
 
-    /* ── Info box — left-rule accent, no full border clutter ────────────────── */
+    /* ── Info box ────────────────────────────────────────────────────────────── */
     .info-box {
       border-left: 3px solid #111111;
       border-radius: 0 4px 4px 0;
@@ -127,7 +138,7 @@ export const baseTemplate = (content: string) => {
       font-size: 13px;
     }
 
-    /* ── Table ──────────────────────────────────────────────────────────────── */
+    /* ── Table ───────────────────────────────────────────────────────────────── */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -146,9 +157,9 @@ export const baseTemplate = (content: string) => {
       color: #737373;
     }
 
-    /* ── Buttons ────────────────────────────────────────────────────────────── */
+    /* ── Buttons ─────────────────────────────────────────────────────────────── */
 
-    /* Primary — solid black, pill */
+    /* Primary — solid black */
     .button {
       display: inline-block;
       padding: 14px 28px;
@@ -187,7 +198,7 @@ export const baseTemplate = (content: string) => {
       vertical-align: middle;
     }
 
-    /* Ghost — truly minimal: underline text link, no border, no bg */
+    /* Ghost — underline text link only, no border, no background */
     .button-ghost {
       display: inline-block;
       padding: 4px 0;
@@ -202,22 +213,14 @@ export const baseTemplate = (content: string) => {
       text-align: center;
     }
 
-    /* Button row wrapper — use this in templates for side-by-side CTAs */
-    .button-row {
-      margin: 24px 0 8px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    /* ── Divider ────────────────────────────────────────────────────────────── */
+    /* ── Divider ─────────────────────────────────────────────────────────────── */
     .divider {
       border: none;
       border-top: 1px solid #e8e8e6;
       margin: 28px 0;
     }
 
-    /* ── Support note ───────────────────────────────────────────────────────── */
+    /* ── Support note ────────────────────────────────────────────────────────── */
     .support-note {
       font-size: 12px;
       color: #737373;
@@ -226,7 +229,7 @@ export const baseTemplate = (content: string) => {
       font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
     }
 
-    /* ── Footer ─────────────────────────────────────────────────────────────── */
+    /* ── Footer ──────────────────────────────────────────────────────────────── */
     .footer {
       background-color: #f8f8f7;
       border-top: 1px solid #e8e8e6;
@@ -235,8 +238,8 @@ export const baseTemplate = (content: string) => {
     }
     .footer-brand {
       font-family: Georgia, 'Times New Roman', Times, serif;
-      font-size: 13px;
-      letter-spacing: 0.15em;
+      font-size: 12px;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
       color: #111111;
       font-weight: 400;
@@ -244,13 +247,13 @@ export const baseTemplate = (content: string) => {
     }
     .footer-tagline {
       font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
-      font-size: 12px;
-      color: #9ca3af;
+      font-size: 11px;
+      color: #b5b5b5;
       margin: 0 0 20px;
       letter-spacing: 0.02em;
     }
     .footer-links {
-      margin: 0 0 20px;
+      margin: 0 0 16px;
     }
     .footer-links a {
       font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
@@ -268,23 +271,28 @@ export const baseTemplate = (content: string) => {
     .footer-support {
       font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
       font-size: 12px;
-      color: #737373;
+      color: #9ca3af;
       margin: 0 0 16px;
     }
     .footer-support a {
-      color: #111111;
+      color: #374151;
       text-decoration: underline;
       text-underline-offset: 2px;
     }
     .footer-copy {
       font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
       font-size: 11px;
-      color: #b5b5b5;
+      color: #c4c4c4;
       margin: 0;
       letter-spacing: 0.02em;
     }
 
-    /* ── Dark mode ──────────────────────────────────────────────────────────── */
+    /* ── Dark mode — content only, not header (header is already dark) ───────── */
+    /*
+     * Gmail ignores prefers-color-scheme, so these only fire in Apple Mail,
+     * Outlook for Mac, and some webmail clients. Safe to keep — non-destructive
+     * in clients that don't support it.
+     */
     @media (prefers-color-scheme: dark) {
       body { background-color: #1a1a1a !important; }
 
@@ -292,8 +300,6 @@ export const baseTemplate = (content: string) => {
         background-color: #1f1f1f !important;
         box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important;
       }
-
-      /* Header stays dark — no change needed */
 
       .content { background-color: #1f1f1f !important; }
 
@@ -325,29 +331,27 @@ export const baseTemplate = (content: string) => {
         background-color: #181818 !important;
         border-top-color: #2d2d2d !important;
       }
-      .footer-brand { color: #f5f5f5 !important; }
-      .footer-tagline { color: #555555 !important; }
+      .footer-brand   { color: #f5f5f5 !important; }
+      .footer-tagline { color: #444444 !important; }
       .footer-links a { color: #737373 !important; border-right-color: #333333 !important; }
-      .footer-support { color: #555555 !important; }
+      .footer-support { color: #444444 !important; }
       .footer-support a { color: #d4d4d4 !important; }
-      .footer-copy { color: #444444 !important; }
+      .footer-copy    { color: #3a3a3a !important; }
     }
 
-    /* ── Outlook dark mode (data-ogsc) ──────────────────────────────────────── */
+    /* ── Outlook dark mode ───────────────────────────────────────────────────── */
     [data-ogsc] .email-container,
     [data-ogsb] .email-container { background-color: #1f1f1f !important; }
     [data-ogsc] h2, [data-ogsb] h2 { color: #f5f5f5 !important; }
     [data-ogsc] p,  [data-ogsb] p  { color: #b0b0b0 !important; }
 
-    /* ── Mobile ─────────────────────────────────────────────────────────────── */
+    /* ── Mobile ──────────────────────────────────────────────────────────────── */
     @media (max-width: 600px) {
       body { padding: 16px 10px 40px; }
 
-      .header { padding: 28px 24px 24px; }
-
+      .header  { padding: 24px 24px 20px; }
       .content { padding: 28px 24px 32px; }
-
-      .footer { padding: 24px 24px 28px; }
+      .footer  { padding: 24px 24px 28px; }
 
       h2 { font-size: 22px !important; }
 
@@ -357,11 +361,6 @@ export const baseTemplate = (content: string) => {
         width: 100% !important;
         text-align: center !important;
       }
-
-      .button-row {
-        flex-direction: column;
-        gap: 8px;
-      }
     }
   </style>
 </head>
@@ -369,34 +368,36 @@ export const baseTemplate = (content: string) => {
   <div class="email-wrapper">
     <div class="email-container">
 
-      <!-- ── Header ──────────────────────────────────────────────────────── -->
+      <!-- ── Header ─────────────────────────────────────────────────────────── -->
+      <!--
+        Single logo only. White mark on transparent PNG background.
+        No dual-image switching — Gmail doesn't support it and it creates
+        the white-box artefact visible in the current render.
+      -->
       <div class="header">
         <a href="${siteUrl}" target="_blank" rel="noopener noreferrer">
-          <!--[if !mso]><!-->
           <img
-            src="${lightLogoUrl}"
+            src="${logoUrl}"
             alt="D'FOOTPRINT"
-            width="48"
-            height="48"
-            class="header-logo"
-            style="display:block; width:48px; height:48px; margin:0 auto 14px; border:0;"
+            width="52"
+            height="52"
+            style="display:block; width:52px; height:52px; margin:0 auto 12px; border:0;"
           />
-          <!--<![endif]-->
-          <span class="header-wordmark" style="display:block; font-size:11px; letter-spacing:0.25em; text-transform:uppercase; color:#a3a3a3; font-family:Georgia,'Times New Roman',Times,serif;">
-            D'FOOTPRINT
+          <span style="display:block; font-family:Georgia,'Times New Roman',Times,serif; font-size:10px; letter-spacing:0.3em; text-transform:uppercase; color:#737373; font-weight:400; text-decoration:none;">
+            D&rsquo;FOOTPRINT
           </span>
         </a>
       </div>
 
-      <!-- ── Content ────────────────────────────────────────────────────── -->
+      <!-- ── Content ──────────────────────────────────────────────────────── -->
       <div class="content">
         ${content}
       </div>
 
-      <!-- ── Footer ─────────────────────────────────────────────────────── -->
+      <!-- ── Footer ───────────────────────────────────────────────────────── -->
       <div class="footer">
-        <p class="footer-brand">D'FOOTPRINT</p>
-        <p class="footer-tagline">Handcrafted Leather Footwear · Lagos, Nigeria</p>
+        <p class="footer-brand">D&rsquo;FOOTPRINT</p>
+        <p class="footer-tagline">Handcrafted Footwear &middot; Lagos, Nigeria</p>
 
         <div class="footer-links">
           <a href="${siteUrl}" target="_blank" rel="noopener noreferrer">Shop</a>
@@ -405,12 +406,11 @@ export const baseTemplate = (content: string) => {
         </div>
 
         <p class="footer-support">
-          Questions about your order?
-          <a href="mailto:support@dfootprint.me">support@dfootprint.me</a>
+          Questions? <a href="mailto:support@dfootprint.me">support@dfootprint.me</a>
         </p>
 
         <p class="footer-copy">
-          &copy; ${new Date().getFullYear()} D'FOOTPRINT. All rights reserved.
+          &copy; ${new Date().getFullYear()} D&rsquo;FOOTPRINT. All rights reserved.
         </p>
       </div>
 
