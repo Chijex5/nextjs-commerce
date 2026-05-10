@@ -26,12 +26,14 @@ export const sendEmail = async ({
   html,
   from = process.env.SMTP_FROM_EMAIL || "D'FOOTPRINT <noreply@yourdomain.com>",
   replyTo = process.env.SUPPORT_EMAIL || "support@dfootprint.me",
+  headers = {},
 }: {
   to: string | string[];
   subject: string;
   html: string;
   from?: string;
   replyTo?: string;
+  headers?: Record<string, string>;
 }) => {
   if (!resend) {
     console.error(
@@ -50,6 +52,7 @@ export const sendEmail = async ({
       replyTo,
       subject,
       html,
+      headers,
     });
     return { success: true, data };
   } catch (error) {

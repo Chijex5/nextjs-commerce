@@ -1,14 +1,16 @@
 import { baseTemplate } from "./base";
 
+
 interface NewsletterWelcomeEmailData {
   name?: string | null;
+  unsubscribeUrl: string;
 }
 
 export const newsletterWelcomeEmailTemplate = (
   data: NewsletterWelcomeEmailData,
 ) => {
   const firstName = data.name?.trim().split(/\s+/)[0] || "there";
-
+  
   const content = `
     <p style="margin: 0 0 10px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #9ca3af; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">Newsletter</p>
     <h2 style="margin: 0 0 20px;">You&apos;re on the list, ${firstName}.</h2>
@@ -63,5 +65,5 @@ export const newsletterWelcomeEmailTemplate = (
     </p>
   `;
 
-  return baseTemplate(content);
+  return baseTemplate(content, data.unsubscribeUrl);
 };

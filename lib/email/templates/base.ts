@@ -3,22 +3,56 @@
  * Editorial quiet-luxury aesthetic.
  *
  * LOGO REQUIREMENTS:
- *   File:        d-light.png  (already hosted at /d-light.png)
+ *   File:        d-light.png  (hosted at /d-light.png)
  *   Format:      PNG, transparent background
- *   Mark colour: #FFFFFF (pure white) — renders cleanly on the dark header
+ *   Mark colour: #FFFFFF (pure white) — renders on dark header
  *   Size:        Export at 120×120px minimum for retina sharpness
  *
- *   No dark variant needed. Gmail ignores prefers-color-scheme on images,
- *   so dual-logo switching adds complexity with no reliable benefit.
- *   One white-on-transparent logo works across every client.
+ * UNSUBSCRIBE (Resend):
+ *   Pass `unsubscribeUrl` as the second argument for any marketing email.
+ *   Leave it out for transactional emails (orders, magic links, etc.).
+ *
+ *   When sending via Resend, also set the List-Unsubscribe header so Gmail
+ *   shows a one-click unsubscribe button automatically:
+ *
+ *   await resend.emails.send({
+ *     from: 'D\'FOOTPRINT <hello@dfootprint.me>',
+ *     to: [recipientEmail],
+ *     subject: '...',
+ *     html: welcomeEmailTemplate(data),
+ *     headers: {
+ *       'List-Unsubscribe': `<${unsubscribeUrl}>`,
+ *       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+ *     },
+ *   });
+ *
+ *   Build an unsubscribe endpoint at /api/unsubscribe that:
+ *   1. Accepts GET ?token=xxx (from the email link click)
+ *   2. Accepts POST with body { token } (from Gmail one-click)
+ *   3. Marks the contact as unsubscribed in your DB / Resend contacts
+ *   4. Returns a confirmation page
+ *
+ *   Generate the token when you send the email:
+ *   const token = Buffer.from(recipientEmail).toString('base64')
+ *   // or use a signed JWT for security
+ *   const unsubscribeUrl = `${siteUrl}/api/unsubscribe?token=${token}`
  */
-export const baseTemplate = (content: string) => {
+export const baseTemplate = (content: string, unsubscribeUrl?: string) => {
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXTAUTH_URL ||
     "https://yourdomain.com";
 
   const logoUrl = "https://www.dfootprint.me/d-light.png";
+
+  // Unsubscribe footer block — only rendered when a URL is provided
+  const unsubscribeBlock = unsubscribeUrl
+    ? `
+        <p class="footer-unsubscribe">
+          You're receiving this email because you subscribed to D'FOOTPRINT's newsletter.
+          <a href="${unsubscribeUrl}">Unsubscribe</a>
+        </p>`
+    : "";
 
   return `
 <!DOCTYPE html>
@@ -59,11 +93,6 @@ export const baseTemplate = (content: string) => {
     }
 
     /* ── Header ──────────────────────────────────────────────────────────────── */
-    /*
-     * Dark panel — brand weight on open.
-     * Logo sits on pure black, no border/box-shadow on the img tag.
-     * White transparent-bg PNG logo renders cleanly here.
-     */
     .header {
       background-color: #111111;
       padding: 32px 40px 28px;
@@ -71,25 +100,6 @@ export const baseTemplate = (content: string) => {
     }
     .header a {
       display: inline-block;
-      text-decoration: none;
-    }
-    .header-logo {
-      display: block;
-      width: 52px;
-      height: 52px;
-      margin: 0 auto 12px;
-      border: 0;
-      /* No background, no border-radius — transparent PNG sits directly on dark bg */
-    }
-    .header-wordmark {
-      display: block;
-      font-family: Georgia, 'Times New Roman', Times, serif;
-      font-size: 10px;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      color: #737373;
-      font-weight: 400;
-      margin: 0;
       text-decoration: none;
     }
 
@@ -158,8 +168,6 @@ export const baseTemplate = (content: string) => {
     }
 
     /* ── Buttons ─────────────────────────────────────────────────────────────── */
-
-    /* Primary — solid black */
     .button {
       display: inline-block;
       padding: 14px 28px;
@@ -177,8 +185,6 @@ export const baseTemplate = (content: string) => {
       min-height: 44px;
       vertical-align: middle;
     }
-
-    /* Secondary — white bg, solid dark border */
     .button-secondary {
       display: inline-block;
       padding: 13px 28px;
@@ -197,8 +203,6 @@ export const baseTemplate = (content: string) => {
       min-height: 44px;
       vertical-align: middle;
     }
-
-    /* Ghost — underline text link only, no border, no background */
     .button-ghost {
       display: inline-block;
       padding: 4px 0;
@@ -279,20 +283,30 @@ export const baseTemplate = (content: string) => {
       text-decoration: underline;
       text-underline-offset: 2px;
     }
+    /* Unsubscribe line — visually recessed, clearly readable */
+    .footer-unsubscribe {
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 11px;
+      color: #c4c4c4;
+      margin: 16px 0 0;
+      line-height: 1.6;
+      padding-top: 16px;
+      border-top: 1px solid #ebebea;
+    }
+    .footer-unsubscribe a {
+      color: #9ca3af;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
     .footer-copy {
       font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
       font-size: 11px;
       color: #c4c4c4;
-      margin: 0;
+      margin: 12px 0 0;
       letter-spacing: 0.02em;
     }
 
-    /* ── Dark mode — content only, not header (header is already dark) ───────── */
-    /*
-     * Gmail ignores prefers-color-scheme, so these only fire in Apple Mail,
-     * Outlook for Mac, and some webmail clients. Safe to keep — non-destructive
-     * in clients that don't support it.
-     */
+    /* ── Dark mode ───────────────────────────────────────────────────────────── */
     @media (prefers-color-scheme: dark) {
       body { background-color: #1a1a1a !important; }
 
@@ -331,12 +345,14 @@ export const baseTemplate = (content: string) => {
         background-color: #181818 !important;
         border-top-color: #2d2d2d !important;
       }
-      .footer-brand   { color: #f5f5f5 !important; }
-      .footer-tagline { color: #444444 !important; }
-      .footer-links a { color: #737373 !important; border-right-color: #333333 !important; }
-      .footer-support { color: #444444 !important; }
-      .footer-support a { color: #d4d4d4 !important; }
-      .footer-copy    { color: #3a3a3a !important; }
+      .footer-brand       { color: #f5f5f5 !important; }
+      .footer-tagline     { color: #444444 !important; }
+      .footer-links a     { color: #737373 !important; border-right-color: #333333 !important; }
+      .footer-support     { color: #444444 !important; }
+      .footer-support a   { color: #d4d4d4 !important; }
+      .footer-unsubscribe { color: #3a3a3a !important; border-top-color: #2a2a2a !important; }
+      .footer-unsubscribe a { color: #555555 !important; }
+      .footer-copy        { color: #3a3a3a !important; }
     }
 
     /* ── Outlook dark mode ───────────────────────────────────────────────────── */
@@ -369,11 +385,6 @@ export const baseTemplate = (content: string) => {
     <div class="email-container">
 
       <!-- ── Header ─────────────────────────────────────────────────────────── -->
-      <!--
-        Single logo only. White mark on transparent PNG background.
-        No dual-image switching — Gmail doesn't support it and it creates
-        the white-box artefact visible in the current render.
-      -->
       <div class="header">
         <a href="${siteUrl}" target="_blank" rel="noopener noreferrer">
           <img
@@ -412,6 +423,8 @@ export const baseTemplate = (content: string) => {
         <p class="footer-copy">
           &copy; ${new Date().getFullYear()} D&rsquo;FOOTPRINT. All rights reserved.
         </p>
+
+        ${unsubscribeBlock}
       </div>
 
     </div>
