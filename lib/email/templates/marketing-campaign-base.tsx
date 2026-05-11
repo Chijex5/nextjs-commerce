@@ -1,9 +1,4 @@
-import {
-  Container,
-  Img,
-  Link,
-  Text,
-} from "../react-email-components";
+import { Container, Img, Link, Text } from "../react-email-components";
 
 interface MarketingEmailProps {
   campaign: {
@@ -43,7 +38,8 @@ export default function MarketingCampaignBase({
 
   const campaignTypeLabel = campaign.type.replace(/_/g, " ").toLowerCase();
   const primaryCtaText = campaign.ctaButtonText || "Browse the Collection";
-  const primaryCtaUrl = normalizeUrl(campaign.ctaButtonUrl) || `${siteUrl}/products`;
+  const primaryCtaUrl =
+    normalizeUrl(campaign.ctaButtonUrl) || `${siteUrl}/products`;
 
   return (
     <Container style={container}>
@@ -53,7 +49,9 @@ export default function MarketingCampaignBase({
       </Text>
 
       <Text style={intro}>
-        Hi {firstName}, {campaign.headerSubtitle || "Here are a few pieces from our latest release, selected for quality, fit, and finish."}
+        Hi {firstName},{" "}
+        {campaign.headerSubtitle ||
+          "Here are a few pieces from our latest release, selected for quality, fit, and finish."}
       </Text>
 
       <div style={divider} />
@@ -103,7 +101,9 @@ export default function MarketingCampaignBase({
         Explore all products
       </Link>
 
-      {campaign.footerText && <Text style={footerNote}>{campaign.footerText}</Text>}
+      {campaign.footerText && (
+        <Text style={footerNote}>{campaign.footerText}</Text>
+      )}
     </Container>
   );
 }

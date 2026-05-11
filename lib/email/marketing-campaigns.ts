@@ -14,7 +14,12 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 
 export type CampaignType = "JUST_ARRIVED" | "SALE" | "COLLECTION";
 export type CampaignStatus = "DRAFT" | "SCHEDULED" | "SENT";
-export type EmailLogStatus = "SENT" | "OPENED" | "CLICKED" | "BOUNCED" | "FAILED";
+export type EmailLogStatus =
+  | "SENT"
+  | "OPENED"
+  | "CLICKED"
+  | "BOUNCED"
+  | "FAILED";
 
 interface CampaignProduct {
   id: string;
@@ -74,7 +79,9 @@ export async function getCampaignWithProducts(campaignId: string) {
         .orderBy(asc(productImages.position)),
     ]);
 
-    const productById = new Map(productRows.map((product) => [product.id, product]));
+    const productById = new Map(
+      productRows.map((product) => [product.id, product]),
+    );
     const imageRowsByProductId = new Map<string, typeof imageRows>();
 
     for (const image of imageRows) {
@@ -88,7 +95,8 @@ export async function getCampaignWithProducts(campaignId: string) {
       if (!prod) continue;
 
       const images = imageRowsByProductId.get(prod.id) ?? [];
-      const featuredImage = images.find((image) => image.isFeatured) || images[0];
+      const featuredImage =
+        images.find((image) => image.isFeatured) || images[0];
 
       campaignProductDetails.push({
         id: prod.id,
@@ -212,13 +220,9 @@ function getUnsubscribeUrl(email: string): string {
 
   // Create HMAC token
   const crypto = require("crypto");
-  const token = crypto
-    .createHmac("sha256", secret)
-    .update(email)
-    .digest("hex");
+  const token = crypto.createHmac("sha256", secret).update(email).digest("hex");
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   return `${baseUrl}/api/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`;
 }
 
