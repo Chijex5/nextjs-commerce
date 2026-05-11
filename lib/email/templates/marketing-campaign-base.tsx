@@ -1,209 +1,216 @@
 import {
-  Button,
-  Column,
   Container,
-  Hr,
   Img,
   Link,
-  Row,
-  Section,
   Text,
 } from "../react-email-components";
 
 interface MarketingEmailProps {
-  campaign: any;
-  subscriber: any;
+  campaign: {
+    type: "JUST_ARRIVED" | "SALE" | "COLLECTION";
+    headerTitle?: string | null;
+    headerSubtitle?: string | null;
+    footerText?: string | null;
+    ctaButtonText?: string | null;
+    ctaButtonUrl?: string | null;
+    products: Array<{
+      id: string;
+      handle: string;
+      title: string;
+      description?: string;
+      image?: string;
+    }>;
+  };
+  subscriber: {
+    name?: string | null;
+    email?: string | null;
+  };
 }
 
 export default function MarketingCampaignBase({
   campaign,
   subscriber,
 }: MarketingEmailProps) {
-  const productUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const productPlaceholder = `${siteUrl}/images/product-placeholder.png`;
+  const firstName = subscriber?.name?.trim().split(/\s+/)[0] || "there";
+
+  const normalizeUrl = (url?: string | null) => {
+    if (!url) return undefined;
+    if (/^https?:\/\//i.test(url)) return url;
+    return `${siteUrl}${url.startsWith("/") ? url : `/${url}`}`;
+  };
+
+  const campaignTypeLabel = campaign.type.replace(/_/g, " ").toLowerCase();
+  const primaryCtaText = campaign.ctaButtonText || "Browse the Collection";
+  const primaryCtaUrl = normalizeUrl(campaign.ctaButtonUrl) || `${siteUrl}/products`;
 
   return (
     <Container style={container}>
-      {/* Header */}
-      <Section style={headerSection}>
-        <Text style={headerTitle}>{campaign.headerTitle || "D'FOOTPRINT"}</Text>
-        {campaign.headerSubtitle && (
-          <Text style={headerSubtitle}>{campaign.headerSubtitle}</Text>
-        )}
-      </Section>
+      <Text style={eyebrow}>{campaignTypeLabel}</Text>
+      <Text style={title}>
+        {campaign.headerTitle || "Handcrafted picks we chose for you."}
+      </Text>
 
-      <Hr style={hr} />
+      <Text style={intro}>
+        Hi {firstName}, {campaign.headerSubtitle || "Here are a few pieces from our latest release, selected for quality, fit, and finish."}
+      </Text>
 
-      {/* Featured Products */}
-      <Section style={productsSection}>
-        <Row>
-          {campaign.products.map((product: any, idx: number) => (
-            <Column key={idx} style={productColumn}>
-              <Link href={`${productUrl}/product/${product.handle}`}>
-                <Img
-                  src={`${productUrl}/images/product-placeholder.png`}
-                  alt={product.title}
-                  width="150"
-                  height="150"
-                  style={productImage}
-                />
-              </Link>
+      <div style={divider} />
+
+      {campaign.products.map((product) => {
+        const productHref = `${siteUrl}/product/${product.handle}`;
+        const image = product.image || productPlaceholder;
+        const description = product.description?.trim();
+        return (
+          <div key={product.id} style={productRow}>
+            <Link href={productHref} style={imageLink}>
+              <Img
+                src={image}
+                alt={product.title}
+                width="96"
+                height="96"
+                style={productImage}
+              />
+            </Link>
+            <div style={productContent}>
               <Text style={productTitle}>{product.title}</Text>
-              {product.description && (
+              {description && (
                 <Text style={productDescription}>
-                  {product.description.substring(0, 100)}...
+                  {description.length > 120
+                    ? `${description.slice(0, 120)}…`
+                    : description}
                 </Text>
               )}
-              <Link
-                href={`${productUrl}/product/${product.handle}`}
-                style={productLink}
-              >
-                View Product
+              <Link href={productHref} style={productLink}>
+                View product
               </Link>
-            </Column>
-          ))}
-        </Row>
-      </Section>
+            </div>
+          </div>
+        );
+      })}
 
-      <Hr style={hr} />
+      <div style={divider} />
 
-      {/* CTA Button */}
-      {campaign.ctaButtonText && campaign.ctaButtonUrl && (
-        <Section style={ctaSection}>
-          <Button href={campaign.ctaButtonUrl} style={button}>
-            {campaign.ctaButtonText}
-          </Button>
-        </Section>
-      )}
+      <Link href={primaryCtaUrl} className="button" style={button}>
+        {primaryCtaText}
+      </Link>
+      <Link
+        href={`${siteUrl}/products`}
+        className="button-secondary"
+        style={secondaryButton}
+      >
+        Explore all products
+      </Link>
 
-      <Hr style={hr} />
-
-      {/* Footer */}
-      <Section style={footerSection}>
-        {campaign.footerText && (
-          <Text style={footerText}>{campaign.footerText}</Text>
-        )}
-        <Text style={companyInfo}>
-          D'FOOTPRINT | Perfect fit, perfect price
-        </Text>
-        <Text style={companyAddress}>
-          <Link href="https://www.instagram.com/d__footprint">Instagram</Link>
-          {" | "}
-          <Link href="https://www.tiktok.com/@d_footprint">TikTok</Link>
-          {" | "}
-          <Link href="https://wa.me/2348121993874">WhatsApp</Link>
-        </Text>
-      </Section>
+      {campaign.footerText && <Text style={footerNote}>{campaign.footerText}</Text>}
     </Container>
   );
 }
 
-// Styles
 const container = {
-  backgroundColor: "#ffffff",
-  margin: "0 auto",
-  padding: "20px 0",
-  marginBottom: "64px",
-};
-
-const headerSection = {
-  padding: "32px 20px",
-  textAlign: "center" as const,
-  backgroundColor: "#f8f8f8",
-};
-
-const headerTitle = {
-  color: "#1a1a1a",
-  fontSize: "28px",
-  fontWeight: "bold",
-  margin: "0 0 8px 0",
-};
-
-const headerSubtitle = {
-  color: "#666666",
-  fontSize: "16px",
   margin: "0",
 };
 
-const productsSection = {
-  padding: "40px 20px",
+const eyebrow = {
+  margin: "0 0 10px",
+  fontSize: "11px",
+  letterSpacing: "0.12em",
+  textTransform: "uppercase" as const,
+  color: "#9ca3af",
+  fontWeight: 700,
 };
 
-const productColumn = {
-  width: "48%",
-  padding: "0 10px 20px",
-  textAlign: "center" as const,
+const title = {
+  margin: "0 0 16px",
+  fontFamily: "Georgia, 'Times New Roman', Times, serif",
+  color: "#111111",
+  fontSize: "26px",
+  fontWeight: 400,
+  lineHeight: 1.3,
+  letterSpacing: "-0.01em",
+};
+
+const intro = {
+  margin: "0",
+  fontSize: "14px",
+  color: "#374151",
+  lineHeight: 1.75,
+};
+
+const divider = {
+  borderTop: "1px solid #e8e8e6",
+  margin: "28px 0",
+};
+
+const productRow = {
+  display: "table",
+  width: "100%",
+  borderCollapse: "collapse" as const,
+  marginBottom: "16px",
+};
+
+const imageLink = {
+  display: "table-cell",
+  width: "108px",
+  verticalAlign: "top" as const,
+  textDecoration: "none",
 };
 
 const productImage = {
-  border: "1px solid #e0e0e0",
-  borderRadius: "8px",
+  width: "96px",
+  height: "96px",
+  borderRadius: "2px",
   display: "block",
-  margin: "0 auto 12px",
+  border: "1px solid #ededeb",
+  objectFit: "cover" as const,
+};
+
+const productContent = {
+  display: "table-cell",
+  verticalAlign: "top" as const,
+  paddingLeft: "12px",
 };
 
 const productTitle = {
+  margin: "0 0 6px",
   fontSize: "14px",
-  fontWeight: "600",
-  color: "#1a1a1a",
-  margin: "0 0 6px 0",
+  color: "#111111",
+  fontWeight: 700,
+  lineHeight: 1.5,
 };
 
 const productDescription = {
-  fontSize: "12px",
-  color: "#666666",
-  margin: "0 0 12px 0",
-  lineHeight: "1.4",
+  margin: "0 0 8px",
+  fontSize: "13px",
+  color: "#6b7280",
+  lineHeight: 1.65,
 };
 
 const productLink = {
-  color: "#0066cc",
-  textDecoration: "underline",
   fontSize: "12px",
-};
-
-const hr = {
-  borderColor: "#e0e0e0",
-  margin: "0",
-};
-
-const ctaSection = {
-  padding: "32px 20px",
-  textAlign: "center" as const,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase" as const,
+  color: "#111111",
+  fontWeight: 600,
+  textDecoration: "underline",
+  textUnderlineOffset: "2px",
 };
 
 const button = {
-  backgroundColor: "#1a1a1a",
-  borderRadius: "4px",
-  color: "#fff",
-  fontSize: "16px",
-  fontWeight: "bold",
-  padding: "12px 32px",
-  textDecoration: "none",
+  display: "block",
   textAlign: "center" as const,
-  display: "inline-block",
 };
 
-const footerSection = {
-  padding: "32px 20px",
-  backgroundColor: "#f8f8f8",
+const secondaryButton = {
+  display: "block",
+  textAlign: "center" as const,
+  marginTop: "10px",
 };
 
-const footerText = {
-  fontSize: "14px",
-  color: "#666666",
-  margin: "0 0 16px 0",
-  lineHeight: "1.6",
-};
-
-const companyInfo = {
-  fontSize: "12px",
-  color: "#999999",
-  margin: "0 0 8px 0",
-};
-
-const companyAddress = {
-  fontSize: "12px",
-  color: "#999999",
-  margin: "0",
+const footerNote = {
+  margin: "24px 0 0",
+  fontSize: "13px",
+  color: "#6b7280",
+  lineHeight: 1.7,
 };
