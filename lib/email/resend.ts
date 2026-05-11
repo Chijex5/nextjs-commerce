@@ -24,6 +24,7 @@ export const sendEmail = async ({
   to,
   subject,
   html,
+  preheader,
   from = process.env.SMTP_FROM_EMAIL || "D'FOOTPRINT <noreply@yourdomain.com>",
   replyTo = process.env.SUPPORT_EMAIL || "support@dfootprint.me",
   headers = {},
@@ -31,6 +32,7 @@ export const sendEmail = async ({
   to: string | string[];
   subject: string;
   html: string;
+  preheader?: string;
   from?: string;
   replyTo?: string;
   headers?: Record<string, string>;
@@ -46,12 +48,16 @@ export const sendEmail = async ({
   }
 
   try {
+    const emailHtml = preheader
+      ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;mso-hide:all;">${preheader}</div>${html}`
+      : html;
+
     const data = await resend.emails.send({
       from,
       to,
       replyTo,
       subject,
-      html,
+      html: emailHtml,
       headers,
     });
     return { success: true, data };

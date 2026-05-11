@@ -862,6 +862,98 @@ export const googleMerchantProductSyncs = pgTable(
   }),
 );
 
+// Email marketing campaigns
+export const emailCampaigns = pgTable(
+  "email_campaigns",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: varchar("name", { length: 255 }).notNull(),
+    type: varchar("type", { length: 50 }).notNull(), // JUST_ARRIVED, SALE, COLLECTION
+    subject: varchar("subject", { length: 255 }).notNull(),
+    preheader: varchar("preheader", { length: 150 }),
+    headerTitle: varchar("header_title", { length: 255 }),
+    headerSubtitle: varchar("header_subtitle", { length: 255 }),
+    footerText: text("footer_text"),
+    ctaButtonText: varchar("cta_button_text", { length: 100 }),
+    ctaButtonUrl: text("cta_button_url"),
+    status: varchar("status", { length: 50 }).default("draft").notNull(), // DRAFT, SCHEDULED, SENT
+    scheduledAt: timestamp("scheduled_at"),
+    sentAt: timestamp("sent_at"),
+    createdBy: uuid("created_by")
+      .references(() => adminUsers.id, { onDelete: "set null" })
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    createdByIdx: index("email_campaigns_created_by_idx").on(table.createdBy),
+    statusIdx: index("email_campaigns_status_idx").on(table.status),
+    scheduledAtIdx: index("email_campaigns_scheduled_at_idx").on(
+      table.scheduledAt,
+    ),
+    typeIdx: index("email_campaigns_type_idx").on(table.type),
+  }),
+);
+
+// Campaign products junction table
+export const campaignProducts = pgTable(
+  "campaign_products",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id")
+      .references(() => emailCampaigns.id, { onDelete: "cascade" })
+      .notNull(),
+    productId: uuid("product_id")
+      .references(() => products.id, { onDelete: "cascade" })
+      .notNull(),
+    position: integer("position").default(0).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    campaignIdIdx: index("campaign_products_campaign_id_idx").on(
+      table.campaignId,
+    ),
+    productIdIdx: index("campaign_products_product_id_idx").on(table.productId),
+    uniqueIdx: uniqueIndex("campaign_products_unique").on(
+      table.campaignId,
+      table.productId,
+    ),
+  }),
+);
+
+// Campaign email logs for tracking delivery and engagement
+export const campaignEmailLogs = pgTable(
+  "campaign_email_logs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id")
+      .references(() => emailCampaigns.id, { onDelete: "cascade" })
+      .notNull(),
+    subscriberEmail: varchar("subscriber_email", { length: 255 }).notNull(),
+    status: varchar("status", { length: 50 }).default("sent").notNull(), // SENT, OPENED, CLICKED, BOUNCED, FAILED
+    sentAt: timestamp("sent_at").defaultNow().notNull(),
+    openedAt: timestamp("opened_at"),
+    clickedAt: timestamp("clicked_at"),
+    bounceReason: varchar("bounce_reason", { length: 255 }),
+    clickCount: integer("click_count").default(0).notNull(),
+    resendMessageId: varchar("resend_message_id", { length: 255 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    campaignIdIdx: index("campaign_email_logs_campaign_id_idx").on(
+      table.campaignId,
+    ),
+    subscriberEmailIdx: index("campaign_email_logs_subscriber_email_idx").on(
+      table.subscriberEmail,
+    ),
+    statusIdx: index("campaign_email_logs_status_idx").on(table.status),
+    resendMessageIdIdx: index("campaign_email_logs_resend_message_id_idx").on(
+      table.resendMessageId,
+    ),
+  }),
+);
+
 // Relations
 export const productsRelations = relations(products, ({ many }) => ({
   variants: many(productVariants),
@@ -1066,6 +1158,42 @@ export const googleMerchantProductSyncsRelations = relations(
     product: one(products, {
       fields: [googleMerchantProductSyncs.productId],
       references: [products.id],
+    }),
+  }),
+);
+
+export const emailCampaignsRelations = relations(
+  emailCampaigns,
+  ({ one, many }) => ({
+    createdByAdmin: one(adminUsers, {
+      fields: [emailCampaigns.createdBy],
+      references: [adminUsers.id],
+    }),
+    products: many(campaignProducts),
+    emailLogs: many(campaignEmailLogs),
+  }),
+);
+
+export const campaignProductsRelations = relations(
+  campaignProducts,
+  ({ one }) => ({
+    campaign: one(emailCampaigns, {
+      fields: [campaignProducts.campaignId],
+      references: [emailCampaigns.id],
+    }),
+    product: one(products, {
+      fields: [campaignProducts.productId],
+      references: [products.id],
+    }),
+  }),
+);
+
+export const campaignEmailLogsRelations = relations(
+  campaignEmailLogs,
+  ({ one }) => ({
+    campaign: one(emailCampaigns, {
+      fields: [campaignEmailLogs.campaignId],
+      references: [emailCampaigns.id],
     }),
   }),
 );

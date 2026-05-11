@@ -351,7 +351,7 @@ export type PublishedSizeGuide = typeof sizeGuides.$inferSelect;
 export async function getPublishedSizeGuides(
   limit: number = 6,
 ): Promise<PublishedSizeGuide[]> {
-  "use cache";
+  "use cache";getPublishedSizeGuides
   cacheTag(TAGS.sizeGuides);
   cacheLife("hours");
 

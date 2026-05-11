@@ -19,7 +19,8 @@
     "noUncheckedIndexedAccess": true,
     "types": ["node"],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@react-email/components": ["./lib/email/react-email-components.tsx"]
     },
     "plugins": [
       {
