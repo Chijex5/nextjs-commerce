@@ -1,15 +1,16 @@
 import type {
-    AnchorHTMLAttributes,
-    HTMLAttributes,
-    ImgHTMLAttributes,
-    ReactNode,
+  AnchorHTMLAttributes,
+  ElementType,
+  HTMLAttributes,
+  ImgHTMLAttributes,
+  ReactNode,
 } from "react";
 
 function wrapTag<
   TagProps extends
     | HTMLAttributes<HTMLElement>
     | AnchorHTMLAttributes<HTMLAnchorElement>,
->(Tag: keyof JSX.IntrinsicElements, extraClassName?: string) {
+>(Tag: ElementType, extraClassName?: string) {
   return function WrappedComponent({
     children,
     style,
@@ -23,7 +24,11 @@ function wrapTag<
       .join(" ");
 
     return (
-      <Tag {...(props as any)} className={className || undefined} style={style}>
+      <Tag
+        {...props}
+        className={className || undefined}
+        style={style}
+      >
         {children}
       </Tag>
     );
@@ -39,6 +44,9 @@ export const Hr = wrapTag<HTMLAttributes<HTMLHRElement>>("hr");
 export const Link = wrapTag<AnchorHTMLAttributes<HTMLAnchorElement>>("a");
 export const Button = wrapTag<AnchorHTMLAttributes<HTMLAnchorElement>>("a");
 
-export function Img({ style, ...props }: ImgHTMLAttributes<HTMLImageElement>) {
+export function Img({
+  style,
+  ...props
+}: ImgHTMLAttributes<HTMLImageElement>) {
   return <img {...props} style={style} />;
 }
