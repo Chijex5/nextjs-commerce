@@ -1,8 +1,7 @@
 "use client";
 
-import { BarChart3, ChevronLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface CampaignAnalytics {
   total: number;
@@ -27,292 +26,300 @@ interface Campaign {
   createdAt: string;
 }
 
+/* ─── Bar ─────────────────────────────────────────────────────────────────── */
+
+function MetricBar({
+  label,
+  rate,
+  count,
+}: {
+  label: string;
+  rate: string;
+  count: number;
+}) {
+  const pct = Math.min(parseFloat(rate), 100);
+  return (
+    <div className="group">
+      <div className="mb-2 flex items-baseline justify-between">
+        <span className="text-xs font-bold uppercase tracking-[0.1em] text-neutral-500">
+          {label}
+        </span>
+        <div className="flex items-baseline gap-3">
+          <span className="font-mono text-xs text-neutral-500">{count}</span>
+          <span className="font-mono text-sm font-semibold text-white">
+            {rate}%
+          </span>
+        </div>
+      </div>
+      <div className="relative h-px w-full bg-neutral-800">
+        <div
+          className="absolute left-0 top-0 h-px bg-white transition-all duration-700 ease-out"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ─── Stat ────────────────────────────────────────────────────────────────── */
+
+function StatCell({
+  label,
+  value,
+  rate,
+  index,
+}: {
+  label: string;
+  value: number;
+  rate?: string;
+  index: number;
+}) {
+  return (
+    <div className="border-r border-neutral-800 px-8 py-7 last:border-r-0">
+      <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500">
+        {String(index + 1).padStart(2, "0")} — {label}
+      </p>
+      <p className="font-mono text-4xl font-bold tracking-tight text-white">
+        {value.toLocaleString()}
+      </p>
+      {rate !== undefined && (
+        <p className="mt-1 font-mono text-xs text-neutral-500">{rate}%</p>
+      )}
+    </div>
+  );
+}
+
+/* ─── Page ────────────────────────────────────────────────────────────────── */
+
 export default function CampaignAnalyticsPage() {
   const router = useRouter();
   const params = useParams();
   const campaignId = typeof params.id === "string" ? params.id : "";
 
-  const [loading, setLoading] = useState(true);
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [analytics, setAnalytics] = useState<CampaignAnalytics | null>(null);
-
-  useEffect(() => {
-    fetchData();
-    // Refresh analytics every 10 seconds for real-time updates
-    const interval = setInterval(fetchData, 10000);
-    return () => clearInterval(interval);
-  }, []);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const isFirstLoad = useRef(true);
 
   async function fetchData() {
     try {
-      setLoading(true);
+      const [campaignRes, analyticsRes] = await Promise.all([
+        fetch(`/api/admin/campaigns/${campaignId}`),
+        fetch(`/api/admin/campaigns/${campaignId}/analytics`),
+      ]);
 
-      // Fetch campaign details
-      const campaignRes = await fetch(`/api/admin/campaigns/${campaignId}`);
       if (!campaignRes.ok) throw new Error("Failed to fetch campaign");
       const campaignData = await campaignRes.json();
       setCampaign(campaignData.campaign);
 
-      // Fetch analytics
-      const analyticsRes = await fetch(
-        `/api/admin/campaigns/${campaignId}/analytics`,
-      );
       if (analyticsRes.ok) {
         const analyticsData = await analyticsRes.json();
         setAnalytics(analyticsData.analytics);
       }
+
+      setLastUpdated(new Date());
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
-      setLoading(false);
+      if (isFirstLoad.current) {
+        setInitialLoading(false);
+        isFirstLoad.current = false;
+      }
     }
   }
 
-  if (loading || !campaign || !analytics) {
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  /* ── Initial skeleton ── */
+  if (initialLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="inline-block animate-spin">
-          <div className="h-8 w-8 border-4 border-gray-300 border-t-black rounded-full"></div>
+      <div className="flex min-h-screen items-center justify-center bg-neutral-950">
+        <div className="space-y-2 text-center">
+          <div className="mx-auto h-px w-16 animate-pulse bg-white" />
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-600">
+            Loading
+          </p>
         </div>
       </div>
     );
   }
 
-  const stats = [
-    {
-      label: "Sent",
-      value: analytics.sent,
-      color: "bg-blue-100 text-blue-800",
-    },
-    {
-      label: "Opened",
-      value: analytics.opened,
-      subtext: `${analytics.openRate}%`,
-      color: "bg-green-100 text-green-800",
-    },
-    {
-      label: "Clicked",
-      value: analytics.clicked,
-      subtext: `${analytics.clickRate}%`,
-      color: "bg-purple-100 text-purple-800",
-    },
-    {
-      label: "Bounced",
-      value: analytics.bounced,
-      subtext: `${analytics.bounceRate}%`,
-      color: "bg-red-100 text-red-800",
-    },
-    {
-      label: "Failed",
-      value: analytics.failed,
-      subtext: `${analytics.failureRate}%`,
-      color: "bg-orange-100 text-orange-800",
-    },
+  if (!campaign || !analytics) return null;
+
+  const stats: { label: string; value: number; rate?: string }[] = [
+    { label: "Sent", value: analytics.sent },
+    { label: "Opened", value: analytics.opened, rate: analytics.openRate },
+    { label: "Clicked", value: analytics.clicked, rate: analytics.clickRate },
+    { label: "Bounced", value: analytics.bounced, rate: analytics.bounceRate },
+    { label: "Failed", value: analytics.failed, rate: analytics.failureRate },
+  ];
+
+  const metrics = [
+    { label: "Open Rate", rate: analytics.openRate, count: analytics.opened },
+    { label: "Click Rate", rate: analytics.clickRate, count: analytics.clicked },
+    { label: "Bounce Rate", rate: analytics.bounceRate, count: analytics.bounced },
+    { label: "Failure Rate", rate: analytics.failureRate, count: analytics.failed },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
+    <div className="min-h-screen bg-neutral-950 text-white">
+      <div className="mx-auto max-w-6xl px-6 py-10 lg:px-8">
+
+        {/* ── Nav ── */}
+        <div className="mb-12 flex items-center justify-between">
           <button
             onClick={() => router.push("/admin/campaigns")}
-            className="p-2 hover:bg-gray-200 rounded-lg transition"
+            className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-neutral-500 transition-colors hover:text-white"
           >
-            <ChevronLeft size={24} />
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            Campaigns
           </button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Campaign Analytics
-            </h1>
-            <p className="text-gray-500 mt-2">{campaign.name}</p>
-          </div>
+
+          {lastUpdated && (
+            <span className="font-mono text-[10px] text-neutral-600">
+              Updated {lastUpdated.toLocaleTimeString()}
+            </span>
+          )}
         </div>
 
-        {/* Campaign Info */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* ── Header ── */}
+        <div className="mb-10 border-b border-neutral-800 pb-10">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
+            Campaign Analytics
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+            {campaign.name}
+          </h1>
+
+          <div className="mt-6 flex flex-wrap gap-8">
             <div>
-              <p className="text-sm text-gray-600">Subject</p>
-              <p className="text-lg font-medium text-gray-900">
-                {campaign.subject}
-              </p>
+              <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-neutral-600">Subject</p>
+              <p className="text-sm text-neutral-300">{campaign.subject}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Type</p>
-              <p className="text-lg font-medium text-gray-900">
+              <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-neutral-600">Type</p>
+              <p className="text-sm capitalize text-neutral-300">
                 {campaign.type.replace("_", " ")}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Sent On</p>
-              <p className="text-lg font-medium text-gray-900">
+              <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-neutral-600">Sent</p>
+              <p className="text-sm text-neutral-300">
                 {new Date(campaign.sentAt).toLocaleString()}
               </p>
             </div>
+            <div>
+              <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-neutral-600">Total Recipients</p>
+              <p className="font-mono text-sm text-neutral-300">{analytics.total.toLocaleString()}</p>
+            </div>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-          {stats.map((stat, idx) => (
-            <div
-              key={idx}
-              className={`rounded-lg border border-gray-200 p-6 text-center`}
-            >
-              <p className="text-gray-600 text-sm font-medium mb-2">
-                {stat.label}
-              </p>
-              <p className="text-3xl font-bold text-gray-900 mb-1">
-                {stat.value}
-              </p>
-              {stat.subtext && (
-                <p className="text-sm text-gray-500">{stat.subtext}</p>
-              )}
-            </div>
+        {/* ── Stats strip ── */}
+        <div className="mb-10 grid grid-cols-2 border border-neutral-800 md:grid-cols-5">
+          {stats.map((s, i) => (
+            <StatCell key={s.label} label={s.label} value={s.value} rate={s.rate} index={i} />
           ))}
         </div>
 
-        {/* Performance Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Engagement Metrics */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <BarChart3 size={20} />
-              Engagement Metrics
-            </h2>
+        {/* ── Bottom grid ── */}
+        <div className="grid gap-px bg-neutral-800 md:grid-cols-2">
 
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm font-medium text-gray-700">Open Rate</p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {analytics.openRate}%
-                  </p>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-green-500 h-2 rounded-full"
-                    style={{
-                      width: `${Math.min(parseFloat(analytics.openRate), 100)}%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm font-medium text-gray-700">
-                    Click Rate
-                  </p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {analytics.clickRate}%
-                  </p>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-purple-500 h-2 rounded-full"
-                    style={{
-                      width: `${Math.min(parseFloat(analytics.clickRate), 100)}%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm font-medium text-gray-700">
-                    Bounce Rate
-                  </p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {analytics.bounceRate}%
-                  </p>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-red-500 h-2 rounded-full"
-                    style={{
-                      width: `${Math.min(parseFloat(analytics.bounceRate), 100)}%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm font-medium text-gray-700">
-                    Failure Rate
-                  </p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {analytics.failureRate}%
-                  </p>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-orange-500 h-2 rounded-full"
-                    style={{
-                      width: `${Math.min(parseFloat(analytics.failureRate), 100)}%`,
-                    }}
-                  />
-                </div>
-              </div>
+          {/* Engagement */}
+          <div className="bg-neutral-950 p-8">
+            <p className="mb-8 text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
+              Engagement
+            </p>
+            <div className="space-y-7">
+              {metrics.map((m) => (
+                <MetricBar key={m.label} label={m.label} rate={m.rate} count={m.count} />
+              ))}
             </div>
           </div>
 
-          {/* Delivery Summary */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">
-              Delivery Summary
-            </h2>
+          {/* Delivery */}
+          <div className="bg-neutral-950 p-8">
+            <p className="mb-8 text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
+              Delivery
+            </p>
+            <div className="space-y-px">
+              {[
+                { label: "Total Recipients", value: analytics.total },
+                { label: "Successfully Sent", value: analytics.sent },
+                { label: "Failed & Bounced", value: analytics.failed + analytics.bounced },
+                { label: "Clicked Through", value: analytics.clicked },
+              ].map((row, i) => (
+                <div
+                  key={row.label}
+                  className="flex items-center justify-between border-b border-neutral-900 py-4 last:border-b-0"
+                >
+                  <div className="flex items-center gap-4">
+                    <span className="w-5 font-mono text-[10px] text-neutral-700">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span className="text-sm text-neutral-400">{row.label}</span>
+                  </div>
+                  <span className="font-mono text-sm font-semibold text-white">
+                    {row.value.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
 
-            <div className="space-y-3">
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <p className="text-gray-700">Total Recipients</p>
-                <p className="font-bold text-gray-900">{analytics.total}</p>
+            {/* Delivery rate visual */}
+            <div className="mt-8">
+              <div className="mb-2 flex justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-neutral-600">
+                  Delivery Rate
+                </span>
+                <span className="font-mono text-xs text-neutral-400">
+                  {analytics.total > 0
+                    ? ((analytics.sent / analytics.total) * 100).toFixed(1)
+                    : "0"}%
+                </span>
               </div>
-
-              <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                <p className="text-gray-700">Successfully Sent</p>
-                <p className="font-bold text-green-900">{analytics.sent}</p>
+              <div className="relative h-px w-full bg-neutral-800">
+                <div
+                  className="absolute left-0 top-0 h-px bg-white transition-all duration-700 ease-out"
+                  style={{
+                    width: `${analytics.total > 0 ? Math.min((analytics.sent / analytics.total) * 100, 100) : 0}%`,
+                  }}
+                />
               </div>
+            </div>
+          </div>
+        </div>
 
-              <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-                <p className="text-gray-700">Failed/Bounced</p>
-                <p className="font-bold text-orange-900">
-                  {analytics.failed + analytics.bounced}
+        {/* ── Tips ── */}
+        <div className="mt-px bg-neutral-900 p-8">
+          <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
+            Recommendations
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[
+              { metric: "Open Rate", tip: "Improve subject line and optimise send time for your audience timezone." },
+              { metric: "Click Rate", tip: "Use a single, clear call-to-action and ensure links are contextually relevant." },
+              { metric: "Bounce Rate", tip: "Clean your mailing list regularly — remove invalid or inactive addresses." },
+              { metric: "List Health", tip: "Consistent metrics over time are the strongest indicator of list quality." },
+            ].map((r) => (
+              <div key={r.metric} className="flex gap-3">
+                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 bg-neutral-600" />
+                <p className="text-xs leading-relaxed text-neutral-500">
+                  <span className="font-semibold text-neutral-400">{r.metric}: </span>
+                  {r.tip}
                 </p>
               </div>
-
-              <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-                <p className="text-gray-700">People who Clicked</p>
-                <p className="font-bold text-purple-900">{analytics.clicked}</p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Tips */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-sm font-semibold text-blue-900 mb-2">
-            📊 Tips to Improve Performance
-          </h3>
-          <ul className="text-sm text-blue-800 space-y-1">
-            <li>• Open Rate: Try improving your subject line and send time</li>
-            <li>
-              • Click Rate: Use clearer CTAs and make sure links are relevant
-            </li>
-            <li>• Bounce Rate: Clean your mailing list regularly</li>
-            <li>
-              • Monitor trends: Consistent performance metrics indicate list
-              health
-            </li>
-          </ul>
-        </div>
-
-        {/* Auto-refresh note */}
-        <div className="mt-4 text-center text-xs text-gray-500">
-          Analytics refresh automatically every 10 seconds
-        </div>
       </div>
     </div>
   );
