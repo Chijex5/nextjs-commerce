@@ -1,13 +1,13 @@
 import {
-    Button,
-    Column,
-    Container,
-    Hr,
-    Img,
-    Link,
-    Row,
-    Section,
-    Text,
+  Button,
+  Column,
+  Container,
+  Hr,
+  Img,
+  Link,
+  Row,
+  Section,
+  Text,
 } from "../react-email-components";
 
 interface MarketingEmailProps {
