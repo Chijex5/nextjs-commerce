@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { db } from "@/lib/db";
 import {
   campaignEmailLogs,
@@ -219,7 +220,6 @@ function getUnsubscribeUrl(email: string): string {
   }
 
   // Create HMAC token
-  const crypto = require("crypto");
   const token = crypto.createHmac("sha256", secret).update(email).digest("hex");
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";

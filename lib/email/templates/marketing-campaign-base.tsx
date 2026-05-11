@@ -22,13 +22,15 @@ interface MarketingEmailProps {
   };
 }
 
+const DESCRIPTION_MAX_LENGTH = 120;
+
 export default function MarketingCampaignBase({
   campaign,
   subscriber,
 }: MarketingEmailProps) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const productPlaceholder = `${siteUrl}/images/product-placeholder.png`;
-  const firstName = subscriber?.name?.trim().split(/\s+/)[0] || "there";
+  const firstName = subscriber?.name?.trim()?.split(/\s+/)[0] || "there";
 
   const normalizeUrl = (url?: string | null) => {
     if (!url) return undefined;
@@ -75,8 +77,8 @@ export default function MarketingCampaignBase({
               <Text style={productTitle}>{product.title}</Text>
               {description && (
                 <Text style={productDescription}>
-                  {description.length > 120
-                    ? `${description.slice(0, 120)}…`
+                  {description.length > DESCRIPTION_MAX_LENGTH
+                    ? `${description.slice(0, DESCRIPTION_MAX_LENGTH)}…`
                     : description}
                 </Text>
               )}
