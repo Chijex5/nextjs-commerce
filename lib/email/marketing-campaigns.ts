@@ -1,19 +1,26 @@
+import crypto from "crypto";
 import { db } from "@/lib/db";
 import {
   campaignEmailLogs,
   campaignProducts,
   emailCampaigns,
   newsletterSubscribers,
+  productImages,
   products,
 } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email/resend";
 import { baseTemplate } from "@/lib/email/templates/base";
 import { render } from "@react-email/render";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 
 export type CampaignType = "JUST_ARRIVED" | "SALE" | "COLLECTION";
 export type CampaignStatus = "DRAFT" | "SCHEDULED" | "SENT";
-export type EmailLogStatus = "SENT" | "OPENED" | "CLICKED" | "BOUNCED" | "FAILED";
+export type EmailLogStatus =
+  | "SENT"
+  | "OPENED"
+  | "CLICKED"
+  | "BOUNCED"
+  | "FAILED";
 
 interface CampaignProduct {
   id: string;
@@ -60,19 +67,44 @@ export async function getCampaignWithProducts(campaignId: string) {
     .where(eq(campaignProducts.campaignId, campaignId))
     .orderBy(campaignProducts.position);
 
-  // Fetch full product details
+  const productIds = campaignProds.map((cp) => cp.productId);
   const campaignProductDetails: CampaignProduct[] = [];
-  for (const cp of campaignProds) {
-    const prod = await db.query.products.findFirst({
-      where: eq(products.id, cp.productId),
-    });
 
-    if (prod) {
+  if (productIds.length > 0) {
+    const [productRows, imageRows] = await Promise.all([
+      db.select().from(products).where(inArray(products.id, productIds)),
+      db
+        .select()
+        .from(productImages)
+        .where(inArray(productImages.productId, productIds))
+        .orderBy(asc(productImages.position)),
+    ]);
+
+    const productById = new Map(
+      productRows.map((product) => [product.id, product]),
+    );
+    const imageRowsByProductId = new Map<string, typeof imageRows>();
+
+    for (const image of imageRows) {
+      const current = imageRowsByProductId.get(image.productId) ?? [];
+      current.push(image);
+      imageRowsByProductId.set(image.productId, current);
+    }
+
+    for (const cp of campaignProds) {
+      const prod = productById.get(cp.productId);
+      if (!prod) continue;
+
+      const images = imageRowsByProductId.get(prod.id) ?? [];
+      const featuredImage =
+        images.find((image) => image.isFeatured) || images[0];
+
       campaignProductDetails.push({
         id: prod.id,
         handle: prod.handle,
         title: prod.title,
         description: prod.description || undefined,
+        image: featuredImage?.url,
       });
     }
   }
@@ -188,14 +220,9 @@ function getUnsubscribeUrl(email: string): string {
   }
 
   // Create HMAC token
-  const crypto = require("crypto");
-  const token = crypto
-    .createHmac("sha256", secret)
-    .update(email)
-    .digest("hex");
+  const token = crypto.createHmac("sha256", secret).update(email).digest("hex");
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   return `${baseUrl}/api/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`;
 }
 
