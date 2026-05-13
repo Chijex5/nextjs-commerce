@@ -42,13 +42,6 @@ export default function LoginPage() {
         console.log("[admin-login] signIn rejected", result.error);
         setError("Invalid email or password");
       } else {
-        const session = await getSession();
-        console.log("[admin-login] session after signIn", {
-          hasSession: Boolean(session),
-          email: session?.user?.email,
-          role: session?.user?.role,
-          id: session?.user?.id,
-        });
         router.push("/admin/dashboard");
         router.refresh();
       }

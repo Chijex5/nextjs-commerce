@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import { db } from "@/lib/db";
 import {
   campaignEmailLogs,
@@ -9,11 +8,12 @@ import {
   productVariants,
   products,
 } from "@/lib/db/schema";
-import { sendEmail } from "@/lib/email/resend";
 import {
   renderMarketingCampaignEmail,
   renderMarketingSubject,
 } from "@/lib/email/marketing-renderer";
+import { sendEmail } from "@/lib/email/resend";
+import crypto from "crypto";
 import { and, asc, eq, inArray } from "drizzle-orm";
 
 export type CampaignType = "JUST_ARRIVED" | "SALE" | "COLLECTION";
@@ -192,6 +192,7 @@ export async function sendMarketingCampaign(campaignId: string) {
         preheader: campaign?.preheader || "",
         headers: {
           "List-Unsubscribe": `<${unsubscribeUrl}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
       });
 

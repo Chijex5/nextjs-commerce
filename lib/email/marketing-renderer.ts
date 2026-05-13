@@ -20,6 +20,7 @@ export type MarketingCampaign = {
   footerText?: string | null;
   ctaButtonText?: string | null;
   ctaButtonUrl?: string | null;
+  heroImageUrl?: string | null;
   products: MarketingCampaignProduct[];
 };
 
@@ -163,6 +164,7 @@ export function renderMarketingCampaignBody(
     renderVariables(campaign.ctaButtonUrl, context),
     siteUrl,
   );
+  const heroUrl = campaign.heroImageUrl ? normalizeUrl(campaign.heroImageUrl, siteUrl) : null;
   const placeholder = `${siteUrl}/images/product-placeholder.png`;
 
   const productsHtml = campaign.products
@@ -202,6 +204,13 @@ export function renderMarketingCampaignBody(
 
   return `
     <div style="margin:0;">
+      ${heroUrl ? `
+      <div style="margin: -36px -40px 32px; overflow: hidden; background-color: #1a1a1a; line-height: 0;">
+        <a href="${siteUrl}/products" target="_blank" rel="noopener noreferrer" style="display: block; text-decoration: none; line-height: 0;">
+          <img src="${escapeHtml(heroUrl)}" alt="" width="600" style="display: block; width: 100%; max-width: 600px; height: auto; border: 0;" />
+        </a>
+      </div>
+      ` : ""}
       <p style="margin:0 0 10px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#9ca3af;font-weight:700;">${escapeHtml(templateLabels[campaign.type])}</p>
       <h1 style="margin:0 0 16px;font-family:Georgia,'Times New Roman',Times,serif;color:#111111;font-size:26px;font-weight:400;line-height:1.3;letter-spacing:-.01em;">${escapeHtml(title)}</h1>
       ${renderParagraphs(subtitle)}

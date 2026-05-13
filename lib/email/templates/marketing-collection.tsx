@@ -1,4 +1,4 @@
-import MarketingCampaignBase from "./marketing-campaign-base";
+import { buildMarketingCampaignContent } from "./marketing-campaign-base";
 
 interface MarketingEmailProps {
   campaign: any;
@@ -9,10 +9,10 @@ export default function CollectionTemplate({
   campaign,
   subscriber,
 }: MarketingEmailProps) {
-  // Enhance campaign data with Collection specific messaging
+  // Enhance campaign data with Collection specific messaging (no emoji)
   const enhancedCampaign = {
     ...campaign,
-    headerTitle: campaign.headerTitle || "✨ New Collection",
+    headerTitle: campaign.headerTitle || "New collection",
     headerSubtitle:
       campaign.headerSubtitle || "Explore our latest curated selection",
     ctaButtonText: campaign.ctaButtonText || "Browse Collection",
@@ -22,10 +22,5 @@ export default function CollectionTemplate({
       "Exclusively designed and crafted with quality in mind.",
   };
 
-  return (
-    <MarketingCampaignBase
-      campaign={enhancedCampaign}
-      subscriber={subscriber}
-    />
-  );
+  return buildMarketingCampaignContent(enhancedCampaign, subscriber);
 }

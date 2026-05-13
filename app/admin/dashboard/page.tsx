@@ -16,13 +16,6 @@ import { authOptions } from "../../../lib/auth";
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
-  console.log("[admin-dashboard] session check", {
-    hasSession: Boolean(session),
-    email: session?.user?.email,
-    role: session?.user?.role,
-    id: session?.user?.id,
-  });
-
   if (!session) {
     console.log("[admin-dashboard] redirecting to login");
     redirect("/admin/login");

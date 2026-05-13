@@ -27,13 +27,6 @@ export default async function AdminOrdersPage({
 }) {
   const session = await getServerSession(authOptions);
 
-  console.log("[admin-orders-page] session check", {
-    hasSession: Boolean(session),
-    email: session?.user?.email,
-    role: session?.user?.role,
-    id: session?.user?.id,
-  });
-
   if (!session) {
     console.log("[admin-orders-page] redirecting to login");
     redirect("/admin/login");

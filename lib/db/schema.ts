@@ -1,16 +1,16 @@
 import { relations } from "drizzle-orm";
 import {
-  boolean,
-  decimal,
-  index,
-  integer,
-  jsonb,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-  uuid,
-  varchar,
+    boolean,
+    decimal,
+    index,
+    integer,
+    jsonb,
+    pgTable,
+    text,
+    timestamp,
+    uniqueIndex,
+    uuid,
+    varchar,
 } from "drizzle-orm/pg-core";
 
 // Products table - stores the main product information
@@ -876,6 +876,7 @@ export const emailCampaigns = pgTable(
     footerText: text("footer_text"),
     ctaButtonText: varchar("cta_button_text", { length: 100 }),
     ctaButtonUrl: text("cta_button_url"),
+    heroImageUrl: text("hero_image_url"),
     status: varchar("status", { length: 50 }).default("draft").notNull(), // DRAFT, SCHEDULED, SENT
     scheduledAt: timestamp("scheduled_at"),
     sentAt: timestamp("sent_at"),

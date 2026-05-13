@@ -2,7 +2,7 @@
 
 import { ChevronLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -18,6 +18,7 @@ interface Campaign {
   footerText: string;
   ctaButtonText: string;
   ctaButtonUrl: string;
+  heroImageUrl?: string;
   products?: Array<{ id: string }>;
 }
 
@@ -303,6 +304,9 @@ export default function CampaignEditorPage() {
   const [scheduledAt, setScheduledAt] = useState("");
   const [previewHtml, setPreviewHtml] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
+  const lastFocusedRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(
+    null,
+  );
 
   const [campaign, setCampaign] = useState<Campaign>({
     id: "",
@@ -315,6 +319,7 @@ export default function CampaignEditorPage() {
     footerText: "",
     ctaButtonText: "",
     ctaButtonUrl: "",
+    heroImageUrl: "",
   });
 
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
@@ -324,6 +329,10 @@ export default function CampaignEditorPage() {
 
   const set = (patch: Partial<Campaign>) =>
     setCampaign((p) => ({ ...p, ...patch }));
+
+  // Subscriber count for Send step
+  const [subscriberCount, setSubscriberCount] = useState<number | null>(null);
+  const [subscriberCountLoading, setSubscriberCountLoading] = useState(false);
 
   // ── Data fetching ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -346,6 +355,9 @@ export default function CampaignEditorPage() {
           setSelectedProducts(
             d.campaign.products?.map((p: { id: string }) => p.id) || [],
           );
+          // pick up heroImageUrl if present
+          if (d.campaign.heroImageUrl)
+            set({ heroImageUrl: d.campaign.heroImageUrl });
         })
         .catch(() => {
           toast.error("Failed to load campaign");
@@ -362,11 +374,23 @@ export default function CampaignEditorPage() {
       .finally(() => setLoadingProducts(false));
   }, []);
 
+  // Fetch subscriber count for Step 5
+  useEffect(() => {
+    setSubscriberCountLoading(true);
+    fetch("/api/admin/subscribers/count")
+      .then((r) => r.json())
+      .then((d) =>
+        setSubscriberCount(typeof d.count === "number" ? d.count : 0),
+      )
+      .catch(() => setSubscriberCount(0))
+      .finally(() => setSubscriberCountLoading(false));
+  }, []);
+
   // ── Validation ───────────────────────────────────────────────────────────────
   const canAdvance = useMemo(() => {
     if (step === 1) return !!(campaign.name.trim() && campaign.subject.trim());
     if (step === 3) return selectedProducts.length > 0;
-    if (step === 4) return !!previewHtml && !previewLoading;
+    if (step === 4) return !previewLoading; // allow advancing even if no preview generated
     if (step === 5 && sendMode === "scheduled") return !!scheduledAt;
     return true;
   }, [
@@ -374,7 +398,6 @@ export default function CampaignEditorPage() {
     campaign.name,
     campaign.subject,
     selectedProducts.length,
-    previewHtml,
     previewLoading,
     sendMode,
     scheduledAt,
@@ -401,6 +424,7 @@ export default function CampaignEditorPage() {
         footerText: campaign.footerText,
         ctaButtonText: campaign.ctaButtonText,
         ctaButtonUrl: campaign.ctaButtonUrl,
+        heroImageUrl: campaign.heroImageUrl,
         productIds: selectedProducts,
       });
       const existingCampaignId = campaign.id || (!isNew ? campaignId : "");
@@ -476,10 +500,101 @@ export default function CampaignEditorPage() {
   async function handleContinue() {
     if (!canAdvance) return;
     if (step === 3) {
-      await generatePreview();
+      // Move to preview step; do not auto-generate preview.
+      setStep(4);
       return;
     }
     setStep((s) => Math.min(5, s + 1));
+  }
+
+  // Insert variable into last-focused input/textarea or fallback to clipboard
+  function insertVariableAtCursor(variable: string) {
+    const el = lastFocusedRef.current;
+    if (
+      el &&
+      (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)
+    ) {
+      const start = el.selectionStart ?? el.value.length;
+      const end = el.selectionEnd ?? start;
+      const before = el.value.slice(0, start);
+      const after = el.value.slice(end);
+      const newVal = `${before}${variable}${after}`;
+
+      // Update React state for known campaign fields
+      if (el.id === "name") set({ name: newVal });
+      else if (el.id === "subject") set({ subject: newVal });
+      else if (el.id === "preheader") set({ preheader: newVal });
+      else if (el.id === "htitle") set({ headerTitle: newVal });
+      else if (el.id === "hsub") set({ headerSubtitle: newVal });
+      else if (el.id === "ctatext") set({ ctaButtonText: newVal });
+      else if (el.id === "ctaurl") set({ ctaButtonUrl: newVal });
+      else if (el.id === "footer") set({ footerText: newVal });
+      else if (el.id === "heroImageUrl") set({ heroImageUrl: newVal });
+      else {
+        // fallback: directly set DOM value and dispatch input
+        el.value = newVal;
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+
+      // restore focus and place cursor after inserted variable
+      // use setTimeout to ensure React state updates don't overwrite selection
+      el.focus();
+      const caret = start + variable.length;
+      setTimeout(() => {
+        try {
+          el.setSelectionRange(caret, caret);
+        } catch {}
+      }, 0);
+
+      toast.success(`${variable} inserted`);
+      return;
+    }
+
+    // fallback to clipboard copy
+    navigator.clipboard
+      ?.writeText(variable)
+      .then(() => toast.success(`${variable} copied to clipboard`))
+      .catch(() => toast.error("Failed to copy variable"));
+  }
+
+  // Product reordering helpers
+  function moveSelectedProduct(fromIndex: number, toIndex: number) {
+    if (
+      fromIndex < 0 ||
+      toIndex < 0 ||
+      fromIndex >= selectedProducts.length ||
+      toIndex >= selectedProducts.length
+    )
+      return;
+    setSelectedProducts((prev) => {
+      const copy = [...prev];
+      const [item] = copy.splice(fromIndex, 1);
+      if (!item) return prev;
+      copy.splice(toIndex, 0, item);
+      return copy;
+    });
+  }
+
+  async function sendTestEmail() {
+    try {
+      const id = await saveCampaign({ showToast: false });
+      if (!id) throw new Error("Save the campaign before sending test");
+      const res = await fetch(`/api/admin/campaigns/${id}/test-send`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || "Failed to send test");
+      }
+      const d = await res.json();
+      const adminEmail =
+        d.adminEmail || (typeof d.email === "string" ? d.email : "your email");
+      toast.success(`Test email sent to ${adminEmail}`);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to send test email",
+      );
+    }
   }
 
   // ── Send / schedule ──────────────────────────────────────────────────────────
@@ -599,6 +714,9 @@ export default function CampaignEditorPage() {
                       type="text"
                       value={campaign.name}
                       onChange={(e) => set({ name: e.target.value })}
+                      onFocus={(e) =>
+                        (lastFocusedRef.current = e.target as HTMLInputElement)
+                      }
                       placeholder="e.g. Spring Collection Launch"
                       className={inputCls}
                       autoFocus
@@ -644,6 +762,9 @@ export default function CampaignEditorPage() {
                       type="text"
                       value={campaign.subject}
                       onChange={(e) => set({ subject: e.target.value })}
+                      onFocus={(e) =>
+                        (lastFocusedRef.current = e.target as HTMLInputElement)
+                      }
                       placeholder="e.g. Discover Our Latest Arrivals!"
                       className={inputCls}
                     />
@@ -658,6 +779,9 @@ export default function CampaignEditorPage() {
                       type="text"
                       value={campaign.preheader}
                       onChange={(e) => set({ preheader: e.target.value })}
+                      onFocus={(e) =>
+                        (lastFocusedRef.current = e.target as HTMLInputElement)
+                      }
                       placeholder="Preview text shown in inbox before opening"
                       className={inputCls}
                     />
@@ -698,11 +822,7 @@ export default function CampaignEditorPage() {
                         <button
                           key={variable}
                           type="button"
-                          onClick={() =>
-                            navigator.clipboard
-                              ?.writeText(variable)
-                              .then(() => toast.success(`${variable} copied`))
-                          }
+                          onClick={() => insertVariableAtCursor(variable)}
                           className="rounded-full border border-neutral-200 bg-white px-2 py-1 text-[10px] font-medium text-neutral-500 hover:text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
                         >
                           {variable}
@@ -721,6 +841,10 @@ export default function CampaignEditorPage() {
                         type="text"
                         value={campaign.headerTitle}
                         onChange={(e) => set({ headerTitle: e.target.value })}
+                        onFocus={(e) =>
+                          (lastFocusedRef.current =
+                            e.target as HTMLInputElement)
+                        }
                         placeholder="e.g. Just Arrived!"
                         className={inputCls}
                       />
@@ -734,6 +858,10 @@ export default function CampaignEditorPage() {
                         value={campaign.headerSubtitle}
                         onChange={(e) =>
                           set({ headerSubtitle: e.target.value })
+                        }
+                        onFocus={(e) =>
+                          (lastFocusedRef.current =
+                            e.target as HTMLTextAreaElement)
                         }
                         placeholder="e.g. Use code SAVE20 before Friday. Supports {{firstName}} and other variables."
                         rows={4}
@@ -752,6 +880,10 @@ export default function CampaignEditorPage() {
                         type="text"
                         value={campaign.ctaButtonText}
                         onChange={(e) => set({ ctaButtonText: e.target.value })}
+                        onFocus={(e) =>
+                          (lastFocusedRef.current =
+                            e.target as HTMLInputElement)
+                        }
                         placeholder="Shop Now"
                         className={inputCls}
                       />
@@ -765,6 +897,10 @@ export default function CampaignEditorPage() {
                         type="text"
                         value={campaign.ctaButtonUrl}
                         onChange={(e) => set({ ctaButtonUrl: e.target.value })}
+                        onFocus={(e) =>
+                          (lastFocusedRef.current =
+                            e.target as HTMLInputElement)
+                        }
                         placeholder="/products or https://..."
                         className={inputCls}
                       />
@@ -779,10 +915,32 @@ export default function CampaignEditorPage() {
                       id="footer"
                       value={campaign.footerText}
                       onChange={(e) => set({ footerText: e.target.value })}
+                      onFocus={(e) =>
+                        (lastFocusedRef.current =
+                          e.target as HTMLTextAreaElement)
+                      }
                       placeholder="e.g. These styles are flying off the shelves — grab yours before they're gone."
                       rows={3}
                       className={inputCls}
                     />
+
+                    <div>
+                      <FieldLabel htmlFor="heroImageUrl" optional>
+                        Hero image URL
+                      </FieldLabel>
+                      <input
+                        id="heroImageUrl"
+                        type="text"
+                        value={campaign.heroImageUrl || ""}
+                        onChange={(e) => set({ heroImageUrl: e.target.value })}
+                        onFocus={(e) =>
+                          (lastFocusedRef.current =
+                            e.target as HTMLInputElement)
+                        }
+                        placeholder="https://... (optional)"
+                        className={inputCls}
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -794,6 +952,55 @@ export default function CampaignEditorPage() {
                     title="Select Products"
                     subtitle="Choose the products to feature in this campaign"
                   />
+
+                  {selectedProducts.length > 0 && (
+                    <div className="rounded-xl border border-neutral-100 p-3 dark:border-neutral-800">
+                      <p className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                        Selected products (drag to reorder or use arrows)
+                      </p>
+                      <ol className="mt-2 space-y-2">
+                        {selectedProducts.map((id, idx) => {
+                          const p = availableProducts.find(
+                            (pr) => pr.id === id,
+                          );
+                          return (
+                            <li
+                              key={id}
+                              className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 dark:bg-neutral-900"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                                  {p?.title || id}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    moveSelectedProduct(idx, idx - 1)
+                                  }
+                                  disabled={idx === 0}
+                                  className="rounded px-2 py-1 text-sm border"
+                                >
+                                  ↑
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    moveSelectedProduct(idx, idx + 1)
+                                  }
+                                  disabled={idx === selectedProducts.length - 1}
+                                  className="rounded px-2 py-1 text-sm border"
+                                >
+                                  ↓
+                                </button>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    </div>
+                  )}
 
                   <div className="flex items-center gap-3">
                     <div className="relative flex-1">
@@ -931,15 +1138,25 @@ export default function CampaignEditorPage() {
                         saved products.
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => generatePreview()}
-                      disabled={previewLoading || saving}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-medium text-neutral-600 transition-colors hover:bg-neutral-50 disabled:opacity-40 dark:border-neutral-700 dark:bg-transparent dark:text-neutral-300 dark:hover:bg-neutral-800"
-                    >
-                      {previewLoading ? <Spinner /> : null}
-                      Refresh preview
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => generatePreview()}
+                        disabled={previewLoading || saving}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-medium text-neutral-600 transition-colors hover:bg-neutral-50 disabled:opacity-40 dark:border-neutral-700 dark:bg-transparent dark:text-neutral-300 dark:hover:bg-neutral-800"
+                      >
+                        {previewLoading ? <Spinner /> : null}
+                        Refresh preview
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => sendTestEmail()}
+                        disabled={saving}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-medium text-neutral-600 transition-colors hover:bg-neutral-50 disabled:opacity-40 dark:border-neutral-700 dark:bg-transparent dark:text-neutral-300 dark:hover:bg-neutral-800"
+                      >
+                        Send test to myself
+                      </button>
+                    </div>
                   </div>
 
                   <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
@@ -1047,6 +1264,20 @@ export default function CampaignEditorPage() {
 
                   {/* Delivery options — card selector */}
                   <div>
+                    <div className="mb-3">
+                      {subscriberCountLoading ? (
+                        <div className="h-4 w-40 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
+                      ) : (
+                        <p className="text-[12px] text-neutral-600 dark:text-neutral-400">
+                          Sending to {subscriberCount ?? 0} subscribers
+                        </p>
+                      )}
+                      {subscriberCount === 0 && !subscriberCountLoading && (
+                        <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                          No active subscribers — sending disabled
+                        </p>
+                      )}
+                    </div>
                     <FieldLabel>Delivery</FieldLabel>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {[
@@ -1187,7 +1418,13 @@ export default function CampaignEditorPage() {
                   <button
                     type="button"
                     onClick={handleSend}
-                    disabled={saving || !canAdvance}
+                    disabled={
+                      saving ||
+                      !canAdvance ||
+                      (step === 5 &&
+                        sendMode === "immediate" &&
+                        subscriberCount === 0)
+                    }
                     className="inline-flex items-center gap-2 rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-700 disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
                   >
                     {saving ? (

@@ -1,10 +1,10 @@
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
-    adminUsers,
-    campaignProducts,
-    emailCampaigns,
-    products,
+  adminUsers,
+  campaignProducts,
+  emailCampaigns,
+  products,
 } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { getServerSession } from "next-auth";
@@ -135,6 +135,7 @@ export async function PATCH(
       ctaButtonText,
       ctaButtonUrl,
       scheduledAt,
+      heroImageUrl,
       productIds, // Array of product IDs to include
     } = body;
 
@@ -148,6 +149,7 @@ export async function PATCH(
     if (footerText !== undefined) updates.footerText = footerText;
     if (ctaButtonText !== undefined) updates.ctaButtonText = ctaButtonText;
     if (ctaButtonUrl !== undefined) updates.ctaButtonUrl = ctaButtonUrl;
+    if (heroImageUrl !== undefined) updates.heroImageUrl = heroImageUrl;
     if (scheduledAt !== undefined) {
       updates.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
       if (scheduledAt) {

@@ -1,4 +1,4 @@
-import MarketingCampaignBase from "./marketing-campaign-base";
+import { buildMarketingCampaignContent } from "./marketing-campaign-base";
 
 interface MarketingEmailProps {
   campaign: any;
@@ -9,22 +9,16 @@ export default function JustArrivedTemplate({
   campaign,
   subscriber,
 }: MarketingEmailProps) {
-  // Enhance campaign data with Just Arrived specific messaging
+  // Enhance campaign data with Just Arrived specific messaging (no emoji)
   const enhancedCampaign = {
     ...campaign,
-    headerTitle: campaign.headerTitle || "🎉 Just Arrived!",
+    headerTitle: campaign.headerTitle || "Just Arrived",
     headerSubtitle: campaign.headerSubtitle || "Discover our latest collection",
     ctaButtonText: campaign.ctaButtonText || "Shop Now",
     ctaButtonUrl: campaign.ctaButtonUrl || "/products",
     footerText:
-      campaign.footerText ||
-      "Don't miss out! These styles are flying off the shelves.",
+      campaign.footerText || "Don't miss out — these styles are limited.",
   };
 
-  return (
-    <MarketingCampaignBase
-      campaign={enhancedCampaign}
-      subscriber={subscriber}
-    />
-  );
+  return buildMarketingCampaignContent(enhancedCampaign, subscriber);
 }

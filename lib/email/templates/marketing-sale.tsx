@@ -1,4 +1,4 @@
-import MarketingCampaignBase from "./marketing-campaign-base";
+import { buildMarketingCampaignContent } from "./marketing-campaign-base";
 
 interface MarketingEmailProps {
   campaign: any;
@@ -9,22 +9,17 @@ export default function SaleTemplate({
   campaign,
   subscriber,
 }: MarketingEmailProps) {
-  // Enhance campaign data with Sale specific messaging
+  // Enhance campaign data with Sale specific messaging (no emoji)
   const enhancedCampaign = {
     ...campaign,
-    headerTitle: campaign.headerTitle || "🛍️ Limited Time Sale!",
+    headerTitle: campaign.headerTitle || "Limited time sale",
     headerSubtitle: campaign.headerSubtitle || "Up to 50% off selected items",
     ctaButtonText: campaign.ctaButtonText || "Shop Sale",
     ctaButtonUrl: campaign.ctaButtonUrl || "/products?sort=sale",
     footerText:
       campaign.footerText ||
-      "Offer valid for a limited time only. Hurry before items sell out!",
+      "Offer valid for a limited time only. Terms apply.",
   };
 
-  return (
-    <MarketingCampaignBase
-      campaign={enhancedCampaign}
-      subscriber={subscriber}
-    />
-  );
+  return buildMarketingCampaignContent(enhancedCampaign, subscriber);
 }

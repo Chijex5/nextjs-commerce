@@ -97,6 +97,7 @@ export async function POST(req: NextRequest) {
       footerText,
       ctaButtonText,
       ctaButtonUrl,
+      heroImageUrl,
       productIds,
     } = body;
 
@@ -119,6 +120,7 @@ export async function POST(req: NextRequest) {
         footerText,
         ctaButtonText,
         ctaButtonUrl,
+        heroImageUrl,
         status: "DRAFT",
         createdBy: admin.id,
       })
