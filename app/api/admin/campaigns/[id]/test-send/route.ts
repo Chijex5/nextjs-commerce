@@ -2,7 +2,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { adminUsers } from "@/lib/db/schema";
 import { getCampaignWithProducts } from "@/lib/email/marketing-campaigns";
-import { renderMarketingCampaignEmail, renderMarketingSubject } from "@/lib/email/marketing-renderer";
+import { renderMarketingCampaignEmail } from "@/lib/email/marketing-renderer";
 import { sendEmail } from "@/lib/email/resend";
 import { eq } from "drizzle-orm";
 import { getServerSession } from "next-auth";
@@ -66,51 +66,4 @@ export async function POST(
   }
 }
 
-// POST /api/admin/campaigns/[id]/test-send - send preview to current admin only
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    const { id } = await params;
 
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const admin = await db.query.adminUsers.findFirst({
-      where: eq(adminUsers.email, session.user.email as string),
-    });
-
-    if (!admin || !admin.isActive) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-    }
-
-    const campaign = await getCampaignWithProducts(id);
-
-    const html = renderMarketingCampaignEmail(
-      campaign,
-      { email: session.user.email, name: admin.name || "Admin" },
-      "#",
-    );
-
-    const subject = renderMarketingSubject(campaign, { email: session.user.email, name: admin.name || "Admin" });
-
-    const result = await sendEmail({
-      to: session.user.email as string,
-      subject,
-      html,
-      preheader: campaign.preheader || "",
-    });
-
-    if (!result.success) {
-      return NextResponse.json({ error: result.error || "Failed to send test" }, { status: 500 });
-    }
-
-    return NextResponse.json({ message: "Test sent", adminEmail: session.user.email });
-  } catch (error) {
-    console.error("Error sending test email:", error);
-    return NextResponse.json({ error: "Failed to send test email" }, { status: 500 });
-  }
-}
