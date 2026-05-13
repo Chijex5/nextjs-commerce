@@ -6,14 +6,25 @@ import {
   emailCampaigns,
   newsletterSubscribers,
   productImages,
+  productVariants,
   products,
 } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email/resend";
-import { baseTemplate } from "@/lib/email/templates/base";
-import { render } from "@react-email/render";
+import {
+  renderMarketingCampaignEmail,
+  renderMarketingSubject,
+} from "@/lib/email/marketing-renderer";
 import { and, asc, eq, inArray } from "drizzle-orm";
 
 export type CampaignType = "JUST_ARRIVED" | "SALE" | "COLLECTION";
+
+const CAMPAIGN_TYPES = ["JUST_ARRIVED", "SALE", "COLLECTION"] as const;
+
+function toCampaignType(type: string): CampaignType {
+  return CAMPAIGN_TYPES.includes(type as CampaignType)
+    ? (type as CampaignType)
+    : "COLLECTION";
+}
 export type CampaignStatus = "DRAFT" | "SCHEDULED" | "SENT";
 export type EmailLogStatus =
   | "SENT"
@@ -71,19 +82,34 @@ export async function getCampaignWithProducts(campaignId: string) {
   const campaignProductDetails: CampaignProduct[] = [];
 
   if (productIds.length > 0) {
-    const [productRows, imageRows] = await Promise.all([
+    const [productRows, imageRows, variantRows] = await Promise.all([
       db.select().from(products).where(inArray(products.id, productIds)),
       db
         .select()
         .from(productImages)
         .where(inArray(productImages.productId, productIds))
         .orderBy(asc(productImages.position)),
+      db
+        .select({
+          productId: productVariants.productId,
+          price: productVariants.price,
+          currencyCode: productVariants.currencyCode,
+        })
+        .from(productVariants)
+        .where(inArray(productVariants.productId, productIds)),
     ]);
 
     const productById = new Map(
       productRows.map((product) => [product.id, product]),
     );
     const imageRowsByProductId = new Map<string, typeof imageRows>();
+    const variantRowsByProductId = new Map<string, typeof variantRows>();
+
+    for (const variant of variantRows) {
+      const current = variantRowsByProductId.get(variant.productId) ?? [];
+      current.push(variant);
+      variantRowsByProductId.set(variant.productId, current);
+    }
 
     for (const image of imageRows) {
       const current = imageRowsByProductId.get(image.productId) ?? [];
@@ -99,18 +125,27 @@ export async function getCampaignWithProducts(campaignId: string) {
       const featuredImage =
         images.find((image) => image.isFeatured) || images[0];
 
+      const variants = variantRowsByProductId.get(prod.id) ?? [];
+      const cheapestVariant = variants
+        .filter((variant) => variant.price)
+        .sort((a, b) => Number(a.price) - Number(b.price))[0];
+
       campaignProductDetails.push({
         id: prod.id,
         handle: prod.handle,
         title: prod.title,
         description: prod.description || undefined,
         image: featuredImage?.url,
+        price: cheapestVariant
+          ? `${cheapestVariant.currencyCode || "NGN"} ${Number(cheapestVariant.price).toLocaleString()}`
+          : undefined,
       });
     }
   }
 
   return {
     ...campaign,
+    type: toCampaignType(campaign.type),
     products: campaignProductDetails,
   };
 }
@@ -128,10 +163,7 @@ export async function getActiveSubscribers() {
 /**
  * Send campaign to all active subscribers
  */
-export async function sendMarketingCampaign(
-  campaignId: string,
-  emailTemplate: (props: any) => React.ReactElement,
-) {
+export async function sendMarketingCampaign(campaignId: string) {
   const campaign = await getCampaignWithProducts(campaignId);
   const subscribers = await getActiveSubscribers();
 
@@ -145,21 +177,17 @@ export async function sendMarketingCampaign(
 
   for (const subscriber of subscribers) {
     try {
-      // Render email template
-      const renderedEmailHtml = await render(
-        emailTemplate({
-          campaign,
-          subscriber,
-        }),
-      );
-
       const unsubscribeUrl = getUnsubscribeUrl(subscriber.email);
-      const emailHtml = baseTemplate(renderedEmailHtml, unsubscribeUrl);
+      const emailHtml = renderMarketingCampaignEmail(
+        campaign,
+        subscriber,
+        unsubscribeUrl,
+      );
 
       // Send email via Resend
       const result = await sendEmail({
         to: subscriber.email,
-        subject: campaign.subject,
+        subject: renderMarketingSubject(campaign, subscriber),
         html: emailHtml,
         preheader: campaign?.preheader || "",
         headers: {
