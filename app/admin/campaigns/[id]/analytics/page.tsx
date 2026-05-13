@@ -26,65 +26,156 @@ interface Campaign {
   createdAt: string;
 }
 
-/* ─── Bar ─────────────────────────────────────────────────────────────────── */
+/* ─── Arc Gauge ───────────────────────────────────────────────────────────── */
 
-function MetricBar({
+function ArcGauge({
+  pct,
   label,
-  rate,
+  value,
   count,
 }: {
+  pct: number;
   label: string;
-  rate: string;
+  value: string;
   count: number;
 }) {
-  const pct = Math.min(parseFloat(rate), 100);
+  const r = 72;
+  const cx = 90;
+  const cy = 90;
+  const startAngle = -210;
+  const endAngle = 30;
+  const totalArc = endAngle - startAngle;
+  const filledArc = (pct / 100) * totalArc;
+
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+
+  const arcPath = (from: number, to: number) => {
+    const x1 = cx + r * Math.cos(toRad(from));
+    const y1 = cy + r * Math.sin(toRad(from));
+    const x2 = cx + r * Math.cos(toRad(to));
+    const y2 = cy + r * Math.sin(toRad(to));
+    const large = to - from > 180 ? 1 : 0;
+    return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`;
+  };
+
   return (
-    <div className="group">
+    <div className="flex flex-col items-center">
+      <svg width="180" height="155" viewBox="0 0 180 155">
+        {/* Track */}
+        <path
+          d={arcPath(startAngle, endAngle)}
+          fill="none"
+          stroke="#1f1f1f"
+          strokeWidth="10"
+          strokeLinecap="round"
+        />
+        {/* Fill */}
+        <path
+          d={arcPath(startAngle, startAngle + filledArc)}
+          fill="none"
+          stroke="white"
+          strokeWidth="10"
+          strokeLinecap="round"
+        />
+        {/* Center text */}
+        <text
+          x={cx}
+          y={cy - 4}
+          textAnchor="middle"
+          fill="white"
+          fontSize="28"
+          fontWeight="600"
+          fontFamily="ui-monospace, monospace"
+        >
+          {value}%
+        </text>
+        <text
+          x={cx}
+          y={cy + 18}
+          textAnchor="middle"
+          fill="#525252"
+          fontSize="11"
+          fontFamily="ui-monospace, monospace"
+        >
+          {count.toLocaleString()} people
+        </text>
+      </svg>
+      <span className="mt-1 text-xs font-semibold uppercase tracking-widest text-neutral-500">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+/* ─── Funnel Bar ──────────────────────────────────────────────────────────── */
+
+function FunnelBar({
+  label,
+  count,
+  total,
+  rate,
+  isLast,
+}: {
+  label: string;
+  count: number;
+  total: number;
+  rate?: string;
+  isLast?: boolean;
+}) {
+  const width = total > 0 ? Math.max((count / total) * 100, 2) : 0;
+
+  return (
+    <div className={`py-4 ${!isLast ? "border-b border-neutral-800/60" : ""}`}>
       <div className="mb-2 flex items-baseline justify-between">
-        <span className="text-xs font-bold uppercase tracking-[0.1em] text-neutral-500">
-          {label}
-        </span>
+        <span className="text-sm text-neutral-400">{label}</span>
         <div className="flex items-baseline gap-3">
-          <span className="font-mono text-xs text-neutral-500">{count}</span>
+          {rate && (
+            <span className="font-mono text-xs text-neutral-600">{rate}%</span>
+          )}
           <span className="font-mono text-sm font-semibold text-white">
-            {rate}%
+            {count.toLocaleString()}
           </span>
         </div>
       </div>
-      <div className="relative h-px w-full bg-neutral-800">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-800">
         <div
-          className="absolute left-0 top-0 h-px bg-white transition-all duration-700 ease-out"
-          style={{ width: `${pct}%` }}
+          className="h-full rounded-full bg-white transition-all duration-700 ease-out"
+          style={{ width: `${width}%` }}
         />
       </div>
     </div>
   );
 }
 
-/* ─── Stat ────────────────────────────────────────────────────────────────── */
+/* ─── Stat Pill ───────────────────────────────────────────────────────────── */
 
-function StatCell({
+function StatPill({
   label,
   value,
-  rate,
-  index,
+  danger,
 }: {
   label: string;
-  value: number;
-  rate?: string;
-  index: number;
+  value: string;
+  danger?: boolean;
 }) {
   return (
-    <div className="border-r border-neutral-800 px-8 py-7 last:border-r-0">
-      <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-        {String(index + 1).padStart(2, "0")} — {label}
-      </p>
-      <p className="font-mono text-4xl font-bold tracking-tight text-white">
-        {value.toLocaleString()}
-      </p>
-      {rate !== undefined && (
-        <p className="mt-1 font-mono text-xs text-neutral-500">{rate}%</p>
-      )}
+    <div
+      className={`flex flex-col gap-1.5 rounded-lg border px-5 py-4 ${
+        danger
+          ? "border-neutral-800 bg-neutral-900"
+          : "border-neutral-800 bg-neutral-900"
+      }`}
+    >
+      <span className="text-xs font-medium uppercase tracking-wider text-neutral-600">
+        {label}
+      </span>
+      <span
+        className={`font-mono text-2xl font-semibold ${
+          danger ? "text-neutral-300" : "text-white"
+        }`}
+      >
+        {value}%
+      </span>
     </div>
   );
 }
@@ -135,185 +226,241 @@ export default function CampaignAnalyticsPage() {
     return () => clearInterval(interval);
   }, []);
 
-  /* ── Initial skeleton ── */
   if (initialLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-neutral-950">
-        <div className="space-y-2 text-center">
-          <div className="mx-auto h-px w-16 animate-pulse bg-white" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-600">
-            Loading
-          </p>
-        </div>
+        <span className="text-xs font-medium uppercase tracking-widest text-neutral-700">
+          Loading…
+        </span>
       </div>
     );
   }
 
   if (!campaign || !analytics) return null;
 
-  const stats: { label: string; value: number; rate?: string }[] = [
-    { label: "Sent", value: analytics.sent },
-    { label: "Opened", value: analytics.opened, rate: analytics.openRate },
-    { label: "Clicked", value: analytics.clicked, rate: analytics.clickRate },
-    { label: "Bounced", value: analytics.bounced, rate: analytics.bounceRate },
-    { label: "Failed", value: analytics.failed, rate: analytics.failureRate },
-  ];
-
-  const metrics = [
-    { label: "Open Rate", rate: analytics.openRate, count: analytics.opened },
-    { label: "Click Rate", rate: analytics.clickRate, count: analytics.clicked },
-    { label: "Bounce Rate", rate: analytics.bounceRate, count: analytics.bounced },
-    { label: "Failure Rate", rate: analytics.failureRate, count: analytics.failed },
-  ];
+  const deliveryRate =
+    analytics.total > 0
+      ? ((analytics.sent / analytics.total) * 100).toFixed(1)
+      : "0";
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
-      <div className="mx-auto max-w-6xl px-6 py-10 lg:px-8">
+      <div className="mx-auto max-w-5xl px-6 py-10 lg:px-8">
 
-        {/* ── Nav ── */}
+        {/* ── Nav bar ── */}
         <div className="mb-12 flex items-center justify-between">
           <button
             onClick={() => router.push("/admin/campaigns")}
-            className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-neutral-500 transition-colors hover:text-white"
+            className="flex items-center gap-2 text-sm text-neutral-600 transition-colors hover:text-white"
           >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
             </svg>
-            Campaigns
+            Back to Campaigns
           </button>
 
           {lastUpdated && (
-            <span className="font-mono text-[10px] text-neutral-600">
-              Updated {lastUpdated.toLocaleTimeString()}
+            <span className="font-mono text-xs text-neutral-700">
+              Live · {lastUpdated.toLocaleTimeString()}
             </span>
           )}
         </div>
 
-        {/* ── Header ── */}
-        <div className="mb-10 border-b border-neutral-800 pb-10">
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
-            Campaign Analytics
+        {/* ── Hero header ── */}
+        <div className="mb-10">
+          <p className="mb-1.5 text-xs font-medium uppercase tracking-widest text-neutral-600">
+            {campaign.type.replace("_", " ")} Campaign
           </p>
-          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
             {campaign.name}
           </h1>
+          <p className="mt-2 text-sm text-neutral-500">
+            {campaign.subject}
+          </p>
 
-          <div className="mt-6 flex flex-wrap gap-8">
-            <div>
-              <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-neutral-600">Subject</p>
-              <p className="text-sm text-neutral-300">{campaign.subject}</p>
-            </div>
-            <div>
-              <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-neutral-600">Type</p>
-              <p className="text-sm capitalize text-neutral-300">
-                {campaign.type.replace("_", " ")}
-              </p>
-            </div>
-            <div>
-              <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-neutral-600">Sent</p>
-              <p className="text-sm text-neutral-300">
-                {new Date(campaign.sentAt).toLocaleString()}
-              </p>
-            </div>
-            <div>
-              <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-neutral-600">Total Recipients</p>
-              <p className="font-mono text-sm text-neutral-300">{analytics.total.toLocaleString()}</p>
-            </div>
+          <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-neutral-700">
+            <span>
+              Sent{" "}
+              <span className="text-neutral-400">
+                {new Date(campaign.sentAt).toLocaleDateString("en-US", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </span>
+            <span className="h-1 w-1 rounded-full bg-neutral-800" />
+            <span>
+              <span className="text-neutral-400">
+                {analytics.total.toLocaleString()}
+              </span>{" "}
+              recipients
+            </span>
+            <span className="h-1 w-1 rounded-full bg-neutral-800" />
+            <span
+              className={`font-medium ${
+                campaign.status === "sent"
+                  ? "text-neutral-300"
+                  : "text-neutral-500"
+              }`}
+            >
+              {campaign.status}
+            </span>
           </div>
         </div>
 
-        {/* ── Stats strip ── */}
-        <div className="mb-10 grid grid-cols-2 border border-neutral-800 md:grid-cols-5">
-          {stats.map((s, i) => (
-            <StatCell key={s.label} label={s.label} value={s.value} rate={s.rate} index={i} />
-          ))}
+        {/* ── Primary gauge row ── */}
+        <div className="mb-6 grid grid-cols-1 gap-px bg-neutral-800 rounded-xl overflow-hidden sm:grid-cols-3">
+          <div className="flex items-center justify-center bg-neutral-950 py-8">
+            <ArcGauge
+              pct={parseFloat(analytics.openRate)}
+              label="Open rate"
+              value={analytics.openRate}
+              count={analytics.opened}
+            />
+          </div>
+          <div className="flex items-center justify-center bg-neutral-950 py-8">
+            <ArcGauge
+              pct={parseFloat(analytics.clickRate)}
+              label="Click rate"
+              value={analytics.clickRate}
+              count={analytics.clicked}
+            />
+          </div>
+          <div className="flex items-center justify-center bg-neutral-950 py-8">
+            <ArcGauge
+              pct={parseFloat(deliveryRate)}
+              label="Delivery rate"
+              value={deliveryRate}
+              count={analytics.sent}
+            />
+          </div>
         </div>
 
-        {/* ── Bottom grid ── */}
-        <div className="grid gap-px bg-neutral-800 md:grid-cols-2">
+        {/* ── Funnel + secondary stats ── */}
+        <div className="mb-6 grid gap-4 md:grid-cols-5">
 
-          {/* Engagement */}
-          <div className="bg-neutral-950 p-8">
-            <p className="mb-8 text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Engagement
+          {/* Funnel — takes 3 cols */}
+          <div className="md:col-span-3 rounded-xl border border-neutral-800 bg-neutral-900 px-6 py-5">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-neutral-600">
+              Audience funnel
             </p>
-            <div className="space-y-7">
-              {metrics.map((m) => (
-                <MetricBar key={m.label} label={m.label} rate={m.rate} count={m.count} />
-              ))}
-            </div>
+            <p className="mb-5 text-xs text-neutral-700">
+              How your audience moved through the campaign
+            </p>
+
+            <FunnelBar
+              label="Total recipients"
+              count={analytics.total}
+              total={analytics.total}
+            />
+            <FunnelBar
+              label="Successfully sent"
+              count={analytics.sent}
+              total={analytics.total}
+              rate={deliveryRate}
+            />
+            <FunnelBar
+              label="Opened"
+              count={analytics.opened}
+              total={analytics.total}
+              rate={analytics.openRate}
+            />
+            <FunnelBar
+              label="Clicked"
+              count={analytics.clicked}
+              total={analytics.total}
+              rate={analytics.clickRate}
+            />
+            <FunnelBar
+              label="Bounced"
+              count={analytics.bounced}
+              total={analytics.total}
+              rate={analytics.bounceRate}
+            />
+            <FunnelBar
+              label="Failed"
+              count={analytics.failed}
+              total={analytics.total}
+              rate={analytics.failureRate}
+              isLast
+            />
           </div>
 
-          {/* Delivery */}
-          <div className="bg-neutral-950 p-8">
-            <p className="mb-8 text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Delivery
-            </p>
-            <div className="space-y-px">
-              {[
-                { label: "Total Recipients", value: analytics.total },
-                { label: "Successfully Sent", value: analytics.sent },
-                { label: "Failed & Bounced", value: analytics.failed + analytics.bounced },
-                { label: "Clicked Through", value: analytics.clicked },
-              ].map((row, i) => (
-                <div
-                  key={row.label}
-                  className="flex items-center justify-between border-b border-neutral-900 py-4 last:border-b-0"
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="w-5 font-mono text-[10px] text-neutral-700">
-                      {String(i + 1).padStart(2, "0")}
+          {/* Secondary stats — takes 2 cols */}
+          <div className="md:col-span-2 flex flex-col gap-4">
+
+            {/* Raw counts */}
+            <div className="rounded-xl border border-neutral-800 bg-neutral-900 px-6 py-5">
+              <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-neutral-600">
+                Totals
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: "Sent", val: analytics.sent },
+                  { label: "Opened", val: analytics.opened },
+                  { label: "Clicked", val: analytics.clicked },
+                  { label: "Bounced + Failed", val: analytics.bounced + analytics.failed },
+                ].map((s) => (
+                  <div key={s.label} className="flex flex-col gap-1">
+                    <span className="text-xs text-neutral-600">{s.label}</span>
+                    <span className="font-mono text-xl font-semibold text-white">
+                      {s.val.toLocaleString()}
                     </span>
-                    <span className="text-sm text-neutral-400">{row.label}</span>
                   </div>
-                  <span className="font-mono text-sm font-semibold text-white">
-                    {row.value.toLocaleString()}
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
-            {/* Delivery rate visual */}
-            <div className="mt-8">
-              <div className="mb-2 flex justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-neutral-600">
-                  Delivery Rate
-                </span>
-                <span className="font-mono text-xs text-neutral-400">
-                  {analytics.total > 0
-                    ? ((analytics.sent / analytics.total) * 100).toFixed(1)
-                    : "0"}%
-                </span>
-              </div>
-              <div className="relative h-px w-full bg-neutral-800">
-                <div
-                  className="absolute left-0 top-0 h-px bg-white transition-all duration-700 ease-out"
-                  style={{
-                    width: `${analytics.total > 0 ? Math.min((analytics.sent / analytics.total) * 100, 100) : 0}%`,
-                  }}
-                />
+            {/* Problem rates */}
+            <div className="rounded-xl border border-neutral-800 bg-neutral-900 px-6 py-5">
+              <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-neutral-600">
+                Issues to watch
+              </p>
+              <div className="flex flex-col gap-3">
+                <StatPill label="Bounce rate" value={analytics.bounceRate} danger />
+                <StatPill label="Failure rate" value={analytics.failureRate} danger />
               </div>
             </div>
           </div>
         </div>
 
-        {/* ── Tips ── */}
-        <div className="mt-px bg-neutral-900 p-8">
-          <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
+        {/* ── Recommendations ── */}
+        <div className="rounded-xl border border-neutral-800 bg-neutral-900 px-6 py-5">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-neutral-600">
             Recommendations
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              { metric: "Open Rate", tip: "Improve subject line and optimise send time for your audience timezone." },
-              { metric: "Click Rate", tip: "Use a single, clear call-to-action and ensure links are contextually relevant." },
-              { metric: "Bounce Rate", tip: "Clean your mailing list regularly — remove invalid or inactive addresses." },
-              { metric: "List Health", tip: "Consistent metrics over time are the strongest indicator of list quality." },
+              {
+                title: "Open rate",
+                body: "Improve your subject line and optimise send time for your audience's timezone.",
+              },
+              {
+                title: "Click rate",
+                body: "Use one clear call-to-action per email and ensure every link is contextually relevant.",
+              },
+              {
+                title: "Bounce rate",
+                body: "Clean your list regularly — remove addresses that have bounced more than once.",
+              },
+              {
+                title: "List health",
+                body: "Consistent metrics over multiple campaigns are the strongest signal of list quality.",
+              },
             ].map((r) => (
-              <div key={r.metric} className="flex gap-3">
-                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 bg-neutral-600" />
-                <p className="text-xs leading-relaxed text-neutral-500">
-                  <span className="font-semibold text-neutral-400">{r.metric}: </span>
-                  {r.tip}
+              <div
+                key={r.title}
+                className="rounded-lg border border-neutral-800 bg-neutral-950 p-4"
+              >
+                <p className="mb-1 text-xs font-semibold text-neutral-300">
+                  {r.title}
+                </p>
+                <p className="text-xs leading-relaxed text-neutral-600">
+                  {r.body}
                 </p>
               </div>
             ))}
