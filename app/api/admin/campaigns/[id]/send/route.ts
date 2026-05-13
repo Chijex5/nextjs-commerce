@@ -2,12 +2,9 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { adminUsers, emailCampaigns } from "@/lib/db/schema";
 import {
-    getCampaignWithProducts,
-    sendMarketingCampaign,
+  getCampaignWithProducts,
+  sendMarketingCampaign,
 } from "@/lib/email/marketing-campaigns";
-import CollectionTemplate from "@/lib/email/templates/marketing-collection";
-import JustArrivedTemplate from "@/lib/email/templates/marketing-just-arrived";
-import SaleTemplate from "@/lib/email/templates/marketing-sale";
 import { eq } from "drizzle-orm";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -42,7 +39,10 @@ export async function POST(
     });
 
     if (!campaign) {
-      return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Campaign not found" },
+        { status: 404 },
+      );
     }
 
     // Verify campaign has products
@@ -57,28 +57,9 @@ export async function POST(
     const body = await req.json();
     const { sendImmediately, scheduledAt } = body;
 
-    // Select template based on campaign type
-    let Template;
-    switch (campaign.type) {
-      case "JUST_ARRIVED":
-        Template = JustArrivedTemplate;
-        break;
-      case "SALE":
-        Template = SaleTemplate;
-        break;
-      case "COLLECTION":
-        Template = CollectionTemplate;
-        break;
-      default:
-        return NextResponse.json(
-          { error: "Unknown campaign type" },
-          { status: 400 },
-        );
-    }
-
     if (sendImmediately) {
       // Send immediately
-      const result = await sendMarketingCampaign(id, Template);
+      const result = await sendMarketingCampaign(id);
 
       return NextResponse.json({
         message: "Campaign sent",
@@ -111,8 +92,7 @@ export async function POST(
     } else {
       return NextResponse.json(
         {
-          error:
-            "Must specify either sendImmediately or scheduledAt",
+          error: "Must specify either sendImmediately or scheduledAt",
         },
         { status: 400 },
       );

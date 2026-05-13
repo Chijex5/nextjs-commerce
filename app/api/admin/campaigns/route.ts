@@ -1,6 +1,6 @@
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { adminUsers, emailCampaigns } from "@/lib/db/schema";
+import { adminUsers, campaignProducts, emailCampaigns } from "@/lib/db/schema";
 import { desc, eq } from "drizzle-orm";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -97,6 +97,7 @@ export async function POST(req: NextRequest) {
       footerText,
       ctaButtonText,
       ctaButtonUrl,
+      productIds,
     } = body;
 
     if (!name || !type || !subject) {
@@ -106,22 +107,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const campaign = await db.insert(emailCampaigns).values({
-      name,
-      type,
-      subject,
-      preheader,
-      headerTitle,
-      headerSubtitle,
-      footerText,
-      ctaButtonText,
-      ctaButtonUrl,
-      status: "DRAFT",
-      createdBy: admin.id,
-    });
+    const [campaign] = await db
+      .insert(emailCampaigns)
+      .values({
+        name,
+        type,
+        subject,
+        preheader,
+        headerTitle,
+        headerSubtitle,
+        footerText,
+        ctaButtonText,
+        ctaButtonUrl,
+        status: "DRAFT",
+        createdBy: admin.id,
+      })
+      .returning({ id: emailCampaigns.id });
+
+    if (!campaign) {
+      throw new Error("Campaign was not created");
+    }
+
+    if (Array.isArray(productIds) && productIds.length > 0) {
+      await db.insert(campaignProducts).values(
+        productIds.map((productId: string, index: number) => ({
+          campaignId: campaign.id,
+          productId,
+          position: index,
+        })),
+      );
+    }
 
     return NextResponse.json(
-      { message: "Campaign created", campaignId: campaign.toString() },
+      { message: "Campaign created", campaignId: campaign.id },
       { status: 201 },
     );
   } catch (error) {

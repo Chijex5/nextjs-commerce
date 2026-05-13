@@ -1,9 +1,6 @@
 import { db } from "@/lib/db";
 import { emailCampaigns } from "@/lib/db/schema";
 import { sendMarketingCampaign } from "@/lib/email/marketing-campaigns";
-import CollectionTemplate from "@/lib/email/templates/marketing-collection";
-import JustArrivedTemplate from "@/lib/email/templates/marketing-just-arrived";
-import SaleTemplate from "@/lib/email/templates/marketing-sale";
 import { and, eq, isNotNull, lte } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -47,25 +44,8 @@ export async function POST(req: NextRequest) {
 
     for (const campaign of scheduledCampaigns) {
       try {
-        // Select template based on campaign type
-        let Template;
-        switch (campaign.type) {
-          case "JUST_ARRIVED":
-            Template = JustArrivedTemplate;
-            break;
-          case "SALE":
-            Template = SaleTemplate;
-            break;
-          case "COLLECTION":
-            Template = CollectionTemplate;
-            break;
-          default:
-            console.warn(`Unknown campaign type: ${campaign.type}`);
-            continue;
-        }
-
-        // Send the campaign
-        const result = await sendMarketingCampaign(campaign.id, Template);
+        // Send the campaign with the flexible marketing renderer.
+        const result = await sendMarketingCampaign(campaign.id);
         console.log(
           `Campaign ${campaign.id} sent: ${result.sent} sent, ${result.failed} failed`,
         );
