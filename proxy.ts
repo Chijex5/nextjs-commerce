@@ -6,11 +6,11 @@ import { NextResponse } from "next/server";
 const CANONICAL_HOST = canonicalHost();
 const ADMIN_ROLES = new Set(["admin", "super_admin"]);
 const ALLOWED_PREVIEW_HOSTS = new Set(["dev.dfootprint.me"]);
+const isAllowedPreviewHost = (host: string) =>
+  ALLOWED_PREVIEW_HOSTS.has(host) || host.endsWith(".vercel.app");
 
 export default withAuth(
   function proxy(req) {
-
-    
     const isAdminPath = req.nextUrl.pathname.startsWith("/admin");
     const isPublicAdminPath =
       req.nextUrl.pathname === "/admin/login" ||
@@ -29,7 +29,7 @@ export default withAuth(
       const shouldRedirectHost =
         !host.includes("localhost") &&
         hostWithoutPort !== CANONICAL_HOST &&
-        !ALLOWED_PREVIEW_HOSTS.has(hostWithoutPort);
+        !isAllowedPreviewHost(hostWithoutPort);
       const shouldRedirectProtocol = forwardedProto !== "https";
 
       if (shouldRedirectHost || shouldRedirectProtocol) {
