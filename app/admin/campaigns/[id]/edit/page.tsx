@@ -34,7 +34,8 @@ const STEPS = [
   { n: 1, label: "Details", hint: "Name, type & subject" },
   { n: 2, label: "Content", hint: "Template, variables & offer" },
   { n: 3, label: "Products", hint: "Choose what to feature" },
-  { n: 4, label: "Send", hint: "Deliver your campaign" },
+  { n: 4, label: "Preview", hint: "Review the final email" },
+  { n: 5, label: "Send", hint: "Deliver your campaign" },
 ] as const;
 
 const CAMPAIGN_TYPES: Array<{
@@ -300,6 +301,8 @@ export default function CampaignEditorPage() {
     "immediate",
   );
   const [scheduledAt, setScheduledAt] = useState("");
+  const [previewHtml, setPreviewHtml] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const [campaign, setCampaign] = useState<Campaign>({
     id: "",
@@ -363,13 +366,16 @@ export default function CampaignEditorPage() {
   const canAdvance = useMemo(() => {
     if (step === 1) return !!(campaign.name.trim() && campaign.subject.trim());
     if (step === 3) return selectedProducts.length > 0;
-    if (step === 4 && sendMode === "scheduled") return !!scheduledAt;
+    if (step === 4) return !!previewHtml && !previewLoading;
+    if (step === 5 && sendMode === "scheduled") return !!scheduledAt;
     return true;
   }, [
     step,
     campaign.name,
     campaign.subject,
     selectedProducts.length,
+    previewHtml,
+    previewLoading,
     sendMode,
     scheduledAt,
   ]);
@@ -377,7 +383,8 @@ export default function CampaignEditorPage() {
   // ── Save draft ───────────────────────────────────────────────────────────────
   async function saveCampaign({
     redirectAfterSave = false,
-  }: { redirectAfterSave?: boolean } = {}) {
+    showToast = true,
+  }: { redirectAfterSave?: boolean; showToast?: boolean } = {}) {
     if (!campaign.name.trim() || !campaign.subject.trim()) {
       toast.error("Name and subject are required");
       return;
@@ -396,14 +403,15 @@ export default function CampaignEditorPage() {
         ctaButtonUrl: campaign.ctaButtonUrl,
         productIds: selectedProducts,
       });
-      const res = isNew
-        ? await fetch("/api/admin/campaigns", {
-            method: "POST",
+      const existingCampaignId = campaign.id || (!isNew ? campaignId : "");
+      const res = existingCampaignId
+        ? await fetch(`/api/admin/campaigns/${existingCampaignId}`, {
+            method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body,
           })
-        : await fetch(`/api/admin/campaigns/${campaignId}`, {
-            method: "PATCH",
+        : await fetch("/api/admin/campaigns", {
+            method: "POST",
             headers: { "Content-Type": "application/json" },
             body,
           });
@@ -412,9 +420,13 @@ export default function CampaignEditorPage() {
         throw new Error(d.error || "Failed to save");
       }
       const result = await res.json().catch(() => ({}));
-      const savedId = result.campaignId || campaignId || campaign.id;
+      const savedId = result.campaignId || existingCampaignId;
       setCampaign((current) => ({ ...current, id: savedId }));
-      toast.success(isNew ? "Campaign saved as draft" : "Campaign updated");
+      if (showToast) {
+        toast.success(
+          existingCampaignId ? "Campaign updated" : "Campaign saved as draft",
+        );
+      }
       if (redirectAfterSave) {
         router.push("/admin/campaigns");
       }
@@ -430,10 +442,55 @@ export default function CampaignEditorPage() {
     await saveCampaign({ redirectAfterSave: true });
   }
 
+  async function generatePreview({
+    stayOnPreview = true,
+  }: { stayOnPreview?: boolean } = {}) {
+    if (selectedProducts.length === 0) {
+      toast.error("Select at least one product");
+      return;
+    }
+
+    setPreviewLoading(true);
+    try {
+      const id = await saveCampaign({ showToast: false });
+      if (!id) throw new Error("Save the campaign before previewing");
+
+      const res = await fetch(`/api/admin/campaigns/${id}/preview`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || "Failed to generate preview");
+      }
+
+      const result = await res.json();
+      setPreviewHtml(result.html || "");
+      if (stayOnPreview) setStep(4);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to preview");
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
+
+  async function handleContinue() {
+    if (!canAdvance) return;
+    if (step === 3) {
+      await generatePreview();
+      return;
+    }
+    setStep((s) => Math.min(5, s + 1));
+  }
+
   // ── Send / schedule ──────────────────────────────────────────────────────────
   async function handleSend() {
     if (selectedProducts.length === 0) {
       toast.error("Select at least one product");
+      return;
+    }
+    if (!previewHtml) {
+      toast.error("Preview the email before sending");
+      setStep(4);
       return;
     }
     if (sendMode === "scheduled" && !scheduledAt) {
@@ -856,8 +913,84 @@ export default function CampaignEditorPage() {
                 </div>
               )}
 
-              {/* ════ STEP 4: Send / Schedule ════ */}
+              {/* ════ STEP 4: Preview ════ */}
               {step === 4 && (
+                <div className="space-y-5">
+                  <SectionHeader
+                    title="Preview Email"
+                    subtitle="This is how the campaign email will look once sent to subscribers"
+                  />
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-100 bg-neutral-50/70 px-4 py-3 dark:border-neutral-800 dark:bg-neutral-950/30">
+                    <div>
+                      <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
+                        Subject: {campaign.subject}
+                      </p>
+                      <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+                        Preview uses a sample subscriber and your currently
+                        saved products.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => generatePreview()}
+                      disabled={previewLoading || saving}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-medium text-neutral-600 transition-colors hover:bg-neutral-50 disabled:opacity-40 dark:border-neutral-700 dark:bg-transparent dark:text-neutral-300 dark:hover:bg-neutral-800"
+                    >
+                      {previewLoading ? <Spinner /> : null}
+                      Refresh preview
+                    </button>
+                  </div>
+
+                  <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+                    {previewLoading ? (
+                      <div className="flex min-h-[520px] items-center justify-center text-sm text-neutral-400">
+                        <span className="inline-flex items-center gap-2">
+                          <Spinner /> Generating preview…
+                        </span>
+                      </div>
+                    ) : previewHtml ? (
+                      <iframe
+                        title="Campaign email preview"
+                        srcDoc={previewHtml}
+                        className="h-[640px] w-full bg-white"
+                      />
+                    ) : (
+                      <div className="flex min-h-[520px] items-center justify-center px-6 text-center">
+                        <div>
+                          <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                            No preview generated yet
+                          </p>
+                          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                            Click refresh preview to save the latest campaign
+                            and render the email.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 border-t border-neutral-100 pt-4 dark:border-neutral-800">
+                    {[
+                      { label: "Edit details", s: 1 },
+                      { label: "Edit content", s: 2 },
+                      { label: "Change products", s: 3 },
+                    ].map((l) => (
+                      <button
+                        key={l.s}
+                        type="button"
+                        onClick={() => setStep(l.s)}
+                        className="rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-medium text-neutral-500 transition-colors hover:bg-neutral-50 hover:text-neutral-800 dark:border-neutral-700 dark:bg-transparent dark:text-neutral-400 dark:hover:bg-neutral-800"
+                      >
+                        {l.label} ↗
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ════ STEP 5: Send / Schedule ════ */}
+              {step === 5 && (
                 <div className="space-y-5">
                   <SectionHeader
                     title="Send Campaign"
@@ -1016,7 +1149,7 @@ export default function CampaignEditorPage() {
 
               <div className="flex items-center gap-2">
                 {/* Save draft — available on all steps */}
-                {step < 4 && (
+                {step < 5 && (
                   <button
                     type="button"
                     onClick={handleSave}
@@ -1028,14 +1161,18 @@ export default function CampaignEditorPage() {
                   </button>
                 )}
 
-                {step < 4 ? (
+                {step < 5 ? (
                   <button
                     type="button"
-                    onClick={() => setStep((s) => Math.min(4, s + 1))}
-                    disabled={!canAdvance}
+                    onClick={handleContinue}
+                    disabled={!canAdvance || previewLoading}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
                   >
-                    Continue
+                    {previewLoading
+                      ? "Generating preview…"
+                      : step === 4
+                        ? "Continue to send"
+                        : "Continue"}
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                       <path
                         d="M5.5 3L9 7l-3.5 4"
