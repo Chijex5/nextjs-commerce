@@ -98,6 +98,10 @@ export async function POST(req: NextRequest) {
       ctaButtonText,
       ctaButtonUrl,
       heroImageUrl,
+      discountPercentage,
+      couponCode,
+      saleDeadline,
+      discountNote,
       productIds,
     } = body;
 
@@ -121,6 +125,15 @@ export async function POST(req: NextRequest) {
         ctaButtonText,
         ctaButtonUrl,
         heroImageUrl,
+        discountPercentage:
+          discountPercentage === undefined ||
+          discountPercentage === null ||
+          discountPercentage === ""
+            ? null
+            : Number(discountPercentage),
+        couponCode: couponCode ? String(couponCode).toUpperCase() : null,
+        saleDeadline: saleDeadline ? new Date(saleDeadline) : null,
+        discountNote,
         status: "DRAFT",
         createdBy: admin.id,
       })

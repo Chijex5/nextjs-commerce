@@ -13,6 +13,10 @@ import {
   renderMarketingSubject,
 } from "@/lib/email/marketing-renderer";
 import { sendEmail } from "@/lib/email/resend";
+import {
+  renderVariables,
+  type MarketingSubscriber,
+} from "@/lib/email/templates/marketing-campaign-base";
 import crypto from "crypto";
 import { and, asc, eq, inArray } from "drizzle-orm";
 
@@ -53,6 +57,10 @@ interface CampaignData {
   footerText?: string;
   ctaButtonText?: string;
   ctaButtonUrl?: string;
+  discountPercentage?: number | null;
+  couponCode?: string | null;
+  saleDeadline?: Date | null;
+  discountNote?: string | null;
   products: CampaignProduct[];
 }
 
@@ -184,12 +192,20 @@ export async function sendMarketingCampaign(campaignId: string) {
         unsubscribeUrl,
       );
 
+      // Render all template variables
+      const renderedSubject = renderMarketingSubject(campaign, subscriber);
+      const renderedPreheader = renderVariables(campaign?.preheader || "", {
+        campaign,
+        subscriber: subscriber as MarketingSubscriber,
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+      });
+
       // Send email via Resend
       const result = await sendEmail({
         to: subscriber.email,
-        subject: renderMarketingSubject(campaign, subscriber),
+        subject: renderedSubject,
         html: emailHtml,
-        preheader: campaign?.preheader || "",
+        preheader: renderedPreheader,
         headers: {
           "List-Unsubscribe": `<${unsubscribeUrl}>`,
           "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",

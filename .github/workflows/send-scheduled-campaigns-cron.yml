@@ -1,0 +1,22 @@
+name: Send Scheduled Campaign Emails
+
+on:
+  schedule:
+    # Run every hour at the top of the hour (0 minutes)
+    - cron: "0 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  send-campaigns:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call send scheduled campaigns endpoint
+        run: |
+          curl -sS -X POST "${{ secrets.APP_BASE_URL }}/api/cron/send-scheduled-campaigns" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{}'
+      
+      - name: Workflow status notification
+        if: failure()
+        run: echo "Campaign email send job failed!"

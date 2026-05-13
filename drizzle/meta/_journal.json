@@ -5,85 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1769953873977,
-      "tag": "0000_careful_thunderbird",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1772318400000,
-      "tag": "0001_custom_order_pipeline",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1772550000000,
-      "tag": "0002_quote_payment_automation",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1772559600000,
-      "tag": "0003_product_search_fts_trgm",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1772815200000,
-      "tag": "0004_paystack_payment_ledger",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1772901600000,
-      "tag": "0005_google_merchant_product_sync",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1773072000000,
-      "tag": "0006_account_customisation",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1773141000000,
-      "tag": "0007_cart_expiry",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1773172800000,
-      "tag": "0008_coupon_shipping_guards",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1773360000000,
-      "tag": "0009_cart_session_identity",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1774041600000,
-      "tag": "0010_admin_password_resets",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1778523102412,
-      "tag": "0011_married_alex_wilder",
+      "when": 1778710520119,
+      "tag": "0000_youthful_marvex",
       "breakpoints": true
     }
   ]

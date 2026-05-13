@@ -6,6 +6,7 @@ import { renderMarketingCampaignEmail } from "@/lib/email/marketing-renderer";
 import { eq } from "drizzle-orm";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
+import { renderVariables } from "@/lib/email/templates/marketing-campaign-base";
 
 // POST /api/admin/campaigns/[id]/preview - Generate preview HTML
 export async function POST(
@@ -37,18 +38,33 @@ export async function POST(
     // Render preview with sample subscriber. Marketing campaigns are admin-authored
     // HTML strings instead of React Email components so copy, variables, and sales
     // offers can stay flexible without adding a component for every campaign shape.
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
     const previewHtml = renderMarketingCampaignEmail(
       campaign,
       {
         email: session.user.email,
         name: admin.name || "Subscriber",
       },
-      "#",
+      `${siteUrl}/unsubscribe?preview=1`,
     );
+
+    const correctedSubject = renderVariables(campaign.subject, {
+      campaign,
+      subscriber: {
+        email: session.user.email,
+        name: admin.name || "Subscriber",
+      },
+      siteUrl,
+    });
+
+    const correctedCampaign = {
+      ...campaign,
+      subject: correctedSubject,
+    };
 
     return NextResponse.json({
       html: previewHtml,
-      campaign,
+      campaign: correctedCampaign,
     });
   } catch (error) {
     console.error("Error generating preview:", error);

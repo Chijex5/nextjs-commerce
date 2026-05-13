@@ -5,6 +5,7 @@ import {
   getCampaignWithProducts,
   sendMarketingCampaign,
 } from "@/lib/email/marketing-campaigns";
+import { renderVariables } from "@/lib/email/templates/marketing-campaign-base"; 
 import { eq } from "drizzle-orm";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
