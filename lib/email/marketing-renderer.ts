@@ -21,6 +21,10 @@ export type MarketingCampaign = {
   ctaButtonText?: string | null;
   ctaButtonUrl?: string | null;
   heroImageUrl?: string | null;
+  discountPercentage?: number | null;
+  couponCode?: string | null;
+  saleDeadline?: Date | string | null;
+  discountNote?: string | null;
   products: MarketingCampaignProduct[];
 };
 
@@ -122,6 +126,53 @@ export function renderVariables(
   });
 }
 
+function formatSaleDeadline(
+  deadline: Date | string | null | undefined,
+): string {
+  if (!deadline) return "";
+  const date = deadline instanceof Date ? deadline : new Date(deadline);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return `Offer ends ${date.toLocaleDateString("en-NG", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  })}`;
+}
+
+function renderSaleDetails(campaign: MarketingCampaign): string {
+  if (campaign.type !== "SALE") return "";
+
+  const details: string[] = [];
+  if (campaign.discountPercentage) {
+    details.push(
+      `<strong style="font-size:18px;color:#111111;">${escapeHtml(campaign.discountPercentage)}% OFF</strong>`,
+    );
+  }
+  if (campaign.couponCode) {
+    details.push(
+      `Use code <strong style="color:#111111;letter-spacing:.08em;">${escapeHtml(campaign.couponCode)}</strong>`,
+    );
+  }
+  const deadlineLabel = formatSaleDeadline(campaign.saleDeadline);
+  if (deadlineLabel) {
+    details.push(escapeHtml(deadlineLabel));
+  }
+  if (campaign.discountNote) {
+    details.push(escapeHtml(campaign.discountNote));
+  }
+
+  if (details.length === 0) return "";
+
+  return `
+    <div style="border:1px solid #e5e5e5;border-left:4px solid #111111;background:#fafafa;margin:22px 0 24px;padding:16px 18px;">
+      <p style="margin:0 0 10px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#6b7280;font-weight:700;">Sale details</p>
+      <div style="font-size:14px;color:#374151;line-height:1.7;">${details
+        .map((detail) => `<p style="margin:0 0 6px;">${detail}</p>`)
+        .join("")}</div>
+    </div>`;
+}
+
 function renderParagraphs(markdownLikeText: string): string {
   return markdownLikeText
     .split(/\n{2,}/)
@@ -164,7 +215,9 @@ export function renderMarketingCampaignBody(
     renderVariables(campaign.ctaButtonUrl, context),
     siteUrl,
   );
-  const heroUrl = campaign.heroImageUrl ? normalizeUrl(campaign.heroImageUrl, siteUrl) : null;
+  const heroUrl = campaign.heroImageUrl
+    ? normalizeUrl(campaign.heroImageUrl, siteUrl)
+    : null;
   const placeholder = `${siteUrl}/images/product-placeholder.png`;
 
   const productsHtml = campaign.products
@@ -204,16 +257,21 @@ export function renderMarketingCampaignBody(
 
   return `
     <div style="margin:0;">
-      ${heroUrl ? `
+      ${
+        heroUrl
+          ? `
       <div style="margin: -36px -40px 32px; overflow: hidden; background-color: #1a1a1a; line-height: 0;">
         <a href="${siteUrl}/products" target="_blank" rel="noopener noreferrer" style="display: block; text-decoration: none; line-height: 0;">
           <img src="${escapeHtml(heroUrl)}" alt="" width="600" style="display: block; width: 100%; max-width: 600px; height: auto; border: 0;" />
         </a>
       </div>
-      ` : ""}
+      `
+          : ""
+      }
       <p style="margin:0 0 10px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#9ca3af;font-weight:700;">${escapeHtml(templateLabels[campaign.type])}</p>
       <h1 style="margin:0 0 16px;font-family:Georgia,'Times New Roman',Times,serif;color:#111111;font-size:26px;font-weight:400;line-height:1.3;letter-spacing:-.01em;">${escapeHtml(title)}</h1>
       ${renderParagraphs(subtitle)}
+      ${renderSaleDetails(campaign)}
       <div style="border-top:1px solid #e8e8e6;margin:28px 0;"></div>
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">${productsHtml}</table>
       <div style="border-top:1px solid #e8e8e6;margin:28px 0;"></div>

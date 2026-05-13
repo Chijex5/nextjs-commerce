@@ -53,6 +53,10 @@ interface CampaignData {
   footerText?: string;
   ctaButtonText?: string;
   ctaButtonUrl?: string;
+  discountPercentage?: number | null;
+  couponCode?: string | null;
+  saleDeadline?: Date | null;
+  discountNote?: string | null;
   products: CampaignProduct[];
 }
 

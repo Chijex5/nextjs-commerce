@@ -19,6 +19,10 @@ interface Campaign {
   ctaButtonText: string;
   ctaButtonUrl: string;
   heroImageUrl?: string;
+  discountPercentage: number | null;
+  couponCode: string;
+  saleDeadline: string | null;
+  discountNote: string;
   products?: Array<{ id: string }>;
 }
 
@@ -72,6 +76,10 @@ const TEMPLATE_PRESETS: Record<
     | "footerText"
     | "ctaButtonText"
     | "ctaButtonUrl"
+    | "discountPercentage"
+    | "couponCode"
+    | "saleDeadline"
+    | "discountNote"
   >
 > = {
   JUST_ARRIVED: {
@@ -83,6 +91,10 @@ const TEMPLATE_PRESETS: Record<
     footerText: "New styles move quickly. Pick your size before they sell out.",
     ctaButtonText: "Shop new arrivals",
     ctaButtonUrl: "/products",
+    discountPercentage: null,
+    couponCode: "",
+    saleDeadline: null,
+    discountNote: "",
   },
   SALE: {
     subject: "{{firstName}}, your limited Dfootprint offer is here",
@@ -94,6 +106,10 @@ const TEMPLATE_PRESETS: Record<
       "Offer details: add the discount amount, coupon code, start/end date, exclusions, and any urgency notes here.",
     ctaButtonText: "Shop the offer",
     ctaButtonUrl: "/products",
+    discountPercentage: null,
+    couponCode: "",
+    saleDeadline: null,
+    discountNote: "",
   },
   COLLECTION: {
     subject: "A curated collection for {{firstName}}",
@@ -105,6 +121,10 @@ const TEMPLATE_PRESETS: Record<
       "Need help choosing? Reply to this email and we will help you decide.",
     ctaButtonText: "Browse collection",
     ctaButtonUrl: "/products",
+    discountPercentage: null,
+    couponCode: "",
+    saleDeadline: null,
+    discountNote: "",
   },
 };
 
@@ -287,6 +307,31 @@ function StepIndicator({
   );
 }
 
+function toDatetimeLocalValue(value: string | Date | null | undefined) {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const offsetMs = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
+function getDatetimeLocalNow() {
+  return toDatetimeLocalValue(new Date());
+}
+
+function formatSaleDeadline(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return `Offer ends ${date.toLocaleDateString("en-NG", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  })}`;
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CampaignEditorPage() {
@@ -320,6 +365,10 @@ export default function CampaignEditorPage() {
     ctaButtonText: "",
     ctaButtonUrl: "",
     heroImageUrl: "",
+    discountPercentage: null,
+    couponCode: "",
+    saleDeadline: null,
+    discountNote: "",
   });
 
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
@@ -351,6 +400,10 @@ export default function CampaignEditorPage() {
             footerText: d.campaign.footerText || "",
             ctaButtonText: d.campaign.ctaButtonText || "",
             ctaButtonUrl: d.campaign.ctaButtonUrl || "",
+            discountPercentage: d.campaign.discountPercentage ?? null,
+            couponCode: d.campaign.couponCode || "",
+            saleDeadline: toDatetimeLocalValue(d.campaign.saleDeadline),
+            discountNote: d.campaign.discountNote || "",
           });
           setSelectedProducts(
             d.campaign.products?.map((p: { id: string }) => p.id) || [],
@@ -425,6 +478,10 @@ export default function CampaignEditorPage() {
         ctaButtonText: campaign.ctaButtonText,
         ctaButtonUrl: campaign.ctaButtonUrl,
         heroImageUrl: campaign.heroImageUrl,
+        discountPercentage: campaign.discountPercentage,
+        couponCode: campaign.couponCode,
+        saleDeadline: campaign.saleDeadline,
+        discountNote: campaign.discountNote,
         productIds: selectedProducts,
       });
       const existingCampaignId = campaign.id || (!isNew ? campaignId : "");
@@ -651,6 +708,8 @@ export default function CampaignEditorPage() {
   );
 
   const selectedType = CAMPAIGN_TYPES.find((t) => t.value === campaign.type)!;
+  const saleDeadlineMin = useMemo(() => getDatetimeLocalNow(), []);
+  const saleDeadlineLabel = formatSaleDeadline(campaign.saleDeadline);
 
   const applyTemplatePreset = (type = campaign.type) => {
     set({ type, ...TEMPLATE_PRESETS[type] });
@@ -942,6 +1001,95 @@ export default function CampaignEditorPage() {
                       />
                     </div>
                   </div>
+
+                  {campaign.type === "SALE" && (
+                    <div className="border-t border-neutral-100 pt-5 dark:border-neutral-800">
+                      <div className="mb-4">
+                        <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                          Sale details
+                        </h3>
+                        <p className="mt-0.5 text-xs text-neutral-400 dark:text-neutral-500">
+                          Add structured offer details for the sale email.
+                        </p>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <FieldLabel htmlFor="discountPercentage">
+                            Discount %
+                          </FieldLabel>
+                          <input
+                            id="discountPercentage"
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={campaign.discountPercentage ?? ""}
+                            onChange={(e) =>
+                              set({
+                                discountPercentage: e.target.value
+                                  ? Number(e.target.value)
+                                  : null,
+                              })
+                            }
+                            placeholder="e.g. 20"
+                            className={inputCls}
+                          />
+                        </div>
+                        <div>
+                          <FieldLabel htmlFor="couponCode" optional>
+                            Coupon Code
+                          </FieldLabel>
+                          <input
+                            id="couponCode"
+                            type="text"
+                            value={campaign.couponCode}
+                            onChange={(e) =>
+                              set({ couponCode: e.target.value.toUpperCase() })
+                            }
+                            placeholder="e.g. DFPRINT20"
+                            className={`${inputCls} uppercase`}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <FieldLabel htmlFor="saleDeadline" optional>
+                          Offer expires
+                        </FieldLabel>
+                        <input
+                          id="saleDeadline"
+                          type="datetime-local"
+                          min={saleDeadlineMin}
+                          value={campaign.saleDeadline || ""}
+                          onChange={(e) =>
+                            set({ saleDeadline: e.target.value || null })
+                          }
+                          className={inputCls}
+                        />
+                        <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500">
+                          Shown in the email as a countdown label, e.g.
+                          &quot;Offer ends Friday 23 May&quot;
+                          {saleDeadlineLabel ? ` — ${saleDeadlineLabel}` : ""}
+                        </p>
+                      </div>
+
+                      <div className="mt-4">
+                        <FieldLabel htmlFor="discountNote" optional>
+                          Fine print / exclusions
+                        </FieldLabel>
+                        <textarea
+                          id="discountNote"
+                          value={campaign.discountNote}
+                          onChange={(e) =>
+                            set({ discountNote: e.target.value })
+                          }
+                          placeholder="e.g. Selected styles only. No minimum spend."
+                          rows={2}
+                          className={inputCls}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

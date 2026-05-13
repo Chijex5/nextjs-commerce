@@ -877,6 +877,10 @@ export const emailCampaigns = pgTable(
     ctaButtonText: varchar("cta_button_text", { length: 100 }),
     ctaButtonUrl: text("cta_button_url"),
     heroImageUrl: text("hero_image_url"),
+    discountPercentage: integer("discount_percentage"),
+    couponCode: varchar("coupon_code", { length: 50 }),
+    saleDeadline: timestamp("sale_deadline"),
+    discountNote: text("discount_note"),
     status: varchar("status", { length: 50 }).default("draft").notNull(), // DRAFT, SCHEDULED, SENT
     scheduledAt: timestamp("scheduled_at"),
     sentAt: timestamp("sent_at"),

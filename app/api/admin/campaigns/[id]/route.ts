@@ -40,7 +40,10 @@ export async function GET(
     });
 
     if (!campaign) {
-      return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Campaign not found" },
+        { status: 404 },
+      );
     }
 
     // Get campaign products
@@ -113,7 +116,10 @@ export async function PATCH(
     });
 
     if (!campaign) {
-      return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Campaign not found" },
+        { status: 404 },
+      );
     }
 
     // Only allow updating DRAFT campaigns (or SCHEDULED before sending)
@@ -127,6 +133,7 @@ export async function PATCH(
     const body = await req.json();
     const {
       name,
+      type,
       subject,
       preheader,
       headerTitle,
@@ -136,12 +143,17 @@ export async function PATCH(
       ctaButtonUrl,
       scheduledAt,
       heroImageUrl,
+      discountPercentage,
+      couponCode,
+      saleDeadline,
+      discountNote,
       productIds, // Array of product IDs to include
     } = body;
 
     // Update campaign fields
     const updates: any = {};
     if (name !== undefined) updates.name = name;
+    if (type !== undefined) updates.type = type;
     if (subject !== undefined) updates.subject = subject;
     if (preheader !== undefined) updates.preheader = preheader;
     if (headerTitle !== undefined) updates.headerTitle = headerTitle;
@@ -150,6 +162,19 @@ export async function PATCH(
     if (ctaButtonText !== undefined) updates.ctaButtonText = ctaButtonText;
     if (ctaButtonUrl !== undefined) updates.ctaButtonUrl = ctaButtonUrl;
     if (heroImageUrl !== undefined) updates.heroImageUrl = heroImageUrl;
+    if (discountPercentage !== undefined) {
+      updates.discountPercentage =
+        discountPercentage === null || discountPercentage === ""
+          ? null
+          : Number(discountPercentage);
+    }
+    if (couponCode !== undefined) {
+      updates.couponCode = couponCode ? String(couponCode).toUpperCase() : null;
+    }
+    if (saleDeadline !== undefined) {
+      updates.saleDeadline = saleDeadline ? new Date(saleDeadline) : null;
+    }
+    if (discountNote !== undefined) updates.discountNote = discountNote;
     if (scheduledAt !== undefined) {
       updates.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
       if (scheduledAt) {
@@ -223,7 +248,10 @@ export async function DELETE(
     });
 
     if (!campaign) {
-      return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Campaign not found" },
+        { status: 404 },
+      );
     }
 
     // Only allow deleting DRAFT campaigns
