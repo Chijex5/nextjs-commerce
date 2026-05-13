@@ -39,25 +39,3 @@ export async function GET() {
   }
 }
 
-// GET /api/admin/subscribers/count - return active subscriber count
-export async function GET(req: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const admin = await db.query.adminUsers.findFirst({
-      where: eq(adminUsers.email, session.user.email as string),
-    });
-    if (!admin || !admin.isActive) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-    }
-
-    const rows = await db.select().from(newsletterSubscribers).where(eq(newsletterSubscribers.status, "active"));
-    return NextResponse.json({ count: rows.length });
-  } catch (error) {
-    console.error("Error fetching subscriber count:", error);
-    return NextResponse.json({ error: "Failed to fetch count" }, { status: 500 });
-  }
-}
