@@ -123,7 +123,7 @@ function renderProductVisual(
 export function renderProductGrid(
   products: MarketingCampaignProduct[],
   siteUrl: string,
-  options: { rowPaddingBottom?: number } = {},
+  options: { rowPaddingBottom?: number; discountPercentage?: number | null } = {},
 ) {
   const shownProducts = products.slice(0, 6);
   const hiddenCount = Math.max(products.length - shownProducts.length, 0);
@@ -138,10 +138,15 @@ export function renderProductGrid(
       ? renderProductCell(left, siteUrl, {
           paddingRight: right ? 4 : 0,
           paddingLeft: 0,
+          discountPercentage: options.discountPercentage,
         })
       : "";
     const rightCell = right
-      ? renderProductCell(right, siteUrl, { paddingRight: 0, paddingLeft: 4 })
+      ? renderProductCell(right, siteUrl, {
+          paddingRight: 0,
+          paddingLeft: 4,
+          discountPercentage: options.discountPercentage,
+        })
       : "";
 
     rows.push(`
@@ -166,12 +171,27 @@ export function renderProductGrid(
 function renderProductCell(
   product: MarketingCampaignProduct,
   siteUrl: string,
-  spacing: { paddingRight: number; paddingLeft: number },
+  spacing: { paddingRight: number; paddingLeft: number; discountPercentage?: number | null },
 ) {
   const productUrl = normalizeUrl(`/product/${product.handle}`, siteUrl);
-  const price = product.price
-    ? `<p style="margin:4px 0 0;font-size:12px;color:#6b7280;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;">${escapeHtml(product.price)}</p>`
-    : "";
+
+  let price = "";
+  if (product.price) {
+    if (spacing.discountPercentage) {
+      const raw = parseFloat(product.price.replace(/[^0-9.]/g, ""));
+      const symbol = product.price.replace(/[0-9.,\s]/g, "").trim();
+      const saleValue = Math.round(raw * (1 - spacing.discountPercentage / 100));
+      const origFormatted = raw.toLocaleString("en-NG");
+      const saleFormatted = saleValue.toLocaleString("en-NG");
+      price = `
+        <p style="margin:4px 0 0;font-size:12px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;">
+          <span style="text-decoration:line-through;color:#9ca3af;">${escapeHtml(symbol + origFormatted)}</span>
+          <span style="color:#dc2626;font-weight:700;margin-left:6px;">${escapeHtml(symbol + saleFormatted)}</span>
+        </p>`;
+    } else {
+      price = `<p style="margin:4px 0 0;font-size:12px;color:#6b7280;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;">${escapeHtml(product.price)}</p>`;
+    }
+  }
 
   return `
     <td width="50%" valign="top" style="width:50%;padding:0 ${spacing.paddingRight}px 0 ${spacing.paddingLeft}px;vertical-align:top;">

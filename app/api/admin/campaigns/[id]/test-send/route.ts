@@ -4,6 +4,7 @@ import { adminUsers } from "@/lib/db/schema";
 import { getCampaignWithProducts } from "@/lib/email/marketing-campaigns";
 import { renderMarketingCampaignEmail } from "@/lib/email/marketing-renderer";
 import { sendEmail } from "@/lib/email/resend";
+import { renderVariables } from "@/lib/email/templates/marketing-campaign-base";
 import { eq } from "drizzle-orm";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -45,14 +46,21 @@ export async function POST(
     // Render email HTML. Pass empty unsubscribe URL so footer is omitted.
     const emailHtml = renderMarketingCampaignEmail(campaign as any, mockSubscriber as any, "");
 
-    const subject = `[TEST] ${campaign.subject}`;
+    const subject = `[TEST] ${renderVariables(campaign.subject, { campaign, subscriber: mockSubscriber, siteUrl: process.env.NEXT_PUBLIC_SITE_URL|| "http://localhost:3000" })}`;
 
-    const result = await sendEmail({
-      to: admin.email as string,
-      subject,
-      html: emailHtml,
-      preheader: campaign?.preheader || "",
-    });
+
+      const preheader = renderVariables(campaign?.preheader || "", {
+        campaign,
+        subscriber: mockSubscriber,
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+      });
+
+      const result = await sendEmail({
+        to: admin.email as string,
+        subject,
+        html: emailHtml,
+        preheader,
+      });
 
     if (!result.success) {
       console.error("Test send failed:", result.error);

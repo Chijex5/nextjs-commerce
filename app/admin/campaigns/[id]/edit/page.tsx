@@ -2,6 +2,7 @@
 
 import { ChevronLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import { format } from "path";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -382,6 +383,7 @@ export default function CampaignEditorPage() {
   // Subscriber count for Send step
   const [subscriberCount, setSubscriberCount] = useState<number | null>(null);
   const [subscriberCountLoading, setSubscriberCountLoading] = useState(false);
+  const [formattedSubject, setFormattedSubject] = useState(campaign.subject);
 
   // ── Data fetching ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -546,6 +548,7 @@ export default function CampaignEditorPage() {
 
       const result = await res.json();
       setPreviewHtml(result.html || "");
+      setFormattedSubject(result.campaign?.subject || campaign.subject);
       if (stayOnPreview) setStep(4);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to preview");
@@ -1279,7 +1282,7 @@ export default function CampaignEditorPage() {
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-100 bg-neutral-50/70 px-4 py-3 dark:border-neutral-800 dark:bg-neutral-950/30">
                     <div>
                       <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-                        Subject: {campaign.subject}
+                        Subject: {formattedSubject}
                       </p>
                       <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
                         Preview uses a sample subscriber and your currently

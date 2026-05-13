@@ -66,7 +66,7 @@ export function buildSaleContent(
         : ""
     }
 
-    ${renderProductGrid(campaign.products || [], siteUrl)}
+    ${renderProductGrid(campaign.products || [], siteUrl, { discountPercentage: campaign.discountPercentage })}
 
     ${
       discountNote
