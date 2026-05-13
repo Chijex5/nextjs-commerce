@@ -37,13 +37,14 @@ export async function POST(
     // Render preview with sample subscriber. Marketing campaigns are admin-authored
     // HTML strings instead of React Email components so copy, variables, and sales
     // offers can stay flexible without adding a component for every campaign shape.
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
     const previewHtml = renderMarketingCampaignEmail(
       campaign,
       {
         email: session.user.email,
         name: admin.name || "Subscriber",
       },
-      "#",
+      `${siteUrl}/unsubscribe?preview=1`,
     );
 
     return NextResponse.json({
