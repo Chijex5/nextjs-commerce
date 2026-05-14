@@ -16,7 +16,7 @@ export function buildSaleContent(
 ): string {
   const context = { campaign, subscriber, siteUrl };
   const title = renderVariables(
-    campaign.headerTitle || "A considered offer from D'FOOTPRINT",
+    campaign.headerTitle || "A considered offer from D'FOOTPRINT.",
     context,
   );
   const subtitle = renderVariables(
@@ -35,6 +35,9 @@ export function buildSaleContent(
   const couponCode = campaign.couponCode?.trim().toUpperCase();
   const discountNote = renderVariables(campaign.discountNote, context);
 
+  // discountPercentage is a number — use it directly, no escapeHtml needed
+  const discountPct = campaign.discountPercentage ?? null;
+
   return `
     ${renderHeroImage(campaign, siteUrl, "D'FOOTPRINT sale footwear")}
 
@@ -42,8 +45,10 @@ export function buildSaleContent(
       <tr>
         <td style="padding:20px 16px;">
           ${
-            campaign.discountPercentage
-              ? `<p style="margin:0;font-family:Georgia,'Times New Roman',Times,serif;color:#111111;line-height:1;"><span style="font-size:48px;font-weight:400;letter-spacing:-0.04em;">${escapeHtml(campaign.discountPercentage)}</span><span style="font-size:16px;letter-spacing:0.14em;text-transform:uppercase;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-weight:700;">% OFF</span></p>
+            discountPct
+              ? `<p style="margin:0;font-family:Georgia,'Times New Roman',Times,serif;color:#111111;line-height:1;">
+                   <span style="font-size:48px;font-weight:400;letter-spacing:-0.04em;">${discountPct}</span><span style="font-size:16px;letter-spacing:0.14em;text-transform:uppercase;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-weight:700;">% OFF</span>
+                 </p>
                  <p style="margin:12px 0 0;font-size:14px;color:#374151;line-height:1.65;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;">${escapeHtml(title)}</p>`
               : `<h2 style="margin:0;font-family:Georgia,'Times New Roman',Times,serif;font-size:22px;line-height:1.3;font-weight:400;color:#111111;">${escapeHtml(title)}</h2>`
           }
@@ -66,7 +71,7 @@ export function buildSaleContent(
         : ""
     }
 
-    ${renderProductGrid(campaign.products || [], siteUrl, { discountPercentage: campaign.discountPercentage })}
+    ${renderProductGrid(campaign.products || [], siteUrl, { discountPercentage: discountPct })}
 
     ${
       discountNote
