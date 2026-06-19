@@ -8,7 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-const HERO_ROTATE_MS = 5000;
+const HERO_ROTATE_MS = 6000;
 
 export default function HeroCarousel({ products }: { products: Product[] }) {
   const items = useMemo(
@@ -41,122 +41,125 @@ export default function HeroCarousel({ products }: { products: Product[] }) {
   if (!items.length) return null;
 
   const activeProduct = items[activeIndex];
-
   if (!activeProduct) return null;
 
-  const previewItems = items
-    .map((product, index) => ({ product, index }))
-    .filter((item) => item.index !== activeIndex)
-    .slice(0, 3);
-
   return (
-    <div className="space-y-4">
-      <Link href={`/product/${activeProduct.handle}`} className="group block">
-        <div className="relative overflow-hidden rounded-[28px] border border-neutral-200 bg-neutral-100 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-          <div className="relative aspect-[4/5] sm:aspect-[5/6]">
-            {items.map((product, index) => (
-              <Image
-                key={product.id}
-                src={product.featuredImage?.url ?? ""}
-                alt={product.featuredImage?.altText || product.title}
-                fill
-                sizes="(min-width: 1280px) 42vw, (min-width: 1024px) 45vw, (min-width: 640px) 70vw, 90vw"
-                className={clsx(
-                  "object-cover transition-opacity duration-700",
-                  index === activeIndex ? "opacity-100" : "opacity-0",
-                )}
-                priority={index === 0}
-              />
-            ))}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/70">
-                Featured product
-              </p>
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={activeProduct.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                    transition: { duration: 0.3, ease: [0, 0, 0.2, 1] },
-                  }}
-                  exit={{
-                    opacity: 0,
-                    y: -4,
-                    transition: { duration: 0.15, ease: [0.4, 0, 1, 1] },
+    <div className="h-full w-full">
+      <Link
+        href={`/product/${activeProduct.handle}`}
+        className="group relative block h-full w-full overflow-hidden"
+        style={{ background: "var(--dp-charcoal)" }}
+      >
+        {items.map((product, index) => (
+          <Image
+            key={product.id}
+            src={product.featuredImage?.url ?? ""}
+            alt={product.featuredImage?.altText || product.title}
+            fill
+            sizes="(min-width: 1024px) 48vw, 100vw"
+            className={clsx(
+              "object-cover transition-opacity duration-[1400ms] ease-out",
+              index === activeIndex ? "opacity-100" : "opacity-0",
+            )}
+            style={{ filter: "brightness(0.94) saturate(0.96)" }}
+            priority={index === 0}
+          />
+        ))}
+
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to top, rgba(6,4,2,0.86) 0%, rgba(6,4,2,0.08) 42%, transparent 65%)",
+          }}
+        />
+
+        <div className="absolute inset-x-0 bottom-0 p-7 sm:p-9">
+          <p
+            className="dp-label"
+            style={{ color: "rgba(242,232,213,0.55)", marginBottom: "0.6rem" }}
+          >
+            {String(activeIndex + 1).padStart(2, "0")} /{" "}
+            {String(items.length).padStart(2, "0")} — Featured
+          </p>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={activeProduct.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
+              }}
+              exit={{
+                opacity: 0,
+                y: -6,
+                transition: { duration: 0.25, ease: [0.4, 0, 1, 1] },
+              }}
+            >
+              <h3
+                className="dp-serif"
+                style={{
+                  fontSize: "clamp(1.4rem, 2.6vw, 2rem)",
+                  fontWeight: 500,
+                  color: "var(--dp-cream)",
+                  lineHeight: 1.15,
+                }}
+              >
+                {activeProduct.title}
+              </h3>
+              <div className="mt-3 flex items-center gap-4">
+                <Price
+                  amount={activeProduct.priceRange.maxVariantPrice.amount}
+                  currencyCode={
+                    activeProduct.priceRange.maxVariantPrice.currencyCode
+                  }
+                  currencyCodeClassName="hidden"
+                  className="dp-sans"
+                  style={
+                    {
+                      fontSize: "0.95rem",
+                      color: "var(--dp-gold)",
+                    } as React.CSSProperties
+                  }
+                />
+                <span
+                  className="dp-sans"
+                  style={{
+                    fontSize: "0.66rem",
+                    fontWeight: 500,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: "var(--dp-cream)",
+                    borderBottom: "1px solid var(--dp-ember)",
+                    paddingBottom: 2,
                   }}
                 >
-                  <h3 className="mt-2 text-xl font-semibold text-white sm:text-2xl">
-                    {activeProduct.title}
-                  </h3>
-                  <div className="mt-3 flex flex-wrap items-center gap-3 text-white">
-                    <Price
-                      amount={activeProduct.priceRange.maxVariantPrice.amount}
-                      currencyCode={
-                        activeProduct.priceRange.maxVariantPrice.currencyCode
-                      }
-                      currencyCodeClassName="hidden"
-                      className="text-base font-semibold text-white"
-                    />
-                    <span className="rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white backdrop-blur">
-                      Shop now
-                    </span>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </div>
+                  View piece
+                </span>
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </Link>
 
-      {previewItems.length > 0 ? (
-        <div className="grid grid-cols-3 gap-3">
-          {previewItems.map(({ product, index }) => (
-            <button
-              key={product.id}
-              type="button"
-              onClick={() => setActiveIndex(index)}
-              className="group text-left"
-              aria-label={`Show ${product.title}`}
-            >
-              <div
-                className={clsx(
-                  "relative aspect-[4/5] overflow-hidden rounded-2xl border bg-neutral-100 transition-all duration-300 dark:bg-neutral-900",
-                  index === activeIndex
-                    ? "border-neutral-900 shadow-sm dark:border-neutral-200"
-                    : "border-neutral-200 hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600",
-                )}
-              >
-                <Image
-                  src={product.featuredImage?.url ?? ""}
-                  alt={product.featuredImage?.altText || product.title}
-                  fill
-                  sizes="(min-width: 1024px) 10vw, (min-width: 640px) 18vw, 30vw"
-                  className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              </div>
-            </button>
-          ))}
-        </div>
-      ) : null}
-
       {items.length > 1 ? (
-        <div className="flex items-center gap-2">
+        <div className="mt-4 flex items-center gap-2">
           {items.map((product, index) => (
             <button
               key={product.id}
               type="button"
               onClick={() => setActiveIndex(index)}
-              className={clsx(
-                "h-2 w-8 rounded-full transition-colors",
-                index === activeIndex
-                  ? "bg-neutral-900 dark:bg-white"
-                  : "bg-neutral-300 dark:bg-neutral-700",
-              )}
               aria-label={`Show ${product.title}`}
+              style={{
+                height: 1,
+                width: index === activeIndex ? 32 : 16,
+                background:
+                  index === activeIndex
+                    ? "var(--dp-cream)"
+                    : "rgba(242,232,213,0.25)",
+                transition: "all 0.4s cubic-bezier(0.16,1,0.3,1)",
+              }}
             />
           ))}
         </div>

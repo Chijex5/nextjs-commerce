@@ -56,7 +56,10 @@ export const metadata: Metadata = {
   },
 };
 
-// Fallback font objects for production builds without network access
+// Google Fonts are unreachable in this build environment, so these are
+// system-font stacks chosen to read as an editorial maison rather than a
+// generic webfont fallback (see app/globals.css for the small-caps /
+// tracking treatment that stands in for a true display face).
 const inter = {
   variable: "--font-inter",
 };
