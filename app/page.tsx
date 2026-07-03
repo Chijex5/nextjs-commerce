@@ -41,7 +41,9 @@ export const metadata: Metadata = {
 
 // Full-bleed cinematic hero — a single photograph, no carousel.
 const HERO = {
-  imageUrl: "", // ← portrait / hero pair photograph (shot tall, 4:5 or taller)
+  // Demo photo (Unsplash, free for commercial use) — swap for your own.
+  imageUrl:
+    "https://images.unsplash.com/photo-1603189343302-e603f7add05a?w=1600&q=80&auto=format&fit=crop", // ← portrait / hero pair photograph (shot tall, 4:5 or taller)
   caption: "Hero photograph — a model or signature pair, shot full-bleed.",
   kicker: "Handcrafted in Nigeria · Est. Day One",
   tagline:
@@ -50,7 +52,9 @@ const HERO = {
 
 // Brand-story split — atelier / hands-at-work imagery.
 const STORY = {
-  imageUrl: "", // ← atelier, leather, or hands-crafting photograph (portrait)
+  // Demo photo (Unsplash, free for commercial use) — swap for your own.
+  imageUrl:
+    "https://images.unsplash.com/photo-1613915617430-8ab0fd7c6baf?w=1600&q=80&auto=format&fit=crop", // ← atelier, leather, or hands-crafting photograph (portrait)
   caption: "The craft — hands, leather, and the making of a pair.",
   kicker: "The Craft",
   title: "Made by hand, meant to last.",
@@ -59,13 +63,17 @@ const STORY = {
 
 // Wide statement image that opens the custom-order section.
 const CUSTOM_HERO = {
-  imageUrl: "", // ← wide, cinematic bespoke shot (landscape 21:9-ish)
+  // Demo photo (Unsplash, free for commercial use) — swap for your own.
+  imageUrl:
+    "https://images.unsplash.com/photo-1595065666634-4725aa7e8379?w=1600&q=80&auto=format&fit=crop", // ← wide, cinematic bespoke shot (landscape 21:9-ish)
   caption: "Bespoke statement image — a finished custom pair, up close.",
 };
 
 // Closing full-bleed call-to-action banner.
 const CTA = {
-  imageUrl: "", // ← closing lifestyle / product banner (landscape)
+  // Demo photo (Unsplash, free for commercial use) — swap for your own.
+  imageUrl:
+    "https://images.unsplash.com/photo-1536303158031-c868b371399f?w=1600&q=80&auto=format&fit=crop", // ← closing lifestyle / product banner (landscape)
   caption: "Closing banner — an aspirational lifestyle or product shot.",
 };
 
