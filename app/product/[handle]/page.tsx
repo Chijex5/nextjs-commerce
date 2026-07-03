@@ -1,4 +1,5 @@
 import Footer from "components/layout/footer";
+import Media from "components/home/media";
 import Price from "components/price";
 import { Gallery } from "components/product/gallery";
 import { ProductDescription } from "components/product/product-description";
@@ -12,10 +13,18 @@ import {
 } from "lib/database";
 import { canonicalUrl, siteName } from "lib/seo";
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+
+/* Image-led craft band shown on every product page. `imageUrl` is a
+   swappable demo photo (Unsplash, free for commercial use) — blank it out
+   to fall back to the on-brand mock placeholder, or set your own shot. */
+const CRAFT_BAND = {
+  imageUrl:
+    "https://images.unsplash.com/photo-1477517787936-70ba786643fd?w=1600&q=80&auto=format&fit=crop",
+  caption: "The craft — hands, leather, and the making of a pair.",
+};
 
 export async function generateMetadata(props: {
   params: Promise<{ handle: string }>;
@@ -150,18 +159,63 @@ export default async function ProductPage(props: {
         }
         .pp-inner {
           display: grid;
-          grid-template-columns: 1.08fr 0.92fr;
+          grid-template-columns: 1.2fr 0.8fr;
           gap: 0;
           align-items: start;
         }
         .pp-gallery-col {
           border-right: 1px solid var(--border);
-          padding: 40px;
+          padding: 32px;
         }
         .pp-info-col {
           padding: 40px;
           position: sticky;
           top: 24px;
+        }
+
+        /* ── CRAFT BAND ── */
+        .pp-craft {
+          position: relative;
+          margin: 2px 48px 0;
+          border: 1px solid var(--border);
+          border-top: none;
+          overflow: hidden;
+          min-height: clamp(320px, 46vh, 520px);
+          display: flex;
+        }
+        .pp-craft-scrim {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(90deg, rgba(6,4,2,0.88) 0%, rgba(6,4,2,0.35) 45%, rgba(6,4,2,0.12) 100%);
+        }
+        .pp-craft-body {
+          position: relative;
+          z-index: 2;
+          margin-top: auto;
+          padding: clamp(28px, 4vw, 56px);
+          max-width: 620px;
+        }
+        .pp-craft-eyebrow {
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.26em;
+          text-transform: uppercase;
+          color: var(--terra);
+          margin-bottom: 14px;
+        }
+        .pp-craft-title {
+          font-family: var(--font-cormorant-garamond), serif;
+          font-size: clamp(26px, 3.4vw, 44px);
+          font-weight: 600;
+          line-height: 1.04;
+          color: var(--cream);
+          margin-bottom: 14px;
+        }
+        .pp-craft-sub {
+          font-size: 13px;
+          line-height: 1.7;
+          color: var(--sand);
+          max-width: 440px;
         }
 
         /* ── REVIEWS SECTION ── */
@@ -223,55 +277,50 @@ export default async function ProductPage(props: {
 
         .pp-related-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-          gap: 2px;
+          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+          gap: 12px;
           list-style: none;
           padding: 0;
           margin: 0;
         }
         .pp-related-card {
-          display: flex;
-          flex-direction: column;
-          background: rgba(242,232,213,0.02);
-          border: 1px solid var(--border);
+          display: block;
           text-decoration: none;
-          transition: background 0.3s, border-color 0.3s;
-          overflow: hidden;
+          transition: transform 0.5s cubic-bezier(0.16,1,0.3,1);
         }
-        .pp-related-card:hover {
-          background: rgba(242,232,213,0.04);
-          border-color: var(--border-mid);
-        }
+        .pp-related-card:hover { transform: translateY(-4px); }
         .pp-related-img {
           position: relative;
           aspect-ratio: 3/4;
           overflow: hidden;
-          background: rgba(242,232,213,0.03);
+          background: var(--charcoal);
         }
-        .pp-related-img img {
+        .pp-related-img img,
+        .pp-related-img > div[role="img"] {
           object-fit: cover;
-          transition: transform 0.5s ease;
+          transition: transform 0.7s cubic-bezier(0.16,1,0.3,1);
         }
-        .pp-related-card:hover .pp-related-img img { transform: scale(1.04); }
+        .pp-related-card:hover .pp-related-img img,
+        .pp-related-card:hover .pp-related-img > div[role="img"] {
+          transform: scale(1.06);
+        }
         .pp-related-info {
-          padding: 16px;
-          border-top: 1px solid var(--border);
+          padding: 14px 2px 0;
         }
         .pp-related-name {
-          font-family: var(--font-cormorant-garamond), serif;
-          font-size: 18px;
-          font-weight: 400;
-          color: var(--cream);
-          line-height: 1.2;
-          margin-bottom: 8px;
+          font-size: 13px;
+          color: var(--sand);
+          line-height: 1.35;
+          margin-bottom: 5px;
           display: -webkit-box;
-          -webkit-line-clamp: 2;
+          -webkit-line-clamp: 1;
           -webkit-box-orient: vertical;
           overflow: hidden;
         }
         .pp-related-price {
-          font-size: 13px;
-          font-weight: 500;
+          font-family: var(--font-bebas-neue), sans-serif;
+          font-size: 17px;
+          letter-spacing: 0.02em;
           color: var(--gold);
         }
 
@@ -289,6 +338,7 @@ export default async function ProductPage(props: {
           .pp-inner { grid-template-columns: 1fr; }
           .pp-gallery-col { border-right: none; border-bottom: 1px solid var(--border); padding: 24px; }
           .pp-info-col { padding: 24px; position: static; }
+          .pp-craft { margin: 2px 24px 0; }
           .pp-reviews-wrap { margin: 2px 24px 0; }
           .pp-related { margin: 2px 24px 0; padding: 24px; }
         }
@@ -297,6 +347,7 @@ export default async function ProductPage(props: {
           .pp-shell { margin: 12px 16px 0; }
           .pp-gallery-col { padding: 16px; }
           .pp-info-col { padding: 16px; }
+          .pp-craft { margin: 2px 16px 0; }
           .pp-reviews-wrap { margin: 2px 16px 0; }
           .pp-related { margin: 2px 16px 0; padding: 16px; }
           .pp-related-grid { grid-template-columns: repeat(2, 1fr); }
@@ -415,6 +466,29 @@ export default async function ProductPage(props: {
           </div>
         </div>
 
+        {/* Image-led craft band */}
+        <section className="pp-craft" aria-label="Handcrafted quality">
+          <Media
+            src={CRAFT_BAND.imageUrl}
+            alt="Handcrafted footwear at the workbench"
+            caption={CRAFT_BAND.caption}
+            sizes="(min-width: 768px) 90vw, 100vw"
+            tone={4}
+            brightness={0.7}
+          />
+          <div className="pp-craft-scrim" />
+          <div className="pp-craft-body">
+            <p className="pp-craft-eyebrow">The Craft</p>
+            <h2 className="pp-craft-title">
+              Every pair cut, stitched, and finished by hand.
+            </h2>
+            <p className="pp-craft-sub">
+              No factory line, no shortcuts — premium leathers and fabrics,
+              chosen for how they wear over years, not seasons.
+            </p>
+          </div>
+        </section>
+
         {/* Reviews */}
         <div className="pp-reviews-wrap">
           <ProductReviewsSection
@@ -458,14 +532,13 @@ async function RelatedProducts({ id }: { id: string }) {
               prefetch={true}
             >
               <div className="pp-related-img">
-                {product.featuredImage?.url ? (
-                  <Image
-                    src={product.featuredImage.url}
-                    alt={product.featuredImage.altText || product.title}
-                    fill
-                    sizes="(min-width: 1280px) 18vw, (min-width: 1024px) 22vw, (min-width: 640px) 35vw, 50vw"
-                  />
-                ) : null}
+                <Media
+                  src={product.featuredImage?.url}
+                  alt={product.featuredImage?.altText || product.title}
+                  caption="Related product shot."
+                  sizes="(min-width: 1280px) 18vw, (min-width: 1024px) 22vw, (min-width: 640px) 35vw, 50vw"
+                  tone={index}
+                />
               </div>
               <div className="pp-related-info">
                 <p className="pp-related-name">{product.title}</p>

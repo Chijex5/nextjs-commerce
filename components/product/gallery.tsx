@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
-import { GridTileImage } from "components/grid/tile";
 import { AnimatePresence, motion } from "framer-motion";
 import { PRODUCT_IMAGE_ASPECT } from "lib/image-constants";
 import Image from "next/image";
@@ -73,68 +72,118 @@ export function Gallery({
         .dp-gallery-divider {
           background: var(--dp-border, rgba(242,232,213,0.09));
         }
+        /* Vertical thumbnail rail (desktop) */
+        .dp-rail-thumb {
+          position: relative;
+          overflow: hidden;
+          aspect-ratio: 1;
+          border: 1px solid var(--dp-border, rgba(242,232,213,0.09));
+          background: rgba(242,232,213,0.02);
+          opacity: 0.6;
+          transition: opacity 0.3s, border-color 0.3s;
+        }
+        .dp-rail-thumb:hover { opacity: 0.85; }
+        .dp-rail-thumb-active {
+          opacity: 1;
+          border-color: var(--dp-cream, #F2E8D5);
+        }
+        .dp-rail-thumb img { transition: transform 0.5s ease; }
+        .dp-rail-thumb:hover img { transform: scale(1.05); }
       `}</style>
 
-      <div
-        className="dp-gallery-shell relative w-full overflow-hidden rounded-none"
-        style={{ aspectRatio: `${activeAspect}` }}
-      >
-        {activeImage && (
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={activeImage.src}
-              initial={{ opacity: 0 }}
-              animate={{
-                opacity: 1,
-                transition: { duration: 0.25, ease: [0, 0, 0.2, 1] },
-              }}
-              exit={{
-                opacity: 0,
-                transition: { duration: 0.15, ease: [0.4, 0, 1, 1] },
-              }}
-              className="absolute inset-0"
-            >
-              <Image
-                className={
-                  useCover
-                    ? "h-full w-full object-cover"
-                    : "h-full w-full object-contain"
-                }
-                fill
-                sizes="(min-width: 1280px) 58vw, (min-width: 1024px) 62vw, (min-width: 768px) 90vw, 100vw"
-                alt={activeImage.altText as string}
-                src={activeImage.src as string}
-                priority={safeImageIndex === 0}
-              />
-            </motion.div>
-          </AnimatePresence>
-        )}
-
+      {/* Editorial layout: large image + vertical thumb rail on desktop */}
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-4">
+        {/* Desktop vertical rail */}
         {images.length > 1 ? (
-          <div className="absolute bottom-[15%] hidden w-full justify-center sm:flex">
-            <div className="dp-gallery-controls mx-auto flex h-11 items-center rounded-none">
-              <button
-                formAction={() => updateImage(previousImageIndex.toString())}
-                aria-label="Previous product image"
-                className={buttonClassName}
-              >
-                <ArrowLeftIcon className="h-5" />
-              </button>
-              <div className="dp-gallery-divider mx-1 h-6 w-px"></div>
-              <button
-                formAction={() => updateImage(nextImageIndex.toString())}
-                aria-label="Next product image"
-                className={buttonClassName}
-              >
-                <ArrowRightIcon className="h-5" />
-              </button>
-            </div>
-          </div>
+          <ul className="hidden shrink-0 lg:flex lg:w-[84px] lg:flex-col lg:gap-3">
+            {images.map((image, index) => {
+              const isActive = index === safeImageIndex;
+              return (
+                <li key={`${image.src}-rail`}>
+                  <button
+                    formAction={() => updateImage(index.toString())}
+                    aria-label={`View image ${index + 1}`}
+                    className={`dp-rail-thumb block w-full ${
+                      isActive ? "dp-rail-thumb-active" : ""
+                    }`}
+                  >
+                    <Image
+                      className="h-full w-full object-cover"
+                      fill
+                      sizes="84px"
+                      alt={image.altText}
+                      src={image.src}
+                    />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         ) : null}
+
+        {/* Main image */}
+        <div
+          className="dp-gallery-shell relative w-full overflow-hidden rounded-none lg:flex-1"
+          style={{ aspectRatio: `${activeAspect}` }}
+        >
+          {activeImage && (
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={activeImage.src}
+                initial={{ opacity: 0 }}
+                animate={{
+                  opacity: 1,
+                  transition: { duration: 0.25, ease: [0, 0, 0.2, 1] },
+                }}
+                exit={{
+                  opacity: 0,
+                  transition: { duration: 0.15, ease: [0.4, 0, 1, 1] },
+                }}
+                className="absolute inset-0"
+              >
+                <Image
+                  className={
+                    useCover
+                      ? "h-full w-full object-cover"
+                      : "h-full w-full object-contain"
+                  }
+                  fill
+                  sizes="(min-width: 1280px) 52vw, (min-width: 1024px) 56vw, (min-width: 768px) 90vw, 100vw"
+                  alt={activeImage.altText as string}
+                  src={activeImage.src as string}
+                  priority={safeImageIndex === 0}
+                />
+              </motion.div>
+            </AnimatePresence>
+          )}
+
+          {images.length > 1 ? (
+            <div className="absolute bottom-[6%] hidden w-full justify-center sm:flex">
+              <div className="dp-gallery-controls mx-auto flex h-11 items-center rounded-none">
+                <button
+                  formAction={() => updateImage(previousImageIndex.toString())}
+                  aria-label="Previous product image"
+                  className={buttonClassName}
+                >
+                  <ArrowLeftIcon className="h-5" />
+                </button>
+                <div className="dp-gallery-divider mx-1 h-6 w-px"></div>
+                <button
+                  formAction={() => updateImage(nextImageIndex.toString())}
+                  aria-label="Next product image"
+                  className={buttonClassName}
+                >
+                  <ArrowRightIcon className="h-5" />
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
 
+      {/* Mobile horizontal thumbnail scroller */}
       {images.length > 1 ? (
-        <div className="mt-6 sm:hidden">
+        <div className="mt-6 lg:hidden">
           <h3 className="mb-3 text-[0.66rem] font-medium uppercase tracking-[0.2em] text-[var(--dp-ember,#BF5A28)]">
             Gallery
           </h3>
@@ -148,7 +197,7 @@ export function Gallery({
               return (
                 <li
                   key={`${image.src}-mobile`}
-                  className="dp-gallery-shell relative w-2/3 flex-none overflow-hidden rounded-none"
+                  className="dp-gallery-shell relative w-2/5 flex-none overflow-hidden rounded-none sm:w-1/4"
                   style={{ aspectRatio: `${mobileAspect}` }}
                 >
                   <button
@@ -159,7 +208,7 @@ export function Gallery({
                     <Image
                       className="h-full w-full object-cover"
                       fill
-                      sizes="70vw"
+                      sizes="40vw"
                       alt={image.altText}
                       src={image.src}
                     />
@@ -169,39 +218,6 @@ export function Gallery({
             })}
           </ul>
         </div>
-      ) : null}
-
-      {images.length > 1 ? (
-        <ul className="my-12 hidden flex-wrap items-center justify-center gap-2 overflow-auto py-1 sm:flex lg:mb-0">
-          {images.map((image, index) => {
-            const isActive = index === safeImageIndex;
-            const thumbAspect =
-              image.width && image.height
-                ? image.width / image.height
-                : PRODUCT_IMAGE_ASPECT;
-            const thumbCover =
-              Math.abs(thumbAspect - PRODUCT_IMAGE_ASPECT) <= 0.05;
-
-            return (
-              <li key={image.src} className="h-20 w-20">
-                <button
-                  formAction={() => updateImage(index.toString())}
-                  aria-label="Select product image"
-                  className="h-full w-full"
-                >
-                  <GridTileImage
-                    alt={image.altText}
-                    src={image.src}
-                    width={80}
-                    height={80}
-                    active={isActive}
-                    fit={thumbCover ? "cover" : "contain"}
-                  />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
       ) : null}
     </form>
   );
