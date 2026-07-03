@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import ThemeToggleButton from "../theme-toggle-button";
 
 type AdminLayoutShellProps = {
   children: React.ReactNode;
@@ -265,58 +266,62 @@ export default function AdminLayoutShell({
               {currentPage}
             </p>
 
-            <div className="relative" ref={profileMenuRef}>
-              <button
-                type="button"
-                aria-label="Open admin profile menu"
-                aria-haspopup="menu"
-                aria-expanded={profileMenuOpen}
-                onClick={() => setProfileMenuOpen((open) => !open)}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-neutral-800 bg-neutral-900 px-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-neutral-800 dark:border-neutral-200 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
-              >
-                {initials}
-              </button>
+            <div className="flex items-center gap-2">
+              <ThemeToggleButton className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800" />
 
-              {profileMenuOpen && (
-                <div
-                  role="menu"
-                  aria-label="Admin profile menu"
-                  className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl ring-1 ring-black/5 dark:border-neutral-700 dark:bg-neutral-900 dark:ring-white/10"
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  type="button"
+                  aria-label="Open admin profile menu"
+                  aria-haspopup="menu"
+                  aria-expanded={profileMenuOpen}
+                  onClick={() => setProfileMenuOpen((open) => !open)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-neutral-800 bg-neutral-900 px-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-neutral-800 dark:border-neutral-200 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
                 >
-                  <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-3 dark:border-neutral-800 dark:bg-neutral-800/50">
-                    <p className="truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                      {displayName}
-                    </p>
-                    <p className="truncate text-xs text-neutral-500 dark:text-neutral-400">
-                      {adminProfile?.email || "Unknown email"}
-                    </p>
-                    <span className="mt-2 inline-flex rounded-full border border-neutral-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-600 dark:border-neutral-700 dark:text-neutral-300">
-                      {roleLabel}
-                    </span>
-                    <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
-                      Last login: {lastLoginLabel}
-                    </p>
+                  {initials}
+                </button>
+
+                {profileMenuOpen && (
+                  <div
+                    role="menu"
+                    aria-label="Admin profile menu"
+                    className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl ring-1 ring-black/5 dark:border-neutral-700 dark:bg-neutral-900 dark:ring-white/10"
+                  >
+                    <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-3 dark:border-neutral-800 dark:bg-neutral-800/50">
+                      <p className="truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                        {displayName}
+                      </p>
+                      <p className="truncate text-xs text-neutral-500 dark:text-neutral-400">
+                        {adminProfile?.email || "Unknown email"}
+                      </p>
+                      <span className="mt-2 inline-flex rounded-full border border-neutral-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-600 dark:border-neutral-700 dark:text-neutral-300">
+                        {roleLabel}
+                      </span>
+                      <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+                        Last login: {lastLoginLabel}
+                      </p>
+                    </div>
+                    <div className="mt-1 py-1">
+                      <Link
+                        href="/admin/account"
+                        role="menuitem"
+                        onClick={() => setProfileMenuOpen(false)}
+                        className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-900 hover:text-white dark:text-neutral-300 dark:hover:bg-neutral-100 dark:hover:text-neutral-900"
+                      >
+                        Account settings
+                      </Link>
+                      <Link
+                        href="/api/auth/signout"
+                        role="menuitem"
+                        onClick={() => setProfileMenuOpen(false)}
+                        className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-900 hover:text-white dark:text-neutral-300 dark:hover:bg-neutral-100 dark:hover:text-neutral-900"
+                      >
+                        Log out
+                      </Link>
+                    </div>
                   </div>
-                  <div className="mt-1 py-1">
-                    <Link
-                      href="/admin/account"
-                      role="menuitem"
-                      onClick={() => setProfileMenuOpen(false)}
-                      className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-900 hover:text-white dark:text-neutral-300 dark:hover:bg-neutral-100 dark:hover:text-neutral-900"
-                    >
-                      Account settings
-                    </Link>
-                    <Link
-                      href="/api/auth/signout"
-                      role="menuitem"
-                      onClick={() => setProfileMenuOpen(false)}
-                      className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-900 hover:text-white dark:text-neutral-300 dark:hover:bg-neutral-100 dark:hover:text-neutral-900"
-                    >
-                      Log out
-                    </Link>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </header>
 

@@ -46,11 +46,15 @@ export default function CustomOrderRequestPage() {
           text-decoration: none;
           transition: border-color .22s, color .22s;
         }
-        .cor-nav-link:hover { border-color: rgba(191,90,40,.4); color: var(--dp-sand); }
+        .cor-nav-link:hover { border-color: rgba(var(--brand-terra-rgb),.4); color: var(--dp-sand); }
       `}</style>
 
-      <div style={{ margin: "0 auto", padding: "3.5rem clamp(1.5rem,4vw,4rem) 5rem" }}>
-
+      <div
+        style={{
+          margin: "0 auto",
+          padding: "3.5rem clamp(1.5rem,4vw,4rem) 5rem",
+        }}
+      >
         {/* ── Page header card ── */}
         <div
           style={{
@@ -71,7 +75,7 @@ export default function CustomOrderRequestPage() {
               bottom: "-.75rem",
               right: "1rem",
               fontSize: "6rem",
-              color: "rgba(242,232,213,0.04)",
+              color: "rgba(var(--brand-fg-rgb),0.04)",
               lineHeight: 1,
               userSelect: "none",
               pointerEvents: "none",
@@ -81,19 +85,28 @@ export default function CustomOrderRequestPage() {
           </span>
 
           <div style={{ position: "relative", zIndex: 1 }}>
-            <p className="dp-label" style={{ marginBottom: ".75rem" }}>D&apos;FOOTPRINT</p>
+            <p className="dp-label" style={{ marginBottom: ".75rem" }}>
+              D&apos;FOOTPRINT
+            </p>
 
             <h1
               className="dp-wordmark"
               style={{
                 fontSize: "clamp(2.4rem,7vw,5rem)",
-                lineHeight: .9,
+                lineHeight: 0.9,
                 letterSpacing: "-.01em",
                 marginBottom: "1rem",
               }}
             >
               <span style={{ color: "var(--dp-cream)" }}>CREATE A</span>{" "}
-              <span style={{ WebkitTextStroke: "1.5px rgba(242,232,213,0.22)", color: "transparent" }}>CUSTOM PAIR</span>
+              <span
+                style={{
+                  WebkitTextStroke: "1.5px rgba(var(--brand-fg-rgb),0.22)",
+                  color: "transparent",
+                }}
+              >
+                CUSTOM PAIR
+              </span>
             </h1>
 
             <p
@@ -106,7 +119,8 @@ export default function CustomOrderRequestPage() {
                 marginBottom: "1.75rem",
               }}
             >
-              Share your design brief and references — we review and send a quote before any payment is taken.
+              Share your design brief and references — we review and send a
+              quote before any payment is taken.
             </p>
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
@@ -136,7 +150,9 @@ export default function CustomOrderRequestPage() {
               >
                 <span
                   style={{
-                    width: "1rem", height: "1rem", borderRadius: "50%",
+                    width: "1rem",
+                    height: "1rem",
+                    borderRadius: "50%",
                     border: "2px solid var(--dp-border)",
                     borderTopColor: "var(--dp-ember)",
                     animation: "dp-spin .8s linear infinite",
@@ -145,7 +161,14 @@ export default function CustomOrderRequestPage() {
                   }}
                 />
                 <style>{`@keyframes dp-spin { to { transform: rotate(360deg); } }`}</style>
-                <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".75rem", color: "var(--dp-muted)", letterSpacing: ".08em" }}>
+                <p
+                  style={{
+                    fontFamily: "DM Sans, sans-serif",
+                    fontSize: ".75rem",
+                    color: "var(--dp-muted)",
+                    letterSpacing: ".08em",
+                  }}
+                >
                   Loading request form…
                 </p>
               </div>
@@ -157,37 +180,66 @@ export default function CustomOrderRequestPage() {
           <div
             style={{
               background: "var(--dp-card)",
-              border: "1px solid rgba(191,90,40,.2)",
+              border: "1px solid rgba(var(--brand-terra-rgb),.2)",
               padding: "2rem",
               display: "flex",
               flexDirection: "column",
               gap: "1rem",
             }}
           >
-            <span style={{ color: "var(--dp-ember)", fontSize: "1.2rem" }}>⊛</span>
+            <span style={{ color: "var(--dp-ember)", fontSize: "1.2rem" }}>
+              ⊛
+            </span>
             <p
               className="dp-serif"
-              style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--dp-cream)" }}
+              style={{
+                fontSize: "1.2rem",
+                fontWeight: 600,
+                color: "var(--dp-cream)",
+              }}
             >
               Custom requests are currently unavailable
             </p>
-            <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".75rem", color: "var(--dp-muted)", lineHeight: 1.65, maxWidth: 480 }}>
-              We&apos;re temporarily pausing new requests. Please reach out directly via WhatsApp or email and we&apos;ll help you personally.
+            <p
+              style={{
+                fontFamily: "DM Sans, sans-serif",
+                fontSize: ".75rem",
+                color: "var(--dp-muted)",
+                lineHeight: 1.65,
+                maxWidth: 480,
+              }}
+            >
+              We&apos;re temporarily pausing new requests. Please reach out
+              directly via WhatsApp or email and we&apos;ll help you personally.
             </p>
             <Link
               href="/socials"
               style={{
-                display: "inline-flex", alignItems: "center", gap: ".5rem",
-                background: "var(--dp-ember)", color: "var(--dp-cream)",
-                fontFamily: "DM Sans, sans-serif", fontWeight: 500,
-                fontSize: ".68rem", letterSpacing: ".12em", textTransform: "uppercase",
-                padding: ".75rem 1.5rem", textDecoration: "none",
-                transition: "opacity .22s", alignSelf: "flex-start",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: ".5rem",
+                background: "var(--dp-ember)",
+                color: "var(--dp-cream)",
+                fontFamily: "DM Sans, sans-serif",
+                fontWeight: 500,
+                fontSize: ".68rem",
+                letterSpacing: ".12em",
+                textTransform: "uppercase",
+                padding: ".75rem 1.5rem",
+                textDecoration: "none",
+                transition: "opacity .22s",
+                alignSelf: "flex-start",
               }}
             >
               Contact us
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path
+                  d="M3 8h10M9 4l4 4-4 4"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </Link>
           </div>

@@ -30,24 +30,24 @@ export default async function CareInstructionsPage() {
     <>
       <style>{`
         :root {
-          --ci-ink: #0A0704;
-          --ci-panel: #15100B;
-          --ci-card: #1C150F;
-          --ci-cream: #F2E8D5;
-          --ci-sand: #C9B99A;
-          --ci-muted: #6A5A48;
-          --ci-ember: #BF5A28;
-          --ci-gold: #C0892A;
-          --ci-border: rgba(242,232,213,0.11);
-          --ci-border-strong: rgba(242,232,213,0.2);
-          --ci-accent: rgba(191,90,40,0.06);
+          --ci-ink: var(--brand-espresso);
+          --ci-panel: var(--brand-surface2);
+          --ci-card: var(--brand-surface2);
+          --ci-cream: var(--brand-cream);
+          --ci-sand: var(--brand-sand);
+          --ci-muted: var(--brand-muted);
+          --ci-ember: var(--brand-terra);
+          --ci-gold: var(--brand-gold);
+          --ci-border: rgba(var(--brand-fg-rgb),0.11);
+          --ci-border-strong: rgba(var(--brand-fg-rgb),0.2);
+          --ci-accent: rgba(var(--brand-terra-rgb),0.06);
         }
 
         .ci-root {
           min-height: 100vh;
           background:
-            radial-gradient(circle at top left, rgba(191,90,40,0.14), transparent 28%),
-            radial-gradient(circle at bottom right, rgba(192,137,42,0.08), transparent 32%),
+            radial-gradient(circle at top left, rgba(var(--brand-terra-rgb),0.14), transparent 28%),
+            radial-gradient(circle at bottom right, rgba(var(--brand-gold-rgb),0.08), transparent 32%),
             var(--ci-ink);
           color: var(--ci-cream);
           font-family: var(--font-dm-sans), sans-serif;
@@ -144,7 +144,7 @@ export default async function CareInstructionsPage() {
         .ci-side {
           align-self: end;
           border: 1px solid var(--ci-border);
-          background: linear-gradient(180deg, rgba(242,232,213,0.04), rgba(242,232,213,0.01));
+          background: linear-gradient(180deg, rgba(var(--brand-fg-rgb),0.04), rgba(var(--brand-fg-rgb),0.01));
           padding: 18px;
         }
 
@@ -321,7 +321,7 @@ export default async function CareInstructionsPage() {
 
         .ci-faq-item {
           border: 1px solid var(--ci-border);
-          background: rgba(242,232,213,0.02);
+          background: rgba(var(--brand-fg-rgb),0.02);
           padding: 16px 18px;
         }
 

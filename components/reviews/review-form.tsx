@@ -21,7 +21,10 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (rating === 0) { setError("Please select a rating"); return; }
+    if (rating === 0) {
+      setError("Please select a rating");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -38,7 +41,8 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
         }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to submit review");
+      if (!response.ok)
+        throw new Error(data.error || "Failed to submit review");
       setSuccess(true);
       setRating(0);
       setTitle("");
@@ -58,27 +62,32 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
         animate="visible"
         variants={slideUp}
         style={{
-          border: "1px solid rgba(191,90,40,0.3)",
-          background: "rgba(191,90,40,0.07)",
+          border: "1px solid rgba(var(--brand-terra-rgb),0.3)",
+          background: "rgba(var(--brand-terra-rgb),0.07)",
           padding: "28px 24px",
           textAlign: "center",
         }}
       >
-        <h3 style={{
-          fontFamily: "'Cormorant Garamond', serif",
-          fontSize: "22px",
-          fontWeight: 300,
-          color: "var(--cream, #F2E8D5)",
-          marginBottom: "8px",
-        }}>
+        <h3
+          style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: "22px",
+            fontWeight: 300,
+            color: "var(--cream, var(--brand-cream))",
+            marginBottom: "8px",
+          }}
+        >
           Thank you
         </h3>
-        <p style={{
-          fontSize: "13px",
-          color: "var(--sand, #C9B99A)",
-          lineHeight: 1.6,
-        }}>
-          Your review has been submitted and will be visible once approved by our team.
+        <p
+          style={{
+            fontSize: "13px",
+            color: "var(--sand, var(--brand-sand))",
+            lineHeight: 1.6,
+          }}
+        >
+          Your review has been submitted and will be visible once approved by
+          our team.
         </p>
       </motion.div>
     );
@@ -99,16 +108,16 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
           font-weight: 500;
           letter-spacing: 0.2em;
           text-transform: uppercase;
-          color: var(--muted, #6A5A48);
+          color: var(--muted, var(--brand-muted));
           margin-bottom: 10px;
         }
-        .rf-required { color: var(--terra, #BF5A28); margin-left: 2px; }
+        .rf-required { color: var(--terra, var(--brand-terra)); margin-left: 2px; }
         .rf-input,
         .rf-textarea {
           width: 100%;
-          background: rgba(10,7,4,0.6);
-          border: 1px solid rgba(242,232,213,0.09);
-          color: var(--cream, #F2E8D5);
+          background: rgba(var(--brand-bg-rgb),0.6);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
+          color: var(--cream, var(--brand-cream));
           font-family: 'DM Sans', sans-serif;
           font-size: 13px;
           padding: 12px 16px;
@@ -117,22 +126,22 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
           resize: none;
         }
         .rf-input::placeholder,
-        .rf-textarea::placeholder { color: var(--muted, #6A5A48); }
+        .rf-textarea::placeholder { color: var(--muted, var(--brand-muted)); }
         .rf-input:focus,
-        .rf-textarea:focus { border-color: rgba(191,90,40,0.45); }
+        .rf-textarea:focus { border-color: rgba(var(--brand-terra-rgb),0.45); }
         .rf-char-count {
           font-size: 11px;
-          color: var(--muted, #6A5A48);
+          color: var(--muted, var(--brand-muted));
           margin-top: 6px;
           text-align: right;
           letter-spacing: 0.06em;
         }
         .rf-error {
-          border: 1px solid rgba(192,137,42,0.3);
-          background: rgba(192,137,42,0.06);
+          border: 1px solid rgba(var(--brand-gold-rgb),0.3);
+          background: rgba(var(--brand-gold-rgb),0.06);
           padding: 12px 16px;
           font-size: 13px;
-          color: #d4a84b;
+          color: var(--brand-gold-light);
           line-height: 1.5;
         }
         .rf-footer {
@@ -142,18 +151,18 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
           justify-content: space-between;
           gap: 12px;
           padding-top: 4px;
-          border-top: 1px solid rgba(242,232,213,0.09);
+          border-top: 1px solid rgba(var(--brand-fg-rgb),0.09);
         }
         .rf-disclaimer {
           font-size: 11px;
-          color: var(--muted, #6A5A48);
+          color: var(--muted, var(--brand-muted));
           letter-spacing: 0.04em;
           line-height: 1.5;
         }
         .rf-submit {
-          background: var(--terra, #BF5A28);
+          background: var(--terra, var(--brand-terra));
           border: none;
-          color: var(--cream, #F2E8D5);
+          color: var(--cream, var(--brand-cream));
           font-family: 'DM Sans', sans-serif;
           font-size: 10px;
           font-weight: 500;
@@ -164,7 +173,7 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
           transition: background 0.2s;
           flex-shrink: 0;
         }
-        .rf-submit:hover:not(:disabled) { background: #a34d22; }
+        .rf-submit:hover:not(:disabled) { background: var(--brand-terra-dark); }
         .rf-submit:disabled {
           opacity: 0.45;
           cursor: not-allowed;
@@ -183,7 +192,15 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
         {/* Title */}
         <div>
           <label htmlFor="review-title" className="rf-label">
-            Review title <span style={{ color: "var(--muted, #6A5A48)", fontWeight: 400 }}>(optional)</span>
+            Review title{" "}
+            <span
+              style={{
+                color: "var(--muted, var(--brand-muted))",
+                fontWeight: 400,
+              }}
+            >
+              (optional)
+            </span>
           </label>
           <input
             type="text"
@@ -199,7 +216,15 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
         {/* Comment */}
         <div>
           <label htmlFor="review-comment" className="rf-label">
-            Your review <span style={{ color: "var(--muted, #6A5A48)", fontWeight: 400 }}>(optional)</span>
+            Your review{" "}
+            <span
+              style={{
+                color: "var(--muted, var(--brand-muted))",
+                fontWeight: 400,
+              }}
+            >
+              (optional)
+            </span>
           </label>
           <textarea
             id="review-comment"

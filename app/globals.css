@@ -19,10 +19,94 @@
 
   /* Fallback font definitions using system fonts */
   :root {
-    --font-inter: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    --font-dm-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-inter:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+      Arial, sans-serif;
+    --font-dm-sans:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+      Arial, sans-serif;
     --font-bebas-neue: "Trebuchet MS", sans-serif;
     --font-cormorant-garamond: Georgia, serif;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Brand design tokens                                                */
+  /* ------------------------------------------------------------------ */
+  /* The site uses a bespoke warm palette (cream / espresso / terra).   */
+  /* Every hardcoded hex + rgba across the pages now resolves through   */
+  /* these tokens, so a single definition drives both themes.           */
+  /*                                                                    */
+  /*  :root  = LIGHT theme values (warm paper + espresso ink)           */
+  /*  .dark  = DARK  theme values (the original espresso + cream look)  */
+  /*                                                                    */
+  /* Solid tokens hold a color; *-rgb tokens hold a bare "r,g,b" triple */
+  /* so overlays keep their opacity but flip their base color per theme */
+  /* (e.g. rgba(var(--brand-fg-rgb), 0.09) is a cream tint on dark and  */
+  /* an ink tint on light — the design intent is preserved either way). */
+  :root {
+    /* Surfaces — light: warm paper stack */
+    --brand-void: #e9e0ce; /* deepest inset */
+    --brand-espresso: #f2ecdd; /* page background */
+    --brand-charcoal: #fbf7ee; /* card / panel */
+    --brand-surface2: #ffffff; /* elevated / hovered surface */
+
+    /* Text — light: espresso ink */
+    --brand-cream: #241a11; /* primary text */
+    --brand-sand: #5f5238; /* secondary text */
+    --brand-muted: #8a7a63; /* tertiary / placeholder */
+
+    /* Accents — deepened for contrast on a light ground */
+    --brand-terra: #a8481c; /* primary accent */
+    --brand-terra-dark: #8f3d18;
+    --brand-terra-light: #b85426;
+    --brand-terra-pale: #c56a3d;
+    --brand-gold: #8a6410; /* secondary accent */
+    --brand-gold-light: #a67c1e;
+    --brand-success: #2f6b41;
+
+    /* Overlay bases (bare r,g,b — used inside rgba(...)) */
+    --brand-fg-rgb: 36, 26, 17; /* foreground/ink tint */
+    --brand-bg-rgb: 236, 228, 210; /* surface tint */
+    --brand-hi-rgb: 0, 0, 0; /* highlight/divider */
+    --brand-terra-rgb: 168, 72, 28;
+    --brand-gold-rgb: 138, 100, 16;
+    --brand-muted-rgb: 138, 122, 99;
+    --brand-success-rgb: 47, 107, 65;
+
+    color-scheme: light;
+  }
+
+  .dark {
+    /* Surfaces — dark: the original espresso stack */
+    --brand-void: #060402;
+    --brand-espresso: #0a0704;
+    --brand-charcoal: #100c06;
+    --brand-surface2: #191209;
+
+    /* Text — dark: cream */
+    --brand-cream: #f2e8d5;
+    --brand-sand: #c9b99a;
+    --brand-muted: #6a5a48;
+
+    /* Accents */
+    --brand-terra: #bf5a28;
+    --brand-terra-dark: #a34d22;
+    --brand-terra-light: #d97b3a;
+    --brand-terra-pale: #f0b08b;
+    --brand-gold: #c0892a;
+    --brand-gold-light: #d4a84b;
+    --brand-success: #4a8c5c;
+
+    /* Overlay bases */
+    --brand-fg-rgb: 242, 232, 213;
+    --brand-bg-rgb: 16, 12, 6;
+    --brand-hi-rgb: 255, 255, 255;
+    --brand-terra-rgb: 191, 90, 40;
+    --brand-gold-rgb: 192, 137, 42;
+    --brand-muted-rgb: 106, 90, 72;
+    --brand-success-rgb: 74, 140, 92;
+
+    color-scheme: dark;
   }
 }
 

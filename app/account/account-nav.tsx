@@ -21,19 +21,19 @@ export default function AccountNav() {
         }
 
         .ac-nav {
-          border: 1px solid rgba(242,232,213,0.09);
-          background: rgba(16,12,6,0.75);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
+          background: rgba(var(--brand-bg-rgb),0.75);
           overflow: hidden;
         }
 
         .ac-nav-top {
           padding: 0.9rem 1rem;
-          border-bottom: 1px solid rgba(242,232,213,0.09);
+          border-bottom: 1px solid rgba(var(--brand-fg-rgb),0.09);
           font-size: 0.6rem;
           font-weight: 500;
           letter-spacing: 0.24em;
           text-transform: uppercase;
-          color: #bf5a28;
+          color: var(--brand-terra);
         }
 
         .ac-nav-list {
@@ -49,8 +49,8 @@ export default function AccountNav() {
           gap: 0.75rem;
           text-decoration: none;
           padding: 0.95rem 1rem;
-          border-bottom: 1px solid rgba(242,232,213,0.09);
-          color: #c9b99a;
+          border-bottom: 1px solid rgba(var(--brand-fg-rgb),0.09);
+          color: var(--brand-sand);
           transition: background 0.2s ease, color 0.2s ease, padding 0.2s ease;
           font-size: 0.8rem;
         }
@@ -60,23 +60,23 @@ export default function AccountNav() {
         }
 
         .ac-nav-link:hover {
-          background: rgba(242,232,213,0.03);
-          color: #f2e8d5;
+          background: rgba(var(--brand-fg-rgb),0.03);
+          color: var(--brand-cream);
           padding-left: 1.2rem;
         }
 
         .ac-nav-link[data-active="true"] {
-          background: rgba(191,90,40,0.11);
-          color: #f2e8d5;
+          background: rgba(var(--brand-terra-rgb),0.11);
+          color: var(--brand-cream);
         }
 
         .ac-nav-arrow {
           font-size: 0.68rem;
-          color: rgba(242,232,213,0.45);
+          color: rgba(var(--brand-fg-rgb),0.45);
         }
 
         .ac-nav-link[data-active="true"] .ac-nav-arrow {
-          color: #bf5a28;
+          color: var(--brand-terra);
         }
 
         @media (max-width: 1024px) {
@@ -92,7 +92,7 @@ export default function AccountNav() {
 
           .ac-nav-link {
             border-bottom: none;
-            border-right: 1px solid rgba(242,232,213,0.09);
+            border-right: 1px solid rgba(var(--brand-fg-rgb),0.09);
             justify-content: center;
             padding: 0.85rem 0.75rem;
           }
@@ -113,7 +113,7 @@ export default function AccountNav() {
 
           .ac-nav-link {
             border-right: none;
-            border-bottom: 1px solid rgba(242,232,213,0.09);
+            border-bottom: 1px solid rgba(var(--brand-fg-rgb),0.09);
             justify-content: space-between;
           }
 
