@@ -17,7 +17,7 @@ export const shippingNotificationTemplate = (
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXTAUTH_URL ||
-    "https://yourdomain.com";
+    "https://www.dfootprint.me";
   const orderUrl = `${siteUrl}/orders?orderNumber=${encodeURIComponent(order.orderNumber)}`;
   const supportUrl = `${siteUrl}/contact?order=${encodeURIComponent(order.orderNumber)}`;
 

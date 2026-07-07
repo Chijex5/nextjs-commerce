@@ -15,7 +15,7 @@ export const contactConfirmationTemplate = (data: ContactConfirmationData) => {
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXTAUTH_URL ||
-    "https://yourdomain.com";
+    "https://www.dfootprint.me";
 
   const greetingName = firstName(data.name);
 

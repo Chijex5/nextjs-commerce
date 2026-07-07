@@ -1,9 +1,8 @@
-import { authOptions } from "@/lib/auth";
 import { sendAbandonedCartEmail } from "@/lib/email/order-emails";
 import { and, desc, eq, isNotNull, lt, lte } from "drizzle-orm";
 import { db } from "lib/db";
 import { abandonedCarts, carts, users } from "lib/db/schema";
-import { getServerSession } from "next-auth";
+import { getUserSession } from "lib/user-session";
 import { NextRequest, NextResponse } from "next/server";
 
 type AbandonedCartItem = {
@@ -54,9 +53,12 @@ const buildItemSignature = (items: AbandonedCartItem[]) =>
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Use the storefront session (custom `user-session` cookie), not NextAuth.
+    // NextAuth is the admin auth system, so gating on it here meant real
+    // customers were never tracked and recovery emails almost never fired.
+    const session = await getUserSession();
 
-    if (!session || !session.user?.email) {
+    if (!session?.email) {
       return NextResponse.json(
         { error: "User must be logged in to track abandoned cart" },
         { status: 401 },
@@ -74,7 +76,7 @@ export async function POST(request: NextRequest) {
     const [user] = await db
       .select({ id: users.id, name: users.name, email: users.email })
       .from(users)
-      .where(eq(users.email, session.user.email))
+      .where(eq(users.email, session.email.toLowerCase()))
       .limit(1);
 
     if (!user) {

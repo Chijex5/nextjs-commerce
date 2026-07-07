@@ -64,7 +64,7 @@ export const sendOrderConfirmationWithMarkup = async (order: OrderData) => {
     to: order.email,
     from: ORDER_FROM_EMAIL,
     replyTo: ORDER_REPLY_TO,
-    subject: `Order Confirmation #${order.orderNumber} - D'FOOTPRINT`,
+    subject: `Your D'FOOTPRINT order is confirmed — #${order.orderNumber}`,
     html: orderConfirmationWithMarkupTemplate({
       orderNumber: order.orderNumber,
       customerName: order.customerName,
@@ -91,7 +91,7 @@ export const sendOrderConfirmation = async (order: OrderData) => {
     to: order.email,
     from: ORDER_FROM_EMAIL,
     replyTo: ORDER_REPLY_TO,
-    subject: `Order Confirmation #${order.orderNumber} - D'FOOTPRINT`,
+    subject: `Your D'FOOTPRINT order is confirmed — #${order.orderNumber}`,
     html: orderConfirmationTemplate(order),
   });
 };
@@ -105,7 +105,7 @@ export const sendShippingNotification = async (order: OrderData) => {
     to: order.email,
     from: ORDER_FROM_EMAIL,
     replyTo: ORDER_REPLY_TO,
-    subject: `Your Order Has Shipped! #${order.orderNumber} - D'FOOTPRINT`,
+    subject: `Your D'FOOTPRINT order is on its way — #${order.orderNumber}`,
     html: shippingNotificationTemplate(order),
   });
 };
@@ -128,7 +128,7 @@ export const sendOrderStatusUpdate = async (data: {
     to: data.email,
     from: STATUS_UPDATE_FROM_EMAIL,
     replyTo: ORDER_REPLY_TO,
-    subject: `Order Update: ${data.orderNumber} - D'FOOTPRINT`,
+    subject: `An update on your D'FOOTPRINT order — #${data.orderNumber}`,
     html: orderStatusUpdateTemplate(data),
   });
 };
@@ -174,7 +174,7 @@ export const sendReviewApprovedEmail = async (data: {
 }) => {
   return sendEmail({
     to: data.to,
-    subject: `Your Review is Live! - D'FOOTPRINT`,
+    subject: `Your D'FOOTPRINT review is now live`,
     html: getReviewApprovedEmailTemplate(data),
   });
 };
@@ -207,7 +207,7 @@ export const sendAdminNewOrderNotification = async (data: {
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXTAUTH_URL ||
-    "https://yourdomain.com";
+    "https://www.dfootprint.me";
 
   return sendEmail({
     to: data.to,
