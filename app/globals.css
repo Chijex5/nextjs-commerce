@@ -44,18 +44,19 @@
   /* (e.g. rgba(var(--brand-fg-rgb), 0.09) is a cream tint on dark and  */
   /* an ink tint on light — the design intent is preserved either way). */
   :root {
-    /* Surfaces — light: warm paper stack */
-    --brand-void: #e9e0ce; /* deepest inset */
-    --brand-espresso: #f2ecdd; /* page background */
-    --brand-charcoal: #fbf7ee; /* card / panel */
+    /* Surfaces — light: clean near-white canvas (neutral, not brown).
+       Warmth comes only from the terra/gold accents, never the background. */
+    --brand-void: #ececeb; /* deepest inset / well */
+    --brand-espresso: #f6f6f5; /* page background — soft off-white */
+    --brand-charcoal: #ffffff; /* card / panel — crisp white */
     --brand-surface2: #ffffff; /* elevated / hovered surface */
 
-    /* Text — light: espresso ink */
-    --brand-cream: #241a11; /* primary text */
-    --brand-sand: #5f5238; /* secondary text */
-    --brand-muted: #8a7a63; /* tertiary / placeholder */
+    /* Text — light: near-black neutral ink (warm-stone, not brown) */
+    --brand-cream: #1c1917; /* primary text */
+    --brand-sand: #57534e; /* secondary text */
+    --brand-muted: #78716c; /* tertiary / placeholder */
 
-    /* Accents — deepened for contrast on a light ground */
+    /* Accents — warm brand colors, deepened for contrast on white */
     --brand-terra: #a8481c; /* primary accent */
     --brand-terra-dark: #8f3d18;
     --brand-terra-light: #b85426;
@@ -65,12 +66,12 @@
     --brand-success: #2f6b41;
 
     /* Overlay bases (bare r,g,b — used inside rgba(...)) */
-    --brand-fg-rgb: 36, 26, 17; /* foreground/ink tint */
-    --brand-bg-rgb: 236, 228, 210; /* surface tint */
-    --brand-hi-rgb: 0, 0, 0; /* highlight/divider */
+    --brand-fg-rgb: 28, 25, 23; /* ink tint — borders / dividers */
+    --brand-bg-rgb: 244, 244, 243; /* surface tint */
+    --brand-hi-rgb: 0, 0, 0; /* highlight / divider */
     --brand-terra-rgb: 168, 72, 28;
     --brand-gold-rgb: 138, 100, 16;
-    --brand-muted-rgb: 138, 122, 99;
+    --brand-muted-rgb: 120, 113, 108;
     --brand-success-rgb: 47, 107, 65;
 
     color-scheme: light;
