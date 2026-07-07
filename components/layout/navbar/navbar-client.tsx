@@ -7,6 +7,7 @@ import LogoSquare from "components/logo-square";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import ThemeToggleButton from "../../theme-toggle-button";
 import MobileMenu from "./mobile-menu";
 import Search, { SearchSkeleton } from "./search";
 import UserAccountIcon from "./user-account-icon";
@@ -51,12 +52,12 @@ export default function NavbarClient({
       <style>{`
 
         :root {
-          --dp-ink:    #0A0704;
-          --dp-cream:  #F2E8D5;
-          --dp-sand:   #C9B99A;
-          --dp-muted:  #6A5A48;
-          --dp-ember:  #BF5A28;
-          --dp-border: rgba(242,232,213,0.09);
+          --dp-ink:    var(--brand-espresso);
+          --dp-cream:  var(--brand-cream);
+          --dp-sand:   var(--brand-sand);
+          --dp-muted:  var(--brand-muted);
+          --dp-ember:  var(--brand-terra);
+          --dp-border: rgba(var(--brand-fg-rgb),0.09);
         }
 
         .dp-nav-wordmark {
@@ -98,14 +99,14 @@ export default function NavbarClient({
           transition: border-color 0.2s, color 0.2s, background 0.2s;
         }
         .dp-icon-btn:hover {
-          border-color: rgba(242,232,213,0.3);
+          border-color: rgba(var(--brand-fg-rgb),0.3);
           color: var(--dp-cream);
-          background: rgba(242,232,213,0.05);
+          background: rgba(var(--brand-fg-rgb),0.05);
         }
 
         .dp-search-input {
           width: 100%;
-          background: rgba(242,232,213,0.05);
+          background: rgba(var(--brand-fg-rgb),0.05);
           border: none;
           border-bottom: 1px solid var(--dp-border);
           color: var(--dp-cream);
@@ -155,7 +156,9 @@ export default function NavbarClient({
           className="mx-auto hidden w-full md:flex items-center"
           style={{
             maxWidth: 1800,
-            padding: scrolled ? "0.7rem clamp(1.5rem,4vw,4rem)" : "1rem clamp(1.5rem,4vw,4rem)",
+            padding: scrolled
+              ? "0.7rem clamp(1.5rem,4vw,4rem)"
+              : "1rem clamp(1.5rem,4vw,4rem)",
             gap: "2.5rem",
             transition: "padding 0.3s",
           }}
@@ -217,7 +220,9 @@ export default function NavbarClient({
                       className={clsx("dp-nav-link", active && "active")}
                     >
                       {item.title}
-                      {active && <span className="dp-active-dot" aria-hidden="true" />}
+                      {active && (
+                        <span className="dp-active-dot" aria-hidden="true" />
+                      )}
                     </Link>
                   </li>
                 );
@@ -265,7 +270,9 @@ export default function NavbarClient({
                 className="dp-icon-btn"
                 aria-label="Search"
               >
-                <MagnifyingGlassIcon style={{ width: "1rem", height: "1rem" }} />
+                <MagnifyingGlassIcon
+                  style={{ width: "1rem", height: "1rem" }}
+                />
               </button>
             )}
 
@@ -280,6 +287,7 @@ export default function NavbarClient({
               }}
             />
 
+            <ThemeToggleButton className="dp-icon-btn" />
             <UserAccountIcon />
             <CartModal />
           </div>
@@ -372,15 +380,24 @@ export default function NavbarClient({
               </Link>
 
               {/* Right actions */}
-              <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.375rem",
+                }}
+              >
                 <button
                   type="button"
                   onClick={() => setIsSearchOpen(true)}
                   className="dp-icon-btn"
                   aria-label="Search"
                 >
-                  <MagnifyingGlassIcon style={{ width: "1rem", height: "1rem" }} />
+                  <MagnifyingGlassIcon
+                    style={{ width: "1rem", height: "1rem" }}
+                  />
                 </button>
+                <ThemeToggleButton className="dp-icon-btn" />
                 <UserAccountIcon />
                 <CartModal />
               </div>

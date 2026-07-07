@@ -25,22 +25,22 @@ export default function OrderFinancialSummary({
     <>
       <style>{`
         .ofs-root {
-          border: 1px solid rgba(242,232,213,0.09);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
           border-top: none;
-          background: rgba(16,12,6,0.7);
+          background: rgba(var(--brand-bg-rgb),0.7);
           padding: 36px 48px;
           font-family: 'DM Sans', sans-serif;
         }
         .ofs-accent {
           height: 1px;
-          background: linear-gradient(90deg, #BF5A28 0%, #C0892A 50%, transparent 100%);
+          background: linear-gradient(90deg, var(--brand-terra) 0%, var(--brand-gold) 50%, transparent 100%);
           margin-bottom: 28px;
         }
         .ofs-title {
           font-family: 'Cormorant Garamond', serif;
           font-size: 26px;
           font-weight: 300;
-          color: var(--cream, #F2E8D5);
+          color: var(--cream, var(--brand-cream));
           margin-bottom: 24px;
         }
 
@@ -56,27 +56,27 @@ export default function OrderFinancialSummary({
           align-items: center;
           justify-content: space-between;
           gap: 16px;
-          background: rgba(242,232,213,0.02);
-          border: 1px solid rgba(242,232,213,0.06);
+          background: rgba(var(--brand-fg-rgb),0.02);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.06);
           padding: 14px 18px;
         }
         .ofs-line-name {
           font-size: 13px;
-          color: var(--sand, #C9B99A);
+          color: var(--sand, var(--brand-sand));
           flex: 1;
           min-width: 0;
         }
         .ofs-line-amount p,
         .ofs-line-amount span {
-          color: var(--cream, #F2E8D5) !important;
+          color: var(--cream, var(--brand-cream)) !important;
           font-size: 13px !important;
           font-weight: 500 !important;
         }
 
         /* ── TOTALS BLOCK ── */
         .ofs-totals {
-          border: 1px solid rgba(242,232,213,0.09);
-          background: rgba(242,232,213,0.02);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
+          background: rgba(var(--brand-fg-rgb),0.02);
           margin-top: 2px;
         }
         .ofs-total-row {
@@ -85,24 +85,24 @@ export default function OrderFinancialSummary({
           justify-content: space-between;
           gap: 16px;
           padding: 14px 18px;
-          border-bottom: 1px solid rgba(242,232,213,0.06);
+          border-bottom: 1px solid rgba(var(--brand-fg-rgb),0.06);
         }
         .ofs-total-row:last-child { border-bottom: none; }
         .ofs-total-label {
           font-size: 11px;
           letter-spacing: 0.14em;
           text-transform: uppercase;
-          color: var(--muted, #6A5A48);
+          color: var(--muted, var(--brand-muted));
         }
         .ofs-total-value p,
         .ofs-total-value span {
-          color: var(--cream, #F2E8D5) !important;
+          color: var(--cream, var(--brand-cream)) !important;
           font-size: 13px !important;
           font-weight: 500 !important;
         }
         .ofs-total-value-discount p,
         .ofs-total-value-discount span {
-          color: #6abf6e !important;
+          color: var(--brand-success) !important;
           font-size: 13px !important;
           font-weight: 500 !important;
         }
@@ -114,8 +114,8 @@ export default function OrderFinancialSummary({
           justify-content: space-between;
           gap: 16px;
           padding: 20px 18px;
-          border-top: 1px solid rgba(191,90,40,0.3);
-          background: rgba(191,90,40,0.05);
+          border-top: 1px solid rgba(var(--brand-terra-rgb),0.3);
+          background: rgba(var(--brand-terra-rgb),0.05);
           margin-top: 2px;
         }
         .ofs-grand-label {
@@ -123,17 +123,17 @@ export default function OrderFinancialSummary({
           font-weight: 500;
           letter-spacing: 0.22em;
           text-transform: uppercase;
-          color: var(--terra, #BF5A28);
+          color: var(--terra, var(--brand-terra));
         }
         .ofs-grand-value {
           font-family: 'Cormorant Garamond', serif;
           font-size: 24px;
           font-weight: 400;
-          color: var(--gold, #C0892A);
+          color: var(--gold, var(--brand-gold));
         }
         .ofs-grand-value p,
         .ofs-grand-value span {
-          color: var(--gold, #C0892A) !important;
+          color: var(--gold, var(--brand-gold)) !important;
           font-family: 'Cormorant Garamond', serif !important;
           font-size: 24px !important;
           font-weight: 400 !important;

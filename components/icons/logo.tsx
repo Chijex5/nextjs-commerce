@@ -9,7 +9,7 @@ export default function LogoIcon(props: React.ComponentProps<"svg">) {
       aria-label={`${logoName} logo`}
       {...props}
       className={clsx(
-        "h-5 w-5 fill-[#C0892A] dark:fill-[#C0892A]",
+        "h-5 w-5 fill-[var(--brand-gold)] dark:fill-[var(--brand-gold)]",
         props.className,
       )}
       viewBox="0 0 375 374.999991"

@@ -42,17 +42,20 @@ const PageLoader = ({
         <div
           className={clsx(
             "animate-spin rounded-full border-[1.5px]",
-            "border-[#F2E8D5]/[0.07] border-t-[#BF5A28]",
+            "border-[var(--brand-cream)]/[0.07] border-t-[var(--brand-terra)]",
             sizes.outer,
           )}
-          style={{ animationDuration: "1.2s", animationTimingFunction: "cubic-bezier(0.5,0,0.5,1)" }}
+          style={{
+            animationDuration: "1.2s",
+            animationTimingFunction: "cubic-bezier(0.5,0,0.5,1)",
+          }}
         />
 
         {/* Inner ring — gold, counter-rotates */}
         <div
           className={clsx(
             "absolute animate-spin rounded-full border-[1.5px]",
-            "border-[#F2E8D5]/[0.04] border-b-[#C0892A]/50",
+            "border-[var(--brand-cream)]/[0.04] border-b-[var(--brand-gold)]/50",
             sizes.inner,
           )}
           style={{
@@ -64,9 +67,9 @@ const PageLoader = ({
 
         {/* Logo centred */}
         <div className="absolute flex items-center justify-center">
-          <div className="flex items-center justify-center rounded-[3px] bg-[#F2E8D5]/[0.05]">
+          <div className="flex items-center justify-center rounded-[3px] bg-[var(--brand-cream)]/[0.05]">
             <LogoIcon
-              className={clsx(sizes.logo, "text-[#F2E8D5]/60")}
+              className={clsx(sizes.logo, "text-[var(--brand-cream)]/60")}
             />
           </div>
         </div>
@@ -75,7 +78,7 @@ const PageLoader = ({
       {/* Message */}
       {message && (
         <p
-          className="text-center text-[11px] uppercase tracking-[0.12em] text-[#F2E8D5]/40"
+          className="text-center text-[11px] uppercase tracking-[0.12em] text-[var(--brand-cream)]/40"
           style={{ fontFamily: "inherit" }}
         >
           {message}
@@ -89,7 +92,7 @@ const PageLoader = ({
     return (
       <div
         className={clsx(
-          "fixed inset-0 z-50 flex items-center justify-center bg-[#0A0704]",
+          "fixed inset-0 z-50 flex items-center justify-center bg-[var(--brand-espresso)]",
           className,
         )}
       >
@@ -108,12 +111,7 @@ const PageLoader = ({
 
   /* Default inline mode */
   return (
-    <div
-      className={clsx(
-        "flex items-center justify-center py-12",
-        className,
-      )}
-    >
+    <div className={clsx("flex items-center justify-center py-12", className)}>
       {loaderContent}
     </div>
   );

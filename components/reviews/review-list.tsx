@@ -59,13 +59,17 @@ export function ReviewList({
       setAverageRating(data.averageRating || 0);
       setTotalReviews(data.totalReviews || 0);
     } catch (error) {
-      setFetchError(error instanceof Error ? error.message : "Failed to load reviews");
+      setFetchError(
+        error instanceof Error ? error.message : "Failed to load reviews",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { void fetchReviews(); }, [productId, sort]);
+  useEffect(() => {
+    void fetchReviews();
+  }, [productId, sort]);
 
   const handleVote = async (reviewId: string, isHelpful: boolean) => {
     try {
@@ -89,20 +93,25 @@ export function ReviewList({
             50% { opacity: 0.6; }
           }
         `}</style>
-        <div style={{
-          padding: "40px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "16px",
-        }}>
+        <div
+          style={{
+            padding: "40px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "16px",
+          }}
+        >
           {[1, 2, 3].map((i) => (
-            <div key={i} style={{
-              height: "80px",
-              background: "rgba(242,232,213,0.04)",
-              border: "1px solid rgba(242,232,213,0.09)",
-              animation: "rl-pulse 1.8s ease-in-out infinite",
-              animationDelay: `${i * 0.15}s`,
-            }} />
+            <div
+              key={i}
+              style={{
+                height: "80px",
+                background: "rgba(var(--brand-fg-rgb),0.04)",
+                border: "1px solid rgba(var(--brand-fg-rgb),0.09)",
+                animation: "rl-pulse 1.8s ease-in-out infinite",
+                animationDelay: `${i * 0.15}s`,
+              }}
+            />
           ))}
         </div>
       </>
@@ -114,7 +123,7 @@ export function ReviewList({
       <style>{`
         .rl-root {
           font-family: 'DM Sans', sans-serif;
-          color: var(--cream, #F2E8D5);
+          color: var(--cream, var(--brand-cream));
           display: flex;
           flex-direction: column;
           gap: 2px;
@@ -128,8 +137,8 @@ export function ReviewList({
           justify-content: space-between;
           gap: 20px;
           padding: 28px 40px;
-          border-bottom: 1px solid rgba(242,232,213,0.09);
-          background: rgba(242,232,213,0.02);
+          border-bottom: 1px solid rgba(var(--brand-fg-rgb),0.09);
+          background: rgba(var(--brand-fg-rgb),0.02);
         }
         .rl-score-block {
           display: flex;
@@ -141,7 +150,7 @@ export function ReviewList({
           font-size: 52px;
           font-weight: 300;
           line-height: 1;
-          color: var(--gold, #C0892A);
+          color: var(--gold, var(--brand-gold));
         }
         .rl-score-meta {
           display: flex;
@@ -152,13 +161,13 @@ export function ReviewList({
           font-size: 11px;
           letter-spacing: 0.14em;
           text-transform: uppercase;
-          color: var(--muted, #6A5A48);
+          color: var(--muted, var(--brand-muted));
           margin-top: 4px;
         }
         .rl-write-btn {
-          background: var(--terra, #BF5A28);
+          background: var(--terra, var(--brand-terra));
           border: none;
-          color: var(--cream, #F2E8D5);
+          color: var(--cream, var(--brand-cream));
           font-family: 'DM Sans', sans-serif;
           font-size: 10px;
           font-weight: 500;
@@ -169,19 +178,19 @@ export function ReviewList({
           transition: background 0.2s;
           flex-shrink: 0;
         }
-        .rl-write-btn:hover { background: #a34d22; }
+        .rl-write-btn:hover { background: var(--brand-terra-dark); }
 
         /* ── FORM WRAPPER ── */
         .rl-form-wrap {
           padding: 32px 40px;
-          border-bottom: 1px solid rgba(242,232,213,0.09);
-          background: rgba(242,232,213,0.02);
+          border-bottom: 1px solid rgba(var(--brand-fg-rgb),0.09);
+          background: rgba(var(--brand-fg-rgb),0.02);
         }
         .rl-form-title {
           font-family: 'Cormorant Garamond', serif;
           font-size: 22px;
           font-weight: 300;
-          color: var(--cream, #F2E8D5);
+          color: var(--cream, var(--brand-cream));
           margin-bottom: 20px;
         }
 
@@ -189,16 +198,16 @@ export function ReviewList({
         .rl-error {
           margin: 0 40px;
           padding: 14px 18px;
-          border: 1px solid rgba(192,137,42,0.3);
-          background: rgba(192,137,42,0.06);
+          border: 1px solid rgba(var(--brand-gold-rgb),0.3);
+          background: rgba(var(--brand-gold-rgb),0.06);
           font-size: 13px;
-          color: #d4a84b;
+          color: var(--brand-gold-light);
         }
 
         /* ── REVIEWS PANEL ── */
         .rl-panel {
           padding: 28px 40px 36px;
-          background: rgba(242,232,213,0.015);
+          background: rgba(var(--brand-fg-rgb),0.015);
         }
         .rl-panel-header {
           display: flex;
@@ -207,7 +216,7 @@ export function ReviewList({
           justify-content: space-between;
           gap: 12px;
           padding-bottom: 20px;
-          border-bottom: 1px solid rgba(242,232,213,0.09);
+          border-bottom: 1px solid rgba(var(--brand-fg-rgb),0.09);
           margin-bottom: 4px;
         }
         .rl-panel-title {
@@ -215,7 +224,7 @@ export function ReviewList({
           font-weight: 500;
           letter-spacing: 0.22em;
           text-transform: uppercase;
-          color: var(--muted, #6A5A48);
+          color: var(--muted, var(--brand-muted));
         }
         .rl-sort-wrap {
           display: flex;
@@ -224,12 +233,12 @@ export function ReviewList({
           font-size: 11px;
           letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: var(--muted, #6A5A48);
+          color: var(--muted, var(--brand-muted));
         }
         .rl-sort-select {
-          background: rgba(10,7,4,0.6);
-          border: 1px solid rgba(242,232,213,0.09);
-          color: var(--cream, #F2E8D5);
+          background: rgba(var(--brand-bg-rgb),0.6);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
+          color: var(--cream, var(--brand-cream));
           font-family: 'DM Sans', sans-serif;
           font-size: 11px;
           letter-spacing: 0.1em;
@@ -240,14 +249,14 @@ export function ReviewList({
           -webkit-appearance: none;
           appearance: none;
         }
-        .rl-sort-select:focus { border-color: rgba(191,90,40,0.5); }
-        .rl-sort-select option { background: #100C06; }
+        .rl-sort-select:focus { border-color: rgba(var(--brand-terra-rgb),0.5); }
+        .rl-sort-select option { background: var(--brand-charcoal); }
 
         /* ── EMPTY ── */
         .rl-empty {
           padding: 48px 0;
           text-align: center;
-          border: 1px dashed rgba(242,232,213,0.1);
+          border: 1px dashed rgba(var(--brand-fg-rgb),0.1);
           margin-top: 20px;
         }
         .rl-empty-text {
@@ -255,13 +264,13 @@ export function ReviewList({
           font-size: 20px;
           font-weight: 300;
           font-style: italic;
-          color: var(--muted, #6A5A48);
+          color: var(--muted, var(--brand-muted));
         }
         .rl-empty-sub {
           font-size: 11px;
           letter-spacing: 0.16em;
           text-transform: uppercase;
-          color: rgba(106,90,72,0.5);
+          color: rgba(var(--brand-muted-rgb),0.5);
           margin-top: 8px;
         }
 
@@ -336,7 +345,9 @@ export function ReviewList({
           {reviews.length === 0 ? (
             <div className="rl-empty">
               <p className="rl-empty-text">No reviews yet.</p>
-              <p className="rl-empty-sub">Be the first to share your experience</p>
+              <p className="rl-empty-sub">
+                Be the first to share your experience
+              </p>
             </div>
           ) : (
             <div>

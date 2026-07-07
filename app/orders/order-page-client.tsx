@@ -85,7 +85,8 @@ export default function OrdersPageClient() {
   const [trackingInput, setTrackingInput] = useState("");
   const [customTrackRequestNumber, setCustomTrackRequestNumber] = useState("");
   const [customTrackEmail, setCustomTrackEmail] = useState("");
-  const [trackedCustomRequest, setTrackedCustomRequest] = useState<CustomRequest | null>(null);
+  const [trackedCustomRequest, setTrackedCustomRequest] =
+    useState<CustomRequest | null>(null);
   const [isOrdersLoading, setIsOrdersLoading] = useState(false);
   const [isTrackingLoading, setIsTrackingLoading] = useState(false);
   const [isCustomRequestsLoading, setIsCustomRequestsLoading] = useState(false);
@@ -119,8 +120,11 @@ export default function OrdersPageClient() {
         const data = await response.json();
         setOrders(data.orders || []);
       }
-    } catch { toast.error("Failed to load orders"); }
-    finally { setIsOrdersLoading(false); }
+    } catch {
+      toast.error("Failed to load orders");
+    } finally {
+      setIsOrdersLoading(false);
+    }
   };
 
   const fetchCustomRequests = async () => {
@@ -133,43 +137,73 @@ export default function OrdersPageClient() {
       } else if (response.status !== 404) {
         toast.error("Failed to load custom requests");
       }
-    } catch { toast.error("Failed to load custom requests"); }
-    finally { setIsCustomRequestsLoading(false); }
+    } catch {
+      toast.error("Failed to load custom requests");
+    } finally {
+      setIsCustomRequestsLoading(false);
+    }
   };
 
-  const trackOrderByNumber = useCallback(async (orderNumber: string) => {
-    const trimmed = orderNumber.trim();
-    if (!trimmed) { toast.error("Please enter an order number"); return; }
-    setIsTrackingLoading(true);
-    try {
-      const response = await fetch(`/api/orders/track?orderNumber=${encodeURIComponent(trimmed)}`);
-      if (!response.ok) { toast.error("Order not found"); return; }
-      const data = await response.json();
-      const order = data.order as Order;
-      router.push(`/order/${order.id}?orderNumber=${encodeURIComponent(order.orderNumber)}`);
-      setIsTrackingModalOpen(false);
-    } catch { toast.error("Failed to track order"); }
-    finally { setIsTrackingLoading(false); }
-  }, [router]);
+  const trackOrderByNumber = useCallback(
+    async (orderNumber: string) => {
+      const trimmed = orderNumber.trim();
+      if (!trimmed) {
+        toast.error("Please enter an order number");
+        return;
+      }
+      setIsTrackingLoading(true);
+      try {
+        const response = await fetch(
+          `/api/orders/track?orderNumber=${encodeURIComponent(trimmed)}`,
+        );
+        if (!response.ok) {
+          toast.error("Order not found");
+          return;
+        }
+        const data = await response.json();
+        const order = data.order as Order;
+        router.push(
+          `/order/${order.id}?orderNumber=${encodeURIComponent(order.orderNumber)}`,
+        );
+        setIsTrackingModalOpen(false);
+      } catch {
+        toast.error("Failed to track order");
+      } finally {
+        setIsTrackingLoading(false);
+      }
+    },
+    [router],
+  );
 
-  const trackCustomRequest = useCallback(async (requestNumber: string, email: string) => {
-    const trimmedRequestNumber = requestNumber.trim();
-    const trimmedEmail = email.trim();
-    if (!trimmedRequestNumber || !trimmedEmail) {
-      toast.error("Request number and email are required");
-      return;
-    }
-    setIsCustomTrackingLoading(true);
-    try {
-      const response = await fetch(
-        `/api/custom-order-requests/track?requestNumber=${encodeURIComponent(trimmedRequestNumber)}&email=${encodeURIComponent(trimmedEmail)}`,
-      );
-      if (!response.ok) { setTrackedCustomRequest(null); toast.error("Custom request not found"); return; }
-      const data = await response.json();
-      setTrackedCustomRequest(data.request || null);
-    } catch { setTrackedCustomRequest(null); toast.error("Failed to track custom request"); }
-    finally { setIsCustomTrackingLoading(false); }
-  }, []);
+  const trackCustomRequest = useCallback(
+    async (requestNumber: string, email: string) => {
+      const trimmedRequestNumber = requestNumber.trim();
+      const trimmedEmail = email.trim();
+      if (!trimmedRequestNumber || !trimmedEmail) {
+        toast.error("Request number and email are required");
+        return;
+      }
+      setIsCustomTrackingLoading(true);
+      try {
+        const response = await fetch(
+          `/api/custom-order-requests/track?requestNumber=${encodeURIComponent(trimmedRequestNumber)}&email=${encodeURIComponent(trimmedEmail)}`,
+        );
+        if (!response.ok) {
+          setTrackedCustomRequest(null);
+          toast.error("Custom request not found");
+          return;
+        }
+        const data = await response.json();
+        setTrackedCustomRequest(data.request || null);
+      } catch {
+        setTrackedCustomRequest(null);
+        toast.error("Failed to track custom request");
+      } finally {
+        setIsCustomTrackingLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!orderNumberParam) return;
@@ -189,13 +223,18 @@ export default function OrdersPageClient() {
     setCustomTrackRequestNumber(customRequestParam);
     setTrackingMode("custom");
     setIsTrackingModalOpen(true);
-    void trackCustomRequest(customRequestParam, customTrackEmail || emailParam || "");
+    void trackCustomRequest(
+      customRequestParam,
+      customTrackEmail || emailParam || "",
+    );
   }, [customRequestParam, customTrackEmail, emailParam, trackCustomRequest]);
 
-  if (status === "loading") return <PageLoader size="lg" message="Loading orders..." />;
+  if (status === "loading")
+    return <PageLoader size="lg" message="Loading orders..." />;
 
   const hasTrackingResults = Boolean(
-    trackedCustomRequest || (customRequestParam && (customTrackEmail || emailParam)),
+    trackedCustomRequest ||
+      (customRequestParam && (customTrackEmail || emailParam)),
   );
   const openTrackingModal = (mode: "order" | "custom") => {
     setTrackingMode(mode);
@@ -207,15 +246,15 @@ export default function OrdersPageClient() {
       <style>{`
 
         :root {
-          --espresso:   #0A0704;
-          --charcoal:   #100C06;
-          --cream:      #F2E8D5;
-          --sand:       #C9B99A;
-          --muted:      #6A5A48;
-          --terra:      #BF5A28;
-          --gold:       #C0892A;
-          --border:     rgba(242,232,213,0.09);
-          --border-mid: rgba(242,232,213,0.18);
+          --espresso:   var(--brand-espresso);
+          --charcoal:   var(--brand-charcoal);
+          --cream:      var(--brand-cream);
+          --sand:       var(--brand-sand);
+          --muted:      var(--brand-muted);
+          --terra:      var(--brand-terra);
+          --gold:       var(--brand-gold);
+          --border:     rgba(var(--brand-fg-rgb),0.09);
+          --border-mid: rgba(var(--brand-fg-rgb),0.18);
         }
 
         .op-root {
@@ -229,7 +268,7 @@ export default function OrdersPageClient() {
 
         /* ── PAGE HERO ── */
         .op-hero {
-          background: rgba(16,12,6,0.95);
+          background: rgba(var(--brand-bg-rgb),0.95);
           border: 1px solid var(--border);
           padding: 48px;
           position: relative;
@@ -315,7 +354,7 @@ export default function OrdersPageClient() {
           cursor: pointer;
           transition: background 0.2s;
         }
-        .op-btn-primary:hover { background: #a34d22; }
+        .op-btn-primary:hover { background: var(--brand-terra-dark); }
         .op-btn-secondary {
           display: inline-flex;
           align-items: center;
@@ -333,16 +372,16 @@ export default function OrdersPageClient() {
           transition: border-color 0.2s, color 0.2s, background 0.2s;
         }
         .op-btn-secondary:hover {
-          border-color: rgba(242,232,213,0.35);
+          border-color: rgba(var(--brand-fg-rgb),0.35);
           color: var(--cream);
-          background: rgba(242,232,213,0.03);
+          background: rgba(var(--brand-fg-rgb),0.03);
         }
 
         /* ── PANEL ── */
         .op-panel {
           border: 1px solid var(--border);
           border-top: none;
-          background: rgba(16,12,6,0.7);
+          background: rgba(var(--brand-bg-rgb),0.7);
           padding: 36px 48px;
         }
         .op-panel-head {
@@ -382,7 +421,7 @@ export default function OrdersPageClient() {
         /* ── ORDER CARD ── */
         .op-order-card {
           border: 1px solid var(--border);
-          background: rgba(242,232,213,0.02);
+          background: rgba(var(--brand-fg-rgb),0.02);
           padding: 24px;
           display: flex;
           flex-direction: column;
@@ -390,7 +429,7 @@ export default function OrdersPageClient() {
           transition: background 0.25s, border-color 0.25s;
         }
         .op-order-card:hover {
-          background: rgba(242,232,213,0.04);
+          background: rgba(var(--brand-fg-rgb),0.04);
           border-color: var(--border-mid);
         }
         .op-card-eyebrow {
@@ -431,8 +470,8 @@ export default function OrdersPageClient() {
           letter-spacing: 0.16em;
           text-transform: uppercase;
           padding: 5px 12px;
-          border: 1px solid rgba(191,90,40,0.35);
-          background: rgba(191,90,40,0.08);
+          border: 1px solid rgba(var(--brand-terra-rgb),0.35);
+          background: rgba(var(--brand-terra-rgb),0.08);
           color: var(--terra);
           flex-shrink: 0;
         }
@@ -454,12 +493,12 @@ export default function OrdersPageClient() {
         /* ── CUSTOM REQUEST CARD ── */
         .op-cr-card {
           border: 1px solid var(--border);
-          background: rgba(242,232,213,0.02);
+          background: rgba(var(--brand-fg-rgb),0.02);
           padding: 28px;
           transition: background 0.25s, border-color 0.25s;
         }
         .op-cr-card:hover {
-          background: rgba(242,232,213,0.04);
+          background: rgba(var(--brand-fg-rgb),0.04);
           border-color: var(--border-mid);
         }
         .op-cr-grid {
@@ -516,7 +555,7 @@ export default function OrdersPageClient() {
         }
         .op-cr-expiry {
           font-size: 11px;
-          color: rgba(192,137,42,0.7);
+          color: rgba(var(--brand-gold-rgb),0.7);
           letter-spacing: 0.06em;
         }
 
@@ -527,7 +566,7 @@ export default function OrdersPageClient() {
         }
         .op-skeleton {
           height: 140px;
-          background: rgba(242,232,213,0.04);
+          background: rgba(var(--brand-fg-rgb),0.04);
           border: 1px solid var(--border);
           animation: op-pulse 1.8s ease-in-out infinite;
         }
@@ -535,7 +574,7 @@ export default function OrdersPageClient() {
 
         /* ── EMPTY / AUTH STATES ── */
         .op-empty {
-          border: 1px dashed rgba(242,232,213,0.1);
+          border: 1px dashed rgba(var(--brand-fg-rgb),0.1);
           padding: 56px 40px;
           text-align: center;
         }
@@ -563,7 +602,7 @@ export default function OrdersPageClient() {
           text-decoration: none;
           transition: background 0.2s;
         }
-        .op-empty-cta:hover { background: #a34d22; }
+        .op-empty-cta:hover { background: var(--brand-terra-dark); }
         .op-empty-cta-ghost {
           display: inline-flex;
           align-items: center;
@@ -580,7 +619,7 @@ export default function OrdersPageClient() {
           text-decoration: none;
           transition: border-color 0.2s, color 0.2s;
         }
-        .op-empty-cta-ghost:hover { border-color: rgba(242,232,213,0.35); color: var(--cream); }
+        .op-empty-cta-ghost:hover { border-color: rgba(var(--brand-fg-rgb),0.35); color: var(--cream); }
 
         /* ── TRACKING RESULT ── */
         .op-track-result-header {
@@ -604,7 +643,7 @@ export default function OrdersPageClient() {
           transition: color 0.2s;
           padding: 0;
         }
-        .op-track-another:hover { color: #d96a30; }
+        .op-track-another:hover { color: var(--brand-terra-light); }
 
         /* ── MODAL ── */
         .op-modal-backdrop {
@@ -615,13 +654,13 @@ export default function OrdersPageClient() {
           align-items: center;
           justify-content: center;
           padding: 24px;
-          background: rgba(10,7,4,0.85);
+          background: rgba(var(--brand-bg-rgb),0.85);
           backdrop-filter: blur(4px);
         }
         .op-modal {
           width: 100%;
           max-width: 500px;
-          background: #100C06;
+          background: var(--brand-charcoal);
           border: 1px solid var(--border-mid);
           padding: 36px;
         }
@@ -659,12 +698,12 @@ export default function OrdersPageClient() {
           transition: color 0.2s, border-color 0.2s;
           flex-shrink: 0;
         }
-        .op-modal-close:hover { color: var(--cream); border-color: rgba(242,232,213,0.35); }
+        .op-modal-close:hover { color: var(--cream); border-color: rgba(var(--brand-fg-rgb),0.35); }
 
         /* Mode toggle */
         .op-mode-toggle {
           display: inline-flex;
-          background: rgba(242,232,213,0.04);
+          background: rgba(var(--brand-fg-rgb),0.04);
           border: 1px solid var(--border);
           padding: 3px;
           gap: 2px;
@@ -692,8 +731,8 @@ export default function OrdersPageClient() {
         .op-form { display: flex; flex-direction: column; gap: 10px; }
         .op-input {
           width: 100%;
-          background: rgba(10,7,4,0.7);
-          border: 1px solid rgba(242,232,213,0.09);
+          background: rgba(var(--brand-bg-rgb),0.7);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
           color: var(--cream);
           font-family: var(--font-dm-sans), sans-serif;
           font-size: 13px;
@@ -703,7 +742,7 @@ export default function OrdersPageClient() {
           box-sizing: border-box;
         }
         .op-input::placeholder { color: var(--muted); }
-        .op-input:focus { border-color: rgba(191,90,40,0.5); }
+        .op-input:focus { border-color: rgba(var(--brand-terra-rgb),0.5); }
         .op-form-submit {
           width: 100%;
           background: var(--terra);
@@ -719,7 +758,7 @@ export default function OrdersPageClient() {
           transition: background 0.2s;
           margin-top: 4px;
         }
-        .op-form-submit:hover { background: #a34d22; }
+        .op-form-submit:hover { background: var(--brand-terra-dark); }
         .op-form-submit:disabled { opacity: 0.45; cursor: not-allowed; }
 
         @media (max-width: 768px) {
@@ -740,13 +779,22 @@ export default function OrdersPageClient() {
             Your <em>Orders</em>
           </h1>
           <p className="op-hero-sub">
-            Catalog purchases and custom requests in dedicated sections. Open tracking only when you need it.
+            Catalog purchases and custom requests in dedicated sections. Open
+            tracking only when you need it.
           </p>
           <div className="op-hero-actions">
-            <button type="button" onClick={() => openTrackingModal("order")} className="op-btn-primary">
+            <button
+              type="button"
+              onClick={() => openTrackingModal("order")}
+              className="op-btn-primary"
+            >
               Track order →
             </button>
-            <button type="button" onClick={() => openTrackingModal("custom")} className="op-btn-secondary">
+            <button
+              type="button"
+              onClick={() => openTrackingModal("custom")}
+              className="op-btn-secondary"
+            >
               Track custom request
             </button>
           </div>
@@ -757,15 +805,30 @@ export default function OrdersPageClient() {
           <div className="op-panel">
             <div className="op-accent" />
             <div className="op-track-result-header">
-              <h2 style={{ fontFamily: "var(--font-cormorant-garamond), serif", fontSize: "26px", fontWeight: 300, color: "var(--cream)" }}>
+              <h2
+                style={{
+                  fontFamily: "var(--font-cormorant-garamond), serif",
+                  fontSize: "26px",
+                  fontWeight: 300,
+                  color: "var(--cream)",
+                }}
+              >
                 Tracking result
               </h2>
-              <button type="button" onClick={() => setIsTrackingModalOpen(true)} className="op-track-another">
+              <button
+                type="button"
+                onClick={() => setIsTrackingModalOpen(true)}
+                className="op-track-another"
+              >
                 Track another →
               </button>
             </div>
-            {trackedCustomRequest ? <CustomRequestCard request={trackedCustomRequest} /> : null}
-            {customRequestParam && !trackedCustomRequest && !isCustomTrackingLoading ? (
+            {trackedCustomRequest ? (
+              <CustomRequestCard request={trackedCustomRequest} />
+            ) : null}
+            {customRequestParam &&
+            !trackedCustomRequest &&
+            !isCustomTrackingLoading ? (
               <div className="op-empty">
                 <p className="op-empty-text">No matching request found.</p>
               </div>
@@ -789,12 +852,16 @@ export default function OrdersPageClient() {
               </div>
             ) : orders.length > 0 ? (
               <div className="op-order-grid">
-                {orders.map((order) => <OrderCard key={order.id} order={order} />)}
+                {orders.map((order) => (
+                  <OrderCard key={order.id} order={order} />
+                ))}
               </div>
             ) : (
               <div className="op-empty">
                 <p className="op-empty-text">No orders placed yet.</p>
-                <Link href="/products" className="op-empty-cta">Start shopping →</Link>
+                <Link href="/products" className="op-empty-cta">
+                  Start shopping →
+                </Link>
               </div>
             )}
           </div>
@@ -806,7 +873,9 @@ export default function OrdersPageClient() {
             <div className="op-accent" />
             <div className="op-panel-head">
               <h2 className="op-panel-title">Custom requests</h2>
-              <span className="op-panel-count">{customRequests.length} total</span>
+              <span className="op-panel-count">
+                {customRequests.length} total
+              </span>
             </div>
 
             {isCustomRequestsLoading ? (
@@ -815,13 +884,19 @@ export default function OrdersPageClient() {
                 <div className="op-skeleton" />
               </div>
             ) : customRequests.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                {customRequests.map((request) => <CustomRequestCard key={request.id} request={request} />)}
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: "2px" }}
+              >
+                {customRequests.map((request) => (
+                  <CustomRequestCard key={request.id} request={request} />
+                ))}
               </div>
             ) : (
               <div className="op-empty">
                 <p className="op-empty-text">No custom requests yet.</p>
-                <Link href="/custom-orders" className="op-empty-cta-ghost">Start a custom order →</Link>
+                <Link href="/custom-orders" className="op-empty-cta-ghost">
+                  Start a custom order →
+                </Link>
               </div>
             )}
           </div>
@@ -832,7 +907,10 @@ export default function OrdersPageClient() {
           <div className="op-panel">
             <div className="op-empty">
               <p className="op-empty-text">Sign in to see your orders.</p>
-              <Link href="/auth/login?callbackUrl=/orders" className="op-empty-cta">
+              <Link
+                href="/auth/login?callbackUrl=/orders"
+                className="op-empty-cta"
+              >
                 Login to account →
               </Link>
             </div>
@@ -881,23 +959,38 @@ type TrackingModalProps = {
 };
 
 function TrackingModal({
-  trackingMode, setTrackingMode,
-  trackingInput, setTrackingInput,
-  isTrackingLoading, onTrackOrder,
-  customTrackRequestNumber, setCustomTrackRequestNumber,
-  customTrackEmail, setCustomTrackEmail,
-  isCustomTrackingLoading, onTrackCustomRequest,
+  trackingMode,
+  setTrackingMode,
+  trackingInput,
+  setTrackingInput,
+  isTrackingLoading,
+  onTrackOrder,
+  customTrackRequestNumber,
+  setCustomTrackRequestNumber,
+  customTrackEmail,
+  setCustomTrackEmail,
+  isCustomTrackingLoading,
+  onTrackCustomRequest,
   onClose,
 }: TrackingModalProps) {
   return (
-    <div className="op-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div
+      className="op-modal-backdrop"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="op-modal">
         <div className="op-modal-head">
           <div>
             <h2 className="op-modal-title">Track shipment</h2>
-            <p className="op-modal-sub">Choose what to track and submit your details.</p>
+            <p className="op-modal-sub">
+              Choose what to track and submit your details.
+            </p>
           </div>
-          <button type="button" onClick={onClose} className="op-modal-close">Close ✕</button>
+          <button type="button" onClick={onClose} className="op-modal-close">
+            Close ✕
+          </button>
         </div>
 
         <div className="op-mode-toggle">
@@ -920,7 +1013,10 @@ function TrackingModal({
         {trackingMode === "order" ? (
           <form
             className="op-form"
-            onSubmit={(e) => { e.preventDefault(); void onTrackOrder(trackingInput); }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              void onTrackOrder(trackingInput);
+            }}
           >
             <input
               value={trackingInput}
@@ -928,14 +1024,24 @@ function TrackingModal({
               placeholder="Order number (e.g. ORD-123456)"
               className="op-input"
             />
-            <button type="submit" disabled={isTrackingLoading} className="op-form-submit">
+            <button
+              type="submit"
+              disabled={isTrackingLoading}
+              className="op-form-submit"
+            >
               {isTrackingLoading ? "Checking..." : "Track order →"}
             </button>
           </form>
         ) : (
           <form
             className="op-form"
-            onSubmit={(e) => { e.preventDefault(); void onTrackCustomRequest(customTrackRequestNumber, customTrackEmail); }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              void onTrackCustomRequest(
+                customTrackRequestNumber,
+                customTrackEmail,
+              );
+            }}
           >
             <input
               value={customTrackRequestNumber}
@@ -950,8 +1056,14 @@ function TrackingModal({
               placeholder="Email address"
               className="op-input"
             />
-            <button type="submit" disabled={isCustomTrackingLoading} className="op-form-submit">
-              {isCustomTrackingLoading ? "Checking..." : "Track custom request →"}
+            <button
+              type="submit"
+              disabled={isCustomTrackingLoading}
+              className="op-form-submit"
+            >
+              {isCustomTrackingLoading
+                ? "Checking..."
+                : "Track custom request →"}
             </button>
           </form>
         )}
@@ -988,7 +1100,8 @@ function OrderCard({ order }: { order: Order }) {
 function CustomRequestCard({ request }: { request: CustomRequest }) {
   const createdDate = new Date(request.createdAt).toLocaleDateString();
   const quoteAmount = request.latestQuote?.amount || request.quotedAmount;
-  const currencyCode = request.latestQuote?.currencyCode || request.currencyCode || "NGN";
+  const currencyCode =
+    request.latestQuote?.currencyCode || request.currencyCode || "NGN";
 
   return (
     <article className="op-cr-card">
@@ -996,7 +1109,9 @@ function CustomRequestCard({ request }: { request: CustomRequest }) {
         <div>
           <div className="op-card-eyebrow">Custom request</div>
           <h3 className="op-cr-number">{request.requestNumber}</h3>
-          <p className="op-cr-subtitle">{request.title} · {createdDate}</p>
+          <p className="op-cr-subtitle">
+            {request.title} · {createdDate}
+          </p>
         </div>
         <div className="op-cr-right">
           <span className="op-cr-status">{request.status}</span>

@@ -32,27 +32,27 @@ export default function OrderActions({
     <>
       <style>{`
         .oa-root {
-          border: 1px solid rgba(242,232,213,0.09);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
           border-top: none;
-          background: rgba(16,12,6,0.7);
+          background: rgba(var(--brand-bg-rgb),0.7);
           padding: 36px 48px;
           font-family: 'DM Sans', sans-serif;
         }
         .oa-accent {
           height: 1px;
-          background: linear-gradient(90deg, #BF5A28 0%, #C0892A 50%, transparent 100%);
+          background: linear-gradient(90deg, var(--brand-terra) 0%, var(--brand-gold) 50%, transparent 100%);
           margin-bottom: 28px;
         }
         .oa-title {
           font-family: 'Cormorant Garamond', serif;
           font-size: 26px;
           font-weight: 300;
-          color: var(--cream, #F2E8D5);
+          color: var(--cream, var(--brand-cream));
           margin-bottom: 6px;
         }
         .oa-sub {
           font-size: 13px;
-          color: var(--muted, #6A5A48);
+          color: var(--muted, var(--brand-muted));
           margin-bottom: 24px;
           line-height: 1.6;
         }
@@ -67,9 +67,9 @@ export default function OrderActions({
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          background: var(--terra, #BF5A28);
+          background: var(--terra, var(--brand-terra));
           border: none;
-          color: var(--cream, #F2E8D5);
+          color: var(--cream, var(--brand-cream));
           font-family: 'DM Sans', sans-serif;
           font-size: 10px;
           font-weight: 500;
@@ -81,7 +81,7 @@ export default function OrderActions({
           transition: background 0.2s;
           flex-shrink: 0;
         }
-        .oa-btn-primary:hover { background: #a34d22; }
+        .oa-btn-primary:hover { background: var(--brand-terra-dark); }
 
         /* Secondary CTAs */
         .oa-btn-secondary {
@@ -89,8 +89,8 @@ export default function OrderActions({
           align-items: center;
           gap: 8px;
           background: transparent;
-          border: 1px solid rgba(242,232,213,0.18);
-          color: var(--muted, #6A5A48);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.18);
+          color: var(--muted, var(--brand-muted));
           font-family: 'DM Sans', sans-serif;
           font-size: 10px;
           font-weight: 500;
@@ -103,9 +103,9 @@ export default function OrderActions({
           flex-shrink: 0;
         }
         .oa-btn-secondary:hover {
-          border-color: rgba(242,232,213,0.35);
-          color: var(--cream, #F2E8D5);
-          background: rgba(242,232,213,0.03);
+          border-color: rgba(var(--brand-fg-rgb),0.35);
+          color: var(--cream, var(--brand-cream));
+          background: rgba(var(--brand-fg-rgb),0.03);
         }
 
         @media (max-width: 768px) {
@@ -147,7 +147,11 @@ export default function OrderActions({
           </button>
           {pdfError && (
             <div
-              style={{ fontSize: "12px", color: "#f4b9a2", marginTop: "8px" }}
+              style={{
+                fontSize: "12px",
+                color: "var(--brand-terra-pale)",
+                marginTop: "8px",
+              }}
             >
               {pdfError}
             </div>

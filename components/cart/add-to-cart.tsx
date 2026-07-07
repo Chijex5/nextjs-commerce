@@ -15,11 +15,11 @@ function SubmitButton({
   selectedVariantId: string | undefined;
 }) {
   const baseClasses =
-    "relative flex w-full items-center justify-center gap-2 rounded-none px-6 py-4 text-xs font-medium uppercase tracking-[0.14em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--dp-ember,#BF5A28)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--dp-charcoal,#191209)]";
+    "relative flex w-full items-center justify-center gap-2 rounded-none px-6 py-4 text-xs font-medium uppercase tracking-[0.14em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--dp-ember,var(--brand-terra))] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--dp-charcoal,var(--brand-surface2))]";
   const activeClasses =
-    "bg-[var(--dp-ember,#BF5A28)] text-[var(--dp-cream,#F2E8D5)] ring-1 ring-[rgba(191,90,40,0.35)]";
+    "bg-[var(--dp-ember,var(--brand-terra))] text-[var(--dp-cream,var(--brand-cream))] ring-1 ring-[rgba(var(--brand-terra-rgb),0.35)]";
   const inactiveClasses =
-    "bg-[rgba(242,232,213,0.06)] text-[var(--dp-muted,#6A5A48)] ring-1 ring-[var(--dp-border,rgba(242,232,213,0.09))]";
+    "bg-[rgba(var(--brand-fg-rgb),0.06)] text-[var(--dp-muted,var(--brand-muted))] ring-1 ring-[var(--dp-border,rgba(var(--brand-fg-rgb),0.09))]";
   const disabledClasses = "cursor-not-allowed";
 
   if (!availableForSale) {

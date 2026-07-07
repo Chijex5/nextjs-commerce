@@ -144,11 +144,11 @@ export default function InfiniteProductsGrid({
                     >
                       <path
                         d="M8 60 Q6 70 20 72 L100 72 Q114 72 110 58 L104 44 Q100 36 88 36 L16 36 Q6 40 8 60 Z"
-                        fill="#F2E8D5"
+                        fill="var(--brand-cream)"
                       />
                       <path
                         d="M16 36 Q12 12 36 4 Q56 -2 80 6 Q100 14 108 36 Z"
-                        fill="#F2E8D5"
+                        fill="var(--brand-cream)"
                       />
                     </svg>
                   </div>
@@ -205,7 +205,7 @@ export default function InfiniteProductsGrid({
             fontSize: "11px",
             letterSpacing: "0.12em",
             textTransform: "uppercase",
-            color: "#BF5A28",
+            color: "var(--brand-terra)",
           }}
         >
           {errorMessage}
@@ -219,7 +219,7 @@ export default function InfiniteProductsGrid({
             fontSize: "10px",
             letterSpacing: "0.18em",
             textTransform: "uppercase",
-            color: "#6A5A48",
+            color: "var(--brand-muted)",
           }}
         >
           Loading more products...

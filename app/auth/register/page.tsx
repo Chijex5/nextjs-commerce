@@ -35,7 +35,8 @@ export default function Register() {
         return;
       }
       toast.success("Account created! Welcome to D'FOOTPRINT.");
-      const callbackUrl = searchParams.get("callbackUrl") || "/account?welcome=1";
+      const callbackUrl =
+        searchParams.get("callbackUrl") || "/account?welcome=1";
       router.push(callbackUrl);
       router.refresh();
     } catch {
@@ -47,18 +48,25 @@ export default function Register() {
 
   /* password strength — 3 levels */
   const pwStrength =
-    password.length === 0 ? 0 :
-    password.length < 8   ? 1 :
-    password.length < 12  ? 2 : 3;
+    password.length === 0
+      ? 0
+      : password.length < 8
+        ? 1
+        : password.length < 12
+          ? 2
+          : 3;
 
   const strengthColor =
-    pwStrength === 1 ? "var(--dp-ember)" :
-    pwStrength === 2 ? "var(--dp-gold)"  : "#6abf69";
+    pwStrength === 1
+      ? "var(--dp-ember)"
+      : pwStrength === 2
+        ? "var(--dp-gold)"
+        : "var(--brand-success)";
 
   const strengthWidth = ["0%", "33%", "66%", "100%"][pwStrength];
 
   const mismatch = confirm.length > 0 && confirm !== password;
-  const matches  = confirm.length > 0 && confirm === password;
+  const matches = confirm.length > 0 && confirm === password;
 
   return (
     <>
@@ -102,12 +110,12 @@ export default function Register() {
         }
         .lc-input::placeholder { color: var(--dp-muted); opacity: .5; }
         .lc-input:focus {
-          border-color: rgba(191,90,40,.65);
-          background: rgba(191,90,40,.03);
+          border-color: rgba(var(--brand-terra-rgb),.65);
+          background: rgba(var(--brand-terra-rgb),.03);
         }
         .lc-input.has-eye  { padding-right: 2.7rem; }
-        .lc-input.is-error { border-color: rgba(191,90,40,.7) !important; }
-        .lc-input.is-ok    { border-color: rgba(106,191,105,.45); }
+        .lc-input.is-error { border-color: rgba(var(--brand-terra-rgb),.7) !important; }
+        .lc-input.is-ok    { border-color: rgba(var(--brand-success-rgb),.45); }
 
         /* eye toggle */
         .lc-eye {
@@ -135,7 +143,7 @@ export default function Register() {
           margin-top: .35rem; line-height: 1.4;
         }
         .lc-msg.error { color: var(--dp-ember); }
-        .lc-msg.ok    { color: #6abf69; }
+        .lc-msg.ok    { color: var(--brand-success); }
 
         /* ── buttons ── */
         .lc-btn-primary {
@@ -188,20 +196,23 @@ export default function Register() {
       `}</style>
 
       <div className="lc-card">
-
         <p className="lc-heading">Create your account</p>
 
         <form onSubmit={handleSubmit}>
           <div className="lc-fields">
-
             {/* Full name */}
             <div className="lc-field">
-              <label htmlFor="name" className="lc-label">Full Name</label>
+              <label htmlFor="name" className="lc-label">
+                Full Name
+              </label>
               <div className="lc-wrap">
                 <input
-                  type="text" id="name" value={name}
+                  type="text"
+                  id="name"
+                  value={name}
                   onChange={(e) => setName(e.target.value)}
-                  required className="lc-input"
+                  required
+                  className="lc-input"
                   placeholder="Chidera Okafor"
                   autoComplete="name"
                 />
@@ -210,12 +221,17 @@ export default function Register() {
 
             {/* Email */}
             <div className="lc-field">
-              <label htmlFor="email" className="lc-label">Email Address</label>
+              <label htmlFor="email" className="lc-label">
+                Email Address
+              </label>
               <div className="lc-wrap">
                 <input
-                  type="email" id="email" value={email}
+                  type="email"
+                  id="email"
+                  value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required className="lc-input"
+                  required
+                  className="lc-input"
                   placeholder="you@example.com"
                   autoComplete="email"
                 />
@@ -224,19 +240,24 @@ export default function Register() {
 
             {/* Password + strength bar */}
             <div className="lc-field">
-              <label htmlFor="password" className="lc-label">Password</label>
+              <label htmlFor="password" className="lc-label">
+                Password
+              </label>
               <div className="lc-wrap">
                 <input
                   type={showPassword ? "text" : "password"}
-                  id="password" value={password}
+                  id="password"
+                  value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required minLength={8}
+                  required
+                  minLength={8}
                   className="lc-input has-eye"
                   placeholder="Minimum 8 characters"
                   autoComplete="new-password"
                 />
                 <button
-                  type="button" className="lc-eye"
+                  type="button"
+                  className="lc-eye"
                   onClick={() => setShowPassword((v) => !v)}
                   tabIndex={-1}
                   aria-label={showPassword ? "Hide password" : "Show password"}
@@ -247,18 +268,24 @@ export default function Register() {
               {/* strength bar — only while typing */}
               {password.length > 0 && (
                 <div className="lc-strength">
-                  <div className="lc-strength-fill" style={{ width: strengthWidth, background: strengthColor }} />
+                  <div
+                    className="lc-strength-fill"
+                    style={{ width: strengthWidth, background: strengthColor }}
+                  />
                 </div>
               )}
             </div>
 
             {/* Confirm password */}
             <div className="lc-field">
-              <label htmlFor="confirm" className="lc-label">Confirm Password</label>
+              <label htmlFor="confirm" className="lc-label">
+                Confirm Password
+              </label>
               <div className="lc-wrap">
                 <input
                   type={showConfirm ? "text" : "password"}
-                  id="confirm" value={confirm}
+                  id="confirm"
+                  value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   required
                   className={`lc-input has-eye${mismatch ? " is-error" : matches ? " is-ok" : ""}`}
@@ -266,7 +293,8 @@ export default function Register() {
                   autoComplete="new-password"
                 />
                 <button
-                  type="button" className="lc-eye"
+                  type="button"
+                  className="lc-eye"
                   onClick={() => setShowConfirm((v) => !v)}
                   tabIndex={-1}
                   aria-label={showConfirm ? "Hide password" : "Show password"}
@@ -274,8 +302,10 @@ export default function Register() {
                   <EyeIcon open={showConfirm} />
                 </button>
               </div>
-              {mismatch && <p className="lc-msg error">Passwords don&apos;t match</p>}
-              {matches  && <p className="lc-msg ok">Passwords match</p>}
+              {mismatch && (
+                <p className="lc-msg error">Passwords don&apos;t match</p>
+              )}
+              {matches && <p className="lc-msg ok">Passwords match</p>}
             </div>
 
             {/* Submit */}
@@ -285,9 +315,17 @@ export default function Register() {
               className="lc-btn-primary"
             >
               {isLoading ? (
-                <><span className="lc-spin"><Spinner /></span>Creating account…</>
+                <>
+                  <span className="lc-spin">
+                    <Spinner />
+                  </span>
+                  Creating account…
+                </>
               ) : (
-                <>Create Account<Arrow /></>
+                <>
+                  Create Account
+                  <Arrow />
+                </>
               )}
             </button>
           </div>
@@ -302,9 +340,13 @@ export default function Register() {
         <div className="lc-footer">
           <p className="lc-footer-text">
             Have an account?{" "}
-            <Link href="/auth/login" className="lc-link">Sign in</Link>
+            <Link href="/auth/login" className="lc-link">
+              Sign in
+            </Link>
           </p>
-          <Link href="/" className="lc-skip">Continue as guest →</Link>
+          <Link href="/" className="lc-skip">
+            Continue as guest →
+          </Link>
         </div>
       </div>
     </>
@@ -314,15 +356,33 @@ export default function Register() {
 /* ── icon helpers ── */
 function EyeIcon({ open }: { open: boolean }) {
   return open ? (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-      <circle cx="12" cy="12" r="3"/>
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
     </svg>
   ) : (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-      <line x1="1" y1="1" x2="23" y2="23"/>
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+      <line x1="1" y1="1" x2="23" y2="23" />
     </svg>
   );
 }
@@ -330,15 +390,29 @@ function EyeIcon({ open }: { open: boolean }) {
 function Arrow() {
   return (
     <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-      <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path
+        d="M3 8h10M9 4l4 4-4 4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 function Spinner() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
     </svg>
   );
 }

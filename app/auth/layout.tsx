@@ -15,15 +15,15 @@ export default function AuthLayout({
     <>
       <style>{`
         :root {
-          --dp-ink:     #0A0704;
-          --dp-charcoal:#191209;
-          --dp-card:    #1E1510;
-          --dp-cream:   #F2E8D5;
-          --dp-sand:    #C9B99A;
-          --dp-muted:   #6A5A48;
-          --dp-ember:   #BF5A28;
-          --dp-gold:    #C0892A;
-          --dp-border:  rgba(242,232,213,0.09);
+          --dp-ink:     var(--brand-espresso);
+          --dp-charcoal:var(--brand-surface2);
+          --dp-card:    var(--brand-surface2);
+          --dp-cream:   var(--brand-cream);
+          --dp-sand:    var(--brand-sand);
+          --dp-muted:   var(--brand-muted);
+          --dp-ember:   var(--brand-terra);
+          --dp-gold:    var(--brand-gold);
+          --dp-border:  rgba(var(--brand-fg-rgb),0.09);
         }
 
         @keyframes dp-rise {
@@ -107,7 +107,7 @@ export default function AuthLayout({
             pointerEvents: "none",
             zIndex: 0,
             background:
-              "radial-gradient(ellipse 60% 50% at 15% 20%, rgba(191,90,40,0.13) 0%, transparent 70%), radial-gradient(ellipse 40% 40% at 85% 80%, rgba(192,137,42,0.08) 0%, transparent 70%)",
+              "radial-gradient(ellipse 60% 50% at 15% 20%, rgba(var(--brand-terra-rgb),0.13) 0%, transparent 70%), radial-gradient(ellipse 40% 40% at 85% 80%, rgba(var(--brand-gold-rgb),0.08) 0%, transparent 70%)",
           }}
         />
 
@@ -165,7 +165,6 @@ export default function AuthLayout({
           }}
         >
           <div className="auth-grid">
-
             {/* ── LEFT: brand copy — desktop only ── */}
             <div className="auth-brand-col dp-rise-2">
               <p className="dp-label" style={{ marginBottom: "1.25rem" }}>
@@ -181,10 +180,12 @@ export default function AuthLayout({
                   marginBottom: "2rem",
                 }}
               >
-                <span style={{ color: "var(--dp-cream)", display: "block" }}>SIGN</span>
+                <span style={{ color: "var(--dp-cream)", display: "block" }}>
+                  SIGN
+                </span>
                 <span
                   style={{
-                    WebkitTextStroke: "1.5px rgba(242,232,213,0.22)",
+                    WebkitTextStroke: "1.5px rgba(var(--brand-fg-rgb),0.22)",
                     color: "transparent",
                     display: "block",
                   }}
@@ -209,18 +210,47 @@ export default function AuthLayout({
                 in one place.
               </p>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: ".85rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: ".85rem",
+                }}
+              >
                 {[
                   { icon: "✦", text: "Track every order in real time" },
-                  { icon: "◈", text: "Save delivery addresses for faster checkout" },
+                  {
+                    icon: "◈",
+                    text: "Save delivery addresses for faster checkout",
+                  },
                   { icon: "⟡", text: "Manage your custom order requests" },
                   { icon: "⊛", text: "Secure across all your devices" },
                 ].map(({ icon, text }) => (
-                  <div key={text} style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
-                    <span style={{ color: "var(--dp-ember)", fontSize: ".9rem", flexShrink: 0 }}>
+                  <div
+                    key={text}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: ".75rem",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: "var(--dp-ember)",
+                        fontSize: ".9rem",
+                        flexShrink: 0,
+                      }}
+                    >
                       {icon}
                     </span>
-                    <p style={{ fontSize: ".78rem", color: "var(--dp-muted)", fontFamily: "var(--font-dm-sans), sans-serif", margin: 0 }}>
+                    <p
+                      style={{
+                        fontSize: ".78rem",
+                        color: "var(--dp-muted)",
+                        fontFamily: "var(--font-dm-sans), sans-serif",
+                        margin: 0,
+                      }}
+                    >
                       {text}
                     </p>
                   </div>
@@ -233,7 +263,7 @@ export default function AuthLayout({
                 style={{
                   marginTop: "3rem",
                   fontSize: "clamp(3rem,8vw,7rem)",
-                  color: "rgba(242,232,213,0.03)",
+                  color: "rgba(var(--brand-fg-rgb),0.03)",
                   lineHeight: 1,
                   userSelect: "none",
                   letterSpacing: ".02em",
@@ -244,10 +274,7 @@ export default function AuthLayout({
             </div>
 
             {/* ── RIGHT: form slot ── */}
-            <div className="auth-form-col dp-rise-3">
-              {children}
-            </div>
-
+            <div className="auth-form-col dp-rise-3">{children}</div>
           </div>
         </main>
       </div>
