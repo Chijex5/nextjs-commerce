@@ -17,7 +17,8 @@ const STATUS_UPDATE_FROM_EMAIL = "D'FOOTPRINT <notification@dfootprint.me>";
 const ADMIN_NOTIFICATION_FROM_EMAIL = "D'FOOTPRINT <admin@dfootprint.me>";
 const ORDER_REPLY_TO = "support@dfootprint.me";
 const CUSTOM_ORDER_FROM_EMAIL =
-  process.env.CUSTOM_ORDER_FROM_EMAIL || "D'FOOTPRINT <custom-orders@dfootprint.me>";
+  process.env.CUSTOM_ORDER_FROM_EMAIL ||
+  "D'FOOTPRINT <custom-orders@dfootprint.me>";
 
 interface OrderData {
   orderNumber: string;
@@ -151,8 +152,9 @@ export const sendAbandonedCartEmail = async (data: {
 }) => {
   return sendEmail({
     to: data.email,
-    from: "D'FOOTPRINT <noreply@yourdomain.com>",
-    subject: `You Left Something Behind - D'FOOTPRINT`,
+    // Inherit the env-driven default sender instead of a hardcoded placeholder
+    // domain that fails SPF/DKIM and lands the recovery email in spam.
+    subject: `You left something behind — D'FOOTPRINT`,
     html: abandonedCartTemplate(data),
   });
 };
