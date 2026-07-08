@@ -1,5 +1,6 @@
 import { baseTemplate } from "@/lib/email/templates/base";
 import { buildCollectionContent } from "@/lib/email/templates/marketing-collection";
+import { buildCustomContent } from "@/lib/email/templates/marketing-custom";
 import { buildJustArrivedContent } from "@/lib/email/templates/marketing-just-arrived";
 import { buildSaleContent } from "@/lib/email/templates/marketing-sale";
 import {
@@ -29,6 +30,8 @@ export function renderMarketingCampaignBody(
       return buildJustArrivedContent(campaign, subscriber, siteUrl);
     case "SALE":
       return buildSaleContent(campaign, subscriber, siteUrl);
+    case "CUSTOM":
+      return buildCustomContent(campaign, subscriber, siteUrl);
     case "COLLECTION":
     default:
       return buildCollectionContent(campaign, subscriber, siteUrl);

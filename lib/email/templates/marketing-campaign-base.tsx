@@ -12,10 +12,48 @@ export type MarketingCampaignProduct = {
   compareAtPrice?: string | null;
 };
 
+export type CampaignType = "JUST_ARRIVED" | "SALE" | "COLLECTION" | "CUSTOM";
+
+// ─── Custom campaign blocks ─────────────────────────────────────────────────────
+// A CUSTOM campaign is a composable list of blocks instead of a fixed template
+// shape. Every block is a small, self-describing object that maps to one of the
+// shared render helpers below.
+
+export type CampaignBlock =
+  | {
+      type: "heading";
+      text: string;
+      eyebrow?: string;
+      align?: "left" | "center";
+    }
+  | { type: "text"; text: string; style?: "normal" | "quote" }
+  | { type: "image"; url: string; href?: string; alt?: string }
+  | {
+      type: "button";
+      text: string;
+      url: string;
+      variant?: "primary" | "secondary";
+    }
+  | { type: "products" }
+  | { type: "coupon"; code: string; label?: string; deadline?: string | null }
+  | { type: "divider" }
+  | { type: "spacer"; size?: "sm" | "md" | "lg" };
+
+export const CAMPAIGN_BLOCK_TYPES: CampaignBlock["type"][] = [
+  "heading",
+  "text",
+  "image",
+  "products",
+  "coupon",
+  "button",
+  "divider",
+  "spacer",
+];
+
 export type MarketingCampaign = {
   id: string;
   name: string;
-  type: "JUST_ARRIVED" | "SALE" | "COLLECTION";
+  type: CampaignType;
   subject: string;
   preheader?: string | null;
   headerTitle?: string | null;
@@ -28,6 +66,7 @@ export type MarketingCampaign = {
   couponCode?: string | null;
   saleDeadline?: Date | string | null;
   discountNote?: string | null;
+  blocks?: CampaignBlock[] | null;
   products: MarketingCampaignProduct[];
 };
 
@@ -48,6 +87,7 @@ export const templateLabels: Record<MarketingCampaign["type"], string> = {
   JUST_ARRIVED: "Just arrived",
   SALE: "Sale",
   COLLECTION: "Collection",
+  CUSTOM: "Custom",
 };
 
 export function getFirstName(subscriber: MarketingSubscriber) {
@@ -152,8 +192,12 @@ function renderPriceHtml(
     if (raw > 0) {
       const symbol = extractSymbol(product.price);
       const saleRaw = Math.round(raw * (1 - discountPercentage / 100));
-      const origFormatted = escapeHtml(`${symbol} ${raw.toLocaleString("en-NG")}`);
-      const saleFormatted = escapeHtml(`${symbol} ${saleRaw.toLocaleString("en-NG")}`);
+      const origFormatted = escapeHtml(
+        `${symbol} ${raw.toLocaleString("en-NG")}`,
+      );
+      const saleFormatted = escapeHtml(
+        `${symbol} ${saleRaw.toLocaleString("en-NG")}`,
+      );
       return `
         ${renderSaleBadge(discountPercentage)}
         <p style="margin:4px 0 0;font-size:12px;line-height:1.6;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;">
@@ -193,21 +237,50 @@ function renderProductCell(
   discountPercentage?: number | null,
 ) {
   const productUrl = normalizeUrl(`/product/${product.handle}`, siteUrl);
+  // .mkt-col stacks to full width on mobile; .mkt-product-title / .mkt-product-link
+  // pick up dark-mode colour overrides from the base template's stylesheet.
   return `
-    <td width="50%" valign="top" style="width:50%;padding:0 ${layout.paddingRight}px 0 ${layout.paddingLeft}px;vertical-align:top;">
+    <td width="50%" valign="top" class="mkt-col" style="width:50%;padding:0 ${layout.paddingRight}px 0 ${layout.paddingLeft}px;vertical-align:top;">
       ${renderProductVisual(product, productUrl)}
-      <p style="margin:10px 0 0;font-size:13px;font-weight:700;color:#111111;line-height:1.4;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;">${escapeHtml(product.title)}</p>
+      <p class="mkt-product-title" style="margin:10px 0 0;font-size:13px;font-weight:700;color:#111111;line-height:1.4;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;">${escapeHtml(product.title)}</p>
       ${renderPriceHtml(product, discountPercentage)}
       <p style="margin:8px 0 0;line-height:1.4;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;">
-        <a href="${escapeHtml(productUrl)}" target="_blank" rel="noopener noreferrer" style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#111111;font-weight:600;text-decoration:underline;text-underline-offset:3px;">View &rarr;</a>
+        <a href="${escapeHtml(productUrl)}" target="_blank" rel="noopener noreferrer" class="mkt-product-link" style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#111111;font-weight:600;text-decoration:underline;text-underline-offset:3px;">View &rarr;</a>
       </p>
     </td>`;
+}
+
+// ─── Coupon box ─────────────────────────────────────────────────────────────────
+// Shared between the SALE template and the CUSTOM "coupon" block so both render an
+// identical dashed code card.
+
+export function renderCouponBox(
+  code: string | null | undefined,
+  options: { label?: string; deadline?: string | null } = {},
+): string {
+  const couponCode = code?.trim().toUpperCase();
+  if (!couponCode) return "";
+  const label = options.label?.trim() || "USE CODE";
+  const deadline = options.deadline?.trim();
+  return `
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;margin:16px 0;">
+      <tr>
+        <td style="padding:14px 20px;text-align:center;border:1.5px dashed #111111;border-radius:2px;">
+          <p style="margin:0 0 6px;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#9ca3af;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;">${escapeHtml(label)}</p>
+          <p style="margin:0;font-size:20px;font-weight:700;letter-spacing:0.15em;font-family:'Courier New',Courier,monospace;color:#111111;line-height:1.4;">${escapeHtml(couponCode)}</p>
+          ${deadline ? `<p style="margin:6px 0 0;font-size:11px;color:#9ca3af;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;">Offer ends ${escapeHtml(deadline)}</p>` : ""}
+        </td>
+      </tr>
+    </table>`;
 }
 
 export function renderProductGrid(
   products: MarketingCampaignProduct[],
   siteUrl: string,
-  options: { rowPaddingBottom?: number; discountPercentage?: number | null } = {},
+  options: {
+    rowPaddingBottom?: number;
+    discountPercentage?: number | null;
+  } = {},
 ) {
   const shownProducts = products.slice(0, 6);
   const hiddenCount = Math.max(products.length - shownProducts.length, 0);

@@ -15,19 +15,29 @@ import {
 import { sendEmail } from "@/lib/email/resend";
 import {
   renderVariables,
+  type CampaignBlock,
   type MarketingSubscriber,
 } from "@/lib/email/templates/marketing-campaign-base";
 import crypto from "crypto";
 import { and, asc, eq, inArray } from "drizzle-orm";
 
-export type CampaignType = "JUST_ARRIVED" | "SALE" | "COLLECTION";
+export type CampaignType = "JUST_ARRIVED" | "SALE" | "COLLECTION" | "CUSTOM";
 
-const CAMPAIGN_TYPES = ["JUST_ARRIVED", "SALE", "COLLECTION"] as const;
+const CAMPAIGN_TYPES = [
+  "JUST_ARRIVED",
+  "SALE",
+  "COLLECTION",
+  "CUSTOM",
+] as const;
 
 function toCampaignType(type: string): CampaignType {
   return CAMPAIGN_TYPES.includes(type as CampaignType)
     ? (type as CampaignType)
     : "COLLECTION";
+}
+
+function toBlocks(value: unknown): CampaignBlock[] {
+  return Array.isArray(value) ? (value as CampaignBlock[]) : [];
 }
 export type CampaignStatus = "DRAFT" | "SCHEDULED" | "SENT";
 export type EmailLogStatus =
@@ -61,6 +71,7 @@ interface CampaignData {
   couponCode?: string | null;
   saleDeadline?: Date | null;
   discountNote?: string | null;
+  blocks?: CampaignBlock[];
   products: CampaignProduct[];
 }
 
@@ -154,6 +165,7 @@ export async function getCampaignWithProducts(campaignId: string) {
   return {
     ...campaign,
     type: toCampaignType(campaign.type),
+    blocks: toBlocks(campaign.blocks),
     products: campaignProductDetails,
   };
 }

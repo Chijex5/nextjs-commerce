@@ -6,6 +6,7 @@ import {
   emailCampaigns,
   products,
 } from "@/lib/db/schema";
+import { sanitizeCampaignBlocks } from "@/lib/email/templates/marketing-custom";
 import { eq } from "drizzle-orm";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -147,6 +148,7 @@ export async function PATCH(
       couponCode,
       saleDeadline,
       discountNote,
+      blocks,
       productIds, // Array of product IDs to include
     } = body;
 
@@ -175,6 +177,7 @@ export async function PATCH(
       updates.saleDeadline = saleDeadline ? new Date(saleDeadline) : null;
     }
     if (discountNote !== undefined) updates.discountNote = discountNote;
+    if (blocks !== undefined) updates.blocks = sanitizeCampaignBlocks(blocks);
     if (scheduledAt !== undefined) {
       updates.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
       if (scheduledAt) {
