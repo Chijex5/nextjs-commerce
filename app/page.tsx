@@ -43,7 +43,7 @@ export const metadata: Metadata = {
 const HERO = {
   // Demo photo (Unsplash, free for commercial use) — swap for your own.
   imageUrl:
-    "https://images.unsplash.com/photo-1737651704014-ed9e926333cf?w=1600&q=80&auto=format&fit=crop", // ← portrait / hero pair photograph (shot tall, 4:5 or taller)
+    "/hero1.jpeg", // ← portrait / hero pair photograph (shot tall, 4:5 or taller)
   caption: "Hero photograph — a model or signature pair, shot full-bleed.",
   kicker: "Handcrafted in Nigeria · Est. Day One",
   tagline:
@@ -54,7 +54,7 @@ const HERO = {
 const STORY = {
   // Demo photo (Unsplash, free for commercial use) — swap for your own.
   imageUrl:
-    "https://images.unsplash.com/photo-1477517787936-70ba786643fd?w=1600&q=80&auto=format&fit=crop", // ← atelier, leather, or hands-crafting photograph (portrait)
+    "/hero2.jpeg", // ← atelier, leather, or hands-crafting photograph (portrait)
   caption: "The craft — hands, leather, and the making of a pair.",
   kicker: "The Craft",
   title: "Made by hand, meant to last.",
@@ -65,7 +65,7 @@ const STORY = {
 const CUSTOM_HERO = {
   // Demo photo (Unsplash, free for commercial use) — swap for your own.
   imageUrl:
-    "https://images.unsplash.com/photo-1632661010878-26304779f821?w=1600&q=80&auto=format&fit=crop", // ← wide, cinematic bespoke shot (landscape 21:9-ish)
+    "/custom.jpeg", // ← wide, cinematic bespoke shot (landscape 21:9-ish)
   caption: "Bespoke statement image — a finished custom pair, up close.",
 };
 
@@ -73,7 +73,7 @@ const CUSTOM_HERO = {
 const CTA = {
   // Demo photo (Unsplash, free for commercial use) — swap for your own.
   imageUrl:
-    "https://images.unsplash.com/photo-1558777374-41a80cbe5ff7?w=1600&q=80&auto=format&fit=crop", // ← closing lifestyle / product banner (landscape)
+    "/footer.jpeg", // ← closing lifestyle / product banner (landscape)
   caption: "Closing banner — an aspirational lifestyle or product shot.",
 };
 
