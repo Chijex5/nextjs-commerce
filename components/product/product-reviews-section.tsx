@@ -26,7 +26,9 @@ export function ProductReviewsSection({
   const { status } = useUserSession();
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyError, setVerifyError] = useState<string | null>(null);
-  const [eligibility, setEligibility] = useState<VerifyPurchaseResponse | null>(null);
+  const [eligibility, setEligibility] = useState<VerifyPurchaseResponse | null>(
+    null,
+  );
 
   useEffect(() => {
     if (status !== "authenticated") {
@@ -46,9 +48,9 @@ export function ProductReviewsSection({
           { cache: "no-store" },
         );
         if (!response.ok) {
-          const data = (await response.json().catch(() => null)) as
-            | { error?: string }
-            | null;
+          const data = (await response.json().catch(() => null)) as {
+            error?: string;
+          } | null;
           throw new Error(data?.error || "Unable to verify purchase status");
         }
         const data = (await response.json()) as VerifyPurchaseResponse;
@@ -57,7 +59,9 @@ export function ProductReviewsSection({
         if (!ignore) {
           setEligibility(null);
           setVerifyError(
-            error instanceof Error ? error.message : "Unable to verify purchase status",
+            error instanceof Error
+              ? error.message
+              : "Unable to verify purchase status",
           );
         }
       } finally {
@@ -66,11 +70,17 @@ export function ProductReviewsSection({
     };
 
     void verifyPurchase();
-    return () => { ignore = true; };
+    return () => {
+      ignore = true;
+    };
   }, [productId, status]);
 
-  const selectedOrderId = useMemo(() => eligibility?.orders?.[0]?.id, [eligibility]);
-  const canReview = status === "authenticated" && Boolean(eligibility?.canReview);
+  const selectedOrderId = useMemo(
+    () => eligibility?.orders?.[0]?.id,
+    [eligibility],
+  );
+  const canReview =
+    status === "authenticated" && Boolean(eligibility?.canReview);
   const showForm = status === "authenticated" && !verifyError;
   const callbackUrl = `/auth/login?callbackUrl=${encodeURIComponent(`/product/${productHandle}`)}`;
 
@@ -84,7 +94,7 @@ export function ProductReviewsSection({
 
         .pr-header {
           padding-bottom: 24px;
-          border-bottom: 1px solid rgba(242,232,213,0.09);
+          border-bottom: 1px solid rgba(var(--brand-fg-rgb),0.09);
           margin-bottom: 28px;
         }
         .pr-eyebrow {
@@ -92,49 +102,49 @@ export function ProductReviewsSection({
           font-weight: 500;
           letter-spacing: 0.26em;
           text-transform: uppercase;
-          color: var(--terra, #BF5A28);
+          color: var(--terra, var(--brand-terra));
           margin-bottom: 10px;
         }
         .pr-title {
           font-family: 'Cormorant Garamond', serif;
           font-size: clamp(24px, 3vw, 34px);
           font-weight: 300;
-          color: var(--cream, #F2E8D5);
+          color: var(--cream, var(--brand-cream));
           line-height: 1.05;
           margin-bottom: 6px;
         }
         .pr-subtitle {
           font-size: 12px;
-          color: var(--muted, #6A5A48);
+          color: var(--muted, var(--brand-muted));
           letter-spacing: 0.03em;
         }
 
         /* ── STATUS BANNERS ── */
         .pr-banner {
-          border: 1px solid rgba(242,232,213,0.09);
-          background: rgba(242,232,213,0.02);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
+          background: rgba(var(--brand-fg-rgb),0.02);
           padding: 14px 18px;
           font-size: 13px;
-          color: var(--sand, #C9B99A);
+          color: var(--sand, var(--brand-sand));
           margin-bottom: 20px;
           line-height: 1.5;
         }
         .pr-banner-warn {
-          border-color: rgba(192,137,42,0.3);
-          background: rgba(192,137,42,0.06);
-          color: #d4a84b;
+          border-color: rgba(var(--brand-gold-rgb),0.3);
+          background: rgba(var(--brand-gold-rgb),0.06);
+          color: var(--brand-gold-light);
         }
 
         /* ── LOGIN PROMPT ── */
         .pr-login-box {
-          border: 1px solid rgba(242,232,213,0.09);
-          background: rgba(242,232,213,0.02);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
+          background: rgba(var(--brand-fg-rgb),0.02);
           padding: 20px;
           margin-bottom: 20px;
         }
         .pr-login-text {
           font-size: 13px;
-          color: var(--sand, #C9B99A);
+          color: var(--sand, var(--brand-sand));
           margin-bottom: 14px;
           line-height: 1.6;
         }
@@ -142,8 +152,8 @@ export function ProductReviewsSection({
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          background: var(--terra, #BF5A28);
-          color: var(--cream, #F2E8D5);
+          background: var(--terra, var(--brand-terra));
+          color: var(--cream, var(--brand-cream));
           font-family: 'DM Sans', sans-serif;
           font-size: 10px;
           font-weight: 500;
@@ -153,7 +163,7 @@ export function ProductReviewsSection({
           text-decoration: none;
           transition: background 0.2s;
         }
-        .pr-login-btn:hover { background: #a34d22; }
+        .pr-login-btn:hover { background: var(--brand-terra-dark); }
         .pr-login-btn::after { content: '→'; }
 
         @media (max-width: 640px) {
@@ -165,21 +175,22 @@ export function ProductReviewsSection({
         <div className="pr-header">
           <p className="pr-eyebrow">Community</p>
           <h2 className="pr-title">Customer Reviews</h2>
-          <p className="pr-subtitle">Real experiences from customers in our community.</p>
+          <p className="pr-subtitle">
+            Real experiences from customers in our community.
+          </p>
         </div>
 
         {/* Loading session */}
         {status === "loading" && (
-          <div className="pr-banner">
-            Checking your review eligibility...
-          </div>
+          <div className="pr-banner">Checking your review eligibility...</div>
         )}
 
         {/* Unauthenticated */}
         {status === "unauthenticated" && (
           <div className="pr-login-box">
             <p className="pr-login-text">
-              Sign in to access review tools and your personalized order history.
+              Sign in to access review tools and your personalized order
+              history.
             </p>
             <Link href={callbackUrl} className="pr-login-btn">
               Log in to review
@@ -191,7 +202,9 @@ export function ProductReviewsSection({
         {status === "authenticated" && (
           <div>
             {verifyLoading && (
-              <div className="pr-banner">Verifying your completed orders...</div>
+              <div className="pr-banner">
+                Verifying your completed orders...
+              </div>
             )}
             {!verifyLoading && verifyError && (
               <div className="pr-banner pr-banner-warn">
@@ -208,8 +221,9 @@ export function ProductReviewsSection({
               !eligibility?.hasReviewed &&
               !eligibility?.hasPurchased && (
                 <div className="pr-banner">
-                  We prioritize feedback from customers with order history on this
-                  item — your review option appears automatically once available.
+                  We prioritize feedback from customers with order history on
+                  this item — your review option appears automatically once
+                  available.
                 </div>
               )}
           </div>

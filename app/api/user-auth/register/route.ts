@@ -4,26 +4,32 @@ import { db } from "lib/db";
 import { users } from "lib/db/schema";
 import { sendWelcomeEmail } from "lib/email/auth-emails";
 import { handleApiError } from "lib/errors";
-import { deriveNameFromEmail } from "lib/user-utils";
+import { getClientIp, rateLimit, tooManyRequests } from "lib/rate-limit";
+import { deriveNameFromEmail, normalizeEmail } from "lib/user-utils";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password } = await request.json();
+    const limit = rateLimit(`register:${getClientIp(request)}`, 5, 60 * 60_000);
+    if (!limit.ok) return tooManyRequests(limit.retryAfter);
 
-    if (!email || !password) {
+    const { name, email: rawEmail, password } = await request.json();
+
+    if (!rawEmail || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
         { status: 400 },
       );
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
+        { error: "Password must be at least 8 characters" },
         { status: 400 },
       );
     }
+
+    const email = normalizeEmail(rawEmail);
 
     const [existingUser] = await db
       .select()
@@ -54,7 +60,7 @@ export async function POST(request: NextRequest) {
         hasPassword: true,
       })
       .returning();
-    
+
     if (!user) {
       return NextResponse.json(
         { error: "Failed to create user" },
@@ -70,7 +76,7 @@ export async function POST(request: NextRequest) {
     if (!welcomeResult.success) {
       console.error("Failed to send welcome email after registration");
     }
-      
+
     return NextResponse.json(
       {
         message: "User created successfully",

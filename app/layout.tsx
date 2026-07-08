@@ -4,7 +4,7 @@ import TikTokIdentify from "components/analytics/tiktok-identify";
 import AbandonedCartRecovery from "components/cart/abandoned-cart-recovery";
 import AbandonedCartTracker from "components/cart/abandoned-cart-tracker";
 import { CartProvider } from "components/cart/cart-context";
-import ExitIntentPopup from "components/exit-intent-popup";
+import FirstVisitSignupPopup from "components/onboarding/first-visit-signup";
 import { Navbar } from "components/layout/navbar";
 import PageTransition from "components/layout/page-transition";
 import { WelcomeToast } from "components/welcome-toast";
@@ -86,15 +86,17 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${dmSans.variable} ${bebasNeue.variable} ${cormorantGaramond.variable} dark`}
+      className={`${inter.variable} ${dmSans.variable} ${bebasNeue.variable} ${cormorantGaramond.variable}`}
       suppressHydrationWarning
     >
       <Analytics />
       <body className="bg-neutral-50 font-sans text-black selection:bg-teal-300 dark:bg-neutral-900 dark:text-white dark:selection:bg-pink-500 dark:selection:text-white">
-        {/* Temporary dark-mode lock until light theme redesign is complete */}
+        {/* Seed the theme from localStorage / system preference before first
+            paint so there is no flash of the wrong theme. Mirrors the logic in
+            components/theme-toggle.tsx. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var d=document.documentElement;d.classList.add('dark');d.style.colorScheme='dark';localStorage.setItem('theme','dark');}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('theme');var d=document.documentElement;var m=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||((!t||t==='system')&&m)){d.classList.add('dark');d.style.colorScheme='dark';}else{d.classList.remove('dark');d.style.colorScheme='light';}}catch(e){}})();`,
           }}
         />
         <script
@@ -193,7 +195,7 @@ export default async function RootLayout({
           {!isAdminRoute ? <AbandonedCartTracker /> : null}
           {!isAdminRoute ? <TikTokIdentify /> : null}
           {!isAdminRoute ? <Navbar /> : null}
-          {!isAdminRoute ? <ExitIntentPopup /> : null}
+          {!isAdminRoute ? <FirstVisitSignupPopup /> : null}
           <main>
             <PageTransition>{children}</PageTransition>
             <Toaster closeButton />

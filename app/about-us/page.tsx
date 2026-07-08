@@ -31,15 +31,15 @@ export default function AboutUsPage() {
     <>
       <style>{`
         :root {
-          --dp-ink:     #0A0704;
-          --dp-charcoal:#191209;
-          --dp-card:    #1E1510;
-          --dp-cream:   #F2E8D5;
-          --dp-sand:    #C9B99A;
-          --dp-muted:   #6A5A48;
-          --dp-ember:   #BF5A28;
-          --dp-gold:    #C0892A;
-          --dp-border:  rgba(242,232,213,0.09);
+          --dp-ink:     var(--brand-espresso);
+          --dp-charcoal:var(--brand-surface2);
+          --dp-card:    var(--brand-surface2);
+          --dp-cream:   var(--brand-cream);
+          --dp-sand:    var(--brand-sand);
+          --dp-muted:   var(--brand-muted);
+          --dp-ember:   var(--brand-terra);
+          --dp-gold:    var(--brand-gold);
+          --dp-border:  rgba(var(--brand-fg-rgb),0.09);
         }
 
         .dp-wordmark { font-family: var(--font-bebas-neue), sans-serif; letter-spacing: 0.1em; }
@@ -162,42 +162,74 @@ export default function AboutUsPage() {
 
       <div
         className="dp-sans"
-        style={{ background: "var(--dp-ink)", color: "var(--dp-cream)", minHeight: "100vh" }}
+        style={{
+          background: "var(--dp-ink)",
+          color: "var(--dp-cream)",
+          minHeight: "100vh",
+        }}
       >
-
         {/* ══════════════════════════════════════════════
             HERO
         ══════════════════════════════════════════════ */}
         <section
           style={{
-            position: "relative", overflow: "hidden",
+            position: "relative",
+            overflow: "hidden",
             padding: "4rem clamp(1.5rem,4vw,4rem) 3.5rem",
             borderBottom: "1px solid var(--dp-border)",
           }}
         >
           {/* Atmospheric glows */}
-          <div style={{
-            position: "absolute", width: 700, height: 700, borderRadius: "50%",
-            background: "radial-gradient(circle,rgba(191,90,40,0.11) 0%,transparent 70%)",
-            right: -120, top: -220, filter: "blur(80px)", pointerEvents: "none",
-          }} />
-          <div style={{
-            position: "absolute", width: 400, height: 400, borderRadius: "50%",
-            background: "radial-gradient(circle,rgba(192,137,42,0.07) 0%,transparent 70%)",
-            left: -80, bottom: -100, filter: "blur(60px)", pointerEvents: "none",
-          }} />
+          <div
+            style={{
+              position: "absolute",
+              width: 700,
+              height: 700,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle,rgba(var(--brand-terra-rgb),0.11) 0%,transparent 70%)",
+              right: -120,
+              top: -220,
+              filter: "blur(80px)",
+              pointerEvents: "none",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              width: 400,
+              height: 400,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle,rgba(var(--brand-gold-rgb),0.07) 0%,transparent 70%)",
+              left: -80,
+              bottom: -100,
+              filter: "blur(60px)",
+              pointerEvents: "none",
+            }}
+          />
 
           <div style={{ maxWidth: 1000, position: "relative", zIndex: 1 }}>
-            <p className="dp-label dp-rise-1" style={{ marginBottom: "1.1rem" }}>About Us</p>
+            <p
+              className="dp-label dp-rise-1"
+              style={{ marginBottom: "1.1rem" }}
+            >
+              About Us
+            </p>
 
             <div style={{ position: "relative" }}>
               <span
                 className="dp-wordmark"
                 style={{
-                  position: "absolute", top: "-0.5rem", left: "-0.1rem",
-                  fontSize: "clamp(7rem,20vw,15rem)", lineHeight: 1,
-                  color: "rgba(242,232,213,0.035)",
-                  pointerEvents: "none", userSelect: "none", zIndex: 0,
+                  position: "absolute",
+                  top: "-0.5rem",
+                  left: "-0.1rem",
+                  fontSize: "clamp(7rem,20vw,15rem)",
+                  lineHeight: 1,
+                  color: "rgba(var(--brand-fg-rgb),0.035)",
+                  pointerEvents: "none",
+                  userSelect: "none",
+                  zIndex: 0,
                 }}
               >
                 01
@@ -205,13 +237,17 @@ export default function AboutUsPage() {
               <h1
                 className="dp-serif dp-rise-2"
                 style={{
-                  position: "relative", zIndex: 1,
+                  position: "relative",
+                  zIndex: 1,
                   fontSize: "clamp(2rem,5vw,3.75rem)",
-                  fontWeight: 600, lineHeight: 1.15,
-                  color: "var(--dp-cream)", maxWidth: 820,
+                  fontWeight: 600,
+                  lineHeight: 1.15,
+                  color: "var(--dp-cream)",
+                  maxWidth: 820,
                 }}
               >
-                Built in Lagos. Worn across Nigeria. Made by hand — every single time.
+                Built in Lagos. Worn across Nigeria. Made by hand — every single
+                time.
               </h1>
             </div>
 
@@ -219,11 +255,17 @@ export default function AboutUsPage() {
               className="dp-rise-3"
               style={{
                 fontFamily: "var(--font-dm-sans),sans-serif",
-                fontSize: "0.88rem", lineHeight: 1.8,
-                color: "var(--dp-muted)", maxWidth: 560, marginTop: "1.4rem",
+                fontSize: "0.88rem",
+                lineHeight: 1.8,
+                color: "var(--dp-muted)",
+                maxWidth: 560,
+                marginTop: "1.4rem",
               }}
             >
-              D&apos;FOOTPRINT started with one person, one skill, and more demand than expected. Every pair of slippers, slides, and custom pieces still starts and ends with the same set of hands — crafted carefully, checked honestly, delivered anywhere in Nigeria.
+              D&apos;FOOTPRINT started with one person, one skill, and more
+              demand than expected. Every pair of slippers, slides, and custom
+              pieces still starts and ends with the same set of hands — crafted
+              carefully, checked honestly, delivered anywhere in Nigeria.
             </p>
           </div>
         </section>
@@ -240,9 +282,17 @@ export default function AboutUsPage() {
           }}
         >
           {[
-            { label: "Process",  value: "On Demand",  sub: "Every pair made to order" },
-            { label: "Base",     value: "Lagos",      sub: "Nigeria" },
-            { label: "Delivery", value: "Nationwide", sub: "All 36 states covered" },
+            {
+              label: "Process",
+              value: "On Demand",
+              sub: "Every pair made to order",
+            },
+            { label: "Base", value: "Lagos", sub: "Nigeria" },
+            {
+              label: "Delivery",
+              value: "Nationwide",
+              sub: "All 36 states covered",
+            },
           ].map(({ label, value, sub }, i) => (
             <div
               key={label}
@@ -251,14 +301,27 @@ export default function AboutUsPage() {
                 borderRight: i < 2 ? "1px solid var(--dp-border)" : "none",
               }}
             >
-              <p className="dp-label" style={{ marginBottom: "0.6rem" }}>{label}</p>
+              <p className="dp-label" style={{ marginBottom: "0.6rem" }}>
+                {label}
+              </p>
               <p
                 className="dp-wordmark"
-                style={{ fontSize: "clamp(1.4rem,3vw,2.2rem)", color: "var(--dp-cream)", lineHeight: 1 }}
+                style={{
+                  fontSize: "clamp(1.4rem,3vw,2.2rem)",
+                  color: "var(--dp-cream)",
+                  lineHeight: 1,
+                }}
               >
                 {value}
               </p>
-              <p style={{ fontFamily: "var(--font-dm-sans),sans-serif", fontSize: "0.68rem", color: "var(--dp-muted)", marginTop: "0.35rem" }}>
+              <p
+                style={{
+                  fontFamily: "var(--font-dm-sans),sans-serif",
+                  fontSize: "0.68rem",
+                  color: "var(--dp-muted)",
+                  marginTop: "0.35rem",
+                }}
+              >
                 {sub}
               </p>
             </div>
@@ -270,12 +333,13 @@ export default function AboutUsPage() {
         ══════════════════════════════════════════════ */}
         <div
           style={{
-            maxWidth: 1200, margin: "0 auto",
+            maxWidth: 1200,
+            margin: "0 auto",
             padding: "5rem clamp(1.5rem,4vw,4rem)",
-            display: "grid", gap: "5rem",
+            display: "grid",
+            gap: "5rem",
           }}
         >
-
           {/* ── ORIGIN STORY ─────────────────────────── */}
           <section className="dp-rise-4">
             <div className="dp-section-head">
@@ -289,15 +353,18 @@ export default function AboutUsPage() {
               className="dp-serif"
               style={{
                 fontSize: "clamp(1.4rem,2.8vw,2rem)",
-                fontWeight: 300, fontStyle: "italic",
-                color: "var(--dp-sand)", lineHeight: 1.55,
+                fontWeight: 300,
+                fontStyle: "italic",
+                color: "var(--dp-sand)",
+                lineHeight: 1.55,
                 borderLeft: "2px solid var(--dp-ember)",
                 paddingLeft: "1.5rem",
                 maxWidth: 780,
                 marginBottom: "3rem",
               }}
             >
-              &ldquo;It didn&apos;t start as a business. It started as something I just knew how to do well.&rdquo;
+              &ldquo;It didn&apos;t start as a business. It started as something
+              I just knew how to do well.&rdquo;
             </blockquote>
 
             {/* Story prose — full width, two columns on wide screens */}
@@ -316,29 +383,39 @@ export default function AboutUsPage() {
                 }}
               >
                 <p>
-                  D&apos;FOOTPRINT started the way most real things do — not with a business
-                  plan, but with a skill and a demand that kept growing. A few pairs made for
-                  people close by. Then more requests. Then orders from people who&apos;d never
-                  met the maker but trusted what they&apos;d seen.
+                  D&apos;FOOTPRINT started the way most real things do — not
+                  with a business plan, but with a skill and a demand that kept
+                  growing. A few pairs made for people close by. Then more
+                  requests. Then orders from people who&apos;d never met the
+                  maker but trusted what they&apos;d seen.
                 </p>
                 <p>
-                  The gap was obvious to anyone who&apos;d bought footwear in Lagos:{" "}
-                  <strong>you could find plenty of options, but almost none you could trust.</strong>{" "}
-                  Market slippers that look sharp in the stall and fall apart before the month
-                  is out. Online sellers with no accountability and no follow-up. It was a
-                  space that needed something built differently.
+                  The gap was obvious to anyone who&apos;d bought footwear in
+                  Lagos:{" "}
+                  <strong>
+                    you could find plenty of options, but almost none you could
+                    trust.
+                  </strong>{" "}
+                  Market slippers that look sharp in the stall and fall apart
+                  before the month is out. Online sellers with no accountability
+                  and no follow-up. It was a space that needed something built
+                  differently.
                 </p>
                 <p>
-                  So that&apos;s what D&apos;FOOTPRINT became — a handmade footwear brand
-                  where every pair is made to order, by one person, with genuine care for how
-                  it holds up. Not mass-produced. Not passed through multiple hands with no
-                  one responsible. <strong>One maker. One standard. Every time.</strong>
+                  So that&apos;s what D&apos;FOOTPRINT became — a handmade
+                  footwear brand where every pair is made to order, by one
+                  person, with genuine care for how it holds up. Not
+                  mass-produced. Not passed through multiple hands with no one
+                  responsible.{" "}
+                  <strong>One maker. One standard. Every time.</strong>
                 </p>
                 <p>
-                  There&apos;s no physical store, and that&apos;s by design. Ordering directly
-                  means honest production timelines, real updates at every stage, and someone
-                  who actually picks up when something needs sorting. That&apos;s the version
-                  of this business we set out to build — and it&apos;s the one we run today.
+                  There&apos;s no physical store, and that&apos;s by design.
+                  Ordering directly means honest production timelines, real
+                  updates at every stage, and someone who actually picks up when
+                  something needs sorting. That&apos;s the version of this
+                  business we set out to build — and it&apos;s the one we run
+                  today.
                 </p>
               </div>
             </div>
@@ -371,7 +448,9 @@ export default function AboutUsPage() {
                   padding: "2rem",
                 }}
               >
-                <p className="dp-label" style={{ marginBottom: "1.25rem" }}>What we make</p>
+                <p className="dp-label" style={{ marginBottom: "1.25rem" }}>
+                  What we make
+                </p>
                 <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
                   {[
                     "Slippers",
@@ -380,19 +459,43 @@ export default function AboutUsPage() {
                     "Personalised edits on existing designs",
                   ].map((item) => (
                     <li key={item} className="dp-make-item">
-                      <span style={{ color: "var(--dp-ember)", fontSize: "0.7rem", flexShrink: 0 }}>◈</span>
+                      <span
+                        style={{
+                          color: "var(--dp-ember)",
+                          fontSize: "0.7rem",
+                          flexShrink: 0,
+                        }}
+                      >
+                        ◈
+                      </span>
                       {item}
                     </li>
                   ))}
                 </ul>
 
-                <div style={{ marginTop: "1.75rem", paddingTop: "1.75rem", borderTop: "1px solid var(--dp-border)" }}>
-                  <p className="dp-label" style={{ marginBottom: "1rem" }}>Custom orders — what&apos;s possible</p>
-                  <p style={{ fontFamily: "var(--font-dm-sans),sans-serif", fontSize: "0.8rem", color: "var(--dp-muted)", lineHeight: 1.8 }}>
-                    Submit a design image to be recreated, or request approved edits on
-                    existing styles — removing buckles, adding roses, changing colours.
-                    Some edits carry an additional cost, which we confirm before you pay.
-                    Not sure what&apos;s possible? Ask first. No pressure, no upsell.
+                <div
+                  style={{
+                    marginTop: "1.75rem",
+                    paddingTop: "1.75rem",
+                    borderTop: "1px solid var(--dp-border)",
+                  }}
+                >
+                  <p className="dp-label" style={{ marginBottom: "1rem" }}>
+                    Custom orders — what&apos;s possible
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "var(--font-dm-sans),sans-serif",
+                      fontSize: "0.8rem",
+                      color: "var(--dp-muted)",
+                      lineHeight: 1.8,
+                    }}
+                  >
+                    Submit a design image to be recreated, or request approved
+                    edits on existing styles — removing buckles, adding roses,
+                    changing colours. Some edits carry an additional cost, which
+                    we confirm before you pay. Not sure what&apos;s possible?
+                    Ask first. No pressure, no upsell.
                   </p>
                 </div>
               </div>
@@ -406,7 +509,9 @@ export default function AboutUsPage() {
                   padding: "2rem",
                 }}
               >
-                <p className="dp-label" style={{ marginBottom: "1.5rem" }}>How an order works</p>
+                <p className="dp-label" style={{ marginBottom: "1.5rem" }}>
+                  How an order works
+                </p>
                 <div>
                   {[
                     {
@@ -485,21 +590,36 @@ export default function AboutUsPage() {
                     },
                   ].map(({ icon, title, body }) => (
                     <li key={title} className="dp-trust-item">
-                      <span style={{ fontSize: "0.9rem", color: "var(--dp-ember)", flexShrink: 0, lineHeight: 1.5 }}>
+                      <span
+                        style={{
+                          fontSize: "0.9rem",
+                          color: "var(--dp-ember)",
+                          flexShrink: 0,
+                          lineHeight: 1.5,
+                        }}
+                      >
                         {icon}
                       </span>
                       <div>
-                        <p style={{
-                          fontFamily: "var(--font-dm-sans),sans-serif",
-                          fontSize: "0.8rem", fontWeight: 500,
-                          color: "var(--dp-sand)", marginBottom: "0.3rem",
-                        }}>
+                        <p
+                          style={{
+                            fontFamily: "var(--font-dm-sans),sans-serif",
+                            fontSize: "0.8rem",
+                            fontWeight: 500,
+                            color: "var(--dp-sand)",
+                            marginBottom: "0.3rem",
+                          }}
+                        >
                           {title}
                         </p>
-                        <p style={{
-                          fontFamily: "var(--font-dm-sans),sans-serif",
-                          fontSize: "0.78rem", color: "var(--dp-muted)", lineHeight: 1.75,
-                        }}>
+                        <p
+                          style={{
+                            fontFamily: "var(--font-dm-sans),sans-serif",
+                            fontSize: "0.78rem",
+                            color: "var(--dp-muted)",
+                            lineHeight: 1.75,
+                          }}
+                        >
                           {body}
                         </p>
                       </div>
@@ -515,20 +635,41 @@ export default function AboutUsPage() {
                   background: "var(--dp-card)",
                   border: "1px solid var(--dp-border)",
                   padding: "2rem",
-                  display: "flex", flexDirection: "column",
-                  justifyContent: "space-between", gap: "2rem",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  gap: "2rem",
                 }}
               >
                 <div>
-                  <p className="dp-label" style={{ marginBottom: "1rem" }}>Have questions before you order?</p>
-                  <p style={{ fontFamily: "var(--font-dm-sans),sans-serif", fontSize: "0.82rem", color: "var(--dp-muted)", lineHeight: 1.8 }}>
-                    Sizing guidance, custom request details, delivery timelines — whatever&apos;s
-                    on your mind, reach out before you buy. We&apos;d rather answer your questions
-                    upfront than sort complications after delivery.
+                  <p className="dp-label" style={{ marginBottom: "1rem" }}>
+                    Have questions before you order?
                   </p>
-                  <p style={{ fontFamily: "var(--font-dm-sans),sans-serif", fontSize: "0.82rem", color: "var(--dp-muted)", lineHeight: 1.8, marginTop: "1rem" }}>
-                    There&apos;s one person handling every message — so you&apos;re always talking
-                    to the same person who made, or will make, your pair.
+                  <p
+                    style={{
+                      fontFamily: "var(--font-dm-sans),sans-serif",
+                      fontSize: "0.82rem",
+                      color: "var(--dp-muted)",
+                      lineHeight: 1.8,
+                    }}
+                  >
+                    Sizing guidance, custom request details, delivery timelines
+                    — whatever&apos;s on your mind, reach out before you buy.
+                    We&apos;d rather answer your questions upfront than sort
+                    complications after delivery.
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "var(--font-dm-sans),sans-serif",
+                      fontSize: "0.82rem",
+                      color: "var(--dp-muted)",
+                      lineHeight: 1.8,
+                      marginTop: "1rem",
+                    }}
+                  >
+                    There&apos;s one person handling every message — so
+                    you&apos;re always talking to the same person who made, or
+                    will make, your pair.
                   </p>
                 </div>
 
@@ -536,10 +677,15 @@ export default function AboutUsPage() {
                   <span
                     className="dp-wordmark"
                     style={{
-                      position: "absolute", bottom: "3rem", right: 0,
-                      fontSize: "3.5rem", lineHeight: 1,
-                      color: "rgba(242,232,213,0.04)",
-                      pointerEvents: "none", userSelect: "none", whiteSpace: "nowrap",
+                      position: "absolute",
+                      bottom: "3rem",
+                      right: 0,
+                      fontSize: "3.5rem",
+                      lineHeight: 1,
+                      color: "rgba(var(--brand-fg-rgb),0.04)",
+                      pointerEvents: "none",
+                      userSelect: "none",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     D&apos;FOOTPRINT
@@ -547,7 +693,13 @@ export default function AboutUsPage() {
                   <Link href="/contact" className="dp-contact-link">
                     Contact D&apos;FOOTPRINT
                     <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                      <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <path
+                        d="M3 8h10M9 4l4 4-4 4"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </Link>
                 </div>
@@ -560,57 +712,108 @@ export default function AboutUsPage() {
             style={{
               background: "var(--dp-ember)",
               padding: "2.75rem clamp(1.5rem,4vw,3.5rem)",
-              display: "flex", flexWrap: "wrap",
-              alignItems: "center", justifyContent: "space-between",
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "space-between",
               gap: "1.5rem",
-              position: "relative", overflow: "hidden",
+              position: "relative",
+              overflow: "hidden",
             }}
           >
             <span
               className="dp-wordmark"
               style={{
-                position: "absolute", right: "-1rem", top: "50%",
+                position: "absolute",
+                right: "-1rem",
+                top: "50%",
                 transform: "translateY(-50%)",
-                fontSize: "clamp(4rem,12vw,9rem)", lineHeight: 1,
+                fontSize: "clamp(4rem,12vw,9rem)",
+                lineHeight: 1,
                 color: "rgba(0,0,0,0.09)",
-                pointerEvents: "none", userSelect: "none", whiteSpace: "nowrap",
+                pointerEvents: "none",
+                userSelect: "none",
+                whiteSpace: "nowrap",
               }}
             >
               SHOP NOW
             </span>
             <div style={{ position: "relative", zIndex: 1 }}>
-              <p className="dp-serif" style={{ fontSize: "clamp(1.25rem,2.5vw,1.85rem)", fontWeight: 600, color: "var(--dp-cream)", lineHeight: 1.25 }}>
+              <p
+                className="dp-serif"
+                style={{
+                  fontSize: "clamp(1.25rem,2.5vw,1.85rem)",
+                  fontWeight: 600,
+                  color: "var(--dp-cream)",
+                  lineHeight: 1.25,
+                }}
+              >
                 Ready to find your pair?
               </p>
-              <p style={{ fontFamily: "var(--font-dm-sans),sans-serif", fontSize: "0.78rem", color: "rgba(242,232,213,0.72)", marginTop: "0.35rem" }}>
-                Browse handcrafted slippers and slides — or tell us exactly what you want made.
+              <p
+                style={{
+                  fontFamily: "var(--font-dm-sans),sans-serif",
+                  fontSize: "0.78rem",
+                  color: "rgba(var(--brand-fg-rgb),0.72)",
+                  marginTop: "0.35rem",
+                }}
+              >
+                Browse handcrafted slippers and slides — or tell us exactly what
+                you want made.
               </p>
             </div>
-            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", position: "relative", zIndex: 1 }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "0.75rem",
+                flexWrap: "wrap",
+                position: "relative",
+                zIndex: 1,
+              }}
+            >
               <Link
                 href="/products"
                 style={{
-                  display: "inline-flex", alignItems: "center", gap: "0.4rem",
-                  background: "var(--dp-cream)", color: "var(--dp-ink)",
-                  fontFamily: "var(--font-dm-sans),sans-serif", fontWeight: 500,
-                  fontSize: "0.68rem", letterSpacing: "0.14em", textTransform: "uppercase",
-                  padding: "0.85rem 1.85rem", textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  background: "var(--dp-cream)",
+                  color: "var(--dp-ink)",
+                  fontFamily: "var(--font-dm-sans),sans-serif",
+                  fontWeight: 500,
+                  fontSize: "0.68rem",
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  padding: "0.85rem 1.85rem",
+                  textDecoration: "none",
                   transition: "opacity 0.2s",
                 }}
               >
                 Shop Collection
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                  <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path
+                    d="M3 8h10M9 4l4 4-4 4"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </Link>
               <Link
                 href="/custom-orders"
                 style={{
-                  display: "inline-flex", alignItems: "center",
-                  border: "1px solid rgba(242,232,213,0.4)", color: "var(--dp-cream)",
-                  fontFamily: "var(--font-dm-sans),sans-serif", fontWeight: 500,
-                  fontSize: "0.68rem", letterSpacing: "0.14em", textTransform: "uppercase",
-                  padding: "0.85rem 1.85rem", textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  border: "1px solid rgba(var(--brand-fg-rgb),0.4)",
+                  color: "var(--dp-cream)",
+                  fontFamily: "var(--font-dm-sans),sans-serif",
+                  fontWeight: 500,
+                  fontSize: "0.68rem",
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  padding: "0.85rem 1.85rem",
+                  textDecoration: "none",
                   transition: "border-color 0.2s",
                 }}
               >
@@ -618,7 +821,6 @@ export default function AboutUsPage() {
               </Link>
             </div>
           </section>
-
         </div>
       </div>
 

@@ -111,15 +111,15 @@ export default async function ProductPage(props: {
       <style>{`
 
         :root {
-          --espresso:   #0A0704;
-          --charcoal:   #100C06;
-          --cream:      #F2E8D5;
-          --sand:       #C9B99A;
-          --muted:      #6A5A48;
-          --terra:      #BF5A28;
-          --gold:       #C0892A;
-          --border:     rgba(242,232,213,0.09);
-          --border-mid: rgba(242,232,213,0.18);
+          --espresso:   var(--brand-espresso);
+          --charcoal:   var(--brand-charcoal);
+          --cream:      var(--brand-cream);
+          --sand:       var(--brand-sand);
+          --muted:      var(--brand-muted);
+          --terra:      var(--brand-terra);
+          --gold:       var(--brand-gold);
+          --border:     rgba(var(--brand-fg-rgb),0.09);
+          --border-mid: rgba(var(--brand-fg-rgb),0.18);
         }
 
         .pp-root {
@@ -155,7 +155,7 @@ export default async function ProductPage(props: {
         .pp-shell {
           margin: 20px 48px 0;
           border: 1px solid var(--border);
-          background: rgba(16,12,6,0.9);
+          background: rgba(var(--brand-bg-rgb),0.9);
         }
         .pp-inner {
           display: grid;
@@ -203,18 +203,20 @@ export default async function ProductPage(props: {
           color: var(--terra);
           margin-bottom: 14px;
         }
+        /* Craft band sits over a fixed dark scrim, so its text stays light
+           in both themes (kept off the theme tokens on purpose). */
         .pp-craft-title {
           font-family: var(--font-cormorant-garamond), serif;
           font-size: clamp(26px, 3.4vw, 44px);
           font-weight: 600;
           line-height: 1.04;
-          color: var(--cream);
+          color: #f2e8d5;
           margin-bottom: 14px;
         }
         .pp-craft-sub {
           font-size: 13px;
           line-height: 1.7;
-          color: var(--sand);
+          color: #c9b99a;
           max-width: 440px;
         }
 
@@ -223,7 +225,7 @@ export default async function ProductPage(props: {
           margin: 2px 48px 0;
           border: 1px solid var(--border);
           border-top: none;
-          background: rgba(16,12,6,0.6);
+          background: rgba(var(--brand-bg-rgb),0.6);
         }
 
         /* ── RELATED ── */
@@ -231,7 +233,7 @@ export default async function ProductPage(props: {
           margin: 2px 48px 0;
           border: 1px solid var(--border);
           border-top: none;
-          background: rgba(16,12,6,0.5);
+          background: rgba(var(--brand-bg-rgb),0.5);
           padding: 40px;
         }
         .pp-related-eyebrow {
@@ -383,7 +385,7 @@ export default async function ProductPage(props: {
                   <div
                     style={{
                       aspectRatio: "3/4",
-                      background: "rgba(242,232,213,0.02)",
+                      background: "rgba(var(--brand-fg-rgb),0.02)",
                       border: "1px solid var(--border)",
                     }}
                   />

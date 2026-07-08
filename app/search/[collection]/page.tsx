@@ -25,10 +25,17 @@ export async function generateMetadata(props: {
 
   if (!collection) return notFound();
 
-  const hasContentAffectingParams = hasContentAffectingSearchParams(searchParams, ["sort"]);
+  const hasContentAffectingParams = hasContentAffectingSearchParams(
+    searchParams,
+    ["sort"],
+  );
   const title = collection.seo?.title || collection.title;
-  const description = collection.seo?.description || collection.description || `${collection.title} products`;
-  const isHiddenCollection = collection.handle.startsWith("hidden-") || collection.handle === "all";
+  const description =
+    collection.seo?.description ||
+    collection.description ||
+    `${collection.title} products`;
+  const isHiddenCollection =
+    collection.handle.startsWith("hidden-") || collection.handle === "all";
   const ogImagePath = `${collection.path}/opengraph-image`;
 
   return {
@@ -66,7 +73,8 @@ export default async function CategoryPage(props: {
   const collection = await getCollection(params.collection);
   if (!collection) return notFound();
 
-  const selectedSort = sorting.find((item) => item.slug === sort) || defaultSort;
+  const selectedSort =
+    sorting.find((item) => item.slug === sort) || defaultSort;
   const { sortKey, reverse } = selectedSort;
 
   const [products, collections] = await Promise.all([
@@ -78,7 +86,7 @@ export default async function CategoryPage(props: {
     <>
       <style>{`
         .co-empty {
-          border: 1px dashed rgba(242,232,213,0.12);
+          border: 1px dashed rgba(var(--brand-fg-rgb),0.12);
           padding: 5rem 2rem;
           text-align: center;
           display: flex;
@@ -88,10 +96,16 @@ export default async function CategoryPage(props: {
         }
       `}</style>
 
-      <section style={{ display: "flex", flexDirection: "column", gap: "3rem" }}>
-
+      <section
+        style={{ display: "flex", flexDirection: "column", gap: "3rem" }}
+      >
         {/* ── Header ── */}
-        <header style={{ borderBottom: "1px solid var(--dp-border)", paddingBottom: "2rem" }}>
+        <header
+          style={{
+            borderBottom: "1px solid var(--dp-border)",
+            paddingBottom: "2rem",
+          }}
+        >
           <div
             style={{
               display: "flex",
@@ -103,12 +117,14 @@ export default async function CategoryPage(props: {
             }}
           >
             <div>
-              <p className="dp-label" style={{ marginBottom: ".6rem" }}>Collection</p>
+              <p className="dp-label" style={{ marginBottom: ".6rem" }}>
+                Collection
+              </p>
               <h1
                 className="dp-wordmark"
                 style={{
                   fontSize: "clamp(2.8rem,8vw,6rem)",
-                  lineHeight: .9,
+                  lineHeight: 0.9,
                   letterSpacing: "-.01em",
                   color: "var(--dp-cream)",
                   marginBottom: ".75rem",
@@ -116,8 +132,16 @@ export default async function CategoryPage(props: {
               >
                 {collection.title.toUpperCase()}
               </h1>
-              <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".72rem", color: "var(--dp-muted)", letterSpacing: ".06em" }}>
-                {products.length} item{products.length === 1 ? "" : "s"} · Sort: {selectedSort.title}
+              <p
+                style={{
+                  fontFamily: "DM Sans, sans-serif",
+                  fontSize: ".72rem",
+                  color: "var(--dp-muted)",
+                  letterSpacing: ".06em",
+                }}
+              >
+                {products.length} item{products.length === 1 ? "" : "s"} · Sort:{" "}
+                {selectedSort.title}
               </p>
             </div>
 
@@ -154,7 +178,7 @@ export default async function CategoryPage(props: {
               className="dp-wordmark"
               style={{
                 fontSize: "clamp(3rem,10vw,7rem)",
-                color: "rgba(242,232,213,0.04)",
+                color: "rgba(var(--brand-fg-rgb),0.04)",
                 lineHeight: 1,
                 userSelect: "none",
                 pointerEvents: "none",
@@ -164,12 +188,25 @@ export default async function CategoryPage(props: {
             </p>
             <p
               className="dp-serif"
-              style={{ fontSize: "1.4rem", fontWeight: 600, color: "var(--dp-cream)" }}
+              style={{
+                fontSize: "1.4rem",
+                fontWeight: 600,
+                color: "var(--dp-cream)",
+              }}
             >
               Nothing here yet
             </p>
-            <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".75rem", color: "var(--dp-muted)", maxWidth: 320, lineHeight: 1.65 }}>
-              No products found in this collection. Check back soon or browse another.
+            <p
+              style={{
+                fontFamily: "DM Sans, sans-serif",
+                fontSize: ".75rem",
+                color: "var(--dp-muted)",
+                maxWidth: 320,
+                lineHeight: 1.65,
+              }}
+            >
+              No products found in this collection. Check back soon or browse
+              another.
             </p>
           </div>
         ) : (

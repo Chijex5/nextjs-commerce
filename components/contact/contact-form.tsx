@@ -55,7 +55,9 @@ export default function ContactForm() {
         return;
       }
 
-      toast.success(data.message || "Thanks for reaching out. We'll reply soon.");
+      toast.success(
+        data.message || "Thanks for reaching out. We'll reply soon.",
+      );
       setFormValues({ name: "", email: "", message: "" });
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -69,19 +71,19 @@ export default function ContactForm() {
       <style>{`
 
         :root {
-          --espresso:   #0A0704;
-          --cream:      #F2E8D5;
-          --sand:       #C9B99A;
-          --muted:      #6A5A48;
-          --terra:      #BF5A28;
-          --gold:       #C0892A;
-          --border:     rgba(242,232,213,0.09);
-          --border-mid: rgba(242,232,213,0.18);
+          --espresso:   var(--brand-espresso);
+          --cream:      var(--brand-cream);
+          --sand:       var(--brand-sand);
+          --muted:      var(--brand-muted);
+          --terra:      var(--brand-terra);
+          --gold:       var(--brand-gold);
+          --border:     rgba(var(--brand-fg-rgb),0.09);
+          --border-mid: rgba(var(--brand-fg-rgb),0.18);
         }
 
         .cf-root {
           border: 1px solid var(--border);
-          background: rgba(16,12,6,0.96);
+          background: rgba(var(--brand-bg-rgb),0.96);
           font-family: var(--font-dm-sans), sans-serif;
           position: relative;
           overflow: hidden;
@@ -156,14 +158,14 @@ export default function ContactForm() {
         }
 
         .cf-field {
-          background: rgba(242,232,213,0.02);
+          background: rgba(var(--brand-fg-rgb),0.02);
           border: 1px solid var(--border);
           padding: 14px 18px 16px;
           transition: border-color 0.2s;
         }
         .cf-field:focus-within {
-          border-color: rgba(191,90,40,0.45);
-          background: rgba(191,90,40,0.03);
+          border-color: rgba(var(--brand-terra-rgb),0.45);
+          background: rgba(var(--brand-terra-rgb),0.03);
         }
 
         .cf-label {
@@ -193,7 +195,7 @@ export default function ContactForm() {
           box-sizing: border-box;
         }
         .cf-input::placeholder,
-        .cf-textarea::placeholder { color: rgba(106,90,72,0.6); }
+        .cf-textarea::placeholder { color: rgba(var(--brand-muted-rgb),0.6); }
 
         /* ── FOOTER ── */
         .cf-footer {
@@ -204,7 +206,7 @@ export default function ContactForm() {
           flex-wrap: wrap;
           padding: 20px 40px;
           border-top: 1px solid var(--border);
-          background: rgba(242,232,213,0.015);
+          background: rgba(var(--brand-fg-rgb),0.015);
           position: relative;
           z-index: 1;
         }
@@ -242,7 +244,7 @@ export default function ContactForm() {
           transition: background 0.2s;
           flex-shrink: 0;
         }
-        .cf-submit:hover:not(:disabled) { background: #a34d22; }
+        .cf-submit:hover:not(:disabled) { background: var(--brand-terra-dark); }
         .cf-submit:disabled { opacity: 0.45; cursor: not-allowed; }
 
         @media (max-width: 560px) {
@@ -257,14 +259,28 @@ export default function ContactForm() {
         {/* Header */}
         <div className="cf-header">
           <div className="cf-eyebrow">Send a message</div>
-          <h2 className="cf-title">Tell us what<br />you need</h2>
+          <h2 className="cf-title">
+            Tell us what
+            <br />
+            you need
+          </h2>
           <p className="cf-sub">
             Custom orders, sizing questions, delivery timelines. We can help.
           </p>
         </div>
 
         {/* Fields */}
-        <fieldset disabled={isSubmitting} className="cf-fields" style={{ border: "none", padding: "28px 40px", display: "flex", flexDirection: "column", gap: "2px" }}>
+        <fieldset
+          disabled={isSubmitting}
+          className="cf-fields"
+          style={{
+            border: "none",
+            padding: "28px 40px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "2px",
+          }}
+        >
           {/* Name */}
           <div className="cf-field">
             <label className="cf-label cf-label-muted">
@@ -312,9 +328,11 @@ export default function ContactForm() {
         <div className="cf-footer">
           <p className="cf-response-note">Response within 1 business day</p>
           <button type="submit" disabled={isSubmitting} className="cf-submit">
-            {isSubmitting
-              ? <LoadingDots className="bg-[#F2E8D5]" />
-              : "Send message →"}
+            {isSubmitting ? (
+              <LoadingDots className="bg-[var(--brand-cream)]" />
+            ) : (
+              "Send message →"
+            )}
           </button>
         </div>
       </form>

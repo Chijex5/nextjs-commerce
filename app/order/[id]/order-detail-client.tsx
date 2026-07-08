@@ -211,8 +211,8 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
       <>
         <style>{`
           .od-not-found {
-            border: 1px solid rgba(242,232,213,0.09);
-            background: rgba(242,232,213,0.02);
+            border: 1px solid rgba(var(--brand-fg-rgb),0.09);
+            background: rgba(var(--brand-fg-rgb),0.02);
             padding: 64px 40px;
             text-align: center;
             font-family: var(--font-dm-sans), sans-serif;
@@ -222,15 +222,15 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
             font-size: 24px;
             font-weight: 300;
             font-style: italic;
-            color: var(--muted, #6A5A48);
+            color: var(--muted, var(--brand-muted));
             margin-bottom: 20px;
           }
           .od-back-btn {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            background: var(--terra, #BF5A28);
-            color: var(--cream, #F2E8D5);
+            background: var(--terra, var(--brand-terra));
+            color: var(--cream, var(--brand-cream));
             font-family: var(--font-dm-sans), sans-serif;
             font-size: 10px;
             font-weight: 500;
@@ -240,7 +240,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
             text-decoration: none;
             transition: background 0.2s;
           }
-          .od-back-btn:hover { background: #a34d22; }
+          .od-back-btn:hover { background: var(--brand-terra-dark); }
         `}</style>
         <div className="od-not-found">
           <p className="od-not-found-text">Order not found.</p>
@@ -294,15 +294,15 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
       <style>{`
 
         :root {
-          --espresso:   #0A0704;
-          --charcoal:   #100C06;
-          --cream:      #F2E8D5;
-          --sand:       #C9B99A;
-          --muted:      #6A5A48;
-          --terra:      #BF5A28;
-          --gold:       #C0892A;
-          --border:     rgba(242,232,213,0.09);
-          --border-mid: rgba(242,232,213,0.18);
+          --espresso:   var(--brand-espresso);
+          --charcoal:   var(--brand-charcoal);
+          --cream:      var(--brand-cream);
+          --sand:       var(--brand-sand);
+          --muted:      var(--brand-muted);
+          --terra:      var(--brand-terra);
+          --gold:       var(--brand-gold);
+          --border:     rgba(var(--brand-fg-rgb),0.09);
+          --border-mid: rgba(var(--brand-fg-rgb),0.18);
         }
 
         .od-root {
@@ -316,7 +316,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
 
         /* ── HERO HEADER ── */
         .od-hero {
-          background: rgba(16,12,6,0.95);
+          background: rgba(var(--brand-bg-rgb),0.95);
           border: 1px solid var(--border);
           padding: 48px;
           position: relative;
@@ -379,8 +379,8 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          border: 1px solid rgba(192,137,42,0.35);
-          background: rgba(192,137,42,0.08);
+          border: 1px solid rgba(var(--brand-gold-rgb),0.35);
+          background: rgba(var(--brand-gold-rgb),0.08);
           padding: 8px 18px;
           font-size: 12px;
           font-weight: 500;
@@ -407,7 +407,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           z-index: 1;
         }
         .od-meta-cell {
-          background: rgba(242,232,213,0.02);
+          background: rgba(var(--brand-fg-rgb),0.02);
           padding: 18px 20px;
         }
         .od-meta-label {
@@ -442,7 +442,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
         .od-panel {
           border: 1px solid var(--border);
           border-top: none;
-          background: rgba(16,12,6,0.7);
+          background: rgba(var(--brand-bg-rgb),0.7);
           padding: 36px 48px;
         }
         .od-panel-title {
@@ -470,7 +470,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           gap: 2px;
         }
         .od-delivery-cell {
-          background: rgba(242,232,213,0.02);
+          background: rgba(var(--brand-fg-rgb),0.02);
           border: 1px solid var(--border);
           padding: 20px 24px;
         }
@@ -490,10 +490,10 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
 
         /* ── TRACKING CALLOUT ── */
         .od-tracking-wrap {
-          border: 1px solid rgba(191,90,40,0.35);
+          border: 1px solid rgba(var(--brand-terra-rgb),0.35);
           background:
-            radial-gradient(circle at 0% 0%, rgba(192,137,42,0.18) 0%, rgba(192,137,42,0) 45%),
-            rgba(242,232,213,0.04);
+            radial-gradient(circle at 0% 0%, rgba(var(--brand-gold-rgb),0.18) 0%, rgba(var(--brand-gold-rgb),0) 45%),
+            rgba(var(--brand-fg-rgb),0.04);
           padding: 24px;
         }
         .od-tracking-eyebrow {
@@ -519,7 +519,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           gap: 14px;
           padding: 14px;
           border: 1px solid var(--border-mid);
-          background: rgba(10,7,4,0.46);
+          background: rgba(var(--brand-bg-rgb),0.46);
         }
         .od-tracking-number {
           margin: 0;
@@ -532,8 +532,8 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           overflow-wrap: anywhere;
         }
         .od-tracking-copy {
-          border: 1px solid rgba(192,137,42,0.7);
-          background: rgba(192,137,42,0.12);
+          border: 1px solid rgba(var(--brand-gold-rgb),0.7);
+          background: rgba(var(--brand-gold-rgb),0.12);
           color: var(--cream);
           padding: 10px 14px;
           font-size: 10px;
@@ -545,8 +545,8 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           cursor: pointer;
         }
         .od-tracking-copy:hover {
-          background: rgba(192,137,42,0.24);
-          border-color: rgba(192,137,42,0.95);
+          background: rgba(var(--brand-gold-rgb),0.24);
+          border-color: rgba(var(--brand-gold-rgb),0.95);
         }
         .od-tracking-copy:focus-visible {
           outline: 2px solid var(--gold);
@@ -566,7 +566,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           color: var(--gold);
         }
         .od-tracking-feedback-error {
-          color: #f4b9a2;
+          color: var(--brand-terra-pale);
         }
 
         /* ── ITEMS ── */
@@ -585,7 +585,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           height: 88px;
           flex-shrink: 0;
           overflow: hidden;
-          background: rgba(242,232,213,0.04);
+          background: rgba(var(--brand-fg-rgb),0.04);
           border: 1px solid var(--border);
         }
         .od-item-img img { object-fit: cover; }
@@ -836,11 +836,11 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                       >
                         <path
                           d="M8 30 Q6 36 14 37 L34 37 Q42 37 40 30 L38 22 Q36 16 30 16 L10 16 Q4 18 8 30Z"
-                          fill="#F2E8D5"
+                          fill="var(--brand-cream)"
                         />
                         <path
                           d="M10 16 Q8 6 18 2 Q26 -1 34 3 Q40 7 40 16Z"
-                          fill="#F2E8D5"
+                          fill="var(--brand-cream)"
                         />
                       </svg>
                     </div>

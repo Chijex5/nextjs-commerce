@@ -3,16 +3,27 @@ import { eq } from "drizzle-orm";
 import { db } from "lib/db";
 import { magicLinkTokens, users } from "lib/db/schema";
 import { sendMagicLinkEmail } from "lib/email/auth-emails";
+import { getClientIp, rateLimit, tooManyRequests } from "lib/rate-limit";
+import { normalizeEmail } from "lib/user-utils";
 import { baseUrl, ensureStartsWith } from "lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, callbackUrl, purpose } = await request.json();
+    const { email: rawEmail, callbackUrl, purpose } = await request.json();
 
-    if (!email) {
+    if (!rawEmail) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
+
+    const email = normalizeEmail(rawEmail);
+    const ip = getClientIp(request);
+    // Each call sends a real email, so cap per-IP and per-recipient to prevent
+    // magic-link email-bombing (mailbox spam + Resend cost).
+    const ipLimit = rateLimit(`magic:ip:${ip}`, 8, 15 * 60_000);
+    if (!ipLimit.ok) return tooManyRequests(ipLimit.retryAfter);
+    const emailLimit = rateLimit(`magic:email:${email}`, 3, 15 * 60_000);
+    if (!emailLimit.ok) return tooManyRequests(emailLimit.retryAfter);
 
     const [existingUser] = await db
       .select({ id: users.id })

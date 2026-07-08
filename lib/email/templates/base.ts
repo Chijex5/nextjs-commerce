@@ -41,7 +41,7 @@ export const baseTemplate = (content: string, unsubscribeUrl?: string) => {
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXTAUTH_URL ||
-    "https://yourdomain.com";
+    "https://www.dfootprint.me";
 
   const logoUrl = "https://www.dfootprint.me/d-light.png";
 

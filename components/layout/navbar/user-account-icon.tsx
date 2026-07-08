@@ -62,8 +62,14 @@ export default function UserAccountIcon() {
 
   if (status === "loading") {
     return (
-      <div className="dp-icon-btn animate-pulse" aria-label="Loading user account">
-        <UserIcon style={{ width: "1rem", height: "1rem" }} className="animate-pulse" />
+      <div
+        className="dp-icon-btn animate-pulse"
+        aria-label="Loading user account"
+      >
+        <UserIcon
+          style={{ width: "1rem", height: "1rem" }}
+          className="animate-pulse"
+        />
       </div>
     );
   }
@@ -106,11 +112,11 @@ export default function UserAccountIcon() {
               first?.focus();
             }
           }}
-          className="absolute right-0 z-50 mt-2 w-56 border border-[rgba(242,232,213,0.3)] bg-[#0A0704] text-[#F2E8D5] p-1 shadow-lg"
+          className="absolute right-0 z-50 mt-2 w-56 border border-[rgba(var(--brand-fg-rgb),0.3)] bg-[var(--brand-espresso)] text-[var(--brand-cream)] p-1 shadow-lg"
         >
           {session ? (
             <>
-              <div className="border-b text-[#F2E8D5] border-[rgba(242,232,213,0.3)] px-3 py-3">
+              <div className="border-b text-[var(--brand-cream)] border-[rgba(var(--brand-fg-rgb),0.3)] px-3 py-3">
                 <p className="text-sm font-medium">{session.name || "User"}</p>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
                   {session.email}
@@ -120,7 +126,7 @@ export default function UserAccountIcon() {
                 <Link
                   href="/account"
                   role="menuitem"
-                  className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgba(242,232,213,0.1)] dark:hover:bg-neutral-800"
+                  className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgba(var(--brand-fg-rgb),0.1)] dark:hover:bg-neutral-800"
                   onClick={() => setIsOpen(false)}
                 >
                   My Account
@@ -128,7 +134,7 @@ export default function UserAccountIcon() {
                 <Link
                   href="/orders"
                   role="menuitem"
-                  className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgba(242,232,213,0.1)] dark:hover:bg-neutral-800"
+                  className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgba(var(--brand-fg-rgb),0.1)] dark:hover:bg-neutral-800"
                   onClick={() => setIsOpen(false)}
                 >
                   My Orders
@@ -136,7 +142,7 @@ export default function UserAccountIcon() {
                 <button
                   onClick={handleSignOut}
                   role="menuitem"
-                  className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-[rgba(242,232,213,0.1)] dark:hover:bg-neutral-800"
+                  className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-[rgba(var(--brand-fg-rgb),0.1)] dark:hover:bg-neutral-800"
                 >
                   Logout
                 </button>
@@ -147,7 +153,7 @@ export default function UserAccountIcon() {
               <Link
                 href="/auth/login"
                 role="menuitem"
-                className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgba(242,232,213,0.1)] dark:hover:bg-neutral-800"
+                className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgba(var(--brand-fg-rgb),0.1)] dark:hover:bg-neutral-800"
                 onClick={() => setIsOpen(false)}
               >
                 Login
@@ -155,7 +161,7 @@ export default function UserAccountIcon() {
               <Link
                 href="/auth/register"
                 role="menuitem"
-                className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgba(242,232,213,0.1)] dark:hover:bg-neutral-800"
+                className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgba(var(--brand-fg-rgb),0.1)] dark:hover:bg-neutral-800"
                 onClick={() => setIsOpen(false)}
               >
                 Register
@@ -163,7 +169,7 @@ export default function UserAccountIcon() {
               <Link
                 href="/orders"
                 role="menuitem"
-                className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgba(242,232,213,0.1)] dark:hover:bg-neutral-800"
+                className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgba(var(--brand-fg-rgb),0.1)] dark:hover:bg-neutral-800"
                 onClick={() => setIsOpen(false)}
               >
                 Track Order

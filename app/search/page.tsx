@@ -46,7 +46,8 @@ export default async function SearchPage(props: {
   const searchValue = rawSearchValue?.trim();
   const hasQuery = Boolean(searchValue);
 
-  const selectedSort = sorting.find((item) => item.slug === sort) || defaultSort;
+  const selectedSort =
+    sorting.find((item) => item.slug === sort) || defaultSort;
   const { sortKey, reverse, title: selectedSortTitle } = selectedSort;
 
   const [products, collections] = await Promise.all([
@@ -69,7 +70,7 @@ export default async function SearchPage(props: {
           flex: 1;
         }
         .co-input::placeholder { color: var(--dp-muted); }
-        .co-input:focus { border-color: rgba(191,90,40,.6); }
+        .co-input:focus { border-color: rgba(var(--brand-terra-rgb),.6); }
 
         .dp-btn-solid {
           display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
@@ -93,14 +94,19 @@ export default async function SearchPage(props: {
           text-decoration: none;
           transition: border-color .22s, color .22s;
         }
-        .suggestion-pill:hover { border-color: rgba(191,90,40,.4); color: var(--dp-sand); }
+        .suggestion-pill:hover { border-color: rgba(var(--brand-terra-rgb),.4); color: var(--dp-sand); }
       `}</style>
 
-      <section style={{ display: "flex", flexDirection: "column", gap: "3rem" }}>
-
+      <section
+        style={{ display: "flex", flexDirection: "column", gap: "3rem" }}
+      >
         {/* ── Header ── */}
-        <header style={{ borderBottom: "1px solid var(--dp-border)", paddingBottom: "2rem" }}>
-
+        <header
+          style={{
+            borderBottom: "1px solid var(--dp-border)",
+            paddingBottom: "2rem",
+          }}
+        >
           {/* Title row */}
           <div
             style={{
@@ -120,7 +126,7 @@ export default async function SearchPage(props: {
                 className="dp-wordmark"
                 style={{
                   fontSize: "clamp(2.8rem,8vw,6rem)",
-                  lineHeight: .9,
+                  lineHeight: 0.9,
                   letterSpacing: "-.01em",
                   color: "var(--dp-cream)",
                   marginBottom: ".75rem",
@@ -128,16 +134,32 @@ export default async function SearchPage(props: {
               >
                 {hasQuery ? (
                   <>
-                    <span style={{ color: "var(--dp-cream)" }}>&ldquo;{searchValue}&rdquo;</span>
+                    <span style={{ color: "var(--dp-cream)" }}>
+                      &ldquo;{searchValue}&rdquo;
+                    </span>
                   </>
                 ) : (
                   <>
                     <span style={{ color: "var(--dp-cream)" }}>SEARCH</span>{" "}
-                    <span style={{ WebkitTextStroke: "1.5px rgba(242,232,213,0.2)", color: "transparent" }}>PRODUCTS</span>
+                    <span
+                      style={{
+                        WebkitTextStroke: "1.5px rgba(var(--brand-fg-rgb),0.2)",
+                        color: "transparent",
+                      }}
+                    >
+                      PRODUCTS
+                    </span>
                   </>
                 )}
               </h1>
-              <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".72rem", color: "var(--dp-muted)", letterSpacing: ".06em" }}>
+              <p
+                style={{
+                  fontFamily: "DM Sans, sans-serif",
+                  fontSize: ".72rem",
+                  color: "var(--dp-muted)",
+                  letterSpacing: ".06em",
+                }}
+              >
                 {products.length} result{products.length === 1 ? "" : "s"}
                 {hasQuery ? "" : ` · Sort: ${selectedSortTitle}`}
               </p>
@@ -154,8 +176,13 @@ export default async function SearchPage(props: {
           </div>
 
           {/* Search form */}
-          <form action="/search" style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
-            <label htmlFor="search-query" className="sr-only">Search products</label>
+          <form
+            action="/search"
+            style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}
+          >
+            <label htmlFor="search-query" className="sr-only">
+              Search products
+            </label>
             <input
               id="search-query"
               name="q"
@@ -167,7 +194,13 @@ export default async function SearchPage(props: {
             <button type="submit" className="dp-btn-solid">
               Search
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path
+                  d="M3 8h10M9 4l4 4-4 4"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </button>
           </form>
@@ -181,7 +214,7 @@ export default async function SearchPage(props: {
         ) : (
           <div
             style={{
-              border: "1px dashed rgba(242,232,213,0.12)",
+              border: "1px dashed rgba(var(--brand-fg-rgb),0.12)",
               padding: "4rem 2rem",
               textAlign: "center",
               display: "flex",
@@ -195,7 +228,7 @@ export default async function SearchPage(props: {
               className="dp-wordmark"
               style={{
                 fontSize: "clamp(3rem,10vw,8rem)",
-                color: "rgba(242,232,213,0.04)",
+                color: "rgba(var(--brand-fg-rgb),0.04)",
                 lineHeight: 1,
                 userSelect: "none",
                 pointerEvents: "none",
@@ -218,11 +251,27 @@ export default async function SearchPage(props: {
               {hasQuery ? ` for "${searchValue}"` : ""}
             </p>
 
-            <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: ".78rem", color: "var(--dp-muted)", maxWidth: 380, lineHeight: 1.65 }}>
+            <p
+              style={{
+                fontFamily: "DM Sans, sans-serif",
+                fontSize: ".78rem",
+                color: "var(--dp-muted)",
+                maxWidth: 380,
+                lineHeight: 1.65,
+              }}
+            >
               Try a different keyword or start from one of these suggestions.
             </p>
 
-            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: ".5rem", marginTop: ".5rem" }}>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                justifyContent: "center",
+                gap: ".5rem",
+                marginTop: ".5rem",
+              }}
+            >
               {suggestedSearches.map((term) => (
                 <Link
                   key={term}

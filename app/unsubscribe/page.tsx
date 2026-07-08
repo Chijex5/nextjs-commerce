@@ -9,7 +9,10 @@ export const metadata: Metadata = {
 
 type Status = "success" | "already" | "invalid" | "error";
 
-const copy: Record<Status, { eyebrow: string; title: string; sub: string; cta?: string }> = {
+const copy: Record<
+  Status,
+  { eyebrow: string; title: string; sub: string; cta?: string }
+> = {
   success: {
     eyebrow: "All done",
     title: "You've been\nunsubscribed.",
@@ -41,9 +44,9 @@ export default async function UnsubscribePage(props: {
 }) {
   const searchParams = await props.searchParams;
   const rawStatus = searchParams?.status ?? "";
-  const status: Status = (["success", "already", "invalid", "error"] as Status[]).includes(
-    rawStatus as Status,
-  )
+  const status: Status = (
+    ["success", "already", "invalid", "error"] as Status[]
+  ).includes(rawStatus as Status)
     ? (rawStatus as Status)
     : "invalid";
 
@@ -57,14 +60,14 @@ export default async function UnsubscribePage(props: {
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
-          --espresso:   #0A0704;
-          --cream:      #F2E8D5;
-          --sand:       #C9B99A;
-          --muted:      #6A5A48;
-          --terra:      #BF5A28;
-          --gold:       #C0892A;
-          --border:     rgba(242,232,213,0.09);
-          --border-mid: rgba(242,232,213,0.18);
+          --espresso:   var(--brand-espresso);
+          --cream:      var(--brand-cream);
+          --sand:       var(--brand-sand);
+          --muted:      var(--brand-muted);
+          --terra:      var(--brand-terra);
+          --gold:       var(--brand-gold);
+          --border:     rgba(var(--brand-fg-rgb),0.09);
+          --border-mid: rgba(var(--brand-fg-rgb),0.18);
         }
 
         .us-wrap {
@@ -81,7 +84,7 @@ export default async function UnsubscribePage(props: {
           width: 100%;
           max-width: 520px;
           border: 1px solid var(--border);
-          background: rgba(16,12,6,0.96);
+          background: rgba(var(--brand-bg-rgb),0.96);
           position: relative;
           overflow: hidden;
         }
@@ -125,8 +128,8 @@ export default async function UnsubscribePage(props: {
           margin-bottom: 24px;
           font-size: 18px;
         }
-        .us-icon-ok  { background: rgba(191,90,40,0.12); border: 1px solid rgba(191,90,40,0.3); color: var(--terra); }
-        .us-icon-err { background: rgba(192,137,42,0.08); border: 1px solid rgba(192,137,42,0.25); color: var(--gold); }
+        .us-icon-ok  { background: rgba(var(--brand-terra-rgb),0.12); border: 1px solid rgba(var(--brand-terra-rgb),0.3); color: var(--terra); }
+        .us-icon-err { background: rgba(var(--brand-gold-rgb),0.08); border: 1px solid rgba(var(--brand-gold-rgb),0.25); color: var(--gold); }
 
         .us-eyebrow {
           font-size: 10px;
@@ -170,7 +173,7 @@ export default async function UnsubscribePage(props: {
           flex-wrap: wrap;
           padding: 20px 44px;
           border-top: 1px solid var(--border);
-          background: rgba(242,232,213,0.015);
+          background: rgba(var(--brand-fg-rgb),0.015);
           position: relative;
           z-index: 1;
         }
@@ -191,7 +194,7 @@ export default async function UnsubscribePage(props: {
           transition: background 0.2s;
           flex-shrink: 0;
         }
-        .us-cta:hover { background: #a34d22; }
+        .us-cta:hover { background: var(--brand-terra-dark); }
 
         .us-home-link {
           font-size: 11px;
@@ -214,7 +217,9 @@ export default async function UnsubscribePage(props: {
           <div className="us-accent" />
 
           <div className="us-body">
-            <div className={`us-icon ${isSuccess ? "us-icon-ok" : "us-icon-err"}`}>
+            <div
+              className={`us-icon ${isSuccess ? "us-icon-ok" : "us-icon-err"}`}
+            >
               {isSuccess ? "✓" : "!"}
             </div>
 

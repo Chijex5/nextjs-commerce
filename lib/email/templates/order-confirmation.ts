@@ -25,7 +25,7 @@ export const orderConfirmationTemplate = (order: OrderConfirmationData) => {
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXTAUTH_URL ||
-    "https://yourdomain.com";
+    "https://www.dfootprint.me";
 
   const subtotalAmount = Number.isFinite(order.subtotalAmount)
     ? Number(order.subtotalAmount)
@@ -33,7 +33,9 @@ export const orderConfirmationTemplate = (order: OrderConfirmationData) => {
   const shippingAmount = Number.isFinite(order.shippingAmount)
     ? Number(order.shippingAmount)
     : 0;
-  const taxAmount = Number.isFinite(order.taxAmount) ? Number(order.taxAmount) : 0;
+  const taxAmount = Number.isFinite(order.taxAmount)
+    ? Number(order.taxAmount)
+    : 0;
   const discountAmount = Number.isFinite(order.discountAmount)
     ? Math.max(Number(order.discountAmount), 0)
     : 0;

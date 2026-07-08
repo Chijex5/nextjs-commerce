@@ -26,14 +26,25 @@ export function StarRating({
         {[...Array(fullStars)].map((_, i) => (
           <span
             key={`full-${i}`}
-            style={{ fontSize: px, color: "var(--gold, #C0892A)", lineHeight: 1 }}
+            style={{
+              fontSize: px,
+              color: "var(--gold, var(--brand-gold))",
+              lineHeight: 1,
+            }}
           >
             ★
           </span>
         ))}
         {hasHalfStar && (
-          <span style={{ position: "relative", display: "inline-block", fontSize: px, lineHeight: 1 }}>
-            <span style={{ color: "rgba(242,232,213,0.15)" }}>★</span>
+          <span
+            style={{
+              position: "relative",
+              display: "inline-block",
+              fontSize: px,
+              lineHeight: 1,
+            }}
+          >
+            <span style={{ color: "rgba(var(--brand-fg-rgb),0.15)" }}>★</span>
             <span
               style={{
                 position: "absolute",
@@ -41,7 +52,7 @@ export function StarRating({
                 top: 0,
                 overflow: "hidden",
                 width: "50%",
-                color: "var(--gold, #C0892A)",
+                color: "var(--gold, var(--brand-gold))",
                 display: "block",
               }}
             >
@@ -52,18 +63,24 @@ export function StarRating({
         {[...Array(emptyStars)].map((_, i) => (
           <span
             key={`empty-${i}`}
-            style={{ fontSize: px, color: "rgba(242,232,213,0.15)", lineHeight: 1 }}
+            style={{
+              fontSize: px,
+              color: "rgba(var(--brand-fg-rgb),0.15)",
+              lineHeight: 1,
+            }}
           >
             ★
           </span>
         ))}
       </div>
       {showCount && totalReviews !== undefined && (
-        <span style={{
-          fontSize: "12px",
-          color: "var(--muted, #6A5A48)",
-          letterSpacing: "0.04em",
-        }}>
+        <span
+          style={{
+            fontSize: "12px",
+            color: "var(--muted, var(--brand-muted))",
+            letterSpacing: "0.04em",
+          }}
+        >
           ({totalReviews})
         </span>
       )}

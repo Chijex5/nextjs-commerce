@@ -115,7 +115,7 @@ export function ProductDescription({
         /* ── TITLE BLOCK ── */
         .pd-header {
           padding-bottom: 28px;
-          border-bottom: 1px solid rgba(242,232,213,0.09);
+          border-bottom: 1px solid rgba(var(--brand-fg-rgb),0.09);
           margin-bottom: 28px;
         }
         .pd-eyebrow {
@@ -123,7 +123,7 @@ export function ProductDescription({
           font-weight: 500;
           letter-spacing: 0.26em;
           text-transform: uppercase;
-          color: var(--terra, #BF5A28);
+          color: var(--terra, var(--brand-terra));
           margin-bottom: 12px;
           display: flex;
           align-items: center;
@@ -134,14 +134,14 @@ export function ProductDescription({
           display: block;
           width: 24px;
           height: 1px;
-          background: var(--terra, #BF5A28);
+          background: var(--terra, var(--brand-terra));
         }
         .pd-title {
           font-family: 'Cormorant Garamond', serif;
           font-size: clamp(32px, 4vw, 52px);
           font-weight: 300;
           line-height: 1.0;
-          color: var(--cream, #F2E8D5);
+          color: var(--cream, var(--brand-cream));
           margin-bottom: 18px;
         }
         .pd-pills {
@@ -156,14 +156,14 @@ export function ProductDescription({
           letter-spacing: 0.14em;
           text-transform: uppercase;
           padding: 6px 14px;
-          border: 1px solid rgba(242,232,213,0.09);
-          color: var(--muted, #6A5A48);
-          background: rgba(242,232,213,0.03);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
+          color: var(--muted, var(--brand-muted));
+          background: rgba(var(--brand-fg-rgb),0.03);
         }
         .pd-pill-active {
-          border-color: rgba(191,90,40,0.45);
-          color: var(--cream, #F2E8D5);
-          background: rgba(191,90,40,0.12);
+          border-color: rgba(var(--brand-terra-rgb),0.45);
+          color: var(--cream, var(--brand-cream));
+          background: rgba(var(--brand-terra-rgb),0.12);
         }
 
         /* ── PRICE ── */
@@ -175,20 +175,20 @@ export function ProductDescription({
         }
         .pd-price-badge {
           padding: 10px 20px;
-          background: var(--terra, #BF5A28);
+          background: var(--terra, var(--brand-terra));
           font-size: 16px;
           font-weight: 500;
-          color: var(--cream, #F2E8D5);
+          color: var(--cream, var(--brand-cream));
         }
         .pd-price-badge p,
         .pd-price-badge span {
-          color: var(--cream, #F2E8D5) !important;
+          color: var(--cream, var(--brand-cream)) !important;
           font-size: 16px !important;
           font-weight: 500 !important;
         }
         .pd-price-range {
           font-size: 12px;
-          color: var(--muted, #6A5A48);
+          color: var(--muted, var(--brand-muted));
           letter-spacing: 0.04em;
         }
 
@@ -201,13 +201,13 @@ export function ProductDescription({
         .pd-prose-wrap span {
           font-size: 14px;
           line-height: 1.75;
-          color: var(--sand, #C9B99A);
+          color: var(--sand, var(--brand-sand));
         }
 
         /* ── TRUST BULLETS ── */
         .pd-trust {
-          border: 1px solid rgba(242,232,213,0.09);
-          background: rgba(242,232,213,0.02);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
+          background: rgba(var(--brand-fg-rgb),0.02);
           padding: 20px;
           margin-bottom: 24px;
           display: flex;
@@ -223,38 +223,38 @@ export function ProductDescription({
           width: 6px;
           height: 6px;
           border-radius: 50%;
-          background: var(--terra, #BF5A28);
+          background: var(--terra, var(--brand-terra));
           flex-shrink: 0;
           margin-top: 5px;
         }
         .pd-trust-title {
           font-size: 13px;
           font-weight: 500;
-          color: var(--cream, #F2E8D5);
+          color: var(--cream, var(--brand-cream));
           margin-bottom: 3px;
         }
         .pd-trust-sub {
           font-size: 12px;
-          color: var(--muted, #6A5A48);
+          color: var(--muted, var(--brand-muted));
           line-height: 1.5;
         }
 
         /* ── ALERT FORM ── */
         .pd-alert-form {
           margin-top: 16px;
-          border: 1px solid rgba(242,232,213,0.09);
-          background: rgba(242,232,213,0.02);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
+          background: rgba(var(--brand-fg-rgb),0.02);
           padding: 18px 20px;
         }
         .pd-alert-title {
           font-size: 13px;
           font-weight: 500;
-          color: var(--cream, #F2E8D5);
+          color: var(--cream, var(--brand-cream));
           margin-bottom: 4px;
         }
         .pd-alert-sub {
           font-size: 11px;
-          color: var(--muted, #6A5A48);
+          color: var(--muted, var(--brand-muted));
           margin-bottom: 14px;
           letter-spacing: 0.03em;
         }
@@ -264,21 +264,21 @@ export function ProductDescription({
         }
         .pd-alert-input {
           flex: 1;
-          background: rgba(10,7,4,0.6);
-          border: 1px solid rgba(242,232,213,0.09);
-          color: var(--cream, #F2E8D5);
+          background: rgba(var(--brand-bg-rgb),0.6);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
+          color: var(--cream, var(--brand-cream));
           font-family: 'DM Sans', sans-serif;
           font-size: 12px;
           padding: 10px 14px;
           outline: none;
           transition: border-color 0.2s;
         }
-        .pd-alert-input::placeholder { color: var(--muted, #6A5A48); }
-        .pd-alert-input:focus { border-color: rgba(191,90,40,0.5); }
+        .pd-alert-input::placeholder { color: var(--muted, var(--brand-muted)); }
+        .pd-alert-input:focus { border-color: rgba(var(--brand-terra-rgb),0.5); }
         .pd-alert-btn {
-          background: var(--terra, #BF5A28);
+          background: var(--terra, var(--brand-terra));
           border: none;
-          color: var(--cream, #F2E8D5);
+          color: var(--cream, var(--brand-cream));
           font-family: 'DM Sans', sans-serif;
           font-size: 10px;
           font-weight: 500;
@@ -292,7 +292,7 @@ export function ProductDescription({
           justify-content: center;
           min-width: 96px;
         }
-        .pd-alert-btn:hover { background: #a34d22; }
+        .pd-alert-btn:hover { background: var(--brand-terra-dark); }
         .pd-alert-btn:disabled { opacity: 0.5; cursor: not-allowed; }
       `}</style>
 
@@ -402,7 +402,7 @@ export function ProductDescription({
               className="pd-alert-btn"
             >
               {alertLoading ? (
-                <LoadingDots className="bg-[#F2E8D5]" />
+                <LoadingDots className="bg-[var(--brand-cream)]" />
               ) : (
                 "Notify me"
               )}

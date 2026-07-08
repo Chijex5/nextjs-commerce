@@ -20,14 +20,21 @@ interface ReviewItemProps {
   canVote?: boolean;
 }
 
-export function ReviewItem({ review, onVote, canVote = false }: ReviewItemProps) {
+export function ReviewItem({
+  review,
+  onVote,
+  canVote = false,
+}: ReviewItemProps) {
   const [voting, setVoting] = useState(false);
 
   const handleVote = async (isHelpful: boolean) => {
     if (!onVote || voting) return;
     setVoting(true);
-    try { await onVote(review.id, isHelpful); }
-    finally { setVoting(false); }
+    try {
+      await onVote(review.id, isHelpful);
+    } finally {
+      setVoting(false);
+    }
   };
 
   return (
@@ -35,7 +42,7 @@ export function ReviewItem({ review, onVote, canVote = false }: ReviewItemProps)
       <style>{`
         .ri-root {
           padding: 28px 0;
-          border-bottom: 1px solid rgba(242,232,213,0.07);
+          border-bottom: 1px solid rgba(var(--brand-fg-rgb),0.07);
           font-family: 'DM Sans', sans-serif;
         }
         .ri-root:first-child { padding-top: 20px; }
@@ -63,18 +70,18 @@ export function ReviewItem({ review, onVote, canVote = false }: ReviewItemProps)
           font-weight: 500;
           letter-spacing: 0.16em;
           text-transform: uppercase;
-          color: var(--terra, #BF5A28);
-          border: 1px solid rgba(191,90,40,0.35);
-          background: rgba(191,90,40,0.08);
+          color: var(--terra, var(--brand-terra));
+          border: 1px solid rgba(var(--brand-terra-rgb),0.35);
+          background: rgba(var(--brand-terra-rgb),0.08);
           padding: 3px 9px;
         }
         .ri-byline {
           font-size: 12px;
-          color: var(--muted, #6A5A48);
+          color: var(--muted, var(--brand-muted));
           letter-spacing: 0.04em;
         }
         .ri-byline-name {
-          color: var(--sand, #C9B99A);
+          color: var(--sand, var(--brand-sand));
           font-weight: 500;
         }
 
@@ -82,14 +89,14 @@ export function ReviewItem({ review, onVote, canVote = false }: ReviewItemProps)
           font-family: 'Cormorant Garamond', serif;
           font-size: 19px;
           font-weight: 400;
-          color: var(--cream, #F2E8D5);
+          color: var(--cream, var(--brand-cream));
           margin-bottom: 8px;
           line-height: 1.2;
         }
         .ri-comment {
           font-size: 13px;
           line-height: 1.75;
-          color: var(--sand, #C9B99A);
+          color: var(--sand, var(--brand-sand));
         }
 
         .ri-images {
@@ -102,7 +109,7 @@ export function ReviewItem({ review, onVote, canVote = false }: ReviewItemProps)
           width: 72px;
           height: 72px;
           object-fit: cover;
-          border: 1px solid rgba(242,232,213,0.09);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
         }
 
         .ri-helpful {
@@ -112,18 +119,18 @@ export function ReviewItem({ review, onVote, canVote = false }: ReviewItemProps)
           gap: 12px;
           margin-top: 18px;
           padding-top: 14px;
-          border-top: 1px solid rgba(242,232,213,0.06);
+          border-top: 1px solid rgba(var(--brand-fg-rgb),0.06);
         }
         .ri-helpful-label {
           font-size: 11px;
           letter-spacing: 0.12em;
           text-transform: uppercase;
-          color: var(--muted, #6A5A48);
+          color: var(--muted, var(--brand-muted));
         }
         .ri-vote-btn {
           background: transparent;
-          border: 1px solid rgba(242,232,213,0.09);
-          color: var(--muted, #6A5A48);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
+          color: var(--muted, var(--brand-muted));
           font-family: 'DM Sans', sans-serif;
           font-size: 11px;
           letter-spacing: 0.1em;
@@ -133,9 +140,9 @@ export function ReviewItem({ review, onVote, canVote = false }: ReviewItemProps)
           transition: border-color 0.2s, color 0.2s, background 0.2s;
         }
         .ri-vote-btn:hover:not(:disabled) {
-          border-color: rgba(242,232,213,0.28);
-          color: var(--cream, #F2E8D5);
-          background: rgba(242,232,213,0.04);
+          border-color: rgba(var(--brand-fg-rgb),0.28);
+          color: var(--cream, var(--brand-cream));
+          background: rgba(var(--brand-fg-rgb),0.04);
         }
         .ri-vote-btn:disabled { opacity: 0.4; cursor: not-allowed; }
       `}</style>

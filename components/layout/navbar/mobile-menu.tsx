@@ -53,16 +53,16 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
           justify-content: center;
           width: 2.25rem;
           height: 2.25rem;
-          border: 1px solid var(--dp-border, rgba(242,232,213,0.09));
+          border: 1px solid var(--dp-border, rgba(var(--brand-fg-rgb),0.09));
           background: transparent;
-          color: var(--dp-muted, #6A5A48);
+          color: var(--dp-muted, var(--brand-muted));
           cursor: pointer;
           transition: border-color 0.2s, color 0.2s, background 0.2s;
         }
         .dp-mobile-trigger:hover {
-          border-color: rgba(242,232,213,0.3);
-          color: var(--dp-cream, #F2E8D5);
-          background: rgba(242,232,213,0.05);
+          border-color: rgba(var(--brand-fg-rgb),0.3);
+          color: var(--dp-cream, var(--brand-cream));
+          background: rgba(var(--brand-fg-rgb),0.05);
         }
 
         .dp-mobile-link {
@@ -78,22 +78,22 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
           font-weight: 500;
           letter-spacing: 0.14em;
           text-transform: uppercase;
-          color: var(--dp-muted, #6A5A48);
-          border-bottom: 1px solid var(--dp-border, rgba(242,232,213,0.09));
+          color: var(--dp-muted, var(--brand-muted));
+          border-bottom: 1px solid var(--dp-border, rgba(var(--brand-fg-rgb),0.09));
           transition: color 0.2s;
         }
         .dp-mobile-link:hover {
-          color: var(--dp-cream, #F2E8D5);
+          color: var(--dp-cream, var(--brand-cream));
         }
         .dp-mobile-link.active {
-          color: var(--dp-cream, #F2E8D5);
+          color: var(--dp-cream, var(--brand-cream));
         }
         .dp-mobile-dot {
           display: inline-block;
           width: 0.36rem;
           height: 0.36rem;
           border-radius: 999px;
-          background: var(--dp-ember, #BF5A28);
+          background: var(--dp-ember, var(--brand-terra));
           flex-shrink: 0;
         }
 
@@ -133,7 +133,7 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
             leaveTo="opacity-0"
           >
             <div
-              className="fixed inset-0 bg-#0A0704 backdrop-blur-[1px]"
+              className="fixed inset-0 bg-var(--brand-espresso) backdrop-blur-[1px]"
               aria-hidden="true"
             />
           </TransitionChild>
@@ -150,9 +150,9 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
             <DialogPanel
               className="dp-mobile-panel-enter fixed inset-y-0 left-0 flex w-[88%] max-w-sm flex-col justify-between border-r p-5"
               style={{
-                borderColor: "var(--dp-border, rgba(242,232,213,0.09))",
-                background: "var(--dp-charcoal, #191209)",
-                color: "var(--dp-cream, #F2E8D5)",
+                borderColor: "var(--dp-border, rgba(var(--brand-fg-rgb),0.09))",
+                background: "var(--dp-charcoal, var(--brand-surface2))",
+                color: "var(--dp-cream, var(--brand-cream))",
                 fontFamily: "DM Sans, sans-serif",
               }}
             >
@@ -164,7 +164,7 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                       fontWeight: 500,
                       letterSpacing: "0.26em",
                       textTransform: "uppercase",
-                      color: "var(--dp-ember, #BF5A28)",
+                      color: "var(--dp-ember, var(--brand-terra))",
                     }}
                   >
                     Menu
@@ -185,7 +185,7 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                     width: "100%",
                     marginBottom: "0.4rem",
                     background:
-                      "linear-gradient(90deg, var(--dp-ember, #BF5A28) 0%, var(--dp-gold, #C0892A) 50%, transparent 100%)",
+                      "linear-gradient(90deg, var(--dp-ember, var(--brand-terra)) 0%, var(--dp-gold, var(--brand-gold)) 50%, transparent 100%)",
                   }}
                 />
 
@@ -265,7 +265,7 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
               <div
                 style={{
                   borderTop:
-                    "1px solid var(--dp-border, rgba(242,232,213,0.09))",
+                    "1px solid var(--dp-border, rgba(var(--brand-fg-rgb),0.09))",
                   paddingTop: "1rem",
                 }}
               >
@@ -273,7 +273,7 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                   style={{
                     fontSize: "0.76rem",
                     lineHeight: 1.65,
-                    color: "var(--dp-muted, #6A5A48)",
+                    color: "var(--dp-muted, var(--brand-muted))",
                     margin: 0,
                   }}
                 >

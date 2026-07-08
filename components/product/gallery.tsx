@@ -54,38 +54,38 @@ export function Gallery({
     safeImageIndex === 0 ? images.length - 1 : safeImageIndex - 1;
 
   const buttonClassName =
-    "flex h-full items-center justify-center px-6 text-[var(--dp-muted,#6A5A48)] transition-all ease-in-out hover:scale-105 hover:text-[var(--dp-cream,#F2E8D5)]";
+    "flex h-full items-center justify-center px-6 text-[var(--dp-muted,var(--brand-muted))] transition-all ease-in-out hover:scale-105 hover:text-[var(--dp-cream,var(--brand-cream))]";
 
   return (
     <form>
       <style>{`
         .dp-gallery-shell {
-          border: 1px solid var(--dp-border, rgba(242,232,213,0.09));
-          background: rgba(242,232,213,0.02);
+          border: 1px solid var(--dp-border, rgba(var(--brand-fg-rgb),0.09));
+          background: rgba(var(--brand-fg-rgb),0.02);
         }
         .dp-gallery-controls {
-          border: 1px solid var(--dp-border, rgba(242,232,213,0.09));
-          background: rgba(10,7,4,0.66);
-          color: var(--dp-muted, #6A5A48);
+          border: 1px solid var(--dp-border, rgba(var(--brand-fg-rgb),0.09));
+          background: rgba(var(--brand-bg-rgb),0.66);
+          color: var(--dp-muted, var(--brand-muted));
           backdrop-filter: blur(8px);
         }
         .dp-gallery-divider {
-          background: var(--dp-border, rgba(242,232,213,0.09));
+          background: var(--dp-border, rgba(var(--brand-fg-rgb),0.09));
         }
         /* Vertical thumbnail rail (desktop) */
         .dp-rail-thumb {
           position: relative;
           overflow: hidden;
           aspect-ratio: 1;
-          border: 1px solid var(--dp-border, rgba(242,232,213,0.09));
-          background: rgba(242,232,213,0.02);
+          border: 1px solid var(--dp-border, rgba(var(--brand-fg-rgb),0.09));
+          background: rgba(var(--brand-fg-rgb),0.02);
           opacity: 0.6;
           transition: opacity 0.3s, border-color 0.3s;
         }
         .dp-rail-thumb:hover { opacity: 0.85; }
         .dp-rail-thumb-active {
           opacity: 1;
-          border-color: var(--dp-cream, #F2E8D5);
+          border-color: var(--dp-cream, var(--brand-cream));
         }
         .dp-rail-thumb img { transition: transform 0.5s ease; }
         .dp-rail-thumb:hover img { transform: scale(1.05); }
@@ -184,7 +184,7 @@ export function Gallery({
       {/* Mobile horizontal thumbnail scroller */}
       {images.length > 1 ? (
         <div className="mt-6 lg:hidden">
-          <h3 className="mb-3 text-[0.66rem] font-medium uppercase tracking-[0.2em] text-[var(--dp-ember,#BF5A28)]">
+          <h3 className="mb-3 text-[0.66rem] font-medium uppercase tracking-[0.2em] text-[var(--dp-ember,var(--brand-terra))]">
             Gallery
           </h3>
           <ul className="flex gap-4 overflow-x-auto pb-2">

@@ -21,7 +21,7 @@ export const abandonedCartTemplate = (data: AbandonedCartData) => {
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXTAUTH_URL ||
-    "https://yourdomain.com";
+    "https://www.dfootprint.me";
 
   const firstName = data.customerName?.trim().split(/\s+/)[0] || "there";
 

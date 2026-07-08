@@ -52,11 +52,11 @@ const OptionButton = memo(function OptionButton({
       className={clsx(
         "relative flex min-w-[52px] items-center justify-center border px-2.5 py-1.5 text-[0.72rem] font-medium uppercase tracking-[0.12em] transition",
         {
-          "cursor-default border-[var(--dp-ember,#BF5A28)] bg-[rgba(191,90,40,0.12)] text-[var(--dp-cream,#F2E8D5)]":
+          "cursor-default border-[var(--dp-ember,var(--brand-terra))] bg-[rgba(var(--brand-terra-rgb),0.12)] text-[var(--dp-cream,var(--brand-cream))]":
             isActive,
-          "border-[var(--dp-border,rgba(242,232,213,0.09))] bg-[rgba(242,232,213,0.03)] text-[var(--dp-muted,#6A5A48)] hover:border-[rgba(242,232,213,0.3)] hover:text-[var(--dp-cream,#F2E8D5)]":
+          "border-[var(--dp-border,rgba(var(--brand-fg-rgb),0.09))] bg-[rgba(var(--brand-fg-rgb),0.03)] text-[var(--dp-muted,var(--brand-muted))] hover:border-[rgba(var(--brand-fg-rgb),0.3)] hover:text-[var(--dp-cream,var(--brand-cream))]":
             !isActive && isAvailableForSale,
-          "relative z-10 cursor-not-allowed overflow-hidden border-[var(--dp-border,rgba(242,232,213,0.09))] bg-[rgba(242,232,213,0.03)] text-[var(--dp-muted,#6A5A48)] before:absolute before:inset-x-0 before:top-1/2 before:-z-10 before:h-px before:-translate-y-1/2 before:-rotate-12 before:bg-[var(--dp-border,rgba(242,232,213,0.09))]":
+          "relative z-10 cursor-not-allowed overflow-hidden border-[var(--dp-border,rgba(var(--brand-fg-rgb),0.09))] bg-[rgba(var(--brand-fg-rgb),0.03)] text-[var(--dp-muted,var(--brand-muted))] before:absolute before:inset-x-0 before:top-1/2 before:-z-10 before:h-px before:-translate-y-1/2 before:-rotate-12 before:bg-[var(--dp-border,rgba(var(--brand-fg-rgb),0.09))]":
             !isAvailableForSale,
           "cursor-wait": isBusy,
         },
@@ -68,9 +68,9 @@ const OptionButton = memo(function OptionButton({
       {isBusy ? (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-2 bottom-0.5 h-px overflow-hidden bg-[var(--dp-ember,#BF5A28)]/20"
+          className="pointer-events-none absolute inset-x-2 bottom-0.5 h-px overflow-hidden bg-[var(--dp-ember,var(--brand-terra))]/20"
         >
-          <span className="absolute inset-y-0 left-0 w-2/5 bg-gradient-to-r from-transparent via-[var(--dp-ember,#BF5A28)]/90 to-transparent animate-[pulse_900ms_cubic-bezier(0.22,1,0.36,1)_infinite]" />
+          <span className="absolute inset-y-0 left-0 w-2/5 bg-gradient-to-r from-transparent via-[var(--dp-ember,var(--brand-terra))]/90 to-transparent animate-[pulse_900ms_cubic-bezier(0.22,1,0.36,1)_infinite]" />
         </span>
       ) : null}
     </button>
@@ -160,7 +160,7 @@ export function VariantSelector({
     return (
       <div key={option.id} aria-busy={isPending}>
         <dl className="mb-8">
-          <dt className="mb-4 text-[0.66rem] font-medium uppercase tracking-[0.2em] text-[var(--dp-ember,#BF5A28)]">
+          <dt className="mb-4 text-[0.66rem] font-medium uppercase tracking-[0.2em] text-[var(--dp-ember,var(--brand-terra))]">
             {option.name}
           </dt>
           <dd className="flex flex-wrap gap-3">

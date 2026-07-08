@@ -56,7 +56,13 @@ type CustomTooltipProps = {
   data: SalesTrendPoint[];
 };
 
-function CustomTooltip({ active, payload, label, currencyCode, data }: CustomTooltipProps) {
+function CustomTooltip({
+  active,
+  payload,
+  label,
+  currencyCode,
+  data,
+}: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
 
   const point = data.find((d) => d.label === label || d.time === label);
@@ -99,8 +105,24 @@ function CustomTooltip({ active, payload, label, currencyCode, data }: CustomToo
               flexShrink: 0,
             }}
           />
-          <span style={{ fontSize: "13px", color: "var(--tooltip-label)", opacity: 0.7 }}>Revenue</span>
-          <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--tooltip-value)", marginLeft: "auto", paddingLeft: "16px" }}>
+          <span
+            style={{
+              fontSize: "13px",
+              color: "var(--tooltip-label)",
+              opacity: 0.7,
+            }}
+          >
+            Revenue
+          </span>
+          <span
+            style={{
+              fontSize: "13px",
+              fontWeight: 700,
+              color: "var(--tooltip-value)",
+              marginLeft: "auto",
+              paddingLeft: "16px",
+            }}
+          >
             {formatCurrencyFull(revenue, currencyCode)}
           </span>
         </div>
@@ -114,8 +136,24 @@ function CustomTooltip({ active, payload, label, currencyCode, data }: CustomToo
               flexShrink: 0,
             }}
           />
-          <span style={{ fontSize: "13px", color: "var(--tooltip-label)", opacity: 0.7 }}>Orders</span>
-          <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--tooltip-value)", marginLeft: "auto", paddingLeft: "16px" }}>
+          <span
+            style={{
+              fontSize: "13px",
+              color: "var(--tooltip-label)",
+              opacity: 0.7,
+            }}
+          >
+            Orders
+          </span>
+          <span
+            style={{
+              fontSize: "13px",
+              fontWeight: 700,
+              color: "var(--tooltip-value)",
+              marginLeft: "auto",
+              paddingLeft: "16px",
+            }}
+          >
             {Math.round(orders).toLocaleString()}
           </span>
         </div>
@@ -124,8 +162,13 @@ function CustomTooltip({ active, payload, label, currencyCode, data }: CustomToo
   );
 }
 
-export default function SalesTrendChart({ data, currencyCode = "NGN" }: SalesTrendChartProps) {
-  const [activeView, setActiveView] = useState<"combined" | "revenue" | "orders">("combined");
+export default function SalesTrendChart({
+  data,
+  currencyCode = "NGN",
+}: SalesTrendChartProps) {
+  const [activeView, setActiveView] = useState<
+    "combined" | "revenue" | "orders"
+  >("combined");
 
   const chartData = useMemo(
     () =>
@@ -154,7 +197,7 @@ export default function SalesTrendChart({ data, currencyCode = "NGN" }: SalesTre
           --chart-revenue-fill-bottom: rgba(15,23,42,0.01);
           --chart-orders: #64748b;
           --chart-grid: rgba(0,0,0,0.06);
-          --tooltip-bg: rgba(255,255,255,0.96);
+          --tooltip-bg: rgba(var(--brand-hi-rgb),0.96);
           --tooltip-border: rgba(0,0,0,0.08);
           --tooltip-label: #374151;
           --tooltip-value: #111827;
@@ -164,9 +207,9 @@ export default function SalesTrendChart({ data, currencyCode = "NGN" }: SalesTre
           --chart-revenue-fill-top: rgba(241,245,249,0.18);
           --chart-revenue-fill-bottom: rgba(241,245,249,0.01);
           --chart-orders: #94a3b8;
-          --chart-grid: rgba(255,255,255,0.06);
+          --chart-grid: rgba(var(--brand-hi-rgb),0.06);
           --tooltip-bg: rgba(15,23,42,0.96);
-          --tooltip-border: rgba(255,255,255,0.08);
+          --tooltip-border: rgba(var(--brand-hi-rgb),0.08);
           --tooltip-label: #cbd5e1;
           --tooltip-value: #f1f5f9;
         }
@@ -192,13 +235,19 @@ export default function SalesTrendChart({ data, currencyCode = "NGN" }: SalesTre
         <div className="flex items-center gap-4">
           {(activeView === "combined" || activeView === "revenue") && (
             <span className="flex items-center gap-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
-              <span className="h-2 w-5 rounded-full" style={{ background: "var(--chart-revenue)", opacity: 0.8 }} />
+              <span
+                className="h-2 w-5 rounded-full"
+                style={{ background: "var(--chart-revenue)", opacity: 0.8 }}
+              />
               Revenue
             </span>
           )}
           {(activeView === "combined" || activeView === "orders") && (
             <span className="flex items-center gap-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
-              <span className="h-2 w-5 rounded" style={{ background: "var(--chart-orders)", opacity: 0.7 }} />
+              <span
+                className="h-2 w-5 rounded"
+                style={{ background: "var(--chart-orders)", opacity: 0.7 }}
+              />
               Orders
             </span>
           )}
@@ -207,16 +256,37 @@ export default function SalesTrendChart({ data, currencyCode = "NGN" }: SalesTre
 
       {/* Chart */}
       <div className="h-60 w-full sm:h-72">
-        {(activeView === "combined") && (
+        {activeView === "combined" && (
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+            <ComposedChart
+              data={chartData}
+              margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+            >
               <defs>
-                <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--chart-revenue)" stopOpacity={0.15} />
-                  <stop offset="100%" stopColor="var(--chart-revenue)" stopOpacity={0.01} />
+                <linearGradient
+                  id="revenueGradient"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="0%"
+                    stopColor="var(--chart-revenue)"
+                    stopOpacity={0.15}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="var(--chart-revenue)"
+                    stopOpacity={0.01}
+                  />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="var(--chart-grid)"
+                vertical={false}
+              />
               <XAxis
                 dataKey="name"
                 tick={{ fontSize: 11, fill: "currentColor", opacity: 0.5 }}
@@ -246,7 +316,9 @@ export default function SalesTrendChart({ data, currencyCode = "NGN" }: SalesTre
                 className="text-neutral-500 dark:text-neutral-400"
               />
               <Tooltip
-                content={<CustomTooltip currencyCode={currencyCode} data={data} />}
+                content={
+                  <CustomTooltip currencyCode={currencyCode} data={data} />
+                }
                 cursor={{ stroke: "var(--chart-grid)", strokeWidth: 1 }}
               />
               <Area
@@ -273,14 +345,35 @@ export default function SalesTrendChart({ data, currencyCode = "NGN" }: SalesTre
 
         {activeView === "revenue" && (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+            <AreaChart
+              data={chartData}
+              margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+            >
               <defs>
-                <linearGradient id="revenueGradient2" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--chart-revenue)" stopOpacity={0.2} />
-                  <stop offset="100%" stopColor="var(--chart-revenue)" stopOpacity={0.01} />
+                <linearGradient
+                  id="revenueGradient2"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="0%"
+                    stopColor="var(--chart-revenue)"
+                    stopOpacity={0.2}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="var(--chart-revenue)"
+                    stopOpacity={0.01}
+                  />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="var(--chart-grid)"
+                vertical={false}
+              />
               <XAxis
                 dataKey="name"
                 tick={{ fontSize: 11, fill: "currentColor", opacity: 0.5 }}
@@ -298,7 +391,9 @@ export default function SalesTrendChart({ data, currencyCode = "NGN" }: SalesTre
                 className="text-neutral-500 dark:text-neutral-400"
               />
               <Tooltip
-                content={<CustomTooltip currencyCode={currencyCode} data={data} />}
+                content={
+                  <CustomTooltip currencyCode={currencyCode} data={data} />
+                }
                 cursor={{ stroke: "var(--chart-grid)", strokeWidth: 1 }}
               />
               <Area
@@ -316,14 +411,29 @@ export default function SalesTrendChart({ data, currencyCode = "NGN" }: SalesTre
 
         {activeView === "orders" && (
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+            <ComposedChart
+              data={chartData}
+              margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+            >
               <defs>
                 <linearGradient id="ordersGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--chart-orders)" stopOpacity={0.15} />
-                  <stop offset="100%" stopColor="var(--chart-orders)" stopOpacity={0.01} />
+                  <stop
+                    offset="0%"
+                    stopColor="var(--chart-orders)"
+                    stopOpacity={0.15}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="var(--chart-orders)"
+                    stopOpacity={0.01}
+                  />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="var(--chart-grid)"
+                vertical={false}
+              />
               <XAxis
                 dataKey="name"
                 tick={{ fontSize: 11, fill: "currentColor", opacity: 0.5 }}
@@ -341,7 +451,9 @@ export default function SalesTrendChart({ data, currencyCode = "NGN" }: SalesTre
                 className="text-neutral-500 dark:text-neutral-400"
               />
               <Tooltip
-                content={<CustomTooltip currencyCode={currencyCode} data={data} />}
+                content={
+                  <CustomTooltip currencyCode={currencyCode} data={data} />
+                }
                 cursor={{ stroke: "var(--chart-grid)", strokeWidth: 1 }}
               />
               <Bar

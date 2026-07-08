@@ -39,7 +39,7 @@ export default function FAQSearchClient({ initialQuestions }: Props) {
 
   const topics = useMemo(
     () => ["All", ...Array.from(new Set(initialQuestions.map((f) => f.topic)))],
-    [initialQuestions]
+    [initialQuestions],
   );
 
   const filtered = useMemo(() => {
@@ -73,8 +73,11 @@ export default function FAQSearchClient({ initialQuestions }: Props) {
           type="search"
           placeholder="Search any question…"
           value={query}
-          onChange={(e) => { setQuery(e.target.value); setOpenId(null); }}
-          className="h-[52px] w-full rounded-xl border border-white/10 bg-white/[0.04] pl-12 pr-4 font-light text-sm text-[#F2E8D5] placeholder:text-[#6a5a48] outline-none transition-colors focus:border-white/25 focus:bg-white/[0.06]"
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpenId(null);
+          }}
+          className="h-[52px] w-full rounded-xl border border-white/10 bg-white/[0.04] pl-12 pr-4 font-light text-sm text-[var(--brand-cream)] placeholder:text-[var(--brand-muted)] outline-none transition-colors focus:border-white/25 focus:bg-white/[0.06]"
         />
       </div>
 
@@ -86,8 +89,8 @@ export default function FAQSearchClient({ initialQuestions }: Props) {
             onClick={() => handleFilterChange(t)}
             className={`rounded-full border px-4 py-1.5 text-xs font-normal tracking-wide transition-all ${
               activeFilter === t
-                ? "border-[#C8793A] bg-[#C8793A] text-white"
-                : "border-white/15 text-[#C9B99A] hover:border-white/30 hover:text-[#F2E8D5]"
+                ? "border-[var(--brand-terra-light)] bg-[var(--brand-terra-light)] text-white"
+                : "border-white/15 text-[var(--brand-sand)] hover:border-white/30 hover:text-[var(--brand-cream)]"
             }`}
           >
             {t}
@@ -96,7 +99,7 @@ export default function FAQSearchClient({ initialQuestions }: Props) {
       </div>
 
       {/* Count */}
-      <p className="mb-5 h-5 text-xs tracking-wide text-[#6a5a48]">
+      <p className="mb-5 h-5 text-xs tracking-wide text-[var(--brand-muted)]">
         {filtered.length === initialQuestions.length
           ? `${initialQuestions.length} questions`
           : `${filtered.length} of ${initialQuestions.length} questions`}
@@ -105,7 +108,7 @@ export default function FAQSearchClient({ initialQuestions }: Props) {
       {/* Accordion */}
       <div className="border-t border-white/10">
         {filtered.length === 0 ? (
-          <p className="py-12 text-center text-sm font-light text-[#6a5a48]">
+          <p className="py-12 text-center text-sm font-light text-[var(--brand-muted)]">
             No results — try a different search or filter.
           </p>
         ) : (
@@ -119,12 +122,12 @@ export default function FAQSearchClient({ initialQuestions }: Props) {
               >
                 <button
                   onClick={() => toggle(f.id)}
-                  className="flex w-full items-center justify-between gap-4 py-5 text-left text-[#C9B99A] transition-colors hover:text-[#F2E8D5]"
+                  className="flex w-full items-center justify-between gap-4 py-5 text-left text-[var(--brand-sand)] transition-colors hover:text-[var(--brand-cream)]"
                   aria-expanded={isOpen}
                 >
                   <span
                     className={`flex-1 text-[15px] font-normal leading-snug transition-colors ${
-                      isOpen ? "text-[#F2E8D5]" : ""
+                      isOpen ? "text-[var(--brand-cream)]" : ""
                     }`}
                   >
                     {f.question}
@@ -138,7 +141,7 @@ export default function FAQSearchClient({ initialQuestions }: Props) {
                   }`}
                 >
                   <p
-                    className="max-w-[68ch] pb-5 text-sm font-light leading-[1.8] text-[#C9B99A] [&_strong]:font-normal [&_strong]:text-[#F2E8D5]"
+                    className="max-w-[68ch] pb-5 text-sm font-light leading-[1.8] text-[var(--brand-sand)] [&_strong]:font-normal [&_strong]:text-[var(--brand-cream)]"
                     dangerouslySetInnerHTML={{ __html: f.answer }}
                   />
                 </div>

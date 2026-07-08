@@ -24,8 +24,8 @@ export default function ProductsFilterMenu({
           align-items: center;
           gap: 8px;
           background: transparent;
-          border: 1px solid rgba(242,232,213,0.2);
-          color: #6A5A48;
+          border: 1px solid rgba(var(--brand-fg-rgb),0.2);
+          color: var(--brand-muted);
           font-family: 'DM Sans', sans-serif;
           font-size: 10px;
           font-weight: 500;
@@ -37,9 +37,9 @@ export default function ProductsFilterMenu({
         }
         .pf-trigger:hover,
         .pf-trigger[aria-expanded="true"] {
-          border-color: rgba(242,232,213,0.35);
-          color: #F2E8D5;
-          background: rgba(242,232,213,0.05);
+          border-color: rgba(var(--brand-fg-rgb),0.35);
+          color: var(--brand-cream);
+          background: rgba(var(--brand-fg-rgb),0.05);
         }
 
         .pf-panel {
@@ -47,8 +47,8 @@ export default function ProductsFilterMenu({
           right: 0;
           top: calc(100% + 10px);
           width: min(92vw, 340px);
-          background: #0D0A07;
-          border: 1px solid rgba(242,232,213,0.14);
+          background: var(--brand-void);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.14);
           box-shadow: 0 32px 64px rgba(0,0,0,0.5);
           padding: 20px;
           z-index: 999;
@@ -60,7 +60,7 @@ export default function ProductsFilterMenu({
           justify-content: space-between;
           margin-bottom: 16px;
           padding-bottom: 14px;
-          border-bottom: 1px solid rgba(242,232,213,0.08);
+          border-bottom: 1px solid rgba(var(--brand-fg-rgb),0.08);
         }
         .pf-heading {
           font-family: 'DM Sans', sans-serif;
@@ -68,7 +68,7 @@ export default function ProductsFilterMenu({
           font-weight: 500;
           letter-spacing: 0.26em;
           text-transform: uppercase;
-          color: #BF5A28;
+          color: var(--brand-terra);
         }
         .pf-close {
           background: none;
@@ -77,12 +77,12 @@ export default function ProductsFilterMenu({
           font-size: 9px;
           letter-spacing: 0.14em;
           text-transform: uppercase;
-          color: #6A5A48;
+          color: var(--brand-muted);
           cursor: pointer;
           transition: color 0.2s;
           padding: 0;
         }
-        .pf-close:hover { color: #F2E8D5; }
+        .pf-close:hover { color: var(--brand-cream); }
 
         .pf-list {
           list-style: none;
@@ -97,7 +97,7 @@ export default function ProductsFilterMenu({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          border: 1px solid rgba(242,232,213,0.1);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.1);
           padding: 11px 14px;
           font-family: 'DM Sans', sans-serif;
           font-size: 10px;
@@ -106,17 +106,17 @@ export default function ProductsFilterMenu({
           text-transform: uppercase;
           text-decoration: none;
           transition: border-color 0.2s, color 0.2s, background 0.2s;
-          color: #6A5A48;
+          color: var(--brand-muted);
         }
         .pf-option:hover {
-          border-color: rgba(242,232,213,0.28);
-          color: #F2E8D5;
-          background: rgba(242,232,213,0.03);
+          border-color: rgba(var(--brand-fg-rgb),0.28);
+          color: var(--brand-cream);
+          background: rgba(var(--brand-fg-rgb),0.03);
         }
         .pf-option-active {
-          border-color: #BF5A28 !important;
-          background: rgba(191,90,40,0.14) !important;
-          color: #F2E8D5 !important;
+          border-color: var(--brand-terra) !important;
+          background: rgba(var(--brand-terra-rgb),0.14) !important;
+          color: var(--brand-cream) !important;
         }
 
         .pf-check {
@@ -125,7 +125,7 @@ export default function ProductsFilterMenu({
           justify-content: center;
           width: 14px;
           height: 14px;
-          border: 1px solid #BF5A28;
+          border: 1px solid var(--brand-terra);
           flex-shrink: 0;
         }
         .pf-check::after {
@@ -133,7 +133,7 @@ export default function ProductsFilterMenu({
           display: block;
           width: 6px;
           height: 6px;
-          background: #BF5A28;
+          background: var(--brand-terra);
         }
       `}</style>
 
@@ -164,7 +164,12 @@ export default function ProductsFilterMenu({
 
       {/* Panel */}
       {isOpen && (
-        <div id="pf-panel" className="pf-panel" role="dialog" aria-label="Sort products">
+        <div
+          id="pf-panel"
+          className="pf-panel"
+          role="dialog"
+          aria-label="Sort products"
+        >
           <div className="pf-panel-header">
             <span className="pf-heading">Sort products</span>
             <button
@@ -187,11 +192,16 @@ export default function ProductsFilterMenu({
                 <li key={option.title}>
                   <Link
                     href={href}
-                    className={clsx("pf-option", isActive && "pf-option-active")}
+                    className={clsx(
+                      "pf-option",
+                      isActive && "pf-option-active",
+                    )}
                     onClick={() => setIsOpen(false)}
                   >
                     <span>{option.title}</span>
-                    {isActive && <span className="pf-check" aria-label="Selected" />}
+                    {isActive && (
+                      <span className="pf-check" aria-label="Selected" />
+                    )}
                   </Link>
                 </li>
               );

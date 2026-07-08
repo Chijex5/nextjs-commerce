@@ -27,11 +27,36 @@ export const metadata: Metadata = {
 };
 
 const socialLinks = [
-  { name: "Instagram", href: "https://instagram.com/d_foot.print", handle: "@dfootprint", note: "New drops, styling clips & behind the scenes" },
-  { name: "TikTok", href: "https://tiktok.com/@d_footprint", handle: "@dfootprint", note: "Short-form videos, process reels & trends" },
-  { name: "Twitter / X", href: "https://x.com/chikaahey", handle: "@dfootprint", note: "Updates, announcements & conversations" },
-  { name: "Snapchat", href: "https://snapchat.com/t/To9LQPVS", handle: "@dfootprint", note: "Exclusive stories and daily behind the craft" },
-  { name: "WhatsApp", href: "https://wa.me/2348121993874", handle: "Chat with us", note: "Sizing, custom requests and order updates" },
+  {
+    name: "Instagram",
+    href: "https://instagram.com/d_foot.print",
+    handle: "@dfootprint",
+    note: "New drops, styling clips & behind the scenes",
+  },
+  {
+    name: "TikTok",
+    href: "https://tiktok.com/@d_footprint",
+    handle: "@dfootprint",
+    note: "Short-form videos, process reels & trends",
+  },
+  {
+    name: "Twitter / X",
+    href: "https://x.com/chikaahey",
+    handle: "@dfootprint",
+    note: "Updates, announcements & conversations",
+  },
+  {
+    name: "Snapchat",
+    href: "https://snapchat.com/t/To9LQPVS",
+    handle: "@dfootprint",
+    note: "Exclusive stories and daily behind the craft",
+  },
+  {
+    name: "WhatsApp",
+    href: "https://wa.me/2348121993874",
+    handle: "Chat with us",
+    note: "Sizing, custom requests and order updates",
+  },
 ];
 
 export default function SocialsPage() {
@@ -40,15 +65,15 @@ export default function SocialsPage() {
       <style>{`
 
         :root {
-          --dp-ink:     #0A0704;
-          --dp-charcoal:#191209;
-          --dp-card:    #1E1510;
-          --dp-cream:   #F2E8D5;
-          --dp-sand:    #C9B99A;
-          --dp-muted:   #6A5A48;
-          --dp-ember:   #BF5A28;
-          --dp-gold:    #C0892A;
-          --dp-border:  rgba(242,232,213,0.09);
+          --dp-ink:     var(--brand-espresso);
+          --dp-charcoal:var(--brand-surface2);
+          --dp-card:    var(--brand-surface2);
+          --dp-cream:   var(--brand-cream);
+          --dp-sand:    var(--brand-sand);
+          --dp-muted:   var(--brand-muted);
+          --dp-ember:   var(--brand-terra);
+          --dp-gold:    var(--brand-gold);
+          --dp-border:  rgba(var(--brand-fg-rgb),0.09);
         }
 
         .dp-wordmark { font-family:var(--font-bebas-neue),sans-serif; }
@@ -83,12 +108,12 @@ export default function SocialsPage() {
           content: '';
           position: absolute;
           inset: 0;
-          background: linear-gradient(135deg, rgba(191,90,40,0.07) 0%, transparent 60%);
+          background: linear-gradient(135deg, rgba(var(--brand-terra-rgb),0.07) 0%, transparent 60%);
           opacity: 0;
           transition: opacity .3s;
         }
         .social-card:hover {
-          border-color: rgba(191,90,40,.35);
+          border-color: rgba(var(--brand-terra-rgb),.35);
           transform: translateY(-4px);
           box-shadow: 0 18px 50px rgba(0,0,0,.4);
         }
@@ -102,10 +127,10 @@ export default function SocialsPage() {
 
         .whatsapp-card {
           background: var(--dp-charcoal);
-          border: 1px solid rgba(191,90,40,.2);
+          border: 1px solid rgba(var(--brand-terra-rgb),.2);
         }
         .whatsapp-card:hover {
-          border-color: rgba(191,90,40,.55);
+          border-color: rgba(var(--brand-terra-rgb),.55);
         }
       `}</style>
 
@@ -122,25 +147,35 @@ export default function SocialsPage() {
         <div
           aria-hidden
           style={{
-            position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
-            background: "radial-gradient(ellipse 50% 45% at 80% 15%, rgba(191,90,40,0.11) 0%, transparent 70%), radial-gradient(ellipse 35% 35% at 10% 85%, rgba(192,137,42,0.07) 0%, transparent 70%)",
+            position: "fixed",
+            inset: 0,
+            pointerEvents: "none",
+            zIndex: 0,
+            background:
+              "radial-gradient(ellipse 50% 45% at 80% 15%, rgba(var(--brand-terra-rgb),0.11) 0%, transparent 70%), radial-gradient(ellipse 35% 35% at 10% 85%, rgba(var(--brand-gold-rgb),0.07) 0%, transparent 70%)",
           }}
         />
 
         <div
           className="relative"
-          style={{ maxWidth: 1800, margin: "0 auto", padding: "3.5rem clamp(1.5rem,4vw,4rem) 0", zIndex: 10 }}
+          style={{
+            maxWidth: 1800,
+            margin: "0 auto",
+            padding: "3.5rem clamp(1.5rem,4vw,4rem) 0",
+            zIndex: 10,
+          }}
         >
-
           {/* ── Hero ── */}
           <div className="dp-rise-1" style={{ marginBottom: "4rem" }}>
-            <p className="dp-label" style={{ marginBottom: "1.25rem" }}>Connect with us</p>
+            <p className="dp-label" style={{ marginBottom: "1.25rem" }}>
+              Connect with us
+            </p>
 
             <div
               className="dp-wordmark"
               style={{
                 fontSize: "clamp(4rem,12vw,10rem)",
-                lineHeight: .88,
+                lineHeight: 0.88,
                 letterSpacing: "-.01em",
                 marginBottom: "2rem",
                 display: "flex",
@@ -149,7 +184,14 @@ export default function SocialsPage() {
               }}
             >
               <span style={{ color: "var(--dp-cream)" }}>FIND</span>
-              <span style={{ WebkitTextStroke: "1.5px rgba(242,232,213,0.22)", color: "transparent" }}>US</span>
+              <span
+                style={{
+                  WebkitTextStroke: "1.5px rgba(var(--brand-fg-rgb),0.22)",
+                  color: "transparent",
+                }}
+              >
+                US
+              </span>
             </div>
 
             <div
@@ -173,7 +215,8 @@ export default function SocialsPage() {
                   maxWidth: 520,
                 }}
               >
-                Stay close to new designs, styling clips, and delivery updates across every channel.
+                Stay close to new designs, styling clips, and delivery updates
+                across every channel.
               </p>
               <div
                 style={{
@@ -183,10 +226,33 @@ export default function SocialsPage() {
                 }}
                 className="lg:justify-end"
               >
-                {[["5", "Platforms"], ["Daily", "New content"], ["Fast", "Response time"]].map(([num, label]) => (
+                {[
+                  ["5", "Platforms"],
+                  ["Daily", "New content"],
+                  ["Fast", "Response time"],
+                ].map(([num, label]) => (
                   <div key={label}>
-                    <p className="dp-wordmark" style={{ fontSize: "2.2rem", color: "var(--dp-gold)", lineHeight: 1 }}>{num}</p>
-                    <p style={{ fontSize: ".65rem", color: "var(--dp-muted)", marginTop: ".3rem", fontFamily: "var(--font-dm-sans), sans-serif", letterSpacing: ".08em" }}>{label}</p>
+                    <p
+                      className="dp-wordmark"
+                      style={{
+                        fontSize: "2.2rem",
+                        color: "var(--dp-gold)",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {num}
+                    </p>
+                    <p
+                      style={{
+                        fontSize: ".65rem",
+                        color: "var(--dp-muted)",
+                        marginTop: ".3rem",
+                        fontFamily: "var(--font-dm-sans), sans-serif",
+                        letterSpacing: ".08em",
+                      }}
+                    >
+                      {label}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -213,10 +279,7 @@ export default function SocialsPage() {
                   className="social-card"
                 >
                   <div style={{ position: "relative", zIndex: 1 }}>
-                    <p
-                      className="dp-label"
-                      style={{ marginBottom: ".75rem" }}
-                    >
+                    <p className="dp-label" style={{ marginBottom: ".75rem" }}>
                       {item.handle}
                     </p>
                     <h2
@@ -242,7 +305,13 @@ export default function SocialsPage() {
                     >
                       {item.note}
                     </p>
-                    <div style={{ display: "flex", alignItems: "center", gap: ".4rem" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: ".4rem",
+                      }}
+                    >
                       <span
                         style={{
                           fontSize: ".6rem",
@@ -251,14 +320,27 @@ export default function SocialsPage() {
                           letterSpacing: ".14em",
                           textTransform: "uppercase",
                           color: "var(--dp-sand)",
-                          borderBottom: "1px solid rgba(191,90,40,.4)",
+                          borderBottom:
+                            "1px solid rgba(var(--brand-terra-rgb),.4)",
                           paddingBottom: 2,
                         }}
                       >
                         Open channel
                       </span>
-                      <svg className="social-arrow" width="12" height="12" viewBox="0 0 16 16" fill="none">
-                        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <svg
+                        className="social-arrow"
+                        width="12"
+                        height="12"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                      >
+                        <path
+                          d="M3 8h10M9 4l4 4-4 4"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
                       </svg>
                     </div>
                   </div>
@@ -272,7 +354,7 @@ export default function SocialsPage() {
                       bottom: "-.5rem",
                       right: ".75rem",
                       fontSize: "4rem",
-                      color: "rgba(242,232,213,0.04)",
+                      color: "rgba(var(--brand-fg-rgb),0.04)",
                       lineHeight: 1,
                       userSelect: "none",
                       pointerEvents: "none",
@@ -304,7 +386,12 @@ export default function SocialsPage() {
                   }}
                 >
                   <div>
-                    <p className="dp-label" style={{ color: "var(--dp-gold)", marginBottom: ".6rem" }}>Direct support</p>
+                    <p
+                      className="dp-label"
+                      style={{ color: "var(--dp-gold)", marginBottom: ".6rem" }}
+                    >
+                      Direct support
+                    </p>
                     <h2
                       className="dp-serif"
                       style={{
@@ -325,7 +412,8 @@ export default function SocialsPage() {
                         maxWidth: 560,
                       }}
                     >
-                      {socialLinks[4].note}. The fastest way to reach us — we typically respond within minutes.
+                      {socialLinks[4].note}. The fastest way to reach us — we
+                      typically respond within minutes.
                     </p>
                   </div>
                   <div
@@ -334,7 +422,7 @@ export default function SocialsPage() {
                       display: "flex",
                       alignItems: "center",
                       gap: ".5rem",
-                      border: "1px solid rgba(191,90,40,.35)",
+                      border: "1px solid rgba(var(--brand-terra-rgb),.35)",
                       padding: ".75rem 1.5rem",
                       whiteSpace: "nowrap",
                     }}
@@ -351,8 +439,20 @@ export default function SocialsPage() {
                     >
                       Start a chat
                     </span>
-                    <svg className="social-arrow" width="13" height="13" viewBox="0 0 16 16" fill="none">
-                      <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <svg
+                      className="social-arrow"
+                      width="13"
+                      height="13"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                    >
+                      <path
+                        d="M3 8h10M9 4l4 4-4 4"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </div>
                 </div>
@@ -365,7 +465,7 @@ export default function SocialsPage() {
                     bottom: "-.8rem",
                     right: "1.5rem",
                     fontSize: "6rem",
-                    color: "rgba(242,232,213,0.03)",
+                    color: "rgba(var(--brand-fg-rgb),0.03)",
                     lineHeight: 1,
                     userSelect: "none",
                     pointerEvents: "none",
@@ -393,7 +493,9 @@ export default function SocialsPage() {
             }}
           >
             <div>
-              <p className="dp-label" style={{ marginBottom: ".4rem" }}>Not just online</p>
+              <p className="dp-label" style={{ marginBottom: ".4rem" }}>
+                Not just online
+              </p>
               <p
                 className="dp-serif"
                 style={{
@@ -404,32 +506,55 @@ export default function SocialsPage() {
                   lineHeight: 1.3,
                 }}
               >
-                Ready to order? Browse the full collection or start a custom request.
+                Ready to order? Browse the full collection or start a custom
+                request.
               </p>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: ".75rem" }}>
               <Link
                 href="/products"
                 style={{
-                  display: "inline-flex", alignItems: "center", gap: ".5rem",
-                  background: "var(--dp-cream)", color: "var(--dp-ink)",
-                  fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 500,
-                  fontSize: ".72rem", letterSpacing: ".12em", textTransform: "uppercase",
-                  padding: ".9rem 2rem", textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: ".5rem",
+                  background: "var(--dp-cream)",
+                  color: "var(--dp-ink)",
+                  fontFamily: "var(--font-dm-sans), sans-serif",
+                  fontWeight: 500,
+                  fontSize: ".72rem",
+                  letterSpacing: ".12em",
+                  textTransform: "uppercase",
+                  padding: ".9rem 2rem",
+                  textDecoration: "none",
                   transition: "background .22s, color .22s",
                 }}
               >
                 Shop Collection
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M3 8h10M9 4l4 4-4 4"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </Link>
               <Link
                 href="/custom-orders"
                 style={{
-                  display: "inline-flex", alignItems: "center", gap: ".5rem",
-                  border: "1px solid rgba(242,232,213,.28)", color: "var(--dp-cream)",
-                  fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 500,
-                  fontSize: ".72rem", letterSpacing: ".12em", textTransform: "uppercase",
-                  padding: ".9rem 2rem", textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: ".5rem",
+                  border: "1px solid rgba(var(--brand-fg-rgb),.28)",
+                  color: "var(--dp-cream)",
+                  fontFamily: "var(--font-dm-sans), sans-serif",
+                  fontWeight: 500,
+                  fontSize: ".72rem",
+                  letterSpacing: ".12em",
+                  textTransform: "uppercase",
+                  padding: ".9rem 2rem",
+                  textDecoration: "none",
                   transition: "border-color .22s, background .22s",
                 }}
               >

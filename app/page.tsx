@@ -139,16 +139,21 @@ export default async function HomePage() {
       {/* ─── GLOBAL TOKENS + UTILITIES ─────────────────────────────── */}
       <style>{`
         :root {
-          --dp-void:    #060402;
-          --dp-ink:     #0A0704;
-          --dp-charcoal:#191209;
-          --dp-card:    #1E1510;
-          --dp-cream:   #F2E8D5;
-          --dp-sand:    #C9B99A;
-          --dp-muted:   #6A5A48;
-          --dp-ember:   #BF5A28;
-          --dp-gold:    #C0892A;
-          --dp-border:  rgba(242,232,213,0.09);
+          /* Theme-aware tokens — follow light/dark via the global brand vars. */
+          --dp-void:    #06040200;
+          --dp-ink:     var(--brand-espresso);
+          --dp-charcoal:var(--brand-surface2);
+          --dp-card:    var(--brand-surface2);
+          --dp-cream:   var(--brand-cream);
+          --dp-sand:    var(--brand-sand);
+          --dp-muted:   var(--brand-muted);
+          --dp-ember:   var(--brand-terra);
+          --dp-gold:    var(--brand-gold);
+          --dp-border:  rgba(var(--brand-fg-rgb),0.09);
+          /* Fixed light values for content that sits OVER dark image scrims,
+             so overlays stay legible in light mode as well as dark. */
+          --dp-on:      #F2E8D5;
+          --dp-on-dim:  #C9B99A;
         }
 
         .dp-wordmark { font-family: var(--font-bebas-neue), sans-serif; }
@@ -167,8 +172,9 @@ export default async function HomePage() {
           font-size: clamp(1.9rem, 3.6vw, 3.1rem); line-height: 1.05;
         }
         .dp-rule { border: none; border-top: 1px solid var(--dp-border); }
+        /* Nav sits over the hero image → fixed light. */
         .dp-nav-link { color: rgba(242,232,213,0.7); text-decoration: none; transition: color 0.2s; }
-        .dp-nav-link:hover { color: var(--dp-cream); }
+        .dp-nav-link:hover { color: #F2E8D5; }
 
         /* Buttons */
         .dp-btn-solid, .dp-btn-ghost, .dp-btn-ember {
@@ -178,12 +184,17 @@ export default async function HomePage() {
           padding: 0.95rem 2.15rem; text-decoration: none;
           transition: background 0.22s, color 0.22s, border-color 0.22s, opacity 0.22s;
         }
-        .dp-btn-solid { background: var(--dp-cream); color: var(--dp-ink); }
-        .dp-btn-solid:hover { background: var(--dp-ember); color: var(--dp-cream); }
-        .dp-btn-ghost { border: 1px solid rgba(242,232,213,0.28); color: var(--dp-cream); }
-        .dp-btn-ghost:hover { border-color: var(--dp-cream); background: rgba(242,232,213,0.06); }
-        .dp-btn-ember { background: var(--dp-ember); color: var(--dp-cream); }
+        /* Solid + ember buttons only ever appear over images → fixed palette. */
+        .dp-btn-solid { background: #F2E8D5; color: #0A0704; }
+        .dp-btn-solid:hover { background: var(--dp-ember); color: #F2E8D5; }
+        .dp-btn-ember { background: var(--dp-ember); color: #F2E8D5; }
         .dp-btn-ember:hover { opacity: 0.88; }
+        /* Ghost buttons appear on normal sections → theme-aware. */
+        .dp-btn-ghost { border: 1px solid rgba(var(--brand-fg-rgb),0.28); color: var(--dp-cream); }
+        .dp-btn-ghost:hover { border-color: var(--dp-cream); background: rgba(var(--brand-fg-rgb),0.06); }
+        /* ...except when explicitly placed over an image. */
+        .dp-btn-ghost.dp-on-media { border-color: rgba(242,232,213,0.28); color: #F2E8D5; }
+        .dp-btn-ghost.dp-on-media:hover { border-color: #F2E8D5; background: rgba(242,232,213,0.06); }
 
         /* Image-first primitives */
         .dp-frame { position: relative; overflow: hidden; background: var(--dp-charcoal); }
@@ -196,7 +207,7 @@ export default async function HomePage() {
 
         .dp-qv { position:absolute; inset:0; display:flex; align-items:flex-end; padding:0.9rem; opacity:0; background:rgba(6,4,2,0.35); transition:opacity 0.3s; }
         .dp-zoom:hover .dp-qv { opacity:1; }
-        .dp-qv-label { font-family:var(--font-dm-sans),sans-serif; font-size:0.6rem; font-weight:500; letter-spacing:0.15em; text-transform:uppercase; color:var(--dp-cream); border-bottom:1px solid var(--dp-ember); padding-bottom:2px; }
+        .dp-qv-label { font-family:var(--font-dm-sans),sans-serif; font-size:0.6rem; font-weight:500; letter-spacing:0.15em; text-transform:uppercase; color:#F2E8D5; border-bottom:1px solid var(--dp-ember); padding-bottom:2px; }
 
         .dp-pill { position:absolute; top:0.6rem; left:0.6rem; font-family:var(--font-dm-sans),sans-serif; font-size:0.5rem; font-weight:500; letter-spacing:0.16em; text-transform:uppercase; padding:3px 8px; }
 
@@ -300,7 +311,7 @@ export default async function HomePage() {
                   margin: 0,
                 }}
               >
-                <span style={{ color: "var(--dp-cream)" }}>D&apos;FOOT</span>
+                <span style={{ color: "var(--dp-on)" }}>D&apos;FOOT</span>
                 <span
                   style={{
                     WebkitTextStroke: "1.5px rgba(242,232,213,0.55)",
@@ -329,7 +340,7 @@ export default async function HomePage() {
                     fontWeight: 300,
                     fontStyle: "italic",
                     lineHeight: 1.4,
-                    color: "var(--dp-cream)",
+                    color: "var(--dp-on)",
                     maxWidth: 520,
                     margin: 0,
                   }}
@@ -342,7 +353,10 @@ export default async function HomePage() {
                   <Link href="/products" className="dp-btn-solid">
                     Shop Collection {ARROW}
                   </Link>
-                  <Link href="/custom-orders" className="dp-btn-ghost">
+                  <Link
+                    href="/custom-orders"
+                    className="dp-btn-ghost dp-on-media"
+                  >
                     Custom Orders
                   </Link>
                 </div>
@@ -376,7 +390,7 @@ export default async function HomePage() {
                   paddingRight: "1.5rem",
                   fontSize: "1rem",
                   letterSpacing: "0.14em",
-                  color: "var(--dp-cream)",
+                  color: "var(--dp-on)",
                 }}
               >
                 <span>HANDCRAFTED IN NIGERIA</span>
@@ -482,7 +496,7 @@ export default async function HomePage() {
                             ? "clamp(1.4rem,2.4vw,2.1rem)"
                             : "1.15rem",
                           fontWeight: 600,
-                          color: "var(--dp-cream)",
+                          color: "var(--dp-on)",
                           margin: 0,
                         }}
                       >
@@ -512,7 +526,7 @@ export default async function HomePage() {
                         />
                         <span
                           className="dp-label"
-                          style={{ color: "var(--dp-cream)" }}
+                          style={{ color: "var(--dp-on)" }}
                         >
                           View →
                         </span>
@@ -778,7 +792,7 @@ export default async function HomePage() {
                               ? "clamp(1.7rem,3.5vw,2.8rem)"
                               : "1.35rem",
                             fontWeight: 600,
-                            color: "var(--dp-cream)",
+                            color: "var(--dp-on)",
                             margin: 0,
                           }}
                         >
@@ -789,7 +803,7 @@ export default async function HomePage() {
                             className="line-clamp-2"
                             style={{
                               fontSize: "0.82rem",
-                              color: "var(--dp-sand)",
+                              color: "var(--dp-on-dim)",
                               marginTop: "0.65rem",
                               maxWidth: 480,
                               lineHeight: 1.6,
@@ -986,7 +1000,7 @@ export default async function HomePage() {
                     style={{
                       fontSize: "clamp(2rem,5vw,4rem)",
                       fontWeight: 600,
-                      color: "var(--dp-cream)",
+                      color: "var(--dp-on)",
                       margin: 0,
                       maxWidth: 640,
                       lineHeight: 1.05,
@@ -1051,7 +1065,7 @@ export default async function HomePage() {
                           className="dp-pill dp-label"
                           style={{
                             background: "rgba(6,4,2,0.72)",
-                            color: "var(--dp-sand)",
+                            color: "var(--dp-on-dim)",
                           }}
                         >
                           Before
@@ -1072,7 +1086,7 @@ export default async function HomePage() {
                           className="dp-pill dp-label"
                           style={{
                             background: "rgba(191,90,40,0.85)",
-                            color: "var(--dp-cream)",
+                            color: "var(--dp-on)",
                           }}
                         >
                           After
@@ -1132,7 +1146,7 @@ export default async function HomePage() {
           >
             <p
               className="dp-label"
-              style={{ color: "var(--dp-sand)", marginBottom: "1rem" }}
+              style={{ color: "var(--dp-on-dim)", marginBottom: "1rem" }}
             >
               Start something special
             </p>
@@ -1141,7 +1155,7 @@ export default async function HomePage() {
               style={{
                 fontSize: "clamp(2rem,5vw,4rem)",
                 fontWeight: 600,
-                color: "var(--dp-cream)",
+                color: "var(--dp-on)",
                 maxWidth: 720,
                 margin: "0 auto 2rem",
                 lineHeight: 1.12,
