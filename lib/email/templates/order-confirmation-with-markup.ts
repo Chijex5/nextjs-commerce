@@ -38,7 +38,7 @@ export const orderConfirmationWithMarkupTemplate = (
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXTAUTH_URL ||
-    "https://yourdomain.com";
+    "https://www.dfootprint.me";
 
   const currencyCode = order.currencyCode || "NGN";
   const orderUrl =

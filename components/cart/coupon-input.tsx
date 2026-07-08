@@ -163,7 +163,7 @@ export default function CouponInput({
       setAppliedCoupon(data.coupon);
       setCode("");
       toast.success(
-        `Coupon applied! You saved ₦${data.coupon.discountAmount.toFixed(2)}`,
+        `Coupon applied — you saved ₦${Math.round(data.coupon.discountAmount).toLocaleString("en-NG")}`,
       );
       onApply(data.coupon.discountAmount, data.coupon.code, data.coupon);
       try {

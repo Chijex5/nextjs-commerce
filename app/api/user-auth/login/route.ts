@@ -3,19 +3,30 @@ import { and, eq, ilike, isNull } from "drizzle-orm";
 import { db } from "lib/db";
 import { customOrderRequests, users } from "lib/db/schema";
 import { handleApiError } from "lib/errors";
+import { getClientIp, rateLimit, tooManyRequests } from "lib/rate-limit";
 import { createUserSession, setUserSessionCookie } from "lib/user-session";
+import { normalizeEmail } from "lib/user-utils";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    const { email: rawEmail, password } = await request.json();
 
-    if (!email || !password) {
+    if (!rawEmail || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
         { status: 400 },
       );
     }
+
+    const email = normalizeEmail(rawEmail);
+    const ip = getClientIp(request);
+    // Throttle by IP (broad) and by account (targeted) to slow credential
+    // stuffing without locking a whole office network out of one account.
+    const ipLimit = rateLimit(`login:ip:${ip}`, 20, 15 * 60_000);
+    if (!ipLimit.ok) return tooManyRequests(ipLimit.retryAfter);
+    const emailLimit = rateLimit(`login:email:${email}`, 5, 15 * 60_000);
+    if (!emailLimit.ok) return tooManyRequests(emailLimit.retryAfter);
 
     const [user] = await db
       .select()

@@ -22,14 +22,17 @@ if (!AMAZON_DB_PASSWORD) throw new Error("AMAZON_DB_PASSWORD is not set");
 const port = Number(AMAZON_DB_PORT);
 if (!Number.isFinite(port)) throw new Error("AMAZON_DB_PORT must be a number");
 
-
 const ssl = { rejectUnauthorized: false };
-
 
 const globalForDb = globalThis as unknown as {
   drizzleClient?: PostgresJsDatabase<typeof schema>;
   drizzleSql?: ReturnType<typeof postgres>;
 };
+
+// On serverless each warm instance opens its own pool, so a high `max`
+// multiplied across instances can exhaust Postgres connections. Keep it small
+// per instance (override with DB_POOL_MAX when running behind a pooler).
+const poolMax = Number(process.env.DB_POOL_MAX ?? 5);
 
 const sql =
   globalForDb.drizzleSql ??
@@ -40,7 +43,8 @@ const sql =
     username: AMAZON_DB_USER,
     password: AMAZON_DB_PASSWORD,
     ssl,
-    max: 20,
+    max: Number.isFinite(poolMax) && poolMax > 0 ? poolMax : 5,
+    idle_timeout: 20,
     prepare: false,
   });
 

@@ -795,14 +795,20 @@ export default function CheckoutPage() {
       if (response.ok && data.authorizationUrl)
         window.location.href = data.authorizationUrl;
       else if (response.ok && data.freeCheckout && data.orderNumber) {
-        toast.success("Order placed successfully");
+        toast.success("Your order is confirmed — thank you!");
         router.push(
           `/checkout/success?order=${encodeURIComponent(data.orderNumber)}`,
         );
-      } else toast.error(data.error || "Failed to initialize payment");
+      } else
+        toast.error(
+          data.error ||
+            "We couldn't start your payment. Your card hasn't been charged — please try again.",
+        );
     } catch (error) {
       console.error("Checkout error:", error);
-      toast.error("An error occurred during checkout");
+      toast.error(
+        "Something went wrong during checkout. Your card hasn't been charged — please try again.",
+      );
     } finally {
       setSubmitting(false);
     }

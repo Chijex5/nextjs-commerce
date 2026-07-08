@@ -53,13 +53,20 @@ export async function verifyUserSession(
       return null;
     }
 
-    // Verify signature
+    // Verify signature with a constant-time comparison to avoid leaking how
+    // much of a forged signature is correct via response timing.
     const expectedSignature = crypto
       .createHmac("sha256", JWT_SECRET_KEY)
       .update(base64Payload)
       .digest("base64url");
 
-    if (signature !== expectedSignature) {
+    const signatureBuffer = Buffer.from(signature);
+    const expectedBuffer = Buffer.from(expectedSignature);
+
+    if (
+      signatureBuffer.length !== expectedBuffer.length ||
+      !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
+    ) {
       return null;
     }
 
