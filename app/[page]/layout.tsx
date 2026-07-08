@@ -5,7 +5,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <>
       <div
         style={{
-          background: "#0A0704",
+          background: "var(--brand-espresso)",
           minHeight: "100vh",
           paddingTop: "48px",
           paddingBottom: "80px",

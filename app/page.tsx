@@ -99,15 +99,15 @@ export default async function HomePage() {
 
         :root {
           --dp-void:    #06040200;
-          --dp-ink:     #0A0704;
-          --dp-charcoal:#191209;
-          --dp-card:    #1E1510;
-          --dp-cream:   #F2E8D5;
-          --dp-sand:    #C9B99A;
-          --dp-muted:   #6A5A48;
-          --dp-ember:   #BF5A28;
-          --dp-gold:    #C0892A;
-          --dp-border:  rgba(242,232,213,0.09);
+          --dp-ink:     var(--brand-espresso);
+          --dp-charcoal:var(--brand-surface2);
+          --dp-card:    var(--brand-surface2);
+          --dp-cream:   var(--brand-cream);
+          --dp-sand:    var(--brand-sand);
+          --dp-muted:   var(--brand-muted);
+          --dp-ember:   var(--brand-terra);
+          --dp-gold:    var(--brand-gold);
+          --dp-border:  rgba(var(--brand-fg-rgb),0.09);
         }
 
         .dp-wordmark   { font-family: var(--font-bebas-neue), sans-serif; }
@@ -159,13 +159,13 @@ export default async function HomePage() {
 
         .dp-btn-ghost {
           display: inline-flex; align-items: center; gap: 0.5rem;
-          border: 1px solid rgba(242,232,213,0.28); color: var(--dp-cream);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.28); color: var(--dp-cream);
           font-family: var(--font-dm-sans), sans-serif; font-weight: 500;
           font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
           padding: 0.9rem 2.1rem; text-decoration: none;
           transition: border-color 0.22s, background 0.22s;
         }
-        .dp-btn-ghost:hover { border-color: var(--dp-cream); background: rgba(242,232,213,0.06); }
+        .dp-btn-ghost:hover { border-color: var(--dp-cream); background: rgba(var(--brand-fg-rgb),0.06); }
 
         .dp-btn-ember {
           display: inline-flex; align-items: center; gap: 0.5rem;
@@ -183,10 +183,10 @@ export default async function HomePage() {
         .dp-nav-link { color: var(--dp-muted); text-decoration: none; transition: color 0.2s; }
         .dp-nav-link:hover { color: var(--dp-cream); }
         .dp-h2    { font-family:var(--font-cormorant-garamond),serif; font-weight:600; color:var(--dp-cream); }
-        .dp-num   { font-family:var(--font-bebas-neue),sans-serif; font-size:5.5rem; line-height:1; color:rgba(242,232,213,0.05); position:absolute; top:0.25rem; left:0.75rem; pointer-events:none; user-select:none; }
+        .dp-num   { font-family:var(--font-bebas-neue),sans-serif; font-size:5.5rem; line-height:1; color:rgba(var(--brand-fg-rgb),0.05); position:absolute; top:0.25rem; left:0.75rem; pointer-events:none; user-select:none; }
 
         /* Quick-view hover chip */
-        .dp-qv { position:absolute; inset:0; display:flex; align-items:flex-end; padding:0.9rem; opacity:0; background:rgba(6,4,2,0.45); transition:opacity 0.3s; }
+        .dp-qv { position:absolute; inset:0; display:flex; align-items:flex-end; padding:0.9rem; opacity:0; background:rgba(var(--brand-bg-rgb),0.45); transition:opacity 0.3s; }
         .dp-zoom:hover .dp-qv { opacity:1; }
         .dp-qv-label { font-family:var(--font-dm-sans),sans-serif; font-size:0.6rem; font-weight:500; letter-spacing:0.15em; text-transform:uppercase; color:var(--dp-cream); border-bottom:1px solid var(--dp-ember); padding-bottom:2px; }
 
@@ -219,7 +219,7 @@ export default async function HomePage() {
               height: 700,
               borderRadius: "50%",
               background:
-                "radial-gradient(circle, rgba(191,90,40,0.16) 0%, transparent 68%)",
+                "radial-gradient(circle, rgba(var(--brand-terra-rgb),0.16) 0%, transparent 68%)",
               right: -120,
               top: -180,
               filter: "blur(80px)",
@@ -232,7 +232,7 @@ export default async function HomePage() {
               height: 400,
               borderRadius: "50%",
               background:
-                "radial-gradient(circle, rgba(192,137,42,0.1) 0%, transparent 70%)",
+                "radial-gradient(circle, rgba(var(--brand-gold-rgb),0.1) 0%, transparent 70%)",
               left: "10%",
               bottom: -60,
               filter: "blur(60px)",
@@ -282,7 +282,7 @@ export default async function HomePage() {
               <span style={{ color: "var(--dp-cream)" }}>D&apos;FOOT</span>
               <span
                 style={{
-                  WebkitTextStroke: "1.5px rgba(242,232,213,0.25)",
+                  WebkitTextStroke: "1.5px rgba(var(--brand-fg-rgb),0.25)",
                   color: "transparent",
                 }}
               >
@@ -463,7 +463,7 @@ export default async function HomePage() {
                 <span>HANDCRAFTED IN NIGERIA</span>
                 <span
                   style={{
-                    color: "rgba(242,232,213,0.45)",
+                    color: "rgba(var(--brand-fg-rgb),0.45)",
                     fontSize: "0.7rem",
                   }}
                 >
@@ -472,7 +472,7 @@ export default async function HomePage() {
                 <span>PREMIUM SLIPPERS &amp; SLIDES</span>
                 <span
                   style={{
-                    color: "rgba(242,232,213,0.45)",
+                    color: "rgba(var(--brand-fg-rgb),0.45)",
                     fontSize: "0.7rem",
                   }}
                 >
@@ -481,7 +481,7 @@ export default async function HomePage() {
                 <span>CUSTOM ORDERS WELCOME</span>
                 <span
                   style={{
-                    color: "rgba(242,232,213,0.45)",
+                    color: "rgba(var(--brand-fg-rgb),0.45)",
                     fontSize: "0.7rem",
                   }}
                 >
@@ -490,7 +490,7 @@ export default async function HomePage() {
                 <span>NATIONWIDE DELIVERY</span>
                 <span
                   style={{
-                    color: "rgba(242,232,213,0.45)",
+                    color: "rgba(var(--brand-fg-rgb),0.45)",
                     fontSize: "0.7rem",
                   }}
                 >
@@ -577,7 +577,7 @@ export default async function HomePage() {
                         position: "absolute",
                         inset: 0,
                         background:
-                          "linear-gradient(to top, rgba(6,4,2,0.92) 0%, rgba(6,4,2,0.25) 55%, transparent 100%)",
+                          "linear-gradient(to top, rgba(var(--brand-bg-rgb),0.92) 0%, rgba(var(--brand-bg-rgb),0.25) 55%, transparent 100%)",
                       }}
                     />
                     <div
@@ -1059,7 +1059,7 @@ export default async function HomePage() {
                         position: "absolute",
                         inset: 0,
                         background:
-                          "linear-gradient(135deg, rgba(6,4,2,0.82) 0%, rgba(6,4,2,0.15) 65%)",
+                          "linear-gradient(135deg, rgba(var(--brand-bg-rgb),0.82) 0%, rgba(var(--brand-bg-rgb),0.15) 65%)",
                       }}
                     />
                     <div
@@ -1206,7 +1206,7 @@ export default async function HomePage() {
                         <span
                           className="dp-pill dp-label"
                           style={{
-                            background: "rgba(6,4,2,0.72)",
+                            background: "rgba(var(--brand-bg-rgb),0.72)",
                             color: "var(--dp-sand)",
                             fontSize: "0.5rem",
                           }}
@@ -1234,7 +1234,7 @@ export default async function HomePage() {
                         <span
                           className="dp-pill dp-label"
                           style={{
-                            background: "rgba(191,90,40,0.85)",
+                            background: "rgba(var(--brand-terra-rgb),0.85)",
                             color: "var(--dp-cream)",
                             fontSize: "0.5rem",
                           }}
@@ -1300,7 +1300,10 @@ export default async function HomePage() {
           <div style={{ position: "relative", zIndex: 10 }}>
             <p
               className="dp-label"
-              style={{ color: "rgba(242,232,213,0.55)", marginBottom: "1rem" }}
+              style={{
+                color: "rgba(var(--brand-fg-rgb),0.55)",
+                marginBottom: "1rem",
+              }}
             >
               Start something special
             </p>

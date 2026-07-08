@@ -51,16 +51,29 @@ export default function CouponInput({
 
   useEffect(() => {
     const loadStoredCoupon = async () => {
-      if (!cartId) { setAppliedCoupon(null); onApply(0, ""); return; }
+      if (!cartId) {
+        setAppliedCoupon(null);
+        onApply(0, "");
+        return;
+      }
       try {
         const customerKey = getCouponCustomerKey(session?.id);
         let couponData = getStoredCoupon(cartId, customerKey);
-        if (!couponData && session?.id) couponData = migrateGuestCouponToUser(cartId, session.id);
+        if (!couponData && session?.id)
+          couponData = migrateGuestCouponToUser(cartId, session.id);
         if (couponData) {
-          const payload: { code: string; cartTotal: number; shippingAmount: number; sessionId?: string } = {
-            code: couponData.code, cartTotal, shippingAmount,
+          const payload: {
+            code: string;
+            cartTotal: number;
+            shippingAmount: number;
+            sessionId?: string;
+          } = {
+            code: couponData.code,
+            cartTotal,
+            shippingAmount,
           };
-          if (!session?.id) payload.sessionId = customerKey.replace("guest:", "");
+          if (!session?.id)
+            payload.sessionId = customerKey.replace("guest:", "");
           const response = await fetch("/api/coupons/validate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -76,17 +89,29 @@ export default function CouponInput({
               shippingDiscountAmount: data.coupon.shippingDiscountAmount || 0,
               productDiscountAmount: data.coupon.productDiscountAmount || 0,
               grantsFreeShipping: Boolean(data.coupon.grantsFreeShipping),
-              includeShippingInDiscount: Boolean(data.coupon.includeShippingInDiscount),
+              includeShippingInDiscount: Boolean(
+                data.coupon.includeShippingInDiscount,
+              ),
               description: data.coupon.description,
-              cartId, customerKey,
+              cartId,
+              customerKey,
             });
           } else {
-            setAppliedCoupon(null); onApply(0, "");
-            logCouponDebug("Revalidation failed", { cartId, customerKey, status: response.status, payload });
+            setAppliedCoupon(null);
+            onApply(0, "");
+            logCouponDebug("Revalidation failed", {
+              cartId,
+              customerKey,
+              status: response.status,
+              payload,
+            });
           }
         }
       } catch (err) {
-        logCouponDebug("Revalidation error", { cartId, error: err instanceof Error ? err.message : String(err) });
+        logCouponDebug("Revalidation error", {
+          cartId,
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     };
     loadStoredCoupon();
@@ -94,13 +119,28 @@ export default function CouponInput({
 
   const handleApply = async () => {
     const trimmedCode = code.trim().toUpperCase();
-    if (!cartId) { toast.error("Unable to apply coupon right now. Please refresh and try again."); return; }
-    if (!trimmedCode) { toast.error("Please enter a coupon code"); return; }
+    if (!cartId) {
+      toast.error(
+        "Unable to apply coupon right now. Please refresh and try again.",
+      );
+      return;
+    }
+    if (!trimmedCode) {
+      toast.error("Please enter a coupon code");
+      return;
+    }
     setLoading(true);
     try {
       const customerKey = getCouponCustomerKey(session?.id);
-      const payload: { code: string; cartTotal: number; shippingAmount: number; sessionId?: string } = {
-        code: trimmedCode, cartTotal, shippingAmount,
+      const payload: {
+        code: string;
+        cartTotal: number;
+        shippingAmount: number;
+        sessionId?: string;
+      } = {
+        code: trimmedCode,
+        cartTotal,
+        shippingAmount,
       };
       if (!session?.id) payload.sessionId = customerKey.replace("guest:", "");
       const response = await fetch("/api/coupons/validate", {
@@ -110,13 +150,21 @@ export default function CouponInput({
       });
       const data = await response.json();
       if (!response.ok) {
-        logCouponDebug("Apply failed", { cartId, customerKey, status: response.status, payload, response: data });
+        logCouponDebug("Apply failed", {
+          cartId,
+          customerKey,
+          status: response.status,
+          payload,
+          response: data,
+        });
         toast.error(parseApiError(response, data));
         return;
       }
       setAppliedCoupon(data.coupon);
       setCode("");
-      toast.success(`Coupon applied — you saved ₦${Math.round(data.coupon.discountAmount).toLocaleString("en-NG")}`);
+      toast.success(
+        `Coupon applied — you saved ₦${Math.round(data.coupon.discountAmount).toLocaleString("en-NG")}`,
+      );
       onApply(data.coupon.discountAmount, data.coupon.code, data.coupon);
       try {
         saveStoredCoupon({
@@ -125,11 +173,16 @@ export default function CouponInput({
           shippingDiscountAmount: data.coupon.shippingDiscountAmount || 0,
           productDiscountAmount: data.coupon.productDiscountAmount || 0,
           grantsFreeShipping: Boolean(data.coupon.grantsFreeShipping),
-          includeShippingInDiscount: Boolean(data.coupon.includeShippingInDiscount),
+          includeShippingInDiscount: Boolean(
+            data.coupon.includeShippingInDiscount,
+          ),
           description: data.coupon.description,
-          cartId, customerKey,
+          cartId,
+          customerKey,
         });
-      } catch (err) { console.error("Failed to save coupon to storage:", err); }
+      } catch (err) {
+        console.error("Failed to save coupon to storage:", err);
+      }
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -138,10 +191,15 @@ export default function CouponInput({
   };
 
   const handleRemove = () => {
-    setAppliedCoupon(null); setCode(""); onApply(0, "");
+    setAppliedCoupon(null);
+    setCode("");
+    onApply(0, "");
     toast.success("Coupon removed");
-    try { localStorage.removeItem(COUPON_STORAGE_KEY); }
-    catch (err) { console.error("Failed to remove coupon from storage:", err); }
+    try {
+      localStorage.removeItem(COUPON_STORAGE_KEY);
+    } catch (err) {
+      console.error("Failed to remove coupon from storage:", err);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -154,27 +212,58 @@ export default function CouponInput({
       return (
         <div
           style={{
-            display: "flex", flexDirection: "column", gap: "0.5rem",
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.5rem",
             padding: "0.6rem 0.75rem",
-            background: "rgba(74,140,92,0.08)",
-            border: "1px solid rgba(74,140,92,0.25)",
+            background: "rgba(var(--brand-success-rgb),0.08)",
+            border: "1px solid rgba(var(--brand-success-rgb),0.25)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "0.5rem",
+            }}
+          >
+            <div
+              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+            >
               {/* Check icon */}
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--dp-green, #4A8C5C)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--dp-green, var(--brand-success))"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.68rem", fontWeight: 500, color: "var(--dp-sand, #C9B99A)", letterSpacing: "0.06em" }}>
+              <span
+                style={{
+                  fontFamily: "DM Sans, sans-serif",
+                  fontSize: "0.68rem",
+                  fontWeight: 500,
+                  color: "var(--dp-sand, var(--brand-sand))",
+                  letterSpacing: "0.06em",
+                }}
+              >
                 Coupon
               </span>
               <span
                 style={{
-                  fontFamily: "DM Sans, sans-serif", fontSize: "0.58rem", fontWeight: 600,
-                  letterSpacing: "0.16em", textTransform: "uppercase",
-                  color: "var(--dp-ember, #BF5A28)",
-                  border: "1px solid var(--dp-ember, #BF5A28)",
+                  fontFamily: "DM Sans, sans-serif",
+                  fontSize: "0.58rem",
+                  fontWeight: 600,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  color: "var(--dp-ember, var(--brand-terra))",
+                  border: "1px solid var(--dp-ember, var(--brand-terra))",
                   padding: "1px 6px",
                 }}
               >
@@ -184,26 +273,67 @@ export default function CouponInput({
             <button
               onClick={handleRemove}
               style={{
-                fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", fontWeight: 500,
-                letterSpacing: "0.1em", textTransform: "uppercase",
-                color: "var(--dp-muted, #6A5A48)", background: "none", border: "none",
-                cursor: "pointer", textDecoration: "underline", padding: 0,
+                fontFamily: "DM Sans, sans-serif",
+                fontSize: "0.6rem",
+                fontWeight: 500,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "var(--dp-muted, var(--brand-muted))",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                textDecoration: "underline",
+                padding: 0,
                 transition: "color 0.2s",
               }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "var(--dp-cream, #F2E8D5)")}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "var(--dp-muted, #6A5A48)")}
+              onMouseEnter={(e) =>
+                ((e.currentTarget as HTMLButtonElement).style.color =
+                  "var(--dp-cream, var(--brand-cream))")
+              }
+              onMouseLeave={(e) =>
+                ((e.currentTarget as HTMLButtonElement).style.color =
+                  "var(--dp-muted, var(--brand-muted))")
+              }
             >
               Remove
             </button>
           </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.68rem", color: "var(--dp-muted, #6A5A48)" }}>Savings</span>
-            <span style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: "0.9rem", color: "var(--dp-green, #4A8C5C)", letterSpacing: "0.06em" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "DM Sans, sans-serif",
+                fontSize: "0.68rem",
+                color: "var(--dp-muted, var(--brand-muted))",
+              }}
+            >
+              Savings
+            </span>
+            <span
+              style={{
+                fontFamily: "Bebas Neue, sans-serif",
+                fontSize: "0.9rem",
+                color: "var(--dp-green, var(--brand-success))",
+                letterSpacing: "0.06em",
+              }}
+            >
               -₦{appliedCoupon.discountAmount.toFixed(2)}
             </span>
           </div>
           {appliedCoupon.description && (
-            <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.62rem", color: "var(--dp-muted, #6A5A48)", lineHeight: 1.5 }}>
+            <p
+              style={{
+                fontFamily: "DM Sans, sans-serif",
+                fontSize: "0.62rem",
+                color: "var(--dp-muted, var(--brand-muted))",
+                lineHeight: 1.5,
+              }}
+            >
               {appliedCoupon.description}
             </p>
           )}
@@ -216,39 +346,93 @@ export default function CouponInput({
       <div
         style={{
           padding: "1rem",
-          background: "rgba(74,140,92,0.07)",
-          border: "1px solid rgba(74,140,92,0.22)",
+          background: "rgba(var(--brand-success-rgb),0.07)",
+          border: "1px solid rgba(var(--brand-success-rgb),0.22)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: "0.75rem",
+          }}
+        >
           <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.35rem" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--dp-green, #4A8C5C)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                marginBottom: "0.35rem",
+              }}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--dp-green, var(--brand-success))"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.72rem", fontWeight: 500, color: "var(--dp-sand, #C9B99A)" }}>
+              <span
+                style={{
+                  fontFamily: "DM Sans, sans-serif",
+                  fontSize: "0.72rem",
+                  fontWeight: 500,
+                  color: "var(--dp-sand, var(--brand-sand))",
+                }}
+              >
                 Applied:
               </span>
               <span
                 style={{
-                  fontFamily: "DM Sans, sans-serif", fontSize: "0.58rem", fontWeight: 600,
-                  letterSpacing: "0.18em", textTransform: "uppercase",
-                  color: "var(--dp-ember, #BF5A28)",
-                  border: "1px solid var(--dp-ember, #BF5A28)",
+                  fontFamily: "DM Sans, sans-serif",
+                  fontSize: "0.58rem",
+                  fontWeight: 600,
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: "var(--dp-ember, var(--brand-terra))",
+                  border: "1px solid var(--dp-ember, var(--brand-terra))",
                   padding: "1px 7px",
                 }}
               >
                 {appliedCoupon.code}
               </span>
             </div>
-            <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.72rem", color: "var(--dp-muted, #6A5A48)" }}>
+            <p
+              style={{
+                fontFamily: "DM Sans, sans-serif",
+                fontSize: "0.72rem",
+                color: "var(--dp-muted, var(--brand-muted))",
+              }}
+            >
               Discount:{" "}
-              <span style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: "0.95rem", color: "var(--dp-green, #4A8C5C)", letterSpacing: "0.04em" }}>
+              <span
+                style={{
+                  fontFamily: "Bebas Neue, sans-serif",
+                  fontSize: "0.95rem",
+                  color: "var(--dp-green, var(--brand-success))",
+                  letterSpacing: "0.04em",
+                }}
+              >
                 -₦{appliedCoupon.discountAmount.toFixed(2)}
               </span>
             </p>
             {appliedCoupon.description && (
-              <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.65rem", color: "var(--dp-muted, #6A5A48)", marginTop: "0.25rem", lineHeight: 1.5 }}>
+              <p
+                style={{
+                  fontFamily: "DM Sans, sans-serif",
+                  fontSize: "0.65rem",
+                  color: "var(--dp-muted, var(--brand-muted))",
+                  marginTop: "0.25rem",
+                  lineHeight: 1.5,
+                }}
+              >
                 {appliedCoupon.description}
               </p>
             )}
@@ -256,20 +440,30 @@ export default function CouponInput({
           <button
             onClick={handleRemove}
             style={{
-              fontFamily: "DM Sans, sans-serif", fontSize: "0.62rem", fontWeight: 500,
-              letterSpacing: "0.1em", textTransform: "uppercase",
-              color: "var(--dp-muted, #6A5A48)", background: "none", border: "none",
-              cursor: "pointer", padding: 0,
+              fontFamily: "DM Sans, sans-serif",
+              fontSize: "0.62rem",
+              fontWeight: 500,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "var(--dp-muted, var(--brand-muted))",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
               borderBottom: "1px solid transparent",
               transition: "color 0.2s, border-color 0.2s",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.color = "var(--dp-cream, #F2E8D5)";
-              (e.currentTarget as HTMLButtonElement).style.borderBottomColor = "var(--dp-ember, #BF5A28)";
+              (e.currentTarget as HTMLButtonElement).style.color =
+                "var(--dp-cream, var(--brand-cream))";
+              (e.currentTarget as HTMLButtonElement).style.borderBottomColor =
+                "var(--dp-ember, var(--brand-terra))";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.color = "var(--dp-muted, #6A5A48)";
-              (e.currentTarget as HTMLButtonElement).style.borderBottomColor = "transparent";
+              (e.currentTarget as HTMLButtonElement).style.color =
+                "var(--dp-muted, var(--brand-muted))";
+              (e.currentTarget as HTMLButtonElement).style.borderBottomColor =
+                "transparent";
             }}
           >
             Remove
@@ -283,17 +477,32 @@ export default function CouponInput({
   if (isCompact) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <span
             style={{
-              fontFamily: "DM Sans, sans-serif", fontSize: "0.58rem", fontWeight: 500,
-              letterSpacing: "0.22em", textTransform: "uppercase",
-              color: "var(--dp-ember, #BF5A28)",
+              fontFamily: "DM Sans, sans-serif",
+              fontSize: "0.58rem",
+              fontWeight: 500,
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              color: "var(--dp-ember, var(--brand-terra))",
             }}
           >
             Discount code
           </span>
-          <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.6rem", color: "var(--dp-muted, #6A5A48)" }}>
+          <span
+            style={{
+              fontFamily: "DM Sans, sans-serif",
+              fontSize: "0.6rem",
+              color: "var(--dp-muted, var(--brand-muted))",
+            }}
+          >
             Optional
           </span>
         </div>
@@ -308,32 +517,57 @@ export default function CouponInput({
             disabled={loading}
             maxLength={50}
             style={{
-              flex: 1, minWidth: 0,
-              background: "rgba(242,232,213,0.04)",
-              border: "1px solid var(--dp-border, rgba(242,232,213,0.09))",
+              flex: 1,
+              minWidth: 0,
+              background: "rgba(var(--brand-fg-rgb),0.04)",
+              border:
+                "1px solid var(--dp-border, rgba(var(--brand-fg-rgb),0.09))",
               borderRight: "none",
-              color: "var(--dp-cream, #F2E8D5)",
+              color: "var(--dp-cream, var(--brand-cream))",
               fontFamily: "DM Sans, sans-serif",
-              fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase",
+              fontSize: "0.72rem",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
               padding: "0.5rem 0.6rem",
               outline: "none",
               transition: "border-color 0.2s",
             }}
-            onFocus={(e) => (e.currentTarget.style.borderColor = "var(--dp-ember, #BF5A28)")}
-            onBlur={(e) => (e.currentTarget.style.borderColor = "var(--dp-border, rgba(242,232,213,0.09))")}
+            onFocus={(e) =>
+              (e.currentTarget.style.borderColor =
+                "var(--dp-ember, var(--brand-terra))")
+            }
+            onBlur={(e) =>
+              (e.currentTarget.style.borderColor =
+                "var(--dp-border, rgba(var(--brand-fg-rgb),0.09))")
+            }
           />
           <button
             onClick={handleApply}
             disabled={loading || !code.trim()}
             style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              padding: "0.5rem 0.9rem", flexShrink: 0,
-              background: loading || !code.trim() ? "var(--dp-charcoal, #191209)" : "var(--dp-ember, #BF5A28)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "0.5rem 0.9rem",
+              flexShrink: 0,
+              background:
+                loading || !code.trim()
+                  ? "var(--dp-charcoal, var(--brand-surface2))"
+                  : "var(--dp-ember, var(--brand-terra))",
               border: "1px solid",
-              borderColor: loading || !code.trim() ? "var(--dp-border, rgba(242,232,213,0.09))" : "var(--dp-ember, #BF5A28)",
-              color: loading || !code.trim() ? "var(--dp-muted, #6A5A48)" : "var(--dp-cream, #F2E8D5)",
-              fontFamily: "DM Sans, sans-serif", fontSize: "0.62rem", fontWeight: 500,
-              letterSpacing: "0.14em", textTransform: "uppercase",
+              borderColor:
+                loading || !code.trim()
+                  ? "var(--dp-border, rgba(var(--brand-fg-rgb),0.09))"
+                  : "var(--dp-ember, var(--brand-terra))",
+              color:
+                loading || !code.trim()
+                  ? "var(--dp-muted, var(--brand-muted))"
+                  : "var(--dp-cream, var(--brand-cream))",
+              fontFamily: "DM Sans, sans-serif",
+              fontSize: "0.62rem",
+              fontWeight: 500,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
               cursor: loading || !code.trim() ? "not-allowed" : "pointer",
               transition: "background 0.2s, color 0.2s, border-color 0.2s",
               minWidth: 60,
@@ -350,18 +584,22 @@ export default function CouponInput({
   return (
     <div
       style={{
-        background: "var(--dp-charcoal, #191209)",
-        border: "1px solid var(--dp-border, rgba(242,232,213,0.09))",
+        background: "var(--dp-charcoal, var(--brand-surface2))",
+        border: "1px solid var(--dp-border, rgba(var(--brand-fg-rgb),0.09))",
         padding: "1rem",
       }}
     >
       <label
         htmlFor="coupon-card"
         style={{
-          display: "block", marginBottom: "0.75rem",
-          fontFamily: "DM Sans, sans-serif", fontSize: "0.58rem", fontWeight: 500,
-          letterSpacing: "0.22em", textTransform: "uppercase",
-          color: "var(--dp-ember, #BF5A28)",
+          display: "block",
+          marginBottom: "0.75rem",
+          fontFamily: "DM Sans, sans-serif",
+          fontSize: "0.58rem",
+          fontWeight: 500,
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+          color: "var(--dp-ember, var(--brand-terra))",
         }}
       >
         Have a discount code?
@@ -378,47 +616,84 @@ export default function CouponInput({
           disabled={loading}
           maxLength={50}
           style={{
-            flex: 1, minWidth: 0,
-            background: "rgba(242,232,213,0.04)",
-            border: "1px solid var(--dp-border, rgba(242,232,213,0.09))",
+            flex: 1,
+            minWidth: 0,
+            background: "rgba(var(--brand-fg-rgb),0.04)",
+            border:
+              "1px solid var(--dp-border, rgba(var(--brand-fg-rgb),0.09))",
             borderRight: "none",
-            color: "var(--dp-cream, #F2E8D5)",
+            color: "var(--dp-cream, var(--brand-cream))",
             fontFamily: "DM Sans, sans-serif",
-            fontSize: "0.75rem", letterSpacing: "0.1em", textTransform: "uppercase",
+            fontSize: "0.75rem",
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
             padding: "0.65rem 0.75rem",
             outline: "none",
             transition: "border-color 0.2s",
           }}
-          onFocus={(e) => (e.currentTarget.style.borderColor = "var(--dp-ember, #BF5A28)")}
-          onBlur={(e) => (e.currentTarget.style.borderColor = "var(--dp-border, rgba(242,232,213,0.09))")}
+          onFocus={(e) =>
+            (e.currentTarget.style.borderColor =
+              "var(--dp-ember, var(--brand-terra))")
+          }
+          onBlur={(e) =>
+            (e.currentTarget.style.borderColor =
+              "var(--dp-border, rgba(var(--brand-fg-rgb),0.09))")
+          }
         />
         <button
           onClick={handleApply}
           disabled={loading || !code.trim()}
           style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            padding: "0.65rem 1.25rem", flexShrink: 0,
-            background: loading || !code.trim() ? "rgba(242,232,213,0.04)" : "var(--dp-ember, #BF5A28)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "0.65rem 1.25rem",
+            flexShrink: 0,
+            background:
+              loading || !code.trim()
+                ? "rgba(var(--brand-fg-rgb),0.04)"
+                : "var(--dp-ember, var(--brand-terra))",
             border: "1px solid",
-            borderColor: loading || !code.trim() ? "var(--dp-border, rgba(242,232,213,0.09))" : "var(--dp-ember, #BF5A28)",
-            color: loading || !code.trim() ? "var(--dp-muted, #6A5A48)" : "var(--dp-cream, #F2E8D5)",
-            fontFamily: "DM Sans, sans-serif", fontSize: "0.68rem", fontWeight: 500,
-            letterSpacing: "0.14em", textTransform: "uppercase",
+            borderColor:
+              loading || !code.trim()
+                ? "var(--dp-border, rgba(var(--brand-fg-rgb),0.09))"
+                : "var(--dp-ember, var(--brand-terra))",
+            color:
+              loading || !code.trim()
+                ? "var(--dp-muted, var(--brand-muted))"
+                : "var(--dp-cream, var(--brand-cream))",
+            fontFamily: "DM Sans, sans-serif",
+            fontSize: "0.68rem",
+            fontWeight: 500,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
             cursor: loading || !code.trim() ? "not-allowed" : "pointer",
             transition: "background 0.2s, color 0.2s, border-color 0.2s",
             minWidth: 80,
           }}
           onMouseEnter={(e) => {
             const btn = e.currentTarget as HTMLButtonElement;
-            if (!btn.disabled) { btn.style.opacity = "0.85"; }
+            if (!btn.disabled) {
+              btn.style.opacity = "0.85";
+            }
           }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.opacity = "1";
+          }}
         >
           {loading ? <Spinner /> : "Apply"}
         </button>
       </div>
 
-      <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "0.62rem", color: "var(--dp-muted, #6A5A48)", marginTop: "0.5rem", lineHeight: 1.5 }}>
+      <p
+        style={{
+          fontFamily: "DM Sans, sans-serif",
+          fontSize: "0.62rem",
+          color: "var(--dp-muted, var(--brand-muted))",
+          marginTop: "0.5rem",
+          lineHeight: 1.5,
+        }}
+      >
         Enter your coupon code to receive a discount on your order.
       </p>
     </div>
@@ -429,11 +704,23 @@ export default function CouponInput({
 function Spinner() {
   return (
     <svg
-      width="14" height="14" viewBox="0 0 24 24" fill="none"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
       style={{ animation: "spin 0.75s linear infinite" }}
     >
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4" strokeDashoffset="10" strokeLinecap="round" />
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeDasharray="31.4"
+        strokeDashoffset="10"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

@@ -15,7 +15,7 @@ const Price = ({
     suppressHydrationWarning={true}
     className={className}
     style={{
-      color: "var(--gold, #C0892A)",
+      color: "var(--gold, var(--brand-gold))",
       fontWeight: 500,
       letterSpacing: "0.03em",
     }}

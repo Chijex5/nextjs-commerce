@@ -2,21 +2,25 @@ import Footer from "components/layout/footer";
 import { Suspense } from "react";
 import ChildrenWrapper from "./children-wrapper";
 
-export default async function SearchLayout({ children }: { children: React.ReactNode }) {
+export default async function SearchLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <>
       <style>{`
 
         :root {
-          --dp-ink:     #0A0704;
-          --dp-charcoal:#191209;
-          --dp-card:    #1E1510;
-          --dp-cream:   #F2E8D5;
-          --dp-sand:    #C9B99A;
-          --dp-muted:   #6A5A48;
-          --dp-ember:   #BF5A28;
-          --dp-gold:    #C0892A;
-          --dp-border:  rgba(242,232,213,0.09);
+          --dp-ink:     var(--brand-espresso);
+          --dp-charcoal:var(--brand-surface2);
+          --dp-card:    var(--brand-surface2);
+          --dp-cream:   var(--brand-cream);
+          --dp-sand:    var(--brand-sand);
+          --dp-muted:   var(--brand-muted);
+          --dp-ember:   var(--brand-terra);
+          --dp-gold:    var(--brand-gold);
+          --dp-border:  rgba(var(--brand-fg-rgb),0.09);
         }
 
         .dp-wordmark { font-family:var(--font-bebas-neue),sans-serif; }
@@ -43,8 +47,12 @@ export default async function SearchLayout({ children }: { children: React.React
         <div
           aria-hidden
           style={{
-            position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
-            background: "radial-gradient(ellipse 45% 40% at 70% 10%, rgba(191,90,40,0.1) 0%, transparent 70%)",
+            position: "fixed",
+            inset: 0,
+            pointerEvents: "none",
+            zIndex: 0,
+            background:
+              "radial-gradient(ellipse 45% 40% at 70% 10%, rgba(var(--brand-terra-rgb),0.1) 0%, transparent 70%)",
           }}
         />
 

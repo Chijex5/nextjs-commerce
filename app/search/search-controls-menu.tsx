@@ -59,7 +59,7 @@ export default function SearchControlsMenu({
           transition: border-color .22s, color .22s;
         }
         .scm-trigger:hover, .scm-trigger[aria-expanded="true"] {
-          border-color: rgba(191,90,40,.45);
+          border-color: rgba(var(--brand-terra-rgb),.45);
           color: var(--dp-cream);
         }
 
@@ -102,7 +102,7 @@ export default function SearchControlsMenu({
           transition: border-color .2s, color .2s, background .2s;
         }
         .scm-option:hover {
-          border-color: rgba(191,90,40,.35);
+          border-color: rgba(var(--brand-terra-rgb),.35);
           color: var(--dp-sand);
         }
         .scm-option.active {
@@ -135,10 +135,18 @@ export default function SearchControlsMenu({
           aria-controls="search-controls-menu"
           className="scm-trigger"
         >
-          <svg aria-hidden viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M3 5h14" strokeLinecap="round"/>
-            <path d="M6 10h8" strokeLinecap="round"/>
-            <path d="M8 15h4" strokeLinecap="round"/>
+          <svg
+            aria-hidden
+            viewBox="0 0 20 20"
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <path d="M3 5h14" strokeLinecap="round" />
+            <path d="M6 10h8" strokeLinecap="round" />
+            <path d="M8 15h4" strokeLinecap="round" />
           </svg>
           Filter &amp; Sort
         </button>
@@ -146,9 +154,23 @@ export default function SearchControlsMenu({
         {isOpen && (
           <div id="search-controls-menu" className="scm-panel">
             {/* Panel header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <p className="dp-label" style={{ color: "var(--dp-ember)" }}>Browse controls</p>
-              <button type="button" onClick={() => setIsOpen(false)} className="scm-close">Close ×</button>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <p className="dp-label" style={{ color: "var(--dp-ember)" }}>
+                Browse controls
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="scm-close"
+              >
+                Close ×
+              </button>
             </div>
 
             {/* Collections */}
@@ -160,14 +182,28 @@ export default function SearchControlsMenu({
                   return (
                     <Link
                       key={collection.handle}
-                      href={buildHref({ path: collection.path, sortSlug: activeSortSlug })}
+                      href={buildHref({
+                        path: collection.path,
+                        sortSlug: activeSortSlug,
+                      })}
                       onClick={() => setIsOpen(false)}
                       className={clsx("scm-option", isActive && "active")}
                     >
                       <span>{collection.title}</span>
                       {isActive && (
-                        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                          <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <svg
+                          width="11"
+                          height="11"
+                          viewBox="0 0 12 12"
+                          fill="none"
+                        >
+                          <path
+                            d="M2 6l3 3 5-5"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
                         </svg>
                       )}
                     </Link>
@@ -179,7 +215,13 @@ export default function SearchControlsMenu({
             {/* Sort */}
             <div>
               <span className="scm-section-label">Sort by</span>
-              <div style={{ display: "flex", flexDirection: "column", gap: ".4rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: ".4rem",
+                }}
+              >
                 {sorting.map((option) => {
                   const isActive = option.slug === activeSortSlug;
                   return (
@@ -191,8 +233,19 @@ export default function SearchControlsMenu({
                     >
                       <span>{option.title}</span>
                       {isActive && (
-                        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                          <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <svg
+                          width="11"
+                          height="11"
+                          viewBox="0 0 12 12"
+                          fill="none"
+                        >
+                          <path
+                            d="M2 6l3 3 5-5"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
                         </svg>
                       )}
                     </Link>

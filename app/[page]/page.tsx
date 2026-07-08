@@ -58,15 +58,15 @@ export default async function Page(props: {
       <style>{`
 
         :root {
-          --espresso:   #0A0704;
-          --charcoal:   #100C06;
-          --cream:      #F2E8D5;
-          --sand:       #C9B99A;
-          --muted:      #6A5A48;
-          --terra:      #BF5A28;
-          --gold:       #C0892A;
-          --border:     rgba(242,232,213,0.09);
-          --border-mid: rgba(242,232,213,0.18);
+          --espresso:   var(--brand-espresso);
+          --charcoal:   var(--brand-charcoal);
+          --cream:      var(--brand-cream);
+          --sand:       var(--brand-sand);
+          --muted:      var(--brand-muted);
+          --terra:      var(--brand-terra);
+          --gold:       var(--brand-gold);
+          --border:     rgba(var(--brand-fg-rgb),0.09);
+          --border-mid: rgba(var(--brand-fg-rgb),0.18);
         }
 
         /* ── PAGE ROOT ── */
@@ -80,7 +80,7 @@ export default async function Page(props: {
 
         /* ── HERO ── */
         .pg-hero {
-          background: rgba(16,12,6,0.96);
+          background: rgba(var(--brand-bg-rgb),0.96);
           border: 1px solid var(--border);
           padding: 56px 56px 48px;
           position: relative;
@@ -155,7 +155,7 @@ export default async function Page(props: {
         .pg-body-panel {
           border: 1px solid var(--border);
           border-top: none;
-          background: rgba(16,12,6,0.75);
+          background: rgba(var(--brand-bg-rgb),0.75);
           padding: 52px 56px;
         }
 
@@ -163,7 +163,7 @@ export default async function Page(props: {
         .pg-meta {
           border: 1px solid var(--border);
           border-top: none;
-          background: rgba(242,232,213,0.02);
+          background: rgba(var(--brand-fg-rgb),0.02);
           padding: 16px 56px;
           display: flex;
           align-items: center;
@@ -259,7 +259,7 @@ export default async function Page(props: {
         .pg-body-panel .prose a {
           color: var(--gold) !important;
           text-decoration: none !important;
-          border-bottom: 1px solid rgba(192,137,42,0.35);
+          border-bottom: 1px solid rgba(var(--brand-gold-rgb),0.35);
           transition: border-color 0.2s, color 0.2s;
         }
         .pg-body-panel a:hover,
@@ -280,7 +280,7 @@ export default async function Page(props: {
           color: var(--sand);
           padding: 8px 0 8px 24px;
           position: relative;
-          border-bottom: 1px solid rgba(242,232,213,0.05);
+          border-bottom: 1px solid rgba(var(--brand-fg-rgb),0.05);
           line-height: 1.7;
         }
         .pg-body-panel ul li:last-child,
@@ -310,7 +310,7 @@ export default async function Page(props: {
           color: var(--sand);
           padding: 10px 0 10px 44px;
           position: relative;
-          border-bottom: 1px solid rgba(242,232,213,0.05);
+          border-bottom: 1px solid rgba(var(--brand-fg-rgb),0.05);
           line-height: 1.7;
           counter-increment: pg-counter;
         }
@@ -334,7 +334,7 @@ export default async function Page(props: {
         .pg-body-panel blockquote,
         .pg-body-panel .prose blockquote {
           border-left: 2px solid var(--terra) !important;
-          background: rgba(191,90,40,0.05) !important;
+          background: rgba(var(--brand-terra-rgb),0.05) !important;
           margin: 2rem 0 !important;
           padding: 20px 28px !important;
           font-family: var(--font-cormorant-garamond), serif !important;
@@ -364,7 +364,7 @@ export default async function Page(props: {
         /* Code */
         .pg-body-panel code,
         .pg-body-panel .prose code {
-          background: rgba(242,232,213,0.06) !important;
+          background: rgba(var(--brand-fg-rgb),0.06) !important;
           border: 1px solid var(--border) !important;
           color: var(--gold) !important;
           font-size: 12px !important;
@@ -374,7 +374,7 @@ export default async function Page(props: {
         }
         .pg-body-panel pre,
         .pg-body-panel .prose pre {
-          background: rgba(242,232,213,0.04) !important;
+          background: rgba(var(--brand-fg-rgb),0.04) !important;
           border: 1px solid var(--border) !important;
           padding: 20px 24px !important;
           overflow-x: auto !important;
@@ -400,7 +400,7 @@ export default async function Page(props: {
         }
         .pg-body-panel th,
         .pg-body-panel .prose th {
-          background: rgba(191,90,40,0.08) !important;
+          background: rgba(var(--brand-terra-rgb),0.08) !important;
           border: 1px solid var(--border) !important;
           padding: 10px 16px !important;
           text-align: left !important;
@@ -419,7 +419,7 @@ export default async function Page(props: {
         }
         .pg-body-panel tr:nth-child(even) td,
         .pg-body-panel .prose tr:nth-child(even) td {
-          background: rgba(242,232,213,0.02);
+          background: rgba(var(--brand-fg-rgb),0.02);
         }
 
         /* First child spacing */
@@ -446,9 +446,7 @@ export default async function Page(props: {
         <header className="pg-hero">
           <div className="pg-eyebrow">Information</div>
           <h1 className="pg-title">{page.title}</h1>
-          {page.bodySummary && (
-            <p className="pg-summary">{page.bodySummary}</p>
-          )}
+          {page.bodySummary && <p className="pg-summary">{page.bodySummary}</p>}
         </header>
 
         {/* ── ACCENT ── */}

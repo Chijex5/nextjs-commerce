@@ -574,15 +574,15 @@ function AccountPageContent() {
       <style>{`
 
         :root {
-          --espresso:   #0A0704;
-          --charcoal:   #100C06;
-          --cream:      #F2E8D5;
-          --sand:       #C9B99A;
-          --muted:      #6A5A48;
-          --terra:      #BF5A28;
-          --gold:       #C0892A;
-          --border:     rgba(242,232,213,0.09);
-          --border-mid: rgba(242,232,213,0.18);
+          --espresso:   var(--brand-espresso);
+          --charcoal:   var(--brand-charcoal);
+          --cream:      var(--brand-cream);
+          --sand:       var(--brand-sand);
+          --muted:      var(--brand-muted);
+          --terra:      var(--brand-terra);
+          --gold:       var(--brand-gold);
+          --border:     rgba(var(--brand-fg-rgb),0.09);
+          --border-mid: rgba(var(--brand-fg-rgb),0.18);
         }
 
         .ac-root {
@@ -596,7 +596,7 @@ function AccountPageContent() {
 
         /* ── HERO ── */
         .ac-hero {
-          background: rgba(16,12,6,0.96);
+          background: rgba(var(--brand-bg-rgb),0.96);
           border: 1px solid var(--border);
           padding: 48px;
           position: relative;
@@ -629,8 +629,8 @@ function AccountPageContent() {
         .ac-avatar {
           width: 72px; height: 72px;
           border-radius: 50%;
-          background: rgba(191,90,40,0.15);
-          border: 1px solid rgba(191,90,40,0.35);
+          background: rgba(var(--brand-terra-rgb),0.15);
+          border: 1px solid rgba(var(--brand-terra-rgb),0.35);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -669,7 +669,7 @@ function AccountPageContent() {
           border-top: none;
         }
         .ac-stat {
-          background: rgba(242,232,213,0.02);
+          background: rgba(var(--brand-fg-rgb),0.02);
           padding: 18px 24px;
         }
         .ac-stat-label {
@@ -689,12 +689,12 @@ function AccountPageContent() {
 
         /* ── PROFILE PROMPT ── */
         .ac-prompt {
-          border: 1px solid rgba(192,137,42,0.35);
+          border: 1px solid rgba(var(--brand-gold-rgb),0.35);
           border-top: none;
-          background: rgba(192,137,42,0.06);
+          background: rgba(var(--brand-gold-rgb),0.06);
           padding: 14px 24px;
           font-size: 13px;
-          color: #d4a84b;
+          color: var(--brand-gold-light);
           letter-spacing: 0.03em;
           display: flex;
           align-items: center;
@@ -721,7 +721,7 @@ function AccountPageContent() {
 
         /* ── PANEL BASE ── */
         .ac-panel {
-          background: rgba(16,12,6,0.7);
+          background: rgba(var(--brand-bg-rgb),0.7);
           padding: 36px 40px;
           border-right: 1px solid var(--border);
         }
@@ -757,12 +757,12 @@ function AccountPageContent() {
           transition: color 0.2s;
           padding: 0;
         }
-        .ac-panel-action:hover { color: #d96a30; }
+        .ac-panel-action:hover { color: var(--brand-terra-light); }
 
         /* ── PROFILE VIEW ── */
         .ac-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
         .ac-info-cell {
-          background: rgba(242,232,213,0.02);
+          background: rgba(var(--brand-fg-rgb),0.02);
           border: 1px solid var(--border);
           padding: 16px 18px;
           display: flex;
@@ -796,8 +796,8 @@ function AccountPageContent() {
         }
         .ac-input {
           width: 100%;
-          background: rgba(10,7,4,0.7);
-          border: 1px solid rgba(242,232,213,0.09);
+          background: rgba(var(--brand-bg-rgb),0.7);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
           color: var(--cream);
           font-family: var(--font-dm-sans), sans-serif;
           font-size: 13px;
@@ -807,10 +807,10 @@ function AccountPageContent() {
           box-sizing: border-box;
         }
         .ac-input::placeholder { color: var(--muted); }
-        .ac-input:focus { border-color: rgba(191,90,40,0.5); }
+        .ac-input:focus { border-color: rgba(var(--brand-terra-rgb),0.5); }
         .ac-input:disabled {
-          background: rgba(242,232,213,0.03);
-          color: rgba(242,232,213,0.25);
+          background: rgba(var(--brand-fg-rgb),0.03);
+          color: rgba(var(--brand-fg-rgb),0.25);
           cursor: not-allowed;
         }
         .ac-input-hint {
@@ -837,7 +837,7 @@ function AccountPageContent() {
           justify-content: center;
           min-width: 120px;
         }
-        .ac-btn-primary:hover { background: #a34d22; }
+        .ac-btn-primary:hover { background: var(--brand-terra-dark); }
         .ac-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
         .ac-btn-ghost {
           background: transparent;
@@ -852,7 +852,7 @@ function AccountPageContent() {
           cursor: pointer;
           transition: border-color 0.2s, color 0.2s;
         }
-        .ac-btn-ghost:hover { border-color: rgba(242,232,213,0.35); color: var(--cream); }
+        .ac-btn-ghost:hover { border-color: rgba(var(--brand-fg-rgb),0.35); color: var(--cream); }
         .ac-btn-text {
           background: none;
           border: none;
@@ -878,7 +878,7 @@ function AccountPageContent() {
           gap: 2px;
         }
         .ac-summary-metric {
-          background: rgba(242,232,213,0.02);
+          background: rgba(var(--brand-fg-rgb),0.02);
           border: 1px solid var(--border);
           padding: 14px;
         }
@@ -901,7 +901,7 @@ function AccountPageContent() {
           gap: 2px;
         }
         .ac-insight-card {
-          background: rgba(242,232,213,0.02);
+          background: rgba(var(--brand-fg-rgb),0.02);
           border: 1px solid var(--border);
           padding: 12px;
         }
@@ -925,7 +925,7 @@ function AccountPageContent() {
         }
         .ac-activity-item {
           border: 1px solid var(--border);
-          background: rgba(242,232,213,0.02);
+          background: rgba(var(--brand-fg-rgb),0.02);
           padding: 10px 12px;
         }
         .ac-activity-head {
@@ -954,7 +954,7 @@ function AccountPageContent() {
         .ac-status-pill {
           display: inline-flex;
           align-items: center;
-          border: 1px solid rgba(242,232,213,0.18);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.18);
           padding: 2px 8px;
           font-size: 9px;
           letter-spacing: 0.12em;
@@ -964,27 +964,27 @@ function AccountPageContent() {
 
         /* ── DANGER ZONE ── */
         .ac-danger {
-          border: 1px solid rgba(191,90,40,0.35);
-          background: rgba(191,90,40,0.06);
+          border: 1px solid rgba(var(--brand-terra-rgb),0.35);
+          background: rgba(var(--brand-terra-rgb),0.06);
           padding: 14px;
         }
         .ac-danger-title {
           font-size: 11px;
           letter-spacing: 0.18em;
           text-transform: uppercase;
-          color: #e08a58;
+          color: var(--brand-terra-pale);
           margin-bottom: 6px;
         }
         .ac-danger-note {
           font-size: 12px;
-          color: #cfb7a0;
+          color: var(--brand-sand);
           line-height: 1.6;
           margin-bottom: 12px;
         }
         .ac-danger-input {
           width: 100%;
-          background: rgba(10,7,4,0.9);
-          border: 1px solid rgba(191,90,40,0.35);
+          background: rgba(var(--brand-bg-rgb),0.9);
+          border: 1px solid rgba(var(--brand-terra-rgb),0.35);
           color: var(--cream);
           font-family: var(--font-dm-sans), sans-serif;
           font-size: 12px;
@@ -996,8 +996,8 @@ function AccountPageContent() {
         }
         .ac-danger-btn {
           background: transparent;
-          border: 1px solid rgba(191,90,40,0.45);
-          color: #f0b08b;
+          border: 1px solid rgba(var(--brand-terra-rgb),0.45);
+          color: var(--brand-terra-pale);
           font-family: var(--font-dm-sans), sans-serif;
           font-size: 10px;
           font-weight: 500;
@@ -1018,7 +1018,7 @@ function AccountPageContent() {
           gap: 2px;
         }
         .ac-right-panel {
-          background: rgba(16,12,6,0.5);
+          background: rgba(var(--brand-bg-rgb),0.5);
           padding: 28px 32px;
           border-bottom: 1px solid var(--border);
         }
@@ -1060,8 +1060,8 @@ function AccountPageContent() {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(191,90,40,0.1);
-          border: 1px solid rgba(191,90,40,0.2);
+          background: rgba(var(--brand-terra-rgb),0.1);
+          border: 1px solid rgba(var(--brand-terra-rgb),0.2);
           border-radius: 50%;
           color: var(--terra);
           flex-shrink: 0;
@@ -1093,13 +1093,13 @@ function AccountPageContent() {
           align-items: center;
           justify-content: center;
           padding: 24px;
-          background: rgba(10,7,4,0.88);
+          background: rgba(var(--brand-bg-rgb),0.88);
           backdrop-filter: blur(4px);
         }
         .ac-modal {
           width: 100%;
           max-width: 440px;
-          background: #100C06;
+          background: var(--brand-charcoal);
           border: 1px solid var(--border-mid);
           padding: 40px;
           position: relative;
@@ -1161,7 +1161,7 @@ function AccountPageContent() {
           justify-content: space-between;
           gap: 18px;
           border: 1px solid var(--border);
-          background: rgba(242,232,213,0.02);
+          background: rgba(var(--brand-fg-rgb),0.02);
           padding: 14px 16px;
         }
         .ac-order-number {
@@ -1198,8 +1198,8 @@ function AccountPageContent() {
           align-items: center;
           justify-content: space-between;
           gap: 12px;
-          border: 1px dashed rgba(192,137,42,0.4);
-          background: rgba(192,137,42,0.05);
+          border: 1px dashed rgba(var(--brand-gold-rgb),0.4);
+          background: rgba(var(--brand-gold-rgb),0.05);
           padding: 16px 20px;
         }
         .ac-coupon-code {
@@ -1211,7 +1211,7 @@ function AccountPageContent() {
         }
         .ac-coupon-copy {
           background: transparent;
-          border: 1px solid rgba(192,137,42,0.4);
+          border: 1px solid rgba(var(--brand-gold-rgb),0.4);
           color: var(--gold);
           font-family: var(--font-dm-sans), sans-serif;
           font-size: 9px;
@@ -1223,7 +1223,7 @@ function AccountPageContent() {
           transition: background 0.2s, color 0.2s;
           flex-shrink: 0;
         }
-        .ac-coupon-copy:hover { background: rgba(192,137,42,0.12); }
+        .ac-coupon-copy:hover { background: rgba(var(--brand-gold-rgb),0.12); }
 
         /* ── RESPONSIVE ── */
         @media (max-width: 1024px) {
@@ -1302,7 +1302,7 @@ function AccountPageContent() {
                   disabled={linkingOrders}
                 >
                   {linkingOrders ? (
-                    <LoadingDots className="bg-[#F2E8D5]" />
+                    <LoadingDots className="bg-[var(--brand-cream)]" />
                   ) : (
                     "Link orders"
                   )}
@@ -1423,7 +1423,7 @@ function AccountPageContent() {
                     className="ac-btn-primary"
                   >
                     {saving ? (
-                      <LoadingDots className="bg-[#F2E8D5]" />
+                      <LoadingDots className="bg-[var(--brand-cream)]" />
                     ) : (
                       "Save profile"
                     )}
@@ -1537,7 +1537,7 @@ function AccountPageContent() {
                     className="ac-btn-primary"
                   >
                     {saving ? (
-                      <LoadingDots className="bg-[#F2E8D5]" />
+                      <LoadingDots className="bg-[var(--brand-cream)]" />
                     ) : (
                       "Save changes"
                     )}
@@ -1669,7 +1669,7 @@ function AccountPageContent() {
                         className="ac-btn-primary"
                       >
                         {saving ? (
-                          <LoadingDots className="bg-[#F2E8D5]" />
+                          <LoadingDots className="bg-[var(--brand-cream)]" />
                         ) : (
                           "Update"
                         )}
@@ -1705,7 +1705,7 @@ function AccountPageContent() {
                         style={{ alignSelf: "flex-start" }}
                       >
                         {sendingOtp ? (
-                          <LoadingDots className="bg-[#F2E8D5]" />
+                          <LoadingDots className="bg-[var(--brand-cream)]" />
                         ) : (
                           "Add password"
                         )}
@@ -1767,7 +1767,7 @@ function AccountPageContent() {
                           className="ac-btn-primary"
                         >
                           {saving ? (
-                            <LoadingDots className="bg-[#F2E8D5]" />
+                            <LoadingDots className="bg-[var(--brand-cream)]" />
                           ) : (
                             "Confirm"
                           )}

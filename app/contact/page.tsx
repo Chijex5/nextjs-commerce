@@ -136,15 +136,15 @@ export default function ContactPage() {
       <style>{`
 
         :root {
-          --dp-ink:     #0A0704;
-          --dp-charcoal:#191209;
-          --dp-card:    #1E1510;
-          --dp-cream:   #F2E8D5;
-          --dp-sand:    #C9B99A;
-          --dp-muted:   #8A7762;
-          --dp-ember:   #BF5A28;
-          --dp-gold:    #C0892A;
-          --dp-border:  rgba(242,232,213,0.09);
+          --dp-ink:     var(--brand-espresso);
+          --dp-charcoal:var(--brand-surface2);
+          --dp-card:    var(--brand-surface2);
+          --dp-cream:   var(--brand-cream);
+          --dp-sand:    var(--brand-sand);
+          --dp-muted:   var(--brand-muted);
+          --dp-ember:   var(--brand-terra);
+          --dp-gold:    var(--brand-gold);
+          --dp-border:  rgba(var(--brand-fg-rgb),0.09);
         }
 
         .dp-wordmark { font-family: var(--font-bebas-neue), sans-serif; letter-spacing: 0.1em; }
@@ -231,7 +231,7 @@ export default function ContactPage() {
               height: 600,
               borderRadius: "50%",
               background:
-                "radial-gradient(circle, rgba(191,90,40,0.12) 0%, transparent 70%)",
+                "radial-gradient(circle, rgba(var(--brand-terra-rgb),0.12) 0%, transparent 70%)",
               right: -100,
               top: -200,
               filter: "blur(70px)",
@@ -256,7 +256,7 @@ export default function ContactPage() {
                   left: "-0.1rem",
                   fontSize: "clamp(7rem, 20vw, 16rem)",
                   lineHeight: 1,
-                  color: "rgba(242,232,213,0.04)",
+                  color: "rgba(var(--brand-fg-rgb),0.04)",
                   pointerEvents: "none",
                   userSelect: "none",
                   zIndex: 0,
@@ -604,7 +604,7 @@ export default function ContactPage() {
                 style={{
                   fontFamily: "var(--font-dm-sans), sans-serif",
                   fontSize: "0.78rem",
-                  color: "rgba(242,232,213,0.7)",
+                  color: "rgba(var(--brand-fg-rgb),0.7)",
                   marginTop: "0.3rem",
                 }}
               >
@@ -655,7 +655,7 @@ export default function ContactPage() {
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  border: "1px solid rgba(242,232,213,0.4)",
+                  border: "1px solid rgba(var(--brand-fg-rgb),0.4)",
                   color: "var(--dp-cream)",
                   fontFamily: "var(--font-dm-sans), sans-serif",
                   fontWeight: 500,

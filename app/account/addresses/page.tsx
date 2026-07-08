@@ -2,8 +2,8 @@
 
 import LoadingDots from "components/loading-dots";
 import {
-    LocationSelectGroup,
-    type LocationChangeSource,
+  LocationSelectGroup,
+  type LocationChangeSource,
 } from "components/locations/location-select-group";
 import PageLoader from "components/page-loader";
 import { useUserSession } from "hooks/useUserSession";
@@ -158,7 +158,7 @@ export default function AddressesPage() {
 
         .ad-root {
           font-family: var(--font-dm-sans), sans-serif;
-          color: #F2E8D5;
+          color: var(--brand-cream);
           display: flex;
           flex-direction: column;
           gap: 2px;
@@ -166,8 +166,8 @@ export default function AddressesPage() {
         }
 
         .ad-hero {
-          background: rgba(16,12,6,0.85);
-          border: 1px solid rgba(242,232,213,0.09);
+          background: rgba(var(--brand-bg-rgb),0.85);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
           padding: 2rem;
         }
 
@@ -176,7 +176,7 @@ export default function AddressesPage() {
           font-weight: 500;
           letter-spacing: 0.24em;
           text-transform: uppercase;
-          color: #BF5A28;
+          color: var(--brand-terra);
           margin-bottom: 0.7rem;
         }
 
@@ -184,21 +184,21 @@ export default function AddressesPage() {
           font-family: var(--font-cormorant-garamond), serif;
           font-size: clamp(1.75rem, 2.5vw, 2.3rem);
           font-weight: 300;
-          color: #F2E8D5;
+          color: var(--brand-cream);
           line-height: 1.2;
         }
 
         .ad-sub {
           margin-top: 0.5rem;
-          color: #8A7762;
+          color: var(--brand-muted);
           font-size: 0.85rem;
           line-height: 1.6;
           max-width: 40rem;
         }
 
         .ad-panel {
-          background: rgba(16,12,6,0.7);
-          border: 1px solid rgba(242,232,213,0.09);
+          background: rgba(var(--brand-bg-rgb),0.7);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
           padding: 1.5rem;
         }
 
@@ -206,12 +206,12 @@ export default function AddressesPage() {
           font-family: var(--font-cormorant-garamond), serif;
           font-size: 1.55rem;
           font-weight: 300;
-          color: #F2E8D5;
+          color: var(--brand-cream);
           margin-bottom: 0.35rem;
         }
 
         .ad-panel-note {
-          color: #8A7762;
+          color: var(--brand-muted);
           font-size: 0.8rem;
           line-height: 1.6;
         }
@@ -232,7 +232,7 @@ export default function AddressesPage() {
         .ad-field-label {
           display: block;
           margin-bottom: 0.35rem;
-          color: #8A7762;
+          color: var(--brand-muted);
           font-size: 0.62rem;
           font-weight: 500;
           letter-spacing: 0.2em;
@@ -241,9 +241,9 @@ export default function AddressesPage() {
 
         .ad-input {
           width: 100%;
-          background: rgba(10,7,4,0.8);
-          border: 1px solid rgba(242,232,213,0.09);
-          color: #F2E8D5;
+          background: rgba(var(--brand-bg-rgb),0.8);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
+          color: var(--brand-cream);
           font-family: var(--font-dm-sans), sans-serif;
           font-size: 0.82rem;
           padding: 0.72rem 0.85rem;
@@ -253,15 +253,15 @@ export default function AddressesPage() {
         }
 
         .ad-input:focus {
-          border-color: rgba(191,90,40,0.5);
+          border-color: rgba(var(--brand-terra-rgb),0.5);
         }
 
         .ad-phone-prefix {
           display: flex;
           align-items: center;
-          border: 1px solid rgba(242,232,213,0.09);
-          background: rgba(242,232,213,0.03);
-          color: #C9B99A;
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
+          background: rgba(var(--brand-fg-rgb),0.03);
+          color: var(--brand-sand);
           padding: 0 0.75rem;
           font-size: 0.75rem;
         }
@@ -275,8 +275,8 @@ export default function AddressesPage() {
 
         .ad-btn-primary {
           border: none;
-          background: #BF5A28;
-          color: #F2E8D5;
+          background: var(--brand-terra);
+          color: var(--brand-cream);
           font-size: 0.62rem;
           font-weight: 500;
           letter-spacing: 0.2em;
@@ -291,9 +291,9 @@ export default function AddressesPage() {
         }
 
         .ad-btn-ghost {
-          border: 1px solid rgba(242,232,213,0.2);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.2);
           background: transparent;
-          color: #C9B99A;
+          color: var(--brand-sand);
           font-size: 0.62rem;
           font-weight: 500;
           letter-spacing: 0.2em;
@@ -303,8 +303,8 @@ export default function AddressesPage() {
         }
 
         .ad-address-card {
-          background: rgba(16,12,6,0.75);
-          border: 1px solid rgba(242,232,213,0.09);
+          background: rgba(var(--brand-bg-rgb),0.75);
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09);
           padding: 1.25rem;
         }
 
@@ -320,13 +320,13 @@ export default function AddressesPage() {
           font-family: var(--font-cormorant-garamond), serif;
           font-size: 1.3rem;
           font-weight: 300;
-          color: #F2E8D5;
+          color: var(--brand-cream);
         }
 
         .ad-link-btn {
           border: none;
           background: none;
-          color: #BF5A28;
+          color: var(--brand-terra);
           font-size: 0.62rem;
           font-weight: 500;
           letter-spacing: 0.2em;
@@ -336,13 +336,13 @@ export default function AddressesPage() {
         }
 
         .ad-line {
-          color: #C9B99A;
+          color: var(--brand-sand);
           font-size: 0.8rem;
           line-height: 1.55;
         }
 
         .ad-line--muted {
-          color: #8A7762;
+          color: var(--brand-muted);
         }
 
         @media (max-width: 768px) {
@@ -399,7 +399,7 @@ export default function AddressesPage() {
                 handleLocationChange("ward", value, source)
               }
               inputClassName="ad-input"
-              menuClassName="rounded-none border border-[rgba(242,232,213,0.09)] bg-[#100C06]"
+              menuClassName="rounded-none border border-[rgba(var(--brand-fg-rgb),0.09)] bg-[var(--brand-charcoal)]"
             />
 
             <Field
@@ -539,7 +539,7 @@ function AddressCard({
         <div>
           <p
             className="ad-line"
-            style={{ color: "#F2E8D5", marginBottom: "0.2rem" }}
+            style={{ color: "var(--brand-cream)", marginBottom: "0.2rem" }}
           >
             {address.firstName} {address.lastName}
           </p>

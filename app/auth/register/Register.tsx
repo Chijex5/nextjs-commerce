@@ -69,7 +69,7 @@ export default function Register() {
       ? "var(--dp-ember)"
       : pwStrength === 2
         ? "var(--dp-gold)"
-        : "#6abf69";
+        : "var(--brand-success)";
 
   const strengthLabel =
     pwStrength === 1
@@ -108,7 +108,7 @@ export default function Register() {
           display: block;
           margin: -1.5rem -1.25rem 1.5rem;
           padding: 1rem 1.25rem;
-          background: linear-gradient(135deg, rgba(191,90,40,.16), rgba(192,137,42,.08));
+          background: linear-gradient(135deg, rgba(var(--brand-terra-rgb),.16), rgba(var(--brand-gold-rgb),.08));
           border-bottom: 1px solid var(--dp-border);
         }
         @media (min-width: 480px) { .rc-gift { margin: -2rem -1.75rem 1.5rem; padding: 1rem 1.75rem; } }
@@ -166,12 +166,12 @@ export default function Register() {
         }
         .rc-input::placeholder { color: var(--dp-muted); opacity: .7; }
         .rc-input:focus {
-          border-color: rgba(191,90,40,.7);
-          background: rgba(191,90,40,.05);
+          border-color: rgba(var(--brand-terra-rgb),.7);
+          background: rgba(var(--brand-terra-rgb),.05);
         }
         .rc-input.has-eye  { padding-right: 3rem; }
-        .rc-input.is-error { border-color: rgba(191,90,40,.75) !important; }
-        .rc-input.is-ok    { border-color: rgba(106,191,105,.5); }
+        .rc-input.is-error { border-color: rgba(var(--brand-terra-rgb),.75) !important; }
+        .rc-input.is-ok    { border-color: rgba(var(--brand-success-rgb),.5); }
 
         /* eye toggle — 44px tap target */
         .rc-eye {
@@ -209,7 +209,7 @@ export default function Register() {
           margin: .15rem 0 0; line-height: 1.4;
         }
         .rc-msg.error { color: var(--dp-ember); }
-        .rc-msg.ok    { color: #6abf69; }
+        .rc-msg.ok    { color: var(--brand-success); }
 
         /* ───── submit ───── */
         .rc-btn {

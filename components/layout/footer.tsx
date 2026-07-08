@@ -42,15 +42,15 @@ export default async function Footer() {
       <style>{`
 
         :root {
-          --dp-ink:     #0A0704;
+          --dp-ink:     var(--brand-espresso);
           --dp-void:    #06040200;
-          --dp-charcoal: #191209;
-          --dp-cream:   #F2E8D5;
-          --dp-sand:    #C9B99A;
-          --dp-muted:   #6A5A48;
-          --dp-ember:   #BF5A28;
-          --dp-gold:    #C0892A;
-          --dp-border:  rgba(242,232,213,0.09);
+          --dp-charcoal: var(--brand-surface2);
+          --dp-cream:   var(--brand-cream);
+          --dp-sand:    var(--brand-sand);
+          --dp-muted:   var(--brand-muted);
+          --dp-ember:   var(--brand-terra);
+          --dp-gold:    var(--brand-gold);
+          --dp-border:  rgba(var(--brand-fg-rgb),0.09);
         }
 
         .dp-footer-wordmark { font-family: var(--font-bebas-neue), sans-serif; letter-spacing: 0.1em; }
@@ -91,7 +91,7 @@ export default async function Footer() {
         .dp-footer-social:hover {
           border-color: var(--dp-ember);
           color: var(--dp-ember);
-          background: rgba(191,90,40,0.06);
+          background: rgba(var(--brand-terra-rgb),0.06);
         }
 
         .dp-footer-label {
@@ -108,7 +108,7 @@ export default async function Footer() {
         /* Newsletter input override */
         .dp-newsletter-wrap input,
         .dp-newsletter-wrap [type="email"] {
-          background: rgba(242,232,213,0.04) !important;
+          background: rgba(var(--brand-fg-rgb),0.04) !important;
           border: none !important;
           border-bottom: 1px solid var(--dp-border) !important;
           border-radius: 0 !important;
@@ -273,7 +273,7 @@ export default async function Footer() {
                           height: "0.75rem",
                           width: `${w}%`,
                           borderRadius: 2,
-                          background: "rgba(242,232,213,0.07)",
+                          background: "rgba(var(--brand-fg-rgb),0.07)",
                           animation: "pulse 1.5s ease-in-out infinite",
                         }}
                       />
@@ -298,15 +298,16 @@ export default async function Footer() {
                   gap: "0.65rem",
                 }}
               >
-                  <FooterMenu menu={[
-                  { title: "About Us", path: "/about-us" },
-                  { title: "Sizing Guide", path: "/sizing-guide" },
-                  { title: "Care Instructions", path: "/care-instructions" },
-                  { title: "FAQ", path: "/faq" },
-                  { title: "Privacy Policy", path: "/privacy-policy" },
-                  { title: "Shipping Returns", path: "/shipping-returns" },
-                ]} />
-                
+                <FooterMenu
+                  menu={[
+                    { title: "About Us", path: "/about-us" },
+                    { title: "Sizing Guide", path: "/sizing-guide" },
+                    { title: "Care Instructions", path: "/care-instructions" },
+                    { title: "FAQ", path: "/faq" },
+                    { title: "Privacy Policy", path: "/privacy-policy" },
+                    { title: "Shipping Returns", path: "/shipping-returns" },
+                  ]}
+                />
               </ul>
             </div>
 

@@ -16,7 +16,9 @@ export default function CheckoutSuccess() {
   const [mounted, setMounted] = useState(false);
   const trackedOrderRef = useRef<string | null>(null);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     try {
@@ -29,7 +31,9 @@ export default function CheckoutSuccess() {
     if (!orderNumber || trackedOrderRef.current === orderNumber) return;
     const trackOrder = async () => {
       try {
-        const response = await fetch(`/api/orders/track?orderNumber=${encodeURIComponent(orderNumber)}`);
+        const response = await fetch(
+          `/api/orders/track?orderNumber=${encodeURIComponent(orderNumber)}`,
+        );
         if (!response.ok) return;
         const data = await response.json();
         const order = data?.order;
@@ -38,9 +42,15 @@ export default function CheckoutSuccess() {
         trackPurchase({
           orderId: order.orderNumber,
           value: parseFloat(order.totalAmount),
-          items: order.items.map((item: any) => ({ id: item.productId, name: item.productTitle, quantity: item.quantity })),
+          items: order.items.map((item: any) => ({
+            id: item.productId,
+            name: item.productTitle,
+            quantity: item.quantity,
+          })),
         });
-      } catch (error) { console.error("Failed to track purchase:", error); }
+      } catch (error) {
+        console.error("Failed to track purchase:", error);
+      }
     };
     trackOrder();
   }, [orderNumber]);
@@ -50,23 +60,26 @@ export default function CheckoutSuccess() {
   const NEXT_STEPS = [
     { icon: "◈", text: "Email confirmation sent with your order details." },
     { icon: "⟡", text: "We'll notify you when your order is shipped." },
-    { icon: "⊛", text: "Track anytime from your account or with your order number." },
+    {
+      icon: "⊛",
+      text: "Track anytime from your account or with your order number.",
+    },
   ];
 
   return (
     <>
       <style>{`
         :root {
-          --dp-ink:     #0A0704;
-          --dp-charcoal:#191209;
-          --dp-card:    #1E1510;
-          --dp-cream:   #F2E8D5;
-          --dp-sand:    #C9B99A;
-          --dp-muted:   #6A5A48;
-          --dp-ember:   #BF5A28;
-          --dp-gold:    #C0892A;
-          --dp-green:   #4A8C5C;
-          --dp-border:  rgba(242,232,213,0.09);
+          --dp-ink:     var(--brand-espresso);
+          --dp-charcoal:var(--brand-surface2);
+          --dp-card:    var(--brand-surface2);
+          --dp-cream:   var(--brand-cream);
+          --dp-sand:    var(--brand-sand);
+          --dp-muted:   var(--brand-muted);
+          --dp-ember:   var(--brand-terra);
+          --dp-gold:    var(--brand-gold);
+          --dp-green:   var(--brand-success);
+          --dp-border:  rgba(var(--brand-fg-rgb),0.09);
         }
 
         @keyframes dp-rise {
@@ -118,40 +131,66 @@ export default function CheckoutSuccess() {
           padding: 0.85rem 1.75rem; text-decoration: none;
           transition: border-color 0.2s, color 0.2s;
         }
-        .dp-btn-ghost:hover { border-color: rgba(242,232,213,0.3); color: var(--dp-cream); }
+        .dp-btn-ghost:hover { border-color: rgba(var(--brand-fg-rgb),0.3); color: var(--dp-cream); }
       `}</style>
 
       <div
         style={{
-          background: "var(--dp-ink)", color: "var(--dp-cream)",
-          minHeight: "100vh", fontFamily: "var(--font-dm-sans), sans-serif",
+          background: "var(--dp-ink)",
+          color: "var(--dp-cream)",
+          minHeight: "100vh",
+          fontFamily: "var(--font-dm-sans), sans-serif",
         }}
       >
         {/* Top accent line */}
-        <div style={{ height: 2, background: "linear-gradient(90deg, var(--dp-ember), var(--dp-gold) 50%, transparent 100%)" }} />
+        <div
+          style={{
+            height: 2,
+            background:
+              "linear-gradient(90deg, var(--dp-ember), var(--dp-gold) 50%, transparent 100%)",
+          }}
+        />
 
         <div
           style={{
-            maxWidth: 700, margin: "0 auto",
+            maxWidth: 700,
+            margin: "0 auto",
             padding: "4rem clamp(1.25rem,4vw,2.5rem) 6rem",
           }}
         >
           {/* ── Animated check ── */}
-          <div className="dp-rise-1" style={{ display: "flex", justifyContent: "center", marginBottom: "2.5rem" }}>
-            <div className="dp-check-ring" style={{ position: "relative", width: 80, height: 80 }}>
+          <div
+            className="dp-rise-1"
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginBottom: "2.5rem",
+            }}
+          >
+            <div
+              className="dp-check-ring"
+              style={{ position: "relative", width: 80, height: 80 }}
+            >
               {/* Outer ring */}
               <div
                 style={{
-                  position: "absolute", inset: 0, borderRadius: "50%",
-                  border: "1px solid rgba(74,140,92,0.3)",
-                  background: "rgba(74,140,92,0.06)",
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: "50%",
+                  border: "1px solid rgba(var(--brand-success-rgb),0.3)",
+                  background: "rgba(var(--brand-success-rgb),0.06)",
                 }}
               />
               {/* SVG checkmark */}
               <svg
                 viewBox="0 0 80 80"
                 fill="none"
-                style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                }}
               >
                 <path
                   className="dp-check-path"
@@ -166,23 +205,47 @@ export default function CheckoutSuccess() {
           </div>
 
           {/* ── Headline ── */}
-          <div className="dp-rise-2" style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.26em", textTransform: "uppercase", color: "var(--dp-ember)", marginBottom: "0.6rem" }}>
+          <div
+            className="dp-rise-2"
+            style={{ textAlign: "center", marginBottom: "2rem" }}
+          >
+            <p
+              style={{
+                fontFamily: "var(--font-dm-sans), sans-serif",
+                fontSize: "0.6rem",
+                fontWeight: 500,
+                letterSpacing: "0.26em",
+                textTransform: "uppercase",
+                color: "var(--dp-ember)",
+                marginBottom: "0.6rem",
+              }}
+            >
               Order Confirmed
             </p>
             <h1
               style={{
                 fontFamily: "var(--font-cormorant-garamond), serif",
                 fontSize: "clamp(1.8rem, 5vw, 3rem)",
-                fontWeight: 600, lineHeight: 1.2,
+                fontWeight: 600,
+                lineHeight: 1.2,
                 color: "var(--dp-cream)",
                 marginBottom: "0.75rem",
               }}
             >
               Your pair is on its way.
             </h1>
-            <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.82rem", color: "var(--dp-muted)", lineHeight: 1.7, maxWidth: 440, margin: "0 auto" }}>
-              Thank you for your purchase. Your order has been confirmed and is being prepared with care.
+            <p
+              style={{
+                fontFamily: "var(--font-dm-sans), sans-serif",
+                fontSize: "0.82rem",
+                color: "var(--dp-muted)",
+                lineHeight: 1.7,
+                maxWidth: 440,
+                margin: "0 auto",
+              }}
+            >
+              Thank you for your purchase. Your order has been confirmed and is
+              being prepared with care.
             </p>
           </div>
 
@@ -195,28 +258,62 @@ export default function CheckoutSuccess() {
                 border: "1px solid var(--dp-border)",
                 padding: "1.25rem 1.5rem",
                 marginBottom: "1.25rem",
-                display: "flex", alignItems: "center", justifyContent: "space-between",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
               }}
             >
               <div>
-                <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--dp-muted)", marginBottom: "0.3rem" }}>
+                <p
+                  style={{
+                    fontFamily: "var(--font-dm-sans), sans-serif",
+                    fontSize: "0.6rem",
+                    fontWeight: 500,
+                    letterSpacing: "0.22em",
+                    textTransform: "uppercase",
+                    color: "var(--dp-muted)",
+                    marginBottom: "0.3rem",
+                  }}
+                >
                   Order Number
                 </p>
-                <p style={{ fontFamily: "var(--font-bebas-neue), sans-serif", fontSize: "1.4rem", letterSpacing: "0.12em", color: "var(--dp-cream)" }}>
+                <p
+                  style={{
+                    fontFamily: "var(--font-bebas-neue), sans-serif",
+                    fontSize: "1.4rem",
+                    letterSpacing: "0.12em",
+                    color: "var(--dp-cream)",
+                  }}
+                >
                   {orderNumber}
                 </p>
               </div>
-              <div style={{ width: 2, height: 40, background: "var(--dp-border)" }} />
+              <div
+                style={{ width: 2, height: 40, background: "var(--dp-border)" }}
+              />
               <div style={{ textAlign: "right" }}>
-                <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--dp-muted)", marginBottom: "0.3rem" }}>
+                <p
+                  style={{
+                    fontFamily: "var(--font-dm-sans), sans-serif",
+                    fontSize: "0.6rem",
+                    fontWeight: 500,
+                    letterSpacing: "0.22em",
+                    textTransform: "uppercase",
+                    color: "var(--dp-muted)",
+                    marginBottom: "0.3rem",
+                  }}
+                >
                   Status
                 </p>
                 <span
                   style={{
-                    fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.62rem", fontWeight: 500,
-                    letterSpacing: "0.12em", textTransform: "uppercase",
+                    fontFamily: "var(--font-dm-sans), sans-serif",
+                    fontSize: "0.62rem",
+                    fontWeight: 500,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
                     color: "var(--dp-green)",
-                    border: "1px solid rgba(74,140,92,0.35)",
+                    border: "1px solid rgba(var(--brand-success-rgb),0.35)",
                     padding: "2px 8px",
                   }}
                 >
@@ -230,13 +327,17 @@ export default function CheckoutSuccess() {
           <p
             className="dp-rise-3"
             style={{
-              fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.75rem",
-              color: "var(--dp-muted)", lineHeight: 1.65,
-              borderLeft: "2px solid var(--dp-ember)", paddingLeft: "0.875rem",
+              fontFamily: "var(--font-dm-sans), sans-serif",
+              fontSize: "0.75rem",
+              color: "var(--dp-muted)",
+              lineHeight: 1.65,
+              borderLeft: "2px solid var(--dp-ember)",
+              paddingLeft: "0.875rem",
               marginBottom: "1.75rem",
             }}
           >
-            A confirmation email with your order details has been sent to your address.
+            A confirmation email with your order details has been sent to your
+            address.
           </p>
 
           {/* ── Auth nudge ── */}
@@ -250,19 +351,41 @@ export default function CheckoutSuccess() {
                 marginBottom: "1.75rem",
               }}
             >
-              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.78rem", fontWeight: 500, color: "var(--dp-sand)", marginBottom: "0.3rem" }}>
+              <p
+                style={{
+                  fontFamily: "var(--font-dm-sans), sans-serif",
+                  fontSize: "0.78rem",
+                  fontWeight: 500,
+                  color: "var(--dp-sand)",
+                  marginBottom: "0.3rem",
+                }}
+              >
                 Create an account to track this order
               </p>
-              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.7rem", color: "var(--dp-muted)", lineHeight: 1.6, marginBottom: "0.75rem" }}>
-                Save your details for faster checkout and see updates in one place.
+              <p
+                style={{
+                  fontFamily: "var(--font-dm-sans), sans-serif",
+                  fontSize: "0.7rem",
+                  color: "var(--dp-muted)",
+                  lineHeight: 1.6,
+                  marginBottom: "0.75rem",
+                }}
+              >
+                Save your details for faster checkout and see updates in one
+                place.
               </p>
               <Link
                 href={`/auth/register?callbackUrl=${encodeURIComponent(`/orders?orderNumber=${orderNumber || ""}`)}`}
                 style={{
-                  fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.62rem", fontWeight: 500,
-                  letterSpacing: "0.12em", textTransform: "uppercase",
-                  color: "var(--dp-ember)", textDecoration: "none",
-                  borderBottom: "1px solid var(--dp-ember)", paddingBottom: 2,
+                  fontFamily: "var(--font-dm-sans), sans-serif",
+                  fontSize: "0.62rem",
+                  fontWeight: 500,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: "var(--dp-ember)",
+                  textDecoration: "none",
+                  borderBottom: "1px solid var(--dp-ember)",
+                  paddingBottom: 2,
                   transition: "color 0.2s",
                 }}
               >
@@ -272,11 +395,25 @@ export default function CheckoutSuccess() {
           )}
 
           {/* ── CTAs ── */}
-          <div className="dp-rise-4" style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", marginBottom: "2.5rem" }}>
+          <div
+            className="dp-rise-4"
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "0.75rem",
+              marginBottom: "2.5rem",
+            }}
+          >
             <Link href="/orders" className="dp-btn-primary">
               View Order Status
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M3 8h10M9 4l4 4-4 4"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </Link>
             <Link href="/" className="dp-btn-ghost">
@@ -285,17 +422,55 @@ export default function CheckoutSuccess() {
           </div>
 
           {/* ── What's next ── */}
-          <div className="dp-rise-5" style={{ background: "var(--dp-charcoal)", border: "1px solid var(--dp-border)" }}>
-            <div style={{ height: 2, background: "linear-gradient(90deg, var(--dp-ember), transparent 70%)" }} />
+          <div
+            className="dp-rise-5"
+            style={{
+              background: "var(--dp-charcoal)",
+              border: "1px solid var(--dp-border)",
+            }}
+          >
+            <div
+              style={{
+                height: 2,
+                background:
+                  "linear-gradient(90deg, var(--dp-ember), transparent 70%)",
+              }}
+            />
             <div style={{ padding: "1.5rem" }}>
-              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.26em", textTransform: "uppercase", color: "var(--dp-ember)", marginBottom: "1rem" }}>
+              <p
+                style={{
+                  fontFamily: "var(--font-dm-sans), sans-serif",
+                  fontSize: "0.6rem",
+                  fontWeight: 500,
+                  letterSpacing: "0.26em",
+                  textTransform: "uppercase",
+                  color: "var(--dp-ember)",
+                  marginBottom: "1rem",
+                }}
+              >
                 What&apos;s Next
               </p>
               <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
                 {NEXT_STEPS.map(({ icon, text }) => (
                   <li key={text} className="dp-step-item">
-                    <span style={{ fontSize: "0.9rem", color: "var(--dp-ember)", flexShrink: 0, lineHeight: 1.6 }}>{icon}</span>
-                    <span style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.78rem", color: "var(--dp-muted)", lineHeight: 1.65 }}>
+                    <span
+                      style={{
+                        fontSize: "0.9rem",
+                        color: "var(--dp-ember)",
+                        flexShrink: 0,
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {icon}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: "var(--font-dm-sans), sans-serif",
+                        fontSize: "0.78rem",
+                        color: "var(--dp-muted)",
+                        lineHeight: 1.65,
+                      }}
+                    >
                       {text}
                     </span>
                   </li>
@@ -305,13 +480,19 @@ export default function CheckoutSuccess() {
           </div>
 
           {/* ── Ghost wordmark ── */}
-          <div style={{ textAlign: "center", marginTop: "3rem", overflow: "hidden" }}>
+          <div
+            style={{
+              textAlign: "center",
+              marginTop: "3rem",
+              overflow: "hidden",
+            }}
+          >
             <span
               style={{
                 fontFamily: "var(--font-bebas-neue), sans-serif",
                 fontSize: "clamp(3rem,10vw,7rem)",
                 letterSpacing: "0.12em",
-                color: "rgba(242,232,213,0.04)",
+                color: "rgba(var(--brand-fg-rgb),0.04)",
                 lineHeight: 1,
                 userSelect: "none",
               }}

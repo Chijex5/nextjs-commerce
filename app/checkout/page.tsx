@@ -149,8 +149,8 @@ function PhoneValidationHint({ value }: { value: string }) {
 /* ── Shared input style ─────────────────────────────────── */
 const INPUT_STYLE: React.CSSProperties = {
   width: "100%",
-  background: "rgba(242,232,213,0.04)",
-  border: "1px solid rgba(242,232,213,0.09)",
+  background: "rgba(var(--brand-fg-rgb),0.04)",
+  border: "1px solid rgba(var(--brand-fg-rgb),0.09)",
   color: "var(--dp-cream)",
   fontFamily: "var(--font-dm-sans), sans-serif",
   fontSize: "0.82rem",
@@ -165,8 +165,8 @@ const PHONE_PREFIX_STYLE: React.CSSProperties = {
   gap: "0.5rem",
   flexShrink: 0,
   padding: "0.65rem 0.75rem",
-  background: "rgba(242,232,213,0.03)",
-  border: "1px solid rgba(242,232,213,0.09)",
+  background: "rgba(var(--brand-fg-rgb),0.03)",
+  border: "1px solid rgba(var(--brand-fg-rgb),0.09)",
   borderRight: "none",
   fontFamily: "var(--font-dm-sans), sans-serif",
   fontSize: "0.78rem",
@@ -183,7 +183,7 @@ function DPInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
         props.onFocus?.(e);
       }}
       onBlur={(e) => {
-        e.currentTarget.style.borderColor = "rgba(242,232,213,0.09)";
+        e.currentTarget.style.borderColor = "rgba(var(--brand-fg-rgb),0.09)";
         props.onBlur?.(e);
       }}
     />
@@ -436,7 +436,11 @@ function StepIndicator({
         return (
           <div
             key={step.id}
-            style={{ display: "flex", alignItems: "center", flex: i < STEPS.length - 1 ? 1 : undefined }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flex: i < STEPS.length - 1 ? 1 : undefined,
+            }}
           >
             <button
               type="button"
@@ -463,7 +467,7 @@ function StepIndicator({
                   background: isCurrent
                     ? "var(--dp-ember)"
                     : isDone
-                      ? "rgba(74,140,92,0.15)"
+                      ? "rgba(var(--brand-success-rgb),0.15)"
                       : "transparent",
                   fontFamily: "var(--font-dm-sans), sans-serif",
                   fontSize: "0.65rem",
@@ -502,9 +506,7 @@ function StepIndicator({
                   flex: 1,
                   height: 1,
                   margin: "0 0.75rem",
-                  background: isDone
-                    ? "var(--dp-green)"
-                    : "var(--dp-border)",
+                  background: isDone ? "var(--dp-green)" : "var(--dp-border)",
                   transition: "background 0.3s",
                 }}
               />
@@ -598,7 +600,10 @@ export default function CheckoutPage() {
   }, [formData.email]);
 
   const loadCouponData = async (cartId: string, cartTotal: number) => {
-    if (!cartId) { setCouponData(null); return; }
+    if (!cartId) {
+      setCouponData(null);
+      return;
+    }
     try {
       const customerKey = getCouponCustomerKey(session?.id);
       let coupon = getStoredCoupon(cartId, customerKey);
@@ -617,7 +622,9 @@ export default function CheckoutPage() {
             amount: data.coupon.discountAmount,
             productDiscountAmount: data.coupon.productDiscountAmount || 0,
             shippingDiscountAmount: data.coupon.shippingDiscountAmount || 0,
-            includeShippingInDiscount: Boolean(data.coupon.includeShippingInDiscount),
+            includeShippingInDiscount: Boolean(
+              data.coupon.includeShippingInDiscount,
+            ),
             grantsFreeShipping: Boolean(data.coupon.grantsFreeShipping),
           });
         } else {
@@ -628,7 +635,10 @@ export default function CheckoutPage() {
         setCouponData(null);
       }
     } catch (err) {
-      logCouponDebug("Initial load validation error", { cartId, error: err instanceof Error ? err.message : String(err) });
+      logCouponDebug("Initial load validation error", {
+        cartId,
+        error: err instanceof Error ? err.message : String(err),
+      });
       setCouponData(null);
     }
   };
@@ -638,12 +648,19 @@ export default function CheckoutPage() {
       const response = await fetch("/api/user-auth/addresses");
       if (response.ok) {
         const data = await response.json();
-        const norm = (input?: Partial<Address>): Address => ({ ...emptyAddress, ...(input || {}) });
+        const norm = (input?: Partial<Address>): Address => ({
+          ...emptyAddress,
+          ...(input || {}),
+        });
         setFormData((prev) => ({
           ...prev,
           email: session?.email || "",
-          shippingAddress: norm(data.addresses.shippingAddress || prev.shippingAddress),
-          billingAddress: norm(data.addresses.billingAddress || prev.billingAddress),
+          shippingAddress: norm(
+            data.addresses.shippingAddress || prev.shippingAddress,
+          ),
+          billingAddress: norm(
+            data.addresses.billingAddress || prev.billingAddress,
+          ),
         }));
       }
     } catch (error) {
@@ -663,7 +680,10 @@ export default function CheckoutPage() {
         }
         setCart(data.cart);
         if (data.cart?.id)
-          await loadCouponData(data.cart.id, parseFloat(data.cart.cost.subtotalAmount.amount));
+          await loadCouponData(
+            data.cart.id,
+            parseFloat(data.cart.cost.subtotalAmount.amount),
+          );
         else setCouponData(null);
       }
     } catch (error) {
@@ -680,7 +700,10 @@ export default function CheckoutPage() {
     addressType?: AddressType,
   ) => {
     if (addressType)
-      setFormData((prev) => ({ ...prev, [addressType]: { ...prev[addressType], [field]: value } }));
+      setFormData((prev) => ({
+        ...prev,
+        [addressType]: { ...prev[addressType], [field]: value },
+      }));
     else setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -690,7 +713,9 @@ export default function CheckoutPage() {
     value: string,
     source: LocationChangeSource,
   ) => {
-    const changed = normalizeLocationName(formData[addressType][field] || "") !== normalizeLocationName(value);
+    const changed =
+      normalizeLocationName(formData[addressType][field] || "") !==
+      normalizeLocationName(value);
     handleInputChange(field, value, addressType);
     if (source !== "select" || !changed) return;
     if (field === "state") {
@@ -729,12 +754,18 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (currentStep === "contact") {
-      if (!isContactValid()) { toast.error("Please fill in your email"); return; }
+      if (!isContactValid()) {
+        toast.error("Please fill in your email");
+        return;
+      }
       advanceStep("contact");
       return;
     }
     if (currentStep === "shipping") {
-      if (!isShippingValid()) { toast.error("Please complete all delivery fields"); return; }
+      if (!isShippingValid()) {
+        toast.error("Please complete all delivery fields");
+        return;
+      }
       advanceStep("shipping");
       return;
     }
@@ -765,11 +796,19 @@ export default function CheckoutPage() {
         window.location.href = data.authorizationUrl;
       else if (response.ok && data.freeCheckout && data.orderNumber) {
         toast.success("Your order is confirmed — thank you!");
-        router.push(`/checkout/success?order=${encodeURIComponent(data.orderNumber)}`);
-      } else toast.error(data.error || "We couldn't start your payment. Your card hasn't been charged — please try again.");
+        router.push(
+          `/checkout/success?order=${encodeURIComponent(data.orderNumber)}`,
+        );
+      } else
+        toast.error(
+          data.error ||
+            "We couldn't start your payment. Your card hasn't been charged — please try again.",
+        );
     } catch (error) {
       console.error("Checkout error:", error);
-      toast.error("Something went wrong during checkout. Your card hasn't been charged — please try again.");
+      toast.error(
+        "Something went wrong during checkout. Your card hasn't been charged — please try again.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -777,7 +816,8 @@ export default function CheckoutPage() {
 
   const subtotal = parseFloat(cart?.cost.subtotalAmount.amount ?? "0");
   const discountAmount = couponData?.amount || 0;
-  const totalQuantity = cart?.lines.reduce((sum, line) => sum + line.quantity, 0) ?? 0;
+  const totalQuantity =
+    cart?.lines.reduce((sum, line) => sum + line.quantity, 0) ?? 0;
   const hasShippingState = Boolean(formData.shippingAddress.state?.trim());
   const shippingCost = hasShippingState
     ? calculateShippingAmount({
@@ -795,7 +835,12 @@ export default function CheckoutPage() {
     if (loading || !cart || !couponData?.code) return;
     const revalidate = async () => {
       const customerKey = getCouponCustomerKey(session?.id);
-      const payload: { code: string; cartTotal: number; shippingAmount: number; sessionId?: string } = {
+      const payload: {
+        code: string;
+        cartTotal: number;
+        shippingAmount: number;
+        sessionId?: string;
+      } = {
         code: couponData.code,
         cartTotal: subtotal,
         shippingAmount: shippingCost,
@@ -807,7 +852,10 @@ export default function CheckoutPage() {
         body: JSON.stringify(payload),
       });
       if (!response.ok) {
-        logCouponDebug("Shipping revalidation failed", { cartId: cart.id, status: response.status });
+        logCouponDebug("Shipping revalidation failed", {
+          cartId: cart.id,
+          status: response.status,
+        });
         setCouponData(null);
         return;
       }
@@ -817,7 +865,9 @@ export default function CheckoutPage() {
         amount: data.coupon.discountAmount,
         productDiscountAmount: data.coupon.productDiscountAmount || 0,
         shippingDiscountAmount: data.coupon.shippingDiscountAmount || 0,
-        includeShippingInDiscount: Boolean(data.coupon.includeShippingInDiscount),
+        includeShippingInDiscount: Boolean(
+          data.coupon.includeShippingInDiscount,
+        ),
         grantsFreeShipping: Boolean(data.coupon.grantsFreeShipping),
       });
     };
@@ -827,36 +877,37 @@ export default function CheckoutPage() {
   if (loading) return <PageLoader size="lg" message="Loading checkout..." />;
   if (!cart || cart.lines.length === 0) return null;
 
-  const ctaLabel = currentStep === "contact"
-    ? "Continue to Delivery →"
-    : currentStep === "shipping"
-      ? "Review Order →"
-      : submitting
-        ? null
-        : isFreeCheckout
-          ? "Place Order →"
-          : "Proceed to Payment →";
+  const ctaLabel =
+    currentStep === "contact"
+      ? "Continue to Delivery →"
+      : currentStep === "shipping"
+        ? "Review Order →"
+        : submitting
+          ? null
+          : isFreeCheckout
+            ? "Place Order →"
+            : "Proceed to Payment →";
 
   return (
     <>
       <style>{`
         :root {
-          --dp-ink:     #0A0704;
-          --dp-charcoal:#191209;
-          --dp-card:    #1E1510;
-          --dp-cream:   #F2E8D5;
-          --dp-sand:    #C9B99A;
-          --dp-muted:   #6A5A48;
-          --dp-ember:   #BF5A28;
-          --dp-gold:    #C0892A;
-          --dp-green:   #4A8C5C;
-          --dp-border:  rgba(242,232,213,0.09);
+          --dp-ink:     var(--brand-espresso);
+          --dp-charcoal:var(--brand-surface2);
+          --dp-card:    var(--brand-surface2);
+          --dp-cream:   var(--brand-cream);
+          --dp-sand:    var(--brand-sand);
+          --dp-muted:   var(--brand-muted);
+          --dp-ember:   var(--brand-terra);
+          --dp-gold:    var(--brand-gold);
+          --dp-green:   var(--brand-success);
+          --dp-border:  rgba(var(--brand-fg-rgb),0.09);
         }
 
         .dp-location-input {
           width: 100% !important;
-          background: rgba(242,232,213,0.04) !important;
-          border: 1px solid rgba(242,232,213,0.09) !important;
+          background: rgba(var(--brand-fg-rgb),0.04) !important;
+          border: 1px solid rgba(var(--brand-fg-rgb),0.09) !important;
           border-radius: 0 !important;
           color: var(--dp-cream) !important;
           font-family: var(--font-dm-sans), sans-serif !important;
@@ -911,25 +962,70 @@ export default function CheckoutPage() {
         }
       `}</style>
 
-      <div style={{ background: "var(--dp-ink)", color: "var(--dp-cream)", minHeight: "100vh", fontFamily: "var(--font-dm-sans), sans-serif" }}>
-        <div style={{ height: 2, background: "linear-gradient(90deg, var(--dp-ember), var(--dp-gold) 50%, transparent 100%)" }} />
+      <div
+        style={{
+          background: "var(--dp-ink)",
+          color: "var(--dp-cream)",
+          minHeight: "100vh",
+          fontFamily: "var(--font-dm-sans), sans-serif",
+        }}
+      >
+        <div
+          style={{
+            height: 2,
+            background:
+              "linear-gradient(90deg, var(--dp-ember), var(--dp-gold) 50%, transparent 100%)",
+          }}
+        />
 
-        <div style={{ maxWidth: 1400, margin: "0 auto", padding: "3rem clamp(1rem,4vw,3rem) 5rem" }}>
+        <div
+          style={{
+            maxWidth: 1400,
+            margin: "0 auto",
+            padding: "3rem clamp(1rem,4vw,3rem) 5rem",
+          }}
+        >
           {/* Page header */}
           <div style={{ marginBottom: "2.5rem" }}>
-            <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.26em", textTransform: "uppercase", color: "var(--dp-ember)", marginBottom: "0.5rem" }}>
+            <p
+              style={{
+                fontFamily: "var(--font-dm-sans), sans-serif",
+                fontSize: "0.6rem",
+                fontWeight: 500,
+                letterSpacing: "0.26em",
+                textTransform: "uppercase",
+                color: "var(--dp-ember)",
+                marginBottom: "0.5rem",
+              }}
+            >
               D&apos;FOOTPRINT
             </p>
-            <h1 style={{ fontFamily: "var(--font-bebas-neue), sans-serif", fontSize: "clamp(2rem,5vw,3.5rem)", letterSpacing: "0.08em", color: "var(--dp-cream)", lineHeight: 1 }}>
+            <h1
+              style={{
+                fontFamily: "var(--font-bebas-neue), sans-serif",
+                fontSize: "clamp(2rem,5vw,3.5rem)",
+                letterSpacing: "0.08em",
+                color: "var(--dp-cream)",
+                lineHeight: 1,
+              }}
+            >
               Checkout
             </h1>
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div style={{ display: "grid", gap: "2rem", alignItems: "start" }} className="lg:grid-cols-[1fr_380px]">
-
+            <div
+              style={{ display: "grid", gap: "2rem", alignItems: "start" }}
+              className="lg:grid-cols-[1fr_380px]"
+            >
               {/* ── LEFT: Step forms ──────────────────────── */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "1.5rem",
+                }}
+              >
                 <StepIndicator
                   currentStep={currentStep}
                   onStepClick={setCurrentStep}
@@ -940,19 +1036,36 @@ export default function CheckoutPage() {
                 {currentStep === "contact" && (
                   <div key="contact" className="dp-step-panel">
                     <SectionCard label="Contact Information">
-                      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "1rem",
+                        }}
+                      >
                         <div>
                           <FieldLabel required>Email</FieldLabel>
                           <DPInput
                             type="email"
                             required
                             value={formData.email}
-                            onChange={(e) => handleInputChange("email", e.target.value)}
+                            onChange={(e) =>
+                              handleInputChange("email", e.target.value)
+                            }
                             placeholder="your.email@example.com"
                           />
                         </div>
-                        <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.65rem", color: "var(--dp-muted)", lineHeight: 1.6, marginTop: "0.25rem" }}>
-                          Your order confirmation and delivery updates will be sent here.
+                        <p
+                          style={{
+                            fontFamily: "var(--font-dm-sans), sans-serif",
+                            fontSize: "0.65rem",
+                            color: "var(--dp-muted)",
+                            lineHeight: 1.6,
+                            marginTop: "0.25rem",
+                          }}
+                        >
+                          Your order confirmation and delivery updates will be
+                          sent here.
                         </p>
                       </div>
                     </SectionCard>
@@ -972,15 +1085,40 @@ export default function CheckoutPage() {
                     </SectionCard>
 
                     {/* Billing toggle */}
-                    <div style={{ background: "var(--dp-charcoal)", border: "1px solid var(--dp-border)", padding: "1.1rem 1.5rem", marginTop: "1rem" }}>
-                      <label style={{ display: "flex", alignItems: "center", gap: "0.75rem", cursor: "pointer" }}>
+                    <div
+                      style={{
+                        background: "var(--dp-charcoal)",
+                        border: "1px solid var(--dp-border)",
+                        padding: "1.1rem 1.5rem",
+                        marginTop: "1rem",
+                      }}
+                    >
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.75rem",
+                          cursor: "pointer",
+                        }}
+                      >
                         <input
                           type="checkbox"
                           checked={formData.useSameAddress}
-                          onChange={(e) => handleInputChange("useSameAddress", e.target.checked)}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "useSameAddress",
+                              e.target.checked,
+                            )
+                          }
                           className="dp-checkbox"
                         />
-                        <span style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.78rem", color: "var(--dp-sand)" }}>
+                        <span
+                          style={{
+                            fontFamily: "var(--font-dm-sans), sans-serif",
+                            fontSize: "0.78rem",
+                            color: "var(--dp-sand)",
+                          }}
+                        >
                           Billing address same as shipping
                         </span>
                       </label>
@@ -1000,15 +1138,37 @@ export default function CheckoutPage() {
                     )}
 
                     {session && (
-                      <div style={{ background: "var(--dp-charcoal)", border: "1px solid var(--dp-border)", padding: "1.1rem 1.5rem", marginTop: "1rem" }}>
-                        <label style={{ display: "flex", alignItems: "center", gap: "0.75rem", cursor: "pointer" }}>
+                      <div
+                        style={{
+                          background: "var(--dp-charcoal)",
+                          border: "1px solid var(--dp-border)",
+                          padding: "1.1rem 1.5rem",
+                          marginTop: "1rem",
+                        }}
+                      >
+                        <label
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.75rem",
+                            cursor: "pointer",
+                          }}
+                        >
                           <input
                             type="checkbox"
                             checked={formData.saveAddress}
-                            onChange={(e) => handleInputChange("saveAddress", e.target.checked)}
+                            onChange={(e) =>
+                              handleInputChange("saveAddress", e.target.checked)
+                            }
                             className="dp-checkbox"
                           />
-                          <span style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.78rem", color: "var(--dp-sand)" }}>
+                          <span
+                            style={{
+                              fontFamily: "var(--font-dm-sans), sans-serif",
+                              fontSize: "0.78rem",
+                              color: "var(--dp-sand)",
+                            }}
+                          >
                             Save this address to my account for future orders
                           </span>
                         </label>
@@ -1019,14 +1179,38 @@ export default function CheckoutPage() {
 
                 {/* STEP 3 — Review */}
                 {currentStep === "review" && (
-                  <div key="review" className="dp-step-panel" style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                  <div
+                    key="review"
+                    className="dp-step-panel"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "1.25rem",
+                    }}
+                  >
                     <SectionCard label="Contact">
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
                         <ReviewRow label="Email" value={formData.email} />
                         <button
                           type="button"
                           onClick={() => setCurrentStep("contact")}
-                          style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.65rem", color: "var(--dp-ember)", letterSpacing: "0.08em", flexShrink: 0, padding: "0 0 0 1rem" }}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            fontFamily: "var(--font-dm-sans), sans-serif",
+                            fontSize: "0.65rem",
+                            color: "var(--dp-ember)",
+                            letterSpacing: "0.08em",
+                            flexShrink: 0,
+                            padding: "0 0 0 1rem",
+                          }}
                         >
                           Edit
                         </button>
@@ -1034,20 +1218,65 @@ export default function CheckoutPage() {
                     </SectionCard>
 
                     <SectionCard label="Delivery Address">
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
                         <div style={{ flex: 1 }}>
-                          <ReviewRow label="Name" value={`${formData.shippingAddress.firstName} ${formData.shippingAddress.lastName}`} />
-                          <ReviewRow label="Address" value={formData.shippingAddress.streetAddress} />
-                          <ReviewRow label="Bus Stop" value={formData.shippingAddress.nearestBusStop} />
-                          <ReviewRow label="Landmark" value={formData.shippingAddress.landmark} />
-                          <ReviewRow label="LGA / State" value={`${formData.shippingAddress.lga}, ${formData.shippingAddress.state}`} />
-                          <ReviewRow label="Phone 1" value={formData.shippingAddress.phone1 ? `+234 ${formData.shippingAddress.phone1}` : ""} />
-                          <ReviewRow label="Phone 2" value={formData.shippingAddress.phone2 ? `+234 ${formData.shippingAddress.phone2}` : ""} />
+                          <ReviewRow
+                            label="Name"
+                            value={`${formData.shippingAddress.firstName} ${formData.shippingAddress.lastName}`}
+                          />
+                          <ReviewRow
+                            label="Address"
+                            value={formData.shippingAddress.streetAddress}
+                          />
+                          <ReviewRow
+                            label="Bus Stop"
+                            value={formData.shippingAddress.nearestBusStop}
+                          />
+                          <ReviewRow
+                            label="Landmark"
+                            value={formData.shippingAddress.landmark}
+                          />
+                          <ReviewRow
+                            label="LGA / State"
+                            value={`${formData.shippingAddress.lga}, ${formData.shippingAddress.state}`}
+                          />
+                          <ReviewRow
+                            label="Phone 1"
+                            value={
+                              formData.shippingAddress.phone1
+                                ? `+234 ${formData.shippingAddress.phone1}`
+                                : ""
+                            }
+                          />
+                          <ReviewRow
+                            label="Phone 2"
+                            value={
+                              formData.shippingAddress.phone2
+                                ? `+234 ${formData.shippingAddress.phone2}`
+                                : ""
+                            }
+                          />
                         </div>
                         <button
                           type="button"
                           onClick={() => setCurrentStep("shipping")}
-                          style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.65rem", color: "var(--dp-ember)", letterSpacing: "0.08em", flexShrink: 0, padding: "0 0 0 1rem", alignSelf: "flex-start" }}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            fontFamily: "var(--font-dm-sans), sans-serif",
+                            fontSize: "0.65rem",
+                            color: "var(--dp-ember)",
+                            letterSpacing: "0.08em",
+                            flexShrink: 0,
+                            padding: "0 0 0 1rem",
+                            alignSelf: "flex-start",
+                          }}
                         >
                           Edit
                         </button>
@@ -1060,7 +1289,12 @@ export default function CheckoutPage() {
                         value={orderNote}
                         onChange={(e) => {
                           setOrderNote(e.target.value);
-                          try { localStorage.setItem(ORDER_NOTE_STORAGE_KEY, e.target.value); } catch {}
+                          try {
+                            localStorage.setItem(
+                              ORDER_NOTE_STORAGE_KEY,
+                              e.target.value,
+                            );
+                          } catch {}
                         }}
                         placeholder="Any special instructions for your order…"
                         rows={3}
@@ -1069,8 +1303,13 @@ export default function CheckoutPage() {
                           resize: "vertical",
                           minHeight: 80,
                         }}
-                        onFocus={(e) => { e.currentTarget.style.borderColor = "var(--dp-ember)"; }}
-                        onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(242,232,213,0.09)"; }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = "var(--dp-ember)";
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor =
+                            "rgba(var(--brand-fg-rgb),0.09)";
+                        }}
                       />
                     </SectionCard>
                   </div>
@@ -1083,7 +1322,9 @@ export default function CheckoutPage() {
                   style={{
                     display: "block",
                     width: "100%",
-                    background: submitting ? "var(--dp-muted)" : "var(--dp-cream)",
+                    background: submitting
+                      ? "var(--dp-muted)"
+                      : "var(--dp-cream)",
                     color: "var(--dp-ink)",
                     border: "none",
                     cursor: submitting ? "not-allowed" : "pointer",
@@ -1097,71 +1338,187 @@ export default function CheckoutPage() {
                   }}
                   onMouseEnter={(e) => {
                     if (!submitting) {
-                      (e.currentTarget as HTMLButtonElement).style.background = "var(--dp-ember)";
-                      (e.currentTarget as HTMLButtonElement).style.color = "var(--dp-cream)";
+                      (e.currentTarget as HTMLButtonElement).style.background =
+                        "var(--dp-ember)";
+                      (e.currentTarget as HTMLButtonElement).style.color =
+                        "var(--dp-cream)";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!submitting) {
-                      (e.currentTarget as HTMLButtonElement).style.background = "var(--dp-cream)";
-                      (e.currentTarget as HTMLButtonElement).style.color = "var(--dp-ink)";
+                      (e.currentTarget as HTMLButtonElement).style.background =
+                        "var(--dp-cream)";
+                      (e.currentTarget as HTMLButtonElement).style.color =
+                        "var(--dp-ink)";
                     }
                   }}
                 >
-                  {submitting ? <LoadingDots className="bg-neutral-600" /> : ctaLabel}
+                  {submitting ? (
+                    <LoadingDots className="bg-neutral-600" />
+                  ) : (
+                    ctaLabel
+                  )}
                 </button>
               </div>
 
               {/* ── RIGHT: Order summary ───────────────────── */}
               <div style={{ position: "sticky", top: "5.5rem" }}>
-                <div style={{ background: "var(--dp-charcoal)", border: "1px solid var(--dp-border)" }}>
-                  <div style={{ height: 2, background: "linear-gradient(90deg, var(--dp-ember), transparent 80%)" }} />
+                <div
+                  style={{
+                    background: "var(--dp-charcoal)",
+                    border: "1px solid var(--dp-border)",
+                  }}
+                >
+                  <div
+                    style={{
+                      height: 2,
+                      background:
+                        "linear-gradient(90deg, var(--dp-ember), transparent 80%)",
+                    }}
+                  />
                   <div style={{ padding: "1.5rem" }}>
-                    <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.26em", textTransform: "uppercase", color: "var(--dp-ember)", marginBottom: "1.1rem" }}>
+                    <p
+                      style={{
+                        fontFamily: "var(--font-dm-sans), sans-serif",
+                        fontSize: "0.6rem",
+                        fontWeight: 500,
+                        letterSpacing: "0.26em",
+                        textTransform: "uppercase",
+                        color: "var(--dp-ember)",
+                        marginBottom: "1.1rem",
+                      }}
+                    >
                       Order Summary
                     </p>
 
                     {/* Cart items */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem", marginBottom: "1.25rem" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.875rem",
+                        marginBottom: "1.25rem",
+                      }}
+                    >
                       {cart.lines.map((item, i) => (
-                        <div key={i} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
-                          <div style={{ position: "relative", width: 56, height: 56, flexShrink: 0, background: "var(--dp-card)", overflow: "hidden" }}>
-                            <Image src={item.merchandise.product.featuredImage.url} alt={item.merchandise.product.title} fill className="object-cover" />
-                            <span style={{ position: "absolute", top: 2, right: 2, background: "var(--dp-ember)", color: "var(--dp-cream)", fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.55rem", fontWeight: 600, padding: "1px 5px", lineHeight: 1.5 }}>
+                        <div
+                          key={i}
+                          style={{
+                            display: "flex",
+                            gap: "0.75rem",
+                            alignItems: "flex-start",
+                          }}
+                        >
+                          <div
+                            style={{
+                              position: "relative",
+                              width: 56,
+                              height: 56,
+                              flexShrink: 0,
+                              background: "var(--dp-card)",
+                              overflow: "hidden",
+                            }}
+                          >
+                            <Image
+                              src={item.merchandise.product.featuredImage.url}
+                              alt={item.merchandise.product.title}
+                              fill
+                              className="object-cover"
+                            />
+                            <span
+                              style={{
+                                position: "absolute",
+                                top: 2,
+                                right: 2,
+                                background: "var(--dp-ember)",
+                                color: "var(--dp-cream)",
+                                fontFamily: "var(--font-dm-sans), sans-serif",
+                                fontSize: "0.55rem",
+                                fontWeight: 600,
+                                padding: "1px 5px",
+                                lineHeight: 1.5,
+                              }}
+                            >
                               {item.quantity}
                             </span>
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <p className="line-clamp-1" style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.75rem", color: "var(--dp-sand)", lineHeight: 1.35 }}>
+                            <p
+                              className="line-clamp-1"
+                              style={{
+                                fontFamily: "var(--font-dm-sans), sans-serif",
+                                fontSize: "0.75rem",
+                                color: "var(--dp-sand)",
+                                lineHeight: 1.35,
+                              }}
+                            >
                               {item.merchandise.product.title}
                             </p>
-                            {item.merchandise.title && item.merchandise.title !== "Default Title" && (
-                              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.65rem", color: "var(--dp-muted)", marginTop: "0.15rem" }}>
-                                {item.merchandise.title}
-                              </p>
-                            )}
+                            {item.merchandise.title &&
+                              item.merchandise.title !== "Default Title" && (
+                                <p
+                                  style={{
+                                    fontFamily:
+                                      "var(--font-dm-sans), sans-serif",
+                                    fontSize: "0.65rem",
+                                    color: "var(--dp-muted)",
+                                    marginTop: "0.15rem",
+                                  }}
+                                >
+                                  {item.merchandise.title}
+                                </p>
+                              )}
                           </div>
                           <Price
                             amount={item.cost.totalAmount.amount}
                             currencyCode={item.cost.totalAmount.currencyCode}
                             currencyCodeClassName="hidden"
                             className="dp-wordmark"
-                            style={{ fontFamily: "var(--font-bebas-neue), sans-serif", fontSize: "0.9rem", color: "var(--dp-cream)", flexShrink: 0 } as React.CSSProperties}
+                            style={
+                              {
+                                fontFamily:
+                                  "var(--font-bebas-neue), sans-serif",
+                                fontSize: "0.9rem",
+                                color: "var(--dp-cream)",
+                                flexShrink: 0,
+                              } as React.CSSProperties
+                            }
                           />
                         </div>
                       ))}
                     </div>
 
                     {/* Totals */}
-                    <div style={{ borderTop: "1px solid var(--dp-border)", paddingTop: "0.875rem" }}>
+                    <div
+                      style={{
+                        borderTop: "1px solid var(--dp-border)",
+                        paddingTop: "0.875rem",
+                      }}
+                    >
                       <div className="dp-sum-row">
                         <span>Subtotal</span>
-                        <Price amount={cart.cost.subtotalAmount.amount} currencyCode={cart.cost.subtotalAmount.currencyCode} currencyCodeClassName="hidden" style={{ color: "var(--dp-sand)" } as React.CSSProperties} />
+                        <Price
+                          amount={cart.cost.subtotalAmount.amount}
+                          currencyCode={cart.cost.subtotalAmount.currencyCode}
+                          currencyCodeClassName="hidden"
+                          style={
+                            { color: "var(--dp-sand)" } as React.CSSProperties
+                          }
+                        />
                       </div>
                       {couponData && (
                         <div className="dp-sum-row">
-                          <span style={{ color: "var(--dp-green)" }}>Discount ({couponData.code})</span>
-                          <span style={{ fontFamily: "var(--font-bebas-neue), sans-serif", fontSize: "0.85rem", color: "var(--dp-green)", letterSpacing: "0.04em" }}>
+                          <span style={{ color: "var(--dp-green)" }}>
+                            Discount ({couponData.code})
+                          </span>
+                          <span
+                            style={{
+                              fontFamily: "var(--font-bebas-neue), sans-serif",
+                              fontSize: "0.85rem",
+                              color: "var(--dp-green)",
+                              letterSpacing: "0.04em",
+                            }}
+                          >
                             -₦{discountAmount.toFixed(2)}
                           </span>
                         </div>
@@ -1170,47 +1527,143 @@ export default function CheckoutPage() {
                         <span>Shipping</span>
                         {hasShippingState ? (
                           <div style={{ textAlign: "right" }}>
-                            <Price amount={netShippingCost.toString()} currencyCode={cart.cost.totalAmount.currencyCode} currencyCodeClassName="hidden" style={{ color: "var(--dp-sand)" } as React.CSSProperties} />
+                            <Price
+                              amount={netShippingCost.toString()}
+                              currencyCode={cart.cost.totalAmount.currencyCode}
+                              currencyCodeClassName="hidden"
+                              style={
+                                {
+                                  color: "var(--dp-sand)",
+                                } as React.CSSProperties
+                              }
+                            />
                             {shippingDiscountAmount > 0 && (
-                              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.62rem", color: "var(--dp-green)", marginTop: 2 }}>
+                              <p
+                                style={{
+                                  fontFamily: "var(--font-dm-sans), sans-serif",
+                                  fontSize: "0.62rem",
+                                  color: "var(--dp-green)",
+                                  marginTop: 2,
+                                }}
+                              >
                                 Saved ₦{shippingDiscountAmount.toFixed(2)}
                               </p>
                             )}
                           </div>
                         ) : (
-                          <span style={{ fontSize: "0.68rem", fontStyle: "italic" }}>Select state</span>
+                          <span
+                            style={{ fontSize: "0.68rem", fontStyle: "italic" }}
+                          >
+                            Select state
+                          </span>
                         )}
                       </div>
-                      <div className="dp-sum-row" style={{ borderTop: "1px solid var(--dp-border)", marginTop: "0.25rem", paddingTop: "0.75rem" }}>
-                        <span style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 500, fontSize: "0.8rem", color: "var(--dp-cream)" }}>Total</span>
-                        <span style={{ fontFamily: "var(--font-bebas-neue), sans-serif", fontSize: "1.2rem", color: "var(--dp-cream)", letterSpacing: "0.06em" }}>
-                          {new Intl.NumberFormat(undefined, { style: "currency", currency: cart.cost.totalAmount.currencyCode, currencyDisplay: "narrowSymbol" }).format(totalDue)}
+                      <div
+                        className="dp-sum-row"
+                        style={{
+                          borderTop: "1px solid var(--dp-border)",
+                          marginTop: "0.25rem",
+                          paddingTop: "0.75rem",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: "var(--font-dm-sans), sans-serif",
+                            fontWeight: 500,
+                            fontSize: "0.8rem",
+                            color: "var(--dp-cream)",
+                          }}
+                        >
+                          Total
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: "var(--font-bebas-neue), sans-serif",
+                            fontSize: "1.2rem",
+                            color: "var(--dp-cream)",
+                            letterSpacing: "0.06em",
+                          }}
+                        >
+                          {new Intl.NumberFormat(undefined, {
+                            style: "currency",
+                            currency: cart.cost.totalAmount.currencyCode,
+                            currencyDisplay: "narrowSymbol",
+                          }).format(totalDue)}
                         </span>
                       </div>
                       {isFreeCheckout && (
-                        <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.65rem", color: "var(--dp-green)", marginTop: "0.4rem", lineHeight: 1.5 }}>
-                          Your coupon fully covers this order. No payment required.
+                        <p
+                          style={{
+                            fontFamily: "var(--font-dm-sans), sans-serif",
+                            fontSize: "0.65rem",
+                            color: "var(--dp-green)",
+                            marginTop: "0.4rem",
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          Your coupon fully covers this order. No payment
+                          required.
                         </p>
                       )}
                     </div>
 
-                    <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.65rem", color: "var(--dp-muted)", lineHeight: 1.65, marginTop: "0.875rem", borderTop: "1px solid var(--dp-border)", paddingTop: "0.75rem" }}>
+                    <p
+                      style={{
+                        fontFamily: "var(--font-dm-sans), sans-serif",
+                        fontSize: "0.65rem",
+                        color: "var(--dp-muted)",
+                        lineHeight: 1.65,
+                        marginTop: "0.875rem",
+                        borderTop: "1px solid var(--dp-border)",
+                        paddingTop: "0.75rem",
+                      }}
+                    >
                       Shipping is calculated from your location and item count.
                     </p>
 
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", marginTop: "0.875rem" }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--dp-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "0.4rem",
+                        marginTop: "0.875rem",
+                      }}
+                    >
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="var(--dp-muted)"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect
+                          x="3"
+                          y="11"
+                          width="18"
+                          height="11"
+                          rx="2"
+                          ry="2"
+                        />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
-                      <span style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.62rem", color: "var(--dp-muted)", letterSpacing: "0.08em" }}>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-dm-sans), sans-serif",
+                          fontSize: "0.62rem",
+                          color: "var(--dp-muted)",
+                          letterSpacing: "0.08em",
+                        }}
+                      >
                         Secure payment via Paystack
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
-
             </div>
           </form>
         </div>

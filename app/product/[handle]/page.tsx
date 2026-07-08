@@ -102,15 +102,15 @@ export default async function ProductPage(props: {
       <style>{`
 
         :root {
-          --espresso:   #0A0704;
-          --charcoal:   #100C06;
-          --cream:      #F2E8D5;
-          --sand:       #C9B99A;
-          --muted:      #6A5A48;
-          --terra:      #BF5A28;
-          --gold:       #C0892A;
-          --border:     rgba(242,232,213,0.09);
-          --border-mid: rgba(242,232,213,0.18);
+          --espresso:   var(--brand-espresso);
+          --charcoal:   var(--brand-charcoal);
+          --cream:      var(--brand-cream);
+          --sand:       var(--brand-sand);
+          --muted:      var(--brand-muted);
+          --terra:      var(--brand-terra);
+          --gold:       var(--brand-gold);
+          --border:     rgba(var(--brand-fg-rgb),0.09);
+          --border-mid: rgba(var(--brand-fg-rgb),0.18);
         }
 
         .pp-root {
@@ -146,7 +146,7 @@ export default async function ProductPage(props: {
         .pp-shell {
           margin: 20px 48px 0;
           border: 1px solid var(--border);
-          background: rgba(16,12,6,0.9);
+          background: rgba(var(--brand-bg-rgb),0.9);
         }
         .pp-inner {
           display: grid;
@@ -169,7 +169,7 @@ export default async function ProductPage(props: {
           margin: 2px 48px 0;
           border: 1px solid var(--border);
           border-top: none;
-          background: rgba(16,12,6,0.6);
+          background: rgba(var(--brand-bg-rgb),0.6);
         }
 
         /* ── RELATED ── */
@@ -177,7 +177,7 @@ export default async function ProductPage(props: {
           margin: 2px 48px 0;
           border: 1px solid var(--border);
           border-top: none;
-          background: rgba(16,12,6,0.5);
+          background: rgba(var(--brand-bg-rgb),0.5);
           padding: 40px;
         }
         .pp-related-eyebrow {
@@ -232,21 +232,21 @@ export default async function ProductPage(props: {
         .pp-related-card {
           display: flex;
           flex-direction: column;
-          background: rgba(242,232,213,0.02);
+          background: rgba(var(--brand-fg-rgb),0.02);
           border: 1px solid var(--border);
           text-decoration: none;
           transition: background 0.3s, border-color 0.3s;
           overflow: hidden;
         }
         .pp-related-card:hover {
-          background: rgba(242,232,213,0.04);
+          background: rgba(var(--brand-fg-rgb),0.04);
           border-color: var(--border-mid);
         }
         .pp-related-img {
           position: relative;
           aspect-ratio: 3/4;
           overflow: hidden;
-          background: rgba(242,232,213,0.03);
+          background: rgba(var(--brand-fg-rgb),0.03);
         }
         .pp-related-img img {
           object-fit: cover;
@@ -332,7 +332,7 @@ export default async function ProductPage(props: {
                   <div
                     style={{
                       aspectRatio: "3/4",
-                      background: "rgba(242,232,213,0.02)",
+                      background: "rgba(var(--brand-fg-rgb),0.02)",
                       border: "1px solid var(--border)",
                     }}
                   />

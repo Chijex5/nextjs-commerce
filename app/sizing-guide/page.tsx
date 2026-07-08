@@ -199,23 +199,23 @@ export default async function SizingGuidePage() {
     <>
       <style>{`
         :root {
-          --sg-ink: #0A0704;
-          --sg-panel: #15100B;
-          --sg-card: #1C150F;
-          --sg-cream: #F2E8D5;
-          --sg-sand: #C9B99A;
-          --sg-muted: #6A5A48;
-          --sg-ember: #BF5A28;
-          --sg-gold: #C0892A;
-          --sg-border: rgba(242,232,213,0.11);
-          --sg-border-strong: rgba(242,232,213,0.2);
+          --sg-ink: var(--brand-espresso);
+          --sg-panel: var(--brand-surface2);
+          --sg-card: var(--brand-surface2);
+          --sg-cream: var(--brand-cream);
+          --sg-sand: var(--brand-sand);
+          --sg-muted: var(--brand-muted);
+          --sg-ember: var(--brand-terra);
+          --sg-gold: var(--brand-gold);
+          --sg-border: rgba(var(--brand-fg-rgb),0.11);
+          --sg-border-strong: rgba(var(--brand-fg-rgb),0.2);
         }
 
         .sg-root {
           min-height: 100vh;
           background:
-            radial-gradient(circle at top left, rgba(191,90,40,0.16), transparent 24%),
-            radial-gradient(circle at top right, rgba(192,137,42,0.1), transparent 26%),
+            radial-gradient(circle at top left, rgba(var(--brand-terra-rgb),0.16), transparent 24%),
+            radial-gradient(circle at top right, rgba(var(--brand-gold-rgb),0.1), transparent 26%),
             var(--sg-ink);
           color: var(--sg-cream);
           font-family: var(--font-dm-sans), sans-serif;
@@ -318,7 +318,7 @@ export default async function SizingGuidePage() {
         .sg-side {
           align-self: end;
           border: 1px solid var(--sg-border);
-          background: linear-gradient(180deg, rgba(242,232,213,0.04), rgba(242,232,213,0.01));
+          background: linear-gradient(180deg, rgba(var(--brand-fg-rgb),0.04), rgba(var(--brand-fg-rgb),0.01));
           padding: 18px;
         }
 
@@ -437,7 +437,7 @@ export default async function SizingGuidePage() {
 
         .sg-step {
           border: 1px solid var(--sg-border);
-          background: rgba(242,232,213,0.02);
+          background: rgba(var(--brand-fg-rgb),0.02);
           padding: 18px;
           min-height: 210px;
         }
@@ -446,7 +446,7 @@ export default async function SizingGuidePage() {
           font-family: var(--font-bebas-neue), sans-serif;
           font-size: 3rem;
           line-height: 1;
-          color: rgba(242,232,213,0.12);
+          color: rgba(var(--brand-fg-rgb),0.12);
         }
 
         .sg-step-title {
@@ -471,7 +471,7 @@ export default async function SizingGuidePage() {
 
         .sg-faq-item {
           border: 1px solid var(--sg-border);
-          background: rgba(242,232,213,0.02);
+          background: rgba(var(--brand-fg-rgb),0.02);
           padding: 16px 18px;
         }
 
@@ -603,9 +603,7 @@ export default async function SizingGuidePage() {
                     </thead>
                     <tbody>
                       {guide.chartRows.map((row, index) => (
-                        <tr
-                          key={`${guide.id}-${row.size}-${index}`}
-                        >
+                        <tr key={`${guide.id}-${row.size}-${index}`}>
                           <td>{row.size}</td>
                           <td>{row.footLength || "—"}</td>
                           <td>{row.notes || "—"}</td>

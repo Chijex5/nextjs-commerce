@@ -1,9 +1,9 @@
 import { defaultSort, sorting } from "lib/constants";
 import { getProducts } from "lib/database";
 import {
-    canonicalUrl,
-    hasContentAffectingSearchParams,
-    siteName,
+  canonicalUrl,
+  hasContentAffectingSearchParams,
+  siteName,
 } from "lib/seo";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -69,16 +69,16 @@ export default async function AllProductsPage(props: {
       <style>{`
 
         :root {
-          --espresso: #0A0704;
-          --cream: #F2E8D5;
-          --cream-dim: rgba(242,232,213,0.55);
-          --cream-faint: rgba(242,232,213,0.06);
-          --terra: #BF5A28;
-          --terra-dim: rgba(191,90,40,0.16);
-          --gold: #C0892A;
-          --muted: #6A5A48;
-          --border: rgba(242,232,213,0.1);
-          --border-mid: rgba(242,232,213,0.2);
+          --espresso: var(--brand-espresso);
+          --cream: var(--brand-cream);
+          --cream-dim: rgba(var(--brand-fg-rgb),0.55);
+          --cream-faint: rgba(var(--brand-fg-rgb),0.06);
+          --terra: var(--brand-terra);
+          --terra-dim: rgba(var(--brand-terra-rgb),0.16);
+          --gold: var(--brand-gold);
+          --muted: var(--brand-muted);
+          --border: rgba(var(--brand-fg-rgb),0.1);
+          --border-mid: rgba(var(--brand-fg-rgb),0.2);
         }
 
         .shop-root {
@@ -100,7 +100,7 @@ export default async function AllProductsPage(props: {
           content: '';
           position: absolute;
           inset: 0;
-          background: radial-gradient(ellipse 60% 80% at 75% 50%, rgba(191,90,40,0.07) 0%, transparent 70%);
+          background: radial-gradient(ellipse 60% 80% at 75% 50%, rgba(var(--brand-terra-rgb),0.07) 0%, transparent 70%);
           pointer-events: none;
         }
         .hero-eyebrow {
@@ -221,13 +221,13 @@ export default async function AllProductsPage(props: {
           color: inherit;
           text-decoration: none;
         }
-        .product-card:hover { background: rgba(242,232,213,0.05); }
+        .product-card:hover { background: rgba(var(--brand-fg-rgb),0.05); }
 
         .card-image-wrap {
           position: relative;
           aspect-ratio: 3 / 4;
           overflow: hidden;
-          background: rgba(242,232,213,0.03);
+          background: rgba(var(--brand-fg-rgb),0.03);
         }
         .card-image-wrap img {
           object-fit: cover;
@@ -400,7 +400,7 @@ export default async function AllProductsPage(props: {
           flex-shrink: 0;
           text-decoration: none;
         }
-        .promo-cta:hover { background: #a34d22; }
+        .promo-cta:hover { background: var(--brand-terra-dark); }
 
         /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
