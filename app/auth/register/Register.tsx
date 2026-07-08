@@ -35,8 +35,16 @@ export default function Register() {
         return;
       }
       toast.success("Account created! Welcome to D'FOOTPRINT.");
+      // Only honour same-origin relative paths to avoid an open redirect via
+      // a crafted ?callbackUrl=. Reject anything protocol-relative ("//host")
+      // or absolute.
+      const rawCallback = searchParams.get("callbackUrl");
       const callbackUrl =
-        searchParams.get("callbackUrl") || "/account?welcome=1";
+        rawCallback &&
+        rawCallback.startsWith("/") &&
+        !rawCallback.startsWith("//")
+          ? rawCallback
+          : "/account?welcome=1";
       router.push(callbackUrl);
       router.refresh();
     } catch {
@@ -270,7 +278,7 @@ export default function Register() {
         {/* desktop heading (banner is hidden ≥960px) */}
         <p className="rc-heading">Create your account</p>
 
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit}>
           <div className="rc-fields">
             {/* Full name */}
             <div className="rc-field">
