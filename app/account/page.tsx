@@ -292,7 +292,7 @@ function AccountPageContent() {
 
   const handleCopyCoupon = async () => {
     try {
-      await navigator.clipboard.writeText("NEWCOM");
+      await navigator.clipboard.writeText("NEWCOMER");
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -1344,15 +1344,15 @@ function AccountPageContent() {
               </button>
               <div className="ac-modal-eyebrow">Welcome gift</div>
               <h2 className="ac-modal-title">
-                ₦1,500 off your
+                10% off your
                 <br />
                 first order
               </h2>
               <p className="ac-modal-sub">
-                Use this code at checkout. One use only.
+                Use this code at checkout on your first order.
               </p>
               <div className="ac-coupon-box">
-                <span className="ac-coupon-code">NEWCOM</span>
+                <span className="ac-coupon-code">NEWCOMER</span>
                 <button onClick={handleCopyCoupon} className="ac-coupon-copy">
                   {copied ? "Copied ✓" : "Copy code"}
                 </button>

@@ -1,7 +1,5 @@
-import { Carousel } from "components/carousel";
-import { ThreeItemGrid } from "components/grid/three-items";
-import HeroCarousel from "components/home/hero-carousel";
 import Footer from "components/layout/footer";
+import Media from "components/home/media";
 import Price from "components/price";
 import {
   getCollectionsWithProducts,
@@ -10,7 +8,6 @@ import {
 } from "lib/database";
 import { canonicalUrl, siteName } from "lib/seo";
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 
 const description =
@@ -34,15 +31,55 @@ export const metadata: Metadata = {
   },
 };
 
-const offerCopy = [
-  {
-    label: "Featured drop",
-    description: "Handcrafted pairs ready for quick checkout.",
-  },
-  {
-    label: "Everyday staples",
-    description: "Slides and slippers built for daily comfort.",
-  },
+/* ────────────────────────────────────────────────────────────────
+   EDITORIAL CONTENT
+   Everything below is image-first. Each slot has an `imageUrl` that
+   is intentionally left blank so a branded MOCK placeholder shows
+   while you design. Drop in your own URL to go live — nothing else
+   needs to change.
+   ──────────────────────────────────────────────────────────────── */
+
+// Full-bleed cinematic hero — a single photograph, no carousel.
+const HERO = {
+  // Demo photo (Unsplash, free for commercial use) — swap for your own.
+  imageUrl:
+    "/hero1.jpeg", // ← portrait / hero pair photograph (shot tall, 4:5 or taller)
+  caption: "Hero photograph — a model or signature pair, shot full-bleed.",
+  kicker: "Handcrafted in Nigeria · Est. Day One",
+  tagline:
+    "Where every stitch tells a story and every sole carries you further.",
+};
+
+// Brand-story split — atelier / hands-at-work imagery.
+const STORY = {
+  // Demo photo (Unsplash, free for commercial use) — swap for your own.
+  imageUrl:
+    "/hero2.jpeg", // ← atelier, leather, or hands-crafting photograph (portrait)
+  caption: "The craft — hands, leather, and the making of a pair.",
+  kicker: "The Craft",
+  title: "Made by hand, meant to last.",
+  body: "Every D'FOOTPRINT pair is cut, stitched, and finished by skilled artisans — no factory line, no shortcuts. Premium leathers and fabrics, chosen for how they wear over years, not seasons.",
+};
+
+// Wide statement image that opens the custom-order section.
+const CUSTOM_HERO = {
+  // Demo photo (Unsplash, free for commercial use) — swap for your own.
+  imageUrl:
+    "/custom.jpeg", // ← wide, cinematic bespoke shot (landscape 21:9-ish)
+  caption: "Bespoke statement image — a finished custom pair, up close.",
+};
+
+// Closing full-bleed call-to-action banner.
+const CTA = {
+  // Demo photo (Unsplash, free for commercial use) — swap for your own.
+  imageUrl:
+    "/footer.jpeg", // ← closing lifestyle / product banner (landscape)
+  caption: "Closing banner — an aspirational lifestyle or product shot.",
+};
+
+const LOOKBOOK_COPY = [
+  { label: "Featured drop", description: "Handcrafted pairs, ready to ship." },
+  { label: "Everyday staples", description: "Built for daily comfort." },
   {
     label: "Signature style",
     description: "Distinctive details, made by hand.",
@@ -60,9 +97,21 @@ const USP_ITEMS = [
     label: "Premium Materials",
     desc: "Only the finest leathers & fabrics",
   },
-  { icon: "⟡", label: "Custom Orders", desc: "Bespoke designs just for you" },
+  { icon: "⟡", label: "Custom Orders", desc: "Bespoke designs, just for you" },
   { icon: "⊛", label: "Nationwide Delivery", desc: "Across all of Nigeria" },
 ];
+
+const ARROW = (
+  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
+    <path
+      d="M3 8h10M9 4l4 4-4 4"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 export default async function HomePage() {
   const [
@@ -77,27 +126,20 @@ export default async function HomePage() {
     getPublishedCustomOrders(3),
   ]);
 
-  const featuredProducts = latestProducts.slice(0, 10);
+  const lookbook = latestProducts.slice(0, 3);
+  const newArrivals = latestProducts.slice(0, 10);
   const bestSellers = trendingProducts.slice(0, 4);
+  const trending = trendingProducts.slice(0, 8);
   const visibleCollections = collectionsWithProducts
     .filter((item) => item.products.length > 0)
-    .slice(0, 6);
-  const heroProducts = latestProducts
-    .filter((product) => product.featuredImage?.url)
     .slice(0, 5);
-  const heroPicks = featuredProducts
-    .filter((product) => product.featuredImage?.url)
-    .slice(0, 2);
-  const offerProducts = trendingProducts
-    .filter((product) => product.featuredImage?.url)
-    .slice(0, 3);
 
   return (
     <>
-      {/* ─── FONTS + GLOBAL TOKENS ─────────────────────────────────────── */}
+      {/* ─── GLOBAL TOKENS + UTILITIES ─────────────────────────────── */}
       <style>{`
-
         :root {
+          /* Theme-aware tokens — follow light/dark via the global brand vars. */
           --dp-void:    #06040200;
           --dp-ink:     var(--brand-espresso);
           --dp-charcoal:var(--brand-surface2);
@@ -108,96 +150,82 @@ export default async function HomePage() {
           --dp-ember:   var(--brand-terra);
           --dp-gold:    var(--brand-gold);
           --dp-border:  rgba(var(--brand-fg-rgb),0.09);
+          /* Fixed light values for content that sits OVER dark image scrims,
+             so overlays stay legible in light mode as well as dark. */
+          --dp-on:      #F2E8D5;
+          --dp-on-dim:  #C9B99A;
         }
 
-        .dp-wordmark   { font-family: var(--font-bebas-neue), sans-serif; }
-        .dp-serif      { font-family: var(--font-cormorant-garamond), serif; }
-        .dp-sans       { font-family: var(--font-dm-sans), sans-serif; }
+        .dp-wordmark { font-family: var(--font-bebas-neue), sans-serif; }
+        .dp-serif    { font-family: var(--font-cormorant-garamond), serif; }
+        .dp-sans     { font-family: var(--font-dm-sans), sans-serif; }
 
-        /* ── Marquee ── */
-        @keyframes dp-marquee {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+        .dp-label {
+          font-family: var(--font-dm-sans), sans-serif;
+          font-size: 0.62rem; font-weight: 500;
+          letter-spacing: 0.26em; text-transform: uppercase;
+          color: var(--dp-ember);
         }
-        .dp-marquee { animation: dp-marquee 32s linear infinite; }
-
-        /* ── Hero fade-up ── */
-        @keyframes dp-rise {
-          from { opacity: 0; transform: translateY(28px); }
-          to   { opacity: 1; transform: translateY(0); }
+        .dp-h2 {
+          font-family: var(--font-cormorant-garamond), serif;
+          font-weight: 600; color: var(--dp-cream);
+          font-size: clamp(1.9rem, 3.6vw, 3.1rem); line-height: 1.05;
         }
-        .dp-rise-1 { animation: dp-rise 1s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
-        .dp-rise-2 { animation: dp-rise 1s cubic-bezier(0.16,1,0.3,1) 0.18s both; }
-        .dp-rise-3 { animation: dp-rise 1s cubic-bezier(0.16,1,0.3,1) 0.32s both; }
-        .dp-rise-4 { animation: dp-rise 1s cubic-bezier(0.16,1,0.3,1) 0.46s both; }
+        .dp-rule { border: none; border-top: 1px solid var(--dp-border); }
+        /* Nav sits over the hero image → fixed light. */
+        .dp-nav-link { color: rgba(242,232,213,0.7); text-decoration: none; transition: color 0.2s; }
+        .dp-nav-link:hover { color: #F2E8D5; }
 
-        /* ── Card lift ── */
-        .dp-lift {
-          transition: transform 0.55s cubic-bezier(0.16,1,0.3,1),
-                      box-shadow 0.55s cubic-bezier(0.16,1,0.3,1);
-        }
-        .dp-lift:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 20px 60px rgba(0,0,0,0.45);
-        }
-
-        /* ── Image zoom ── */
-        .dp-zoom { overflow: hidden; }
-        .dp-zoom img { transition: transform 0.7s cubic-bezier(0.16,1,0.3,1); }
-        .dp-zoom:hover img { transform: scale(1.07); }
-
-        /* ── Buttons ── */
-        .dp-btn-solid {
-          display: inline-flex; align-items: center; gap: 0.5rem;
-          background: var(--dp-cream); color: var(--dp-ink);
+        /* Buttons */
+        .dp-btn-solid, .dp-btn-ghost, .dp-btn-ember {
+          display: inline-flex; align-items: center; gap: 0.55rem;
           font-family: var(--font-dm-sans), sans-serif; font-weight: 500;
           font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
-          padding: 0.9rem 2.1rem; text-decoration: none;
-          transition: background 0.22s, color 0.22s;
+          padding: 0.95rem 2.15rem; text-decoration: none;
+          transition: background 0.22s, color 0.22s, border-color 0.22s, opacity 0.22s;
         }
-        .dp-btn-solid:hover { background: var(--dp-ember); color: var(--dp-cream); }
-
-        .dp-btn-ghost {
-          display: inline-flex; align-items: center; gap: 0.5rem;
-          border: 1px solid rgba(var(--brand-fg-rgb),0.28); color: var(--dp-cream);
-          font-family: var(--font-dm-sans), sans-serif; font-weight: 500;
-          font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
-          padding: 0.9rem 2.1rem; text-decoration: none;
-          transition: border-color 0.22s, background 0.22s;
-        }
-        .dp-btn-ghost:hover { border-color: var(--dp-cream); background: rgba(var(--brand-fg-rgb),0.06); }
-
-        .dp-btn-ember {
-          display: inline-flex; align-items: center; gap: 0.5rem;
-          background: var(--dp-ember); color: var(--dp-cream);
-          font-family: var(--font-dm-sans), sans-serif; font-weight: 500;
-          font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
-          padding: 0.9rem 2.1rem; text-decoration: none;
-          transition: opacity 0.22s;
-        }
+        /* Solid + ember buttons only ever appear over images → fixed palette. */
+        .dp-btn-solid { background: #F2E8D5; color: #0A0704; }
+        .dp-btn-solid:hover { background: var(--dp-ember); color: #F2E8D5; }
+        .dp-btn-ember { background: var(--dp-ember); color: #F2E8D5; }
         .dp-btn-ember:hover { opacity: 0.88; }
+        /* Ghost buttons appear on normal sections → theme-aware. */
+        .dp-btn-ghost { border: 1px solid rgba(var(--brand-fg-rgb),0.28); color: var(--dp-cream); }
+        .dp-btn-ghost:hover { border-color: var(--dp-cream); background: rgba(var(--brand-fg-rgb),0.06); }
+        /* ...except when explicitly placed over an image. */
+        .dp-btn-ghost.dp-on-media { border-color: rgba(242,232,213,0.28); color: #F2E8D5; }
+        .dp-btn-ghost.dp-on-media:hover { border-color: #F2E8D5; background: rgba(242,232,213,0.06); }
 
-        /* ── Misc ── */
-        .dp-rule  { border: none; border-top: 1px solid var(--dp-border); }
-        .dp-label { font-family:var(--font-dm-sans),sans-serif; font-size:0.62rem; font-weight:500; letter-spacing:0.26em; text-transform:uppercase; color:var(--dp-ember); }
-        .dp-nav-link { color: var(--dp-muted); text-decoration: none; transition: color 0.2s; }
-        .dp-nav-link:hover { color: var(--dp-cream); }
-        .dp-h2    { font-family:var(--font-cormorant-garamond),serif; font-weight:600; color:var(--dp-cream); }
-        .dp-num   { font-family:var(--font-bebas-neue),sans-serif; font-size:5.5rem; line-height:1; color:rgba(var(--brand-fg-rgb),0.05); position:absolute; top:0.25rem; left:0.75rem; pointer-events:none; user-select:none; }
+        /* Image-first primitives */
+        .dp-frame { position: relative; overflow: hidden; background: var(--dp-charcoal); }
+        .dp-zoom img, .dp-zoom > div[role="img"] { transition: transform 0.8s cubic-bezier(0.16,1,0.3,1); }
+        .dp-zoom:hover img, .dp-zoom:hover > div[role="img"] { transform: scale(1.06); }
+        .dp-lift { transition: transform 0.5s cubic-bezier(0.16,1,0.3,1); }
+        .dp-lift:hover { transform: translateY(-4px); }
+        .dp-scrim-b { position:absolute; inset:0; background: linear-gradient(to top, rgba(6,4,2,0.94) 0%, rgba(6,4,2,0.30) 48%, transparent 82%); }
+        .dp-num { font-family: var(--font-bebas-neue), sans-serif; font-size: 4.5rem; line-height: 1; color: rgba(242,232,213,0.10); }
 
-        /* Quick-view hover chip */
-        .dp-qv { position:absolute; inset:0; display:flex; align-items:flex-end; padding:0.9rem; opacity:0; background:rgba(var(--brand-bg-rgb),0.45); transition:opacity 0.3s; }
+        .dp-qv { position:absolute; inset:0; display:flex; align-items:flex-end; padding:0.9rem; opacity:0; background:rgba(6,4,2,0.35); transition:opacity 0.3s; }
         .dp-zoom:hover .dp-qv { opacity:1; }
-        .dp-qv-label { font-family:var(--font-dm-sans),sans-serif; font-size:0.6rem; font-weight:500; letter-spacing:0.15em; text-transform:uppercase; color:var(--dp-cream); border-bottom:1px solid var(--dp-ember); padding-bottom:2px; }
+        .dp-qv-label { font-family:var(--font-dm-sans),sans-serif; font-size:0.6rem; font-weight:500; letter-spacing:0.15em; text-transform:uppercase; color:#F2E8D5; border-bottom:1px solid var(--dp-ember); padding-bottom:2px; }
 
-        /* Before/After pill */
-        .dp-pill { position:absolute; top:0.5rem; left:0.5rem; font-family:var(--font-dm-sans),sans-serif; font-size:0.5rem; font-weight:500; letter-spacing:0.16em; text-transform:uppercase; padding:2px 7px; }
+        .dp-pill { position:absolute; top:0.6rem; left:0.6rem; font-family:var(--font-dm-sans),sans-serif; font-size:0.5rem; font-weight:500; letter-spacing:0.16em; text-transform:uppercase; padding:3px 8px; }
 
-        /* Noise grain */
-        .dp-grain::after {
-          content:''; position:absolute; inset:0; pointer-events:none; z-index:5;
-          background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-        }
+        /* Horizontal snap row */
+        .dp-scroller { display:flex; gap:0.75rem; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; -ms-overflow-style:none; padding-bottom:0.5rem; }
+        .dp-scroller::-webkit-scrollbar { display:none; }
+        .dp-scroller > * { scroll-snap-align:start; flex:0 0 auto; }
+
+        /* Marquee ribbon */
+        @keyframes dp-marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .dp-marquee { animation: dp-marquee 40s linear infinite; }
+        @media (prefers-reduced-motion: reduce) { .dp-marquee { animation: none; } }
+
+        @keyframes dp-rise { from { opacity:0; transform:translateY(26px);} to { opacity:1; transform:translateY(0);} }
+        .dp-rise-1 { animation: dp-rise 1s cubic-bezier(0.16,1,0.3,1) 0.10s both; }
+        .dp-rise-2 { animation: dp-rise 1s cubic-bezier(0.16,1,0.3,1) 0.24s both; }
+        .dp-rise-3 { animation: dp-rise 1s cubic-bezier(0.16,1,0.3,1) 0.40s both; }
+        @media (prefers-reduced-motion: reduce) { .dp-rise-1,.dp-rise-2,.dp-rise-3 { animation:none; } }
       `}</style>
 
       <div
@@ -205,231 +233,140 @@ export default async function HomePage() {
         style={{ background: "var(--dp-ink)", color: "var(--dp-cream)" }}
       >
         {/* ══════════════════════════════════════════════════════════
-            §1  HERO
+            §1  HERO — full-bleed photograph, no carousel
         ══════════════════════════════════════════════════════════ */}
         <section
-          className="dp-grain relative overflow-hidden"
-          style={{ background: "var(--dp-ink)" }}
+          className="dp-frame dp-zoom"
+          style={{
+            minHeight: "clamp(600px, 92vh, 1040px)",
+            display: "flex",
+          }}
         >
-          {/* Atmospheric glow */}
-          <div
-            className="pointer-events-none absolute"
-            style={{
-              width: 700,
-              height: 700,
-              borderRadius: "50%",
-              background:
-                "radial-gradient(circle, rgba(var(--brand-terra-rgb),0.16) 0%, transparent 68%)",
-              right: -120,
-              top: -180,
-              filter: "blur(80px)",
-            }}
-          />
-          <div
-            className="pointer-events-none absolute"
-            style={{
-              width: 400,
-              height: 400,
-              borderRadius: "50%",
-              background:
-                "radial-gradient(circle, rgba(var(--brand-gold-rgb),0.1) 0%, transparent 70%)",
-              left: "10%",
-              bottom: -60,
-              filter: "blur(60px)",
-            }}
+          <Media
+            src={HERO.imageUrl}
+            alt="D'FOOTPRINT handcrafted footwear"
+            caption={HERO.caption}
+            sizes="100vw"
+            priority
+            tone={0}
+            brightness={0.78}
           />
 
+          {/* top nav bar over the image */}
           <div
-            className="relative mx-auto px-6 pt-14 pb-0 md:px-10 lg:px-16"
-            style={{ maxWidth: 1800, zIndex: 10 }}
+            className="dp-rise-1"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              zIndex: 20,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "1.6rem clamp(1.5rem, 4vw, 4rem)",
+            }}
           >
-            {/* Sub-header bar */}
-            <div className="dp-rise-1 mb-8 flex items-center justify-between">
-              <span className="dp-label" style={{ color: "var(--dp-muted)" }}>
-                Est. in Nigeria · Handcrafted Since Day One
-              </span>
-              <nav className="hidden md:flex items-center gap-8">
-                {["Shop All", "Collections", "Custom Orders"].map((item) => (
-                  <Link
-                    key={item}
-                    href={
-                      item === "Shop All"
-                        ? "/products"
-                        : item === "Collections"
-                          ? "/products"
-                          : "/custom-orders"
-                    }
-                    className="dp-label dp-nav-link"
-                  >
-                    {item}
-                  </Link>
-                ))}
-              </nav>
-            </div>
-
-            {/* Giant wordmark */}
-            <div
-              className="dp-wordmark dp-rise-2"
-              style={{
-                fontSize: "clamp(4.5rem, 13vw, 12rem)",
-                lineHeight: 0.88,
-                letterSpacing: "-0.01em",
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "0 0.4em",
-              }}
+            <span
+              className="dp-label"
+              style={{ color: "rgba(242,232,213,0.7)" }}
             >
-              <span style={{ color: "var(--dp-cream)" }}>D&apos;FOOT</span>
-              <span
+              {HERO.kicker}
+            </span>
+            <nav className="hidden items-center gap-8 md:flex">
+              <Link href="/products" className="dp-label dp-nav-link">
+                Shop All
+              </Link>
+              <Link href="/products" className="dp-label dp-nav-link">
+                Collections
+              </Link>
+              <Link href="/custom-orders" className="dp-label dp-nav-link">
+                Custom Orders
+              </Link>
+            </nav>
+          </div>
+
+          <div className="dp-scrim-b" style={{ zIndex: 10 }} />
+
+          {/* hero copy, bottom-left */}
+          <div
+            style={{
+              position: "relative",
+              zIndex: 15,
+              marginTop: "auto",
+              width: "100%",
+              padding: "clamp(2rem, 5vw, 4.5rem) clamp(1.5rem, 4vw, 4rem)",
+            }}
+          >
+            <div style={{ maxWidth: 1800, marginInline: "auto" }}>
+              <h1
+                className="dp-wordmark dp-rise-2"
                 style={{
-                  WebkitTextStroke: "1.5px rgba(var(--brand-fg-rgb),0.25)",
-                  color: "transparent",
+                  fontSize: "clamp(3.6rem, 12vw, 11rem)",
+                  lineHeight: 0.86,
+                  letterSpacing: "-0.01em",
+                  display: "flex",
+                  flexWrap: "wrap",
+                  columnGap: "0.4em",
+                  margin: 0,
                 }}
               >
-                PRINT
-              </span>
-            </div>
+                <span style={{ color: "var(--dp-on)" }}>D&apos;FOOT</span>
+                <span
+                  style={{
+                    WebkitTextStroke: "1.5px rgba(242,232,213,0.55)",
+                    color: "transparent",
+                  }}
+                >
+                  PRINT
+                </span>
+              </h1>
 
-            {/* Hero body grid */}
-            <div className="dp-rise-3 mt-10 grid gap-8 lg:grid-cols-2 lg:gap-0 lg:items-end">
-              {/* Left column: tagline + CTAs + quick picks */}
-              <div className="space-y-8 pb-14">
+              <div
+                className="dp-rise-3"
+                style={{
+                  marginTop: "1.75rem",
+                  display: "flex",
+                  flexWrap: "wrap",
+                  alignItems: "flex-end",
+                  justifyContent: "space-between",
+                  gap: "2rem",
+                }}
+              >
                 <p
                   className="dp-serif"
                   style={{
-                    fontSize: "clamp(1.35rem, 2.8vw, 2.1rem)",
+                    fontSize: "clamp(1.25rem, 2.6vw, 2rem)",
                     fontWeight: 300,
                     fontStyle: "italic",
                     lineHeight: 1.4,
-                    color: "var(--dp-sand)",
-                    maxWidth: 500,
+                    color: "var(--dp-on)",
+                    maxWidth: 520,
+                    margin: 0,
                   }}
                 >
-                  Where every stitch tells a story and every sole carries you
-                  further.
+                  {HERO.tagline}
                 </p>
-
-                <div className="flex flex-wrap gap-3">
+                <div
+                  style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}
+                >
                   <Link href="/products" className="dp-btn-solid">
-                    Shop Collection
-                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                      <path
-                        d="M3 8h10M9 4l4 4-4 4"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                    Shop Collection {ARROW}
                   </Link>
-                  <Link href="/custom-orders" className="dp-btn-ghost">
+                  <Link
+                    href="/custom-orders"
+                    className="dp-btn-ghost dp-on-media"
+                  >
                     Custom Orders
                   </Link>
                 </div>
-
-                {heroPicks.length > 0 && (
-                  <div style={{ paddingTop: "0.75rem" }}>
-                    <p className="dp-label mb-4">Quick picks</p>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "0.75rem",
-                      }}
-                    >
-                      {heroPicks.map((product) => (
-                        <Link
-                          key={product.id}
-                          href={`/product/${product.handle}`}
-                          className="dp-lift group"
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.875rem",
-                            background: "var(--dp-card)",
-                            border: "1px solid var(--dp-border)",
-                            padding: "0.75rem",
-                            textDecoration: "none",
-                          }}
-                        >
-                          <div
-                            className="dp-zoom"
-                            style={{
-                              position: "relative",
-                              width: 60,
-                              height: 60,
-                              flexShrink: 0,
-                              background: "var(--dp-charcoal)",
-                            }}
-                          >
-                            {product.featuredImage?.url && (
-                              <Image
-                                src={product.featuredImage.url}
-                                alt={product.title}
-                                fill
-                                sizes="60px"
-                                className="object-cover"
-                              />
-                            )}
-                          </div>
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <p
-                              className="line-clamp-1"
-                              style={{
-                                fontSize: "0.8rem",
-                                color: "var(--dp-sand)",
-                                fontFamily: "var(--font-dm-sans), sans-serif",
-                              }}
-                            >
-                              {product.title}
-                            </p>
-                            <Price
-                              amount={product.priceRange.maxVariantPrice.amount}
-                              currencyCode={
-                                product.priceRange.maxVariantPrice.currencyCode
-                              }
-                              currencyCodeClassName="hidden"
-                              className="dp-wordmark"
-                              style={
-                                {
-                                  fontSize: "0.9rem",
-                                  color: "var(--dp-gold)",
-                                } as React.CSSProperties
-                              }
-                            />
-                          </div>
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 16 16"
-                            fill="none"
-                            style={{ flexShrink: 0, color: "var(--dp-muted)" }}
-                          >
-                            <path
-                              d="M3 8h10M9 4l4 4-4 4"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Right column: hero carousel, bleeds to bottom */}
-              <div style={{ position: "relative", minHeight: 500 }}>
-                <HeroCarousel products={heroProducts} />
               </div>
             </div>
           </div>
         </section>
 
         {/* ══════════════════════════════════════════════════════════
-            §2  MARQUEE STRIP
+            §2  MARQUEE RIBBON
         ══════════════════════════════════════════════════════════ */}
         <div
           style={{
@@ -440,11 +377,7 @@ export default async function HomePage() {
         >
           <div
             className="dp-marquee"
-            style={{
-              display: "flex",
-              whiteSpace: "nowrap",
-              alignItems: "center",
-            }}
+            style={{ display: "flex", whiteSpace: "nowrap" }}
           >
             {Array.from({ length: 4 }).map((_, i) => (
               <span
@@ -457,13 +390,13 @@ export default async function HomePage() {
                   paddingRight: "1.5rem",
                   fontSize: "1rem",
                   letterSpacing: "0.14em",
-                  color: "var(--dp-cream)",
+                  color: "var(--dp-on)",
                 }}
               >
                 <span>HANDCRAFTED IN NIGERIA</span>
                 <span
                   style={{
-                    color: "rgba(var(--brand-fg-rgb),0.45)",
+                    color: "rgba(242,232,213,0.45)",
                     fontSize: "0.7rem",
                   }}
                 >
@@ -472,7 +405,7 @@ export default async function HomePage() {
                 <span>PREMIUM SLIPPERS &amp; SLIDES</span>
                 <span
                   style={{
-                    color: "rgba(var(--brand-fg-rgb),0.45)",
+                    color: "rgba(242,232,213,0.45)",
                     fontSize: "0.7rem",
                   }}
                 >
@@ -481,7 +414,7 @@ export default async function HomePage() {
                 <span>CUSTOM ORDERS WELCOME</span>
                 <span
                   style={{
-                    color: "rgba(var(--brand-fg-rgb),0.45)",
+                    color: "rgba(242,232,213,0.45)",
                     fontSize: "0.7rem",
                   }}
                 >
@@ -490,7 +423,7 @@ export default async function HomePage() {
                 <span>NATIONWIDE DELIVERY</span>
                 <span
                   style={{
-                    color: "rgba(var(--brand-fg-rgb),0.45)",
+                    color: "rgba(242,232,213,0.45)",
                     fontSize: "0.7rem",
                   }}
                 >
@@ -502,89 +435,49 @@ export default async function HomePage() {
         </div>
 
         {/* ══════════════════════════════════════════════════════════
-            §3  EDITORIAL OFFER CARDS
+            §3  LOOKBOOK — asymmetric editorial image tiles
         ══════════════════════════════════════════════════════════ */}
-        {offerProducts.length > 0 && (
+        {lookbook.length > 0 && (
           <section
             className="mx-auto"
             style={{
               maxWidth: 1800,
-              padding: "4rem 1.5rem 3rem",
-              paddingLeft: "clamp(1.5rem, 4vw, 4rem)",
-              paddingRight: "clamp(1.5rem, 4vw, 4rem)",
+              padding: "clamp(3.5rem,7vw,6rem) clamp(1.5rem,4vw,4rem) 3rem",
             }}
           >
+            <SectionHead kicker="The Lookbook" title="Just Landed" />
             <div
-              style={{
-                marginBottom: "1.75rem",
-                display: "flex",
-                alignItems: "flex-end",
-                justifyContent: "space-between",
-              }}
+              style={{ display: "grid", gap: "0.75rem" }}
+              className="grid-cols-2 lg:grid-cols-3"
             >
-              <div>
-                <p className="dp-label" style={{ marginBottom: "0.5rem" }}>
-                  Latest drops
-                </p>
-                <h2
-                  className="dp-h2 dp-serif"
-                  style={{
-                    fontSize: "clamp(1.8rem, 3.5vw, 3rem)",
-                    fontWeight: 600,
-                  }}
-                >
-                  Just Landed
-                </h2>
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: "grid",
-                gap: "0.75rem",
-                gridTemplateColumns: "repeat(3, 1fr)",
-              }}
-            >
-              {offerProducts.map((product, index) => {
-                const offer = offerCopy[index % offerCopy.length];
+              {lookbook.map((product, index) => {
+                const copy = LOOKBOOK_COPY[index % LOOKBOOK_COPY.length]!;
                 const isBig = index === 0;
-                return offer ? (
+                return (
                   <Link
                     key={product.id}
                     href={`/product/${product.handle}`}
-                    className="dp-zoom dp-lift"
+                    className={`dp-frame dp-zoom dp-lift ${isBig ? "col-span-2 lg:col-span-1" : ""}`}
                     style={{
-                      position: "relative",
                       display: "block",
-                      aspectRatio: isBig ? "2/3" : "3/4",
+                      aspectRatio: isBig ? "16/13" : "4/5",
                       textDecoration: "none",
-                      gridRow: isBig ? "1 / 3" : undefined,
-                      overflow: "hidden",
                     }}
                   >
-                    {product.featuredImage?.url && (
-                      <Image
-                        src={product.featuredImage.url}
-                        alt={product.featuredImage.altText || product.title}
-                        fill
-                        sizes="(min-width: 1280px) 35vw, 80vw"
-                        className="object-cover"
-                        style={{ filter: "brightness(0.72)" }}
-                      />
-                    )}
-                    <div
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        background:
-                          "linear-gradient(to top, rgba(var(--brand-bg-rgb),0.92) 0%, rgba(var(--brand-bg-rgb),0.25) 55%, transparent 100%)",
-                      }}
+                    <Media
+                      src={product.featuredImage?.url}
+                      alt={product.featuredImage?.altText || product.title}
+                      caption={`${copy.label} — editorial product shot.`}
+                      sizes="(min-width: 1024px) 33vw, 50vw"
+                      brightness={0.82}
+                      tone={index}
                     />
+                    <div className="dp-scrim-b" />
                     <div
                       style={{
                         position: "absolute",
                         inset: 0,
-                        padding: "1.5rem",
+                        padding: "clamp(1.1rem,2.2vw,1.75rem)",
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "flex-end",
@@ -594,34 +487,24 @@ export default async function HomePage() {
                         className="dp-label"
                         style={{ marginBottom: "0.5rem" }}
                       >
-                        {offer.label}
+                        {copy.label}
                       </p>
                       <h3
                         className="dp-serif"
                         style={{
                           fontSize: isBig
-                            ? "clamp(1.4rem, 2.5vw, 2rem)"
-                            : "1.1rem",
+                            ? "clamp(1.4rem,2.4vw,2.1rem)"
+                            : "1.15rem",
                           fontWeight: 600,
-                          color: "var(--dp-cream)",
-                          marginBottom: "0.5rem",
+                          color: "var(--dp-on)",
+                          margin: 0,
                         }}
                       >
                         {product.title}
                       </h3>
-                      <p
-                        style={{
-                          fontSize: "0.78rem",
-                          color: "var(--dp-sand)",
-                          marginBottom: "0.875rem",
-                          fontFamily: "var(--font-dm-sans), sans-serif",
-                          lineHeight: 1.55,
-                        }}
-                      >
-                        {offer.description}
-                      </p>
                       <div
                         style={{
+                          marginTop: "0.75rem",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "space-between",
@@ -636,276 +519,193 @@ export default async function HomePage() {
                           className="dp-wordmark"
                           style={
                             {
-                              fontSize: "1.15rem",
+                              fontSize: "1.2rem",
                               color: "var(--dp-gold)",
                             } as React.CSSProperties
                           }
                         />
                         <span
-                          style={{
-                            fontSize: "0.62rem",
-                            fontFamily: "var(--font-dm-sans), sans-serif",
-                            fontWeight: 500,
-                            letterSpacing: "0.12em",
-                            textTransform: "uppercase",
-                            color: "var(--dp-cream)",
-                            borderBottom: "1px solid var(--dp-ember)",
-                            paddingBottom: 2,
-                          }}
+                          className="dp-label"
+                          style={{ color: "var(--dp-on)" }}
                         >
                           View →
                         </span>
                       </div>
                     </div>
                   </Link>
-                ) : null;
+                );
               })}
             </div>
           </section>
         )}
 
         {/* ══════════════════════════════════════════════════════════
-            §4  THREE ITEM GRID + CAROUSEL (existing components, wrapped)
-        ══════════════════════════════════════════════════════════ */}
-        <hr className="dp-rule mx-6 md:mx-10 lg:mx-16" />
-        <div className="mt-8">
-          <ThreeItemGrid />
-        </div>
-        <Carousel />
-
-        {/* ══════════════════════════════════════════════════════════
-            §5  NEW ARRIVALS
+            §4  BRAND STORY — full-height image + text split
         ══════════════════════════════════════════════════════════ */}
         <section
-          className="mx-auto"
-          style={{
-            maxWidth: 1800,
-            padding: "4rem clamp(1.5rem, 4vw, 4rem)",
-          }}
+          className="mx-auto grid items-stretch gap-0 lg:grid-cols-2"
+          style={{ maxWidth: 1800, padding: "0 clamp(1.5rem,4vw,4rem)" }}
         >
           <div
+            className="dp-frame dp-zoom"
             style={{
-              marginBottom: "2.5rem",
-              display: "flex",
-              alignItems: "flex-end",
-              justifyContent: "space-between",
+              minHeight: "clamp(360px, 62vh, 720px)",
+              aspectRatio: "auto",
             }}
           >
-            <div>
-              <p className="dp-label" style={{ marginBottom: "0.5rem" }}>
-                Just dropped
-              </p>
-              <h2
-                className="dp-h2 dp-serif"
-                style={{
-                  fontSize: "clamp(1.8rem, 3.5vw, 3rem)",
-                  fontWeight: 600,
-                }}
-              >
-                New Arrivals
-              </h2>
-            </div>
-            <Link href="/products?sort=latest-desc" className="dp-btn-ghost">
-              View all
-            </Link>
+            <Media
+              src={STORY.imageUrl}
+              alt="D'FOOTPRINT atelier"
+              caption={STORY.caption}
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              tone={4}
+              brightness={0.85}
+            />
           </div>
-
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, 1fr)",
-              gap: "0.75rem",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              padding: "clamp(2.5rem,5vw,4.5rem)",
+              background: "var(--dp-charcoal)",
             }}
-            className="sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
           >
-            {featuredProducts.map((product) => (
-              <Link
-                key={product.id}
-                href={`/product/${product.handle}`}
-                className="dp-lift group"
-                style={{ display: "block", textDecoration: "none" }}
-              >
-                <div
-                  className="dp-zoom"
-                  style={{
-                    position: "relative",
-                    aspectRatio: "3/4",
-                    background: "var(--dp-charcoal)",
-                  }}
-                >
-                  {product.featuredImage?.url && (
-                    <Image
-                      src={product.featuredImage.url}
-                      alt={product.featuredImage.altText || product.title}
-                      fill
-                      sizes="(min-width: 1280px) 20vw, (min-width: 640px) 30vw, 50vw"
-                      className="object-cover"
-                    />
-                  )}
-                  <div className="dp-qv">
-                    <span className="dp-qv-label">Quick View</span>
-                  </div>
-                </div>
-                <div style={{ marginTop: "0.75rem", padding: "0 0.25rem" }}>
-                  <p
-                    className="line-clamp-2"
-                    style={{
-                      fontSize: "0.78rem",
-                      color: "var(--dp-sand)",
-                      fontFamily: "var(--font-dm-sans), sans-serif",
-                      lineHeight: 1.4,
-                      marginBottom: "0.25rem",
-                    }}
-                  >
-                    {product.title}
-                  </p>
-                  <Price
-                    amount={product.priceRange.maxVariantPrice.amount}
-                    currencyCode={
-                      product.priceRange.maxVariantPrice.currencyCode
-                    }
-                    currencyCodeClassName="hidden"
-                    className="dp-wordmark"
-                    style={
-                      {
-                        fontSize: "0.95rem",
-                        color: "var(--dp-cream)",
-                      } as React.CSSProperties
-                    }
-                  />
-                </div>
+            <p className="dp-label" style={{ marginBottom: "1rem" }}>
+              {STORY.kicker}
+            </p>
+            <h2 className="dp-h2 dp-serif" style={{ marginBottom: "1.25rem" }}>
+              {STORY.title}
+            </h2>
+            <p
+              style={{
+                fontSize: "0.95rem",
+                lineHeight: 1.75,
+                color: "var(--dp-sand)",
+                maxWidth: 460,
+                marginBottom: "2rem",
+              }}
+            >
+              {STORY.body}
+            </p>
+            <div>
+              <Link href="/custom-orders" className="dp-btn-ghost">
+                Discover the process {ARROW}
               </Link>
-            ))}
+            </div>
           </div>
         </section>
 
         {/* ══════════════════════════════════════════════════════════
-            §6  BEST SELLERS
+            §5  NEW ARRIVALS — image-dominant product grid
+        ══════════════════════════════════════════════════════════ */}
+        {newArrivals.length > 0 && (
+          <section
+            className="mx-auto"
+            style={{
+              maxWidth: 1800,
+              padding: "clamp(3.5rem,7vw,6rem) clamp(1.5rem,4vw,4rem) 3rem",
+            }}
+          >
+            <SectionHead
+              kicker="Just dropped"
+              title="New Arrivals"
+              action={{ href: "/products?sort=latest-desc", label: "View all" }}
+            />
+            <div
+              style={{ display: "grid", gap: "0.75rem" }}
+              className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+            >
+              {newArrivals.map((product, i) => (
+                <ProductCard key={product.id} product={product} tone={i} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════
+            §6  BEST SELLERS — ranked, image-first
         ══════════════════════════════════════════════════════════ */}
         {bestSellers.length > 0 && (
           <section
-            style={{ background: "var(--dp-charcoal)", padding: "4rem 0" }}
+            style={{
+              background: "var(--dp-charcoal)",
+              padding: "clamp(3.5rem,7vw,6rem) 0",
+            }}
           >
             <div
               className="mx-auto"
-              style={{ maxWidth: 1800, padding: "0 clamp(1.5rem, 4vw, 4rem)" }}
+              style={{ maxWidth: 1800, padding: "0 clamp(1.5rem,4vw,4rem)" }}
             >
-              <div
-                style={{
-                  marginBottom: "2.5rem",
-                  display: "flex",
-                  alignItems: "flex-end",
-                  justifyContent: "space-between",
+              <SectionHead
+                kicker="Most loved"
+                title="Best Sellers"
+                action={{
+                  href: "/products?sort=best-selling",
+                  label: "Shop all",
                 }}
-              >
-                <div>
-                  <p className="dp-label" style={{ marginBottom: "0.5rem" }}>
-                    Most loved
-                  </p>
-                  <h2
-                    className="dp-h2 dp-serif"
-                    style={{
-                      fontSize: "clamp(1.8rem, 3.5vw, 3rem)",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Best Sellers
-                  </h2>
-                </div>
-                <Link
-                  href="/products?sort=best-selling"
-                  className="dp-btn-ghost"
-                >
-                  Shop all
-                </Link>
-              </div>
-
+              />
               <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(2, 1fr)",
-                  gap: "0.75rem",
-                }}
-                className="lg:grid-cols-4"
+                style={{ display: "grid", gap: "0.75rem" }}
+                className="grid-cols-2 lg:grid-cols-4"
               >
                 {bestSellers.map((product, i) => (
                   <Link
                     key={product.id}
                     href={`/product/${product.handle}`}
                     className="dp-lift group"
-                    style={{
-                      position: "relative",
-                      display: "block",
-                      background: "var(--dp-ink)",
-                      padding: "1rem",
-                      textDecoration: "none",
-                    }}
+                    style={{ display: "block", textDecoration: "none" }}
                   >
-                    <span className="dp-num">0{i + 1}</span>
                     <div
-                      className="dp-zoom"
-                      style={{
-                        position: "relative",
-                        aspectRatio: "4/5",
-                        background: "var(--dp-charcoal)",
-                      }}
+                      className="dp-frame dp-zoom"
+                      style={{ aspectRatio: "4/5" }}
                     >
-                      {product.featuredImage?.url && (
-                        <Image
-                          src={product.featuredImage.url}
-                          alt={product.featuredImage.altText || product.title}
-                          fill
-                          sizes="(min-width: 1024px) 18vw, (min-width: 640px) 40vw, 80vw"
-                          className="object-cover"
-                        />
-                      )}
-                    </div>
-                    <div style={{ marginTop: "1rem" }}>
-                      <p
-                        className="line-clamp-2"
+                      <Media
+                        src={product.featuredImage?.url}
+                        alt={product.featuredImage?.altText || product.title}
+                        caption="Best-seller product shot."
+                        sizes="(min-width: 1024px) 22vw, 50vw"
+                        tone={i + 1}
+                      />
+                      <span
+                        className="dp-num"
                         style={{
-                          fontSize: "0.78rem",
+                          position: "absolute",
+                          top: "0.5rem",
+                          left: "0.85rem",
+                        }}
+                      >
+                        0{i + 1}
+                      </span>
+                      <div className="dp-qv">
+                        <span className="dp-qv-label">Quick View</span>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: "0.9rem", padding: "0 0.15rem" }}>
+                      <p
+                        className="line-clamp-1"
+                        style={{
+                          fontSize: "0.8rem",
                           color: "var(--dp-sand)",
-                          fontFamily: "var(--font-dm-sans), sans-serif",
-                          marginBottom: "0.4rem",
+                          marginBottom: "0.3rem",
                         }}
                       >
                         {product.title}
                       </p>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <Price
-                          amount={product.priceRange.maxVariantPrice.amount}
-                          currencyCode={
-                            product.priceRange.maxVariantPrice.currencyCode
-                          }
-                          currencyCodeClassName="hidden"
-                          className="dp-wordmark"
-                          style={
-                            {
-                              fontSize: "1rem",
-                              color: "var(--dp-gold)",
-                            } as React.CSSProperties
-                          }
-                        />
-                        <span
-                          style={{
-                            fontSize: "0.6rem",
-                            fontFamily: "var(--font-dm-sans), sans-serif",
-                            fontWeight: 500,
-                            letterSpacing: "0.1em",
-                            textTransform: "uppercase",
-                            color: "var(--dp-ember)",
-                          }}
-                        >
-                          Shop →
-                        </span>
-                      </div>
+                      <Price
+                        amount={product.priceRange.maxVariantPrice.amount}
+                        currencyCode={
+                          product.priceRange.maxVariantPrice.currencyCode
+                        }
+                        currencyCodeClassName="hidden"
+                        className="dp-wordmark"
+                        style={
+                          {
+                            fontSize: "1rem",
+                            color: "var(--dp-gold)",
+                          } as React.CSSProperties
+                        }
+                      />
                     </div>
                   </Link>
                 ))}
@@ -915,19 +715,201 @@ export default async function HomePage() {
         )}
 
         {/* ══════════════════════════════════════════════════════════
-            §7  USP STRIP
+            §7  COLLECTIONS — large editorial image tiles
+        ══════════════════════════════════════════════════════════ */}
+        {visibleCollections.length > 0 && (
+          <section
+            className="mx-auto"
+            style={{
+              maxWidth: 1800,
+              padding: "clamp(3.5rem,7vw,6rem) clamp(1.5rem,4vw,4rem) 3rem",
+            }}
+          >
+            <SectionHead
+              kicker="Explore"
+              title="Collections"
+              action={{ href: "/products", label: "Browse all" }}
+            />
+            <div
+              style={{ display: "grid", gap: "0.75rem" }}
+              className="grid-cols-2 lg:grid-cols-3"
+            >
+              {visibleCollections.map(
+                ({ collection, products: colProducts }, idx) => {
+                  const preview = colProducts.find((p) => p.featuredImage?.url);
+                  const isFeature = idx === 0;
+                  return (
+                    <Link
+                      key={collection.handle}
+                      href={collection.path}
+                      className={`dp-frame dp-zoom dp-lift ${isFeature ? "col-span-2" : ""}`}
+                      style={{
+                        display: "block",
+                        aspectRatio: isFeature ? "16/10" : "4/5",
+                        textDecoration: "none",
+                      }}
+                    >
+                      <Media
+                        src={preview?.featuredImage?.url}
+                        alt={collection.title}
+                        caption={`${collection.title} — collection cover.`}
+                        sizes={
+                          isFeature
+                            ? "(min-width: 1024px) 66vw, 100vw"
+                            : "(min-width: 1024px) 33vw, 50vw"
+                        }
+                        brightness={0.72}
+                        tone={idx + 2}
+                      />
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background:
+                            "linear-gradient(135deg, rgba(6,4,2,0.85) 0%, rgba(6,4,2,0.15) 62%)",
+                        }}
+                      />
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          padding: "clamp(1.25rem,3vw,2.4rem)",
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "flex-end",
+                        }}
+                      >
+                        <p
+                          className="dp-label"
+                          style={{ marginBottom: "0.5rem" }}
+                        >
+                          {colProducts.length} items
+                        </p>
+                        <h3
+                          className="dp-serif"
+                          style={{
+                            fontSize: isFeature
+                              ? "clamp(1.7rem,3.5vw,2.8rem)"
+                              : "1.35rem",
+                            fontWeight: 600,
+                            color: "var(--dp-on)",
+                            margin: 0,
+                          }}
+                        >
+                          {collection.title}
+                        </h3>
+                        {isFeature && collection.description && (
+                          <p
+                            className="line-clamp-2"
+                            style={{
+                              fontSize: "0.82rem",
+                              color: "var(--dp-on-dim)",
+                              marginTop: "0.65rem",
+                              maxWidth: 480,
+                              lineHeight: 1.6,
+                            }}
+                          >
+                            {collection.description}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  );
+                },
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════
+            §8  TRENDING — CSS scroll-snap image row (no JS)
+        ══════════════════════════════════════════════════════════ */}
+        {trending.length > 0 && (
+          <section style={{ padding: "clamp(3.5rem,7vw,6rem) 0 3rem" }}>
+            <div
+              className="mx-auto"
+              style={{ maxWidth: 1800, padding: "0 clamp(1.5rem,4vw,4rem)" }}
+            >
+              <SectionHead kicker="Trending now" title="More to Explore" />
+            </div>
+            <div
+              className="dp-scroller"
+              style={{
+                paddingInline: "clamp(1.5rem,4vw,4rem)",
+                scrollPaddingInline: "clamp(1.5rem,4vw,4rem)",
+              }}
+            >
+              {trending.map((product, i) => (
+                <Link
+                  key={product.id}
+                  href={`/product/${product.handle}`}
+                  className="dp-lift group"
+                  style={{
+                    display: "block",
+                    textDecoration: "none",
+                    width: "clamp(230px, 26vw, 340px)",
+                  }}
+                >
+                  <div
+                    className="dp-frame dp-zoom"
+                    style={{ aspectRatio: "3/4" }}
+                  >
+                    <Media
+                      src={product.featuredImage?.url}
+                      alt={product.featuredImage?.altText || product.title}
+                      caption="Trending product shot."
+                      sizes="340px"
+                      tone={i}
+                    />
+                    <div className="dp-qv">
+                      <span className="dp-qv-label">Quick View</span>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: "0.85rem", padding: "0 0.15rem" }}>
+                    <p
+                      className="line-clamp-1"
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "var(--dp-sand)",
+                        marginBottom: "0.3rem",
+                      }}
+                    >
+                      {product.title}
+                    </p>
+                    <Price
+                      amount={product.priceRange.maxVariantPrice.amount}
+                      currencyCode={
+                        product.priceRange.maxVariantPrice.currencyCode
+                      }
+                      currencyCodeClassName="hidden"
+                      className="dp-wordmark"
+                      style={
+                        {
+                          fontSize: "1rem",
+                          color: "var(--dp-gold)",
+                        } as React.CSSProperties
+                      }
+                    />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════
+            §9  USP STRIP
         ══════════════════════════════════════════════════════════ */}
         <section
           className="mx-auto"
-          style={{ maxWidth: 1800, padding: "3.5rem clamp(1.5rem, 4vw, 4rem)" }}
+          style={{
+            maxWidth: 1800,
+            padding: "1rem clamp(1.5rem,4vw,4rem) clamp(3rem,6vw,5rem)",
+          }}
         >
           <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, 1fr)",
-              gap: "1.5rem 3rem",
-            }}
-            className="md:grid-cols-4"
+            style={{ display: "grid", gap: "1.5rem 3rem" }}
+            className="grid-cols-2 md:grid-cols-4"
           >
             {USP_ITEMS.map(({ icon, label, desc }) => (
               <div
@@ -949,7 +931,6 @@ export default async function HomePage() {
                 </span>
                 <p
                   style={{
-                    fontFamily: "var(--font-dm-sans), sans-serif",
                     fontWeight: 500,
                     fontSize: "0.82rem",
                     color: "var(--dp-cream)",
@@ -961,7 +942,6 @@ export default async function HomePage() {
                 </p>
                 <p
                   style={{
-                    fontFamily: "var(--font-dm-sans), sans-serif",
                     fontSize: "0.72rem",
                     color: "var(--dp-muted)",
                     lineHeight: 1.55,
@@ -974,197 +954,81 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <hr className="dp-rule mx-6 md:mx-10 lg:mx-16" />
-
         {/* ══════════════════════════════════════════════════════════
-            §8  COLLECTIONS
+            §10  CUSTOM ORDERS — cinematic, image-first
         ══════════════════════════════════════════════════════════ */}
-        <section
-          className="mx-auto"
-          style={{ maxWidth: 1800, padding: "4rem clamp(1.5rem, 4vw, 4rem)" }}
-        >
+        <section style={{ background: "var(--dp-void)" }}>
+          {/* wide statement image */}
           <div
-            style={{
-              marginBottom: "2.5rem",
-              display: "flex",
-              alignItems: "flex-end",
-              justifyContent: "space-between",
-            }}
+            className="dp-frame dp-zoom"
+            style={{ minHeight: "clamp(340px, 56vh, 640px)", display: "flex" }}
           >
-            <div>
-              <p className="dp-label" style={{ marginBottom: "0.5rem" }}>
-                Explore
-              </p>
-              <h2
-                className="dp-h2 dp-serif"
-                style={{
-                  fontSize: "clamp(1.8rem, 3.5vw, 3rem)",
-                  fontWeight: 600,
-                }}
-              >
-                Collections
-              </h2>
-            </div>
-            <Link href="/products" className="dp-btn-ghost">
-              Browse all
-            </Link>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gap: "0.75rem",
-              gridTemplateColumns: "repeat(3, 1fr)",
-            }}
-            className="md:grid-cols-2 lg:grid-cols-3"
-          >
-            {visibleCollections.map(
-              ({ collection, products: colProducts }, idx) => {
-                const preview = colProducts.find((p) => p.featuredImage?.url);
-                const isFeature = idx === 0;
-                return (
-                  <Link
-                    key={collection.handle}
-                    href={collection.path}
-                    className="dp-zoom dp-lift"
-                    style={{
-                      position: "relative",
-                      display: "block",
-                      aspectRatio: isFeature ? "16/10" : "4/3",
-                      textDecoration: "none",
-                      overflow: "hidden",
-                      gridColumn: isFeature ? "1 / -1" : undefined,
-                    }}
-                  >
-                    {preview?.featuredImage?.url ? (
-                      <Image
-                        src={preview.featuredImage.url}
-                        alt={collection.title}
-                        fill
-                        sizes="(min-width: 1024px) 60vw, 90vw"
-                        className="object-cover"
-                        style={{ filter: "brightness(0.65)" }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          background: "var(--dp-charcoal)",
-                        }}
-                      />
-                    )}
-                    <div
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        background:
-                          "linear-gradient(135deg, rgba(var(--brand-bg-rgb),0.82) 0%, rgba(var(--brand-bg-rgb),0.15) 65%)",
-                      }}
-                    />
-                    <div
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        padding: "clamp(1.25rem, 3vw, 2.25rem)",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "flex-end",
-                      }}
-                    >
-                      <p
-                        className="dp-label"
-                        style={{ marginBottom: "0.5rem" }}
-                      >
-                        {colProducts.length} items
-                      </p>
-                      <h3
-                        className="dp-serif"
-                        style={{
-                          fontSize: isFeature
-                            ? "clamp(1.6rem, 3.5vw, 2.6rem)"
-                            : "1.4rem",
-                          fontWeight: 600,
-                          color: "var(--dp-cream)",
-                        }}
-                      >
-                        {collection.title}
-                      </h3>
-                      {collection.description && (
-                        <p
-                          className="line-clamp-2"
-                          style={{
-                            fontSize: "0.78rem",
-                            color: "var(--dp-sand)",
-                            marginTop: "0.5rem",
-                            maxWidth: 480,
-                            fontFamily: "var(--font-dm-sans), sans-serif",
-                            lineHeight: 1.55,
-                          }}
-                        >
-                          {collection.description}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
-                );
-              },
-            )}
-          </div>
-        </section>
-
-        {/* ══════════════════════════════════════════════════════════
-            §9  CUSTOM ORDERS
-        ══════════════════════════════════════════════════════════ */}
-        {customOrderRows.length > 0 && (
-          <section style={{ background: "var(--dp-void)", padding: "4rem 0" }}>
+            <Media
+              src={CUSTOM_HERO.imageUrl}
+              alt="Bespoke custom footwear"
+              caption={CUSTOM_HERO.caption}
+              sizes="100vw"
+              tone={4}
+              brightness={0.62}
+            />
             <div
-              className="mx-auto"
-              style={{ maxWidth: 1800, padding: "0 clamp(1.5rem, 4vw, 4rem)" }}
+              style={{
+                position: "relative",
+                zIndex: 5,
+                marginTop: "auto",
+                width: "100%",
+                padding: "clamp(2rem,5vw,4rem) clamp(1.5rem,4vw,4rem)",
+              }}
             >
               <div
                 style={{
-                  marginBottom: "2.5rem",
+                  maxWidth: 1800,
+                  marginInline: "auto",
                   display: "flex",
+                  flexWrap: "wrap",
                   alignItems: "flex-end",
                   justifyContent: "space-between",
+                  gap: "1.5rem",
                 }}
               >
                 <div>
-                  <p className="dp-label" style={{ marginBottom: "0.5rem" }}>
+                  <p className="dp-label" style={{ marginBottom: "0.75rem" }}>
                     Bespoke
                   </p>
                   <h2
-                    className="dp-h2 dp-serif"
+                    className="dp-serif"
                     style={{
-                      fontSize: "clamp(1.8rem, 3.5vw, 3rem)",
+                      fontSize: "clamp(2rem,5vw,4rem)",
                       fontWeight: 600,
+                      color: "var(--dp-on)",
+                      margin: 0,
+                      maxWidth: 640,
+                      lineHeight: 1.05,
                     }}
                   >
-                    Custom Work
+                    Dreamt up by you, made by hand.
                   </h2>
                 </div>
                 <Link href="/custom-orders" className="dp-btn-ember">
-                  Request yours
-                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                    <path
-                      d="M3 8h10M9 4l4 4-4 4"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  Request yours {ARROW}
                 </Link>
               </div>
+            </div>
+          </div>
 
+          {/* before / after showcase */}
+          {customOrderRows.length > 0 && (
+            <div
+              className="mx-auto"
+              style={{
+                maxWidth: 1800,
+                padding:
+                  "clamp(2.5rem,5vw,4rem) clamp(1.5rem,4vw,4rem) clamp(3.5rem,7vw,6rem)",
+              }}
+            >
               <div
-                style={{
-                  display: "grid",
-                  gap: "0.75rem",
-                  gridTemplateColumns: "repeat(1, 1fr)",
-                }}
-                className="md:grid-cols-3"
+                style={{ display: "grid", gap: "0.75rem" }}
+                className="grid-cols-1 md:grid-cols-3"
               >
                 {customOrderRows.map((order) => (
                   <Link
@@ -1174,7 +1038,7 @@ export default async function HomePage() {
                     style={{
                       display: "block",
                       background: "var(--dp-card)",
-                      padding: "1rem",
+                      padding: "0.75rem",
                       textDecoration: "none",
                       border: "1px solid var(--dp-border)",
                     }}
@@ -1187,168 +1051,120 @@ export default async function HomePage() {
                       }}
                     >
                       <div
-                        className="dp-zoom"
-                        style={{
-                          position: "relative",
-                          aspectRatio: "1",
-                          background: "var(--dp-charcoal)",
-                        }}
+                        className="dp-frame dp-zoom"
+                        style={{ aspectRatio: "1" }}
                       >
-                        {order.beforeImage && (
-                          <Image
-                            src={order.beforeImage}
-                            alt={`${order.title} inspiration`}
-                            fill
-                            sizes="20vw"
-                            className="object-cover"
-                          />
-                        )}
+                        <Media
+                          src={order.beforeImage}
+                          alt={`${order.title} inspiration`}
+                          caption="Before"
+                          sizes="20vw"
+                          tone={2}
+                        />
                         <span
                           className="dp-pill dp-label"
                           style={{
-                            background: "rgba(var(--brand-bg-rgb),0.72)",
-                            color: "var(--dp-sand)",
-                            fontSize: "0.5rem",
+                            background: "rgba(6,4,2,0.72)",
+                            color: "var(--dp-on-dim)",
                           }}
                         >
                           Before
                         </span>
                       </div>
                       <div
-                        className="dp-zoom"
-                        style={{
-                          position: "relative",
-                          aspectRatio: "1",
-                          background: "var(--dp-charcoal)",
-                        }}
+                        className="dp-frame dp-zoom"
+                        style={{ aspectRatio: "1" }}
                       >
-                        {order.afterImage && (
-                          <Image
-                            src={order.afterImage}
-                            alt={`${order.title} result`}
-                            fill
-                            sizes="20vw"
-                            className="object-cover"
-                          />
-                        )}
+                        <Media
+                          src={order.afterImage}
+                          alt={`${order.title} result`}
+                          caption="After"
+                          sizes="20vw"
+                          tone={4}
+                        />
                         <span
                           className="dp-pill dp-label"
                           style={{
-                            background: "rgba(var(--brand-terra-rgb),0.85)",
-                            color: "var(--dp-cream)",
-                            fontSize: "0.5rem",
+                            background: "rgba(191,90,40,0.85)",
+                            color: "var(--dp-on)",
                           }}
                         >
                           After
                         </span>
                       </div>
                     </div>
-                    <p
+                    <div
                       style={{
-                        marginTop: "0.875rem",
-                        fontSize: "0.8rem",
-                        fontFamily: "var(--font-dm-sans), sans-serif",
-                        color: "var(--dp-sand)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginTop: "0.9rem",
                       }}
                     >
-                      {order.title}
-                    </p>
-                    <p
-                      className="dp-label"
-                      style={{ marginTop: "0.3rem", color: "var(--dp-ember)" }}
-                    >
-                      View process →
-                    </p>
+                      <p
+                        style={{ fontSize: "0.82rem", color: "var(--dp-sand)" }}
+                      >
+                        {order.title}
+                      </p>
+                      <span
+                        className="dp-label"
+                        style={{ color: "var(--dp-ember)" }}
+                      >
+                        Process →
+                      </span>
+                    </div>
                   </Link>
                 ))}
               </div>
             </div>
-          </section>
-        )}
+          )}
+        </section>
 
         {/* ══════════════════════════════════════════════════════════
-            §10  FULL-WIDTH CTA BANNER
+            §11  CLOSING CTA — full-bleed image banner
         ══════════════════════════════════════════════════════════ */}
         <section
-          style={{
-            background: "var(--dp-ember)",
-            padding: "5rem 1.5rem",
-            textAlign: "center",
-            position: "relative",
-            overflow: "hidden",
-          }}
+          className="dp-frame dp-zoom"
+          style={{ minHeight: "clamp(420px, 64vh, 720px)", display: "flex" }}
         >
-          {/* Decorative wordmark behind */}
-          <span
-            className="dp-wordmark"
+          <Media
+            src={CTA.imageUrl}
+            alt="Craft your own pair"
+            caption={CTA.caption}
+            sizes="100vw"
+            tone={0}
+            brightness={0.55}
+          />
+          <div
             style={{
-              position: "absolute",
-              fontSize: "clamp(8rem, 25vw, 22rem)",
-              color: "rgba(0,0,0,0.12)",
-              lineHeight: 1,
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              whiteSpace: "nowrap",
-              pointerEvents: "none",
-              userSelect: "none",
+              position: "relative",
+              zIndex: 5,
+              margin: "auto",
+              padding: "clamp(2rem,5vw,4rem)",
+              textAlign: "center",
             }}
           >
-            D&apos;FOOTPRINT
-          </span>
-
-          <div style={{ position: "relative", zIndex: 10 }}>
             <p
               className="dp-label"
-              style={{
-                color: "rgba(var(--brand-fg-rgb),0.55)",
-                marginBottom: "1rem",
-              }}
+              style={{ color: "var(--dp-on-dim)", marginBottom: "1rem" }}
             >
               Start something special
             </p>
             <h2
               className="dp-serif"
               style={{
-                fontSize: "clamp(1.8rem, 4vw, 3.5rem)",
+                fontSize: "clamp(2rem,5vw,4rem)",
                 fontWeight: 600,
-                color: "var(--dp-cream)",
-                maxWidth: 640,
+                color: "var(--dp-on)",
+                maxWidth: 720,
                 margin: "0 auto 2rem",
-                lineHeight: 1.25,
+                lineHeight: 1.12,
               }}
             >
-              Can&apos;t find what you&apos;re looking for? Let us craft it for
-              you.
+              Can&apos;t find the pair you&apos;re imagining? Let us craft it.
             </h2>
-            <Link
-              href="/custom-orders"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.6rem",
-                background: "var(--dp-cream)",
-                color: "var(--dp-ember)",
-                fontFamily: "var(--font-dm-sans), sans-serif",
-                fontWeight: 500,
-                fontSize: "0.72rem",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                padding: "1rem 2.5rem",
-                textDecoration: "none",
-                transition: "background 0.22s",
-              }}
-            >
-              Order a Custom Pair
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                <path
-                  d="M3 8h10M9 4l4 4-4 4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+            <Link href="/custom-orders" className="dp-btn-solid">
+              Order a Custom Pair {ARROW}
             </Link>
           </div>
         </section>
@@ -1356,5 +1172,98 @@ export default async function HomePage() {
 
       <Footer />
     </>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Local presentational helpers (server components)
+   ──────────────────────────────────────────────────────────────── */
+
+function SectionHead({
+  kicker,
+  title,
+  action,
+}: {
+  kicker: string;
+  title: string;
+  action?: { href: string; label: string };
+}) {
+  return (
+    <div
+      style={{
+        marginBottom: "2.25rem",
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "space-between",
+        gap: "1.5rem",
+      }}
+    >
+      <div>
+        <p className="dp-label" style={{ marginBottom: "0.6rem" }}>
+          {kicker}
+        </p>
+        <h2 className="dp-h2 dp-serif" style={{ margin: 0 }}>
+          {title}
+        </h2>
+      </div>
+      {action && (
+        <Link href={action.href} className="dp-btn-ghost hidden sm:inline-flex">
+          {action.label}
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function ProductCard({
+  product,
+  tone,
+}: {
+  product: Awaited<ReturnType<typeof getProducts>>[number];
+  tone: number;
+}) {
+  return (
+    <Link
+      href={`/product/${product.handle}`}
+      className="dp-lift group"
+      style={{ display: "block", textDecoration: "none" }}
+    >
+      <div className="dp-frame dp-zoom" style={{ aspectRatio: "3/4" }}>
+        <Media
+          src={product.featuredImage?.url}
+          alt={product.featuredImage?.altText || product.title}
+          caption="Product shot — portrait, on a clean ground."
+          sizes="(min-width: 1280px) 20vw, (min-width: 640px) 30vw, 50vw"
+          tone={tone}
+        />
+        <div className="dp-qv">
+          <span className="dp-qv-label">Quick View</span>
+        </div>
+      </div>
+      <div style={{ marginTop: "0.85rem", padding: "0 0.15rem" }}>
+        <p
+          className="line-clamp-1"
+          style={{
+            fontSize: "0.8rem",
+            color: "var(--dp-sand)",
+            marginBottom: "0.3rem",
+          }}
+        >
+          {product.title}
+        </p>
+        <Price
+          amount={product.priceRange.maxVariantPrice.amount}
+          currencyCode={product.priceRange.maxVariantPrice.currencyCode}
+          currencyCodeClassName="hidden"
+          className="dp-wordmark"
+          style={
+            {
+              fontSize: "0.98rem",
+              color: "var(--dp-cream)",
+            } as React.CSSProperties
+          }
+        />
+      </div>
+    </Link>
   );
 }

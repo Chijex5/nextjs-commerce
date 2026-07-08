@@ -2,6 +2,10 @@ import { baseTemplate } from "./base";
 
 interface WelcomeEmailData {
   name: string;
+  /** Welcome discount code delivered to new members. */
+  couponCode?: string;
+  /** Human label for the discount, e.g. "10% off". */
+  discountLabel?: string;
 }
 
 export const welcomeEmailTemplate = (data: WelcomeEmailData) => {
@@ -11,6 +15,8 @@ export const welcomeEmailTemplate = (data: WelcomeEmailData) => {
     "https://www.dfootprint.me";
 
   const firstName = data.name?.trim().split(/\s+/)[0] || "there";
+  const couponCode = data.couponCode || "NEWCOMER";
+  const discountLabel = data.discountLabel || "10% off";
 
   const heroImageUrl = "https://www.dfootprint.me/image1.png";
   const craftImageUrl = "https://www.dfootprint.me/image2.png";
@@ -112,6 +118,26 @@ export const welcomeEmailTemplate = (data: WelcomeEmailData) => {
     <p style="font-size: 14px; color: #374151; line-height: 1.75; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; margin: 0;">
       Your account is ready. Here's what it gives you.
     </p>
+
+    <!-- Welcome gift — the promised discount code -->
+    <div style="margin: 28px 0 0; border: 1px solid #111111; border-radius: 2px; padding: 24px; text-align: center; background-color: #faf9f7;">
+      <p style="margin: 0 0 8px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #9ca3af; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">
+        Your welcome gift
+      </p>
+      <p style="margin: 0 0 16px; font-size: 22px; line-height: 1.3; color: #111111; font-weight: 400; font-family: Georgia, 'Times New Roman', Times, serif;">
+        ${discountLabel} your first order
+      </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto;">
+        <tr>
+          <td style="border: 1px dashed #111111; border-radius: 2px; padding: 13px 26px;">
+            <span style="font-size: 20px; letter-spacing: 0.2em; font-weight: 700; color: #111111; font-family: 'Courier New', Courier, monospace;">${couponCode}</span>
+          </td>
+        </tr>
+      </table>
+      <p style="margin: 14px 0 0; font-size: 12px; color: #6b7280; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">
+        Enter it at checkout on your first order.
+      </p>
+    </div>
 
     <!-- Craft detail image -->
     <div style="margin: 28px 0 0; background-color: #111111; border-radius: 2px; overflow: hidden; line-height: 0;">
