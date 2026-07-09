@@ -341,6 +341,10 @@ export const baseTemplate = (content: string, unsubscribeUrl?: string) => {
       }
       .button-ghost { color: #d4d4d4 !important; }
 
+      /* Marketing product cards */
+      .mkt-product-title { color: #f5f5f5 !important; }
+      .mkt-product-link  { color: #f5f5f5 !important; }
+
       .footer {
         background-color: #181818 !important;
         border-top-color: #2d2d2d !important;
@@ -376,6 +380,13 @@ export const baseTemplate = (content: string, unsubscribeUrl?: string) => {
         display: block !important;
         width: 100% !important;
         text-align: center !important;
+      }
+
+      /* Stack the 2-up marketing product grid into a single column */
+      .mkt-col {
+        display: block !important;
+        width: 100% !important;
+        padding: 0 0 24px 0 !important;
       }
     }
   </style>

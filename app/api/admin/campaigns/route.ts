@@ -1,6 +1,7 @@
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { adminUsers, campaignProducts, emailCampaigns } from "@/lib/db/schema";
+import { sanitizeCampaignBlocks } from "@/lib/email/templates/marketing-custom";
 import { desc, eq } from "drizzle-orm";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -102,6 +103,7 @@ export async function POST(req: NextRequest) {
       couponCode,
       saleDeadline,
       discountNote,
+      blocks,
       productIds,
     } = body;
 
@@ -134,6 +136,7 @@ export async function POST(req: NextRequest) {
         couponCode: couponCode ? String(couponCode).toUpperCase() : null,
         saleDeadline: saleDeadline ? new Date(saleDeadline) : null,
         discountNote,
+        blocks: sanitizeCampaignBlocks(blocks),
         status: "DRAFT",
         createdBy: admin.id,
       })

@@ -8,10 +8,12 @@ import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+type CampaignType = "JUST_ARRIVED" | "SALE" | "COLLECTION" | "CUSTOM";
+
 interface Campaign {
   id: string;
   name: string;
-  type: "JUST_ARRIVED" | "SALE" | "COLLECTION";
+  type: CampaignType;
   subject: string;
   preheader: string;
   headerTitle: string;
@@ -32,6 +34,135 @@ interface Product {
   title: string;
   handle: string;
   description?: string;
+}
+
+// ─── Custom campaign blocks (editor-side) ──────────────────────────────────────
+// `_id` is a client-only key for React lists; the API strips it on save.
+
+type EditorBlock =
+  | {
+      _id: string;
+      type: "heading";
+      text: string;
+      eyebrow: string;
+      align: "left" | "center";
+    }
+  | { _id: string; type: "text"; text: string; style: "normal" | "quote" }
+  | { _id: string; type: "image"; url: string; href: string; alt: string }
+  | {
+      _id: string;
+      type: "button";
+      text: string;
+      url: string;
+      variant: "primary" | "secondary";
+    }
+  | { _id: string; type: "products" }
+  | {
+      _id: string;
+      type: "coupon";
+      code: string;
+      label: string;
+      deadline: string;
+    }
+  | { _id: string; type: "divider" }
+  | { _id: string; type: "spacer"; size: "sm" | "md" | "lg" };
+
+type BlockType = EditorBlock["type"];
+
+const BLOCK_META: Record<BlockType, { label: string; hint: string }> = {
+  heading: { label: "Heading", hint: "Section title with optional eyebrow" },
+  text: { label: "Text", hint: "A paragraph or a pull quote" },
+  image: { label: "Image", hint: "Full-width banner, optionally linked" },
+  products: { label: "Products", hint: "Grid of the campaign's products" },
+  coupon: { label: "Coupon", hint: "Dashed discount-code card" },
+  button: { label: "Button", hint: "Call-to-action link" },
+  divider: { label: "Divider", hint: "Thin horizontal rule" },
+  spacer: { label: "Spacer", hint: "Vertical breathing room" },
+};
+
+const BLOCK_ORDER: BlockType[] = [
+  "heading",
+  "text",
+  "products",
+  "image",
+  "coupon",
+  "button",
+  "divider",
+  "spacer",
+];
+
+let blockIdSeq = 0;
+function newBlockId() {
+  blockIdSeq += 1;
+  return `b${Date.now().toString(36)}${blockIdSeq}`;
+}
+
+function createBlock(type: BlockType): EditorBlock {
+  switch (type) {
+    case "heading":
+      return { _id: newBlockId(), type, text: "", eyebrow: "", align: "left" };
+    case "text":
+      return { _id: newBlockId(), type, text: "", style: "normal" };
+    case "image":
+      return { _id: newBlockId(), type, url: "", href: "", alt: "" };
+    case "button":
+      return {
+        _id: newBlockId(),
+        type,
+        text: "",
+        url: "/products",
+        variant: "primary",
+      };
+    case "coupon":
+      return { _id: newBlockId(), type, code: "", label: "", deadline: "" };
+    case "spacer":
+      return { _id: newBlockId(), type, size: "md" };
+    case "products":
+      return { _id: newBlockId(), type };
+    case "divider":
+      return { _id: newBlockId(), type };
+  }
+}
+
+// A sensible starter layout when switching a campaign to CUSTOM.
+function starterBlocks(): EditorBlock[] {
+  return [
+    {
+      _id: newBlockId(),
+      type: "heading",
+      text: "A note for {{firstName}}",
+      eyebrow: "D'FOOTPRINT",
+      align: "left",
+    },
+    {
+      _id: newBlockId(),
+      type: "text",
+      text: "Write your message here. You can use variables like {{firstName}}.",
+      style: "normal",
+    },
+    { _id: newBlockId(), type: "products" },
+    {
+      _id: newBlockId(),
+      type: "button",
+      text: "Shop now",
+      url: "/products",
+      variant: "primary",
+    },
+  ];
+}
+
+function toEditorBlocks(raw: unknown): EditorBlock[] {
+  if (!Array.isArray(raw)) return [];
+  const out: EditorBlock[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const b = item as Record<string, unknown>;
+    const type = b.type as BlockType;
+    if (!BLOCK_META[type]) continue;
+    const base = createBlock(type);
+    out.push({ ...base, ...b, _id: base._id, type } as EditorBlock);
+  }
+  return out;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -63,6 +194,11 @@ const CAMPAIGN_TYPES: Array<{
     value: "COLLECTION",
     label: "Collection",
     description: "Highlight a curated product collection",
+  },
+  {
+    value: "CUSTOM",
+    label: "Custom",
+    description: "Build your own layout from content blocks",
   },
 ];
 
@@ -121,6 +257,20 @@ const TEMPLATE_PRESETS: Record<
     footerText:
       "Need help choosing? Reply to this email and we will help you decide.",
     ctaButtonText: "Browse collection",
+    ctaButtonUrl: "/products",
+    discountPercentage: null,
+    couponCode: "",
+    saleDeadline: null,
+    discountNote: "",
+  },
+  // CUSTOM campaigns are composed from blocks, so the fixed-field preset is empty.
+  CUSTOM: {
+    subject: "A message for {{firstName}}",
+    preheader: "",
+    headerTitle: "",
+    headerSubtitle: "",
+    footerText: "",
+    ctaButtonText: "",
     ctaButtonUrl: "/products",
     discountPercentage: null,
     couponCode: "",
@@ -333,6 +483,347 @@ function formatSaleDeadline(value: string | null) {
   })}`;
 }
 
+// ─── Block builder (CUSTOM campaigns) ──────────────────────────────────────────
+
+function BlockCardHeader({
+  index,
+  total,
+  label,
+  onMove,
+  onRemove,
+}: {
+  index: number;
+  total: number;
+  label: string;
+  onMove: (from: number, to: number) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 border-b border-neutral-100 bg-neutral-50/60 px-3 py-2 dark:border-neutral-800 dark:bg-neutral-950/40">
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+        {label}
+      </span>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => onMove(index, index - 1)}
+          disabled={index === 0}
+          className="rounded border border-neutral-200 px-1.5 py-0.5 text-xs text-neutral-500 disabled:opacity-30 dark:border-neutral-700"
+          aria-label="Move up"
+        >
+          ↑
+        </button>
+        <button
+          type="button"
+          onClick={() => onMove(index, index + 1)}
+          disabled={index === total - 1}
+          className="rounded border border-neutral-200 px-1.5 py-0.5 text-xs text-neutral-500 disabled:opacity-30 dark:border-neutral-700"
+          aria-label="Move down"
+        >
+          ↓
+        </button>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="rounded border border-neutral-200 px-1.5 py-0.5 text-xs text-red-500 hover:bg-red-50 dark:border-neutral-700 dark:hover:bg-red-950/30"
+          aria-label="Remove block"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function BlockBuilder({
+  blocks,
+  onAdd,
+  onRemove,
+  onUpdate,
+  onMove,
+  onSeed,
+  lastFocusedRef,
+}: {
+  blocks: EditorBlock[];
+  onAdd: (type: BlockType) => void;
+  onRemove: (id: string) => void;
+  onUpdate: (id: string, patch: Record<string, unknown>) => void;
+  onMove: (from: number, to: number) => void;
+  onSeed: () => void;
+  lastFocusedRef: React.MutableRefObject<
+    HTMLInputElement | HTMLTextAreaElement | null
+  >;
+}) {
+  const focus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    (lastFocusedRef.current = e.target);
+
+  const toggleCls = (active: boolean) =>
+    `rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+      active
+        ? "border-neutral-900 bg-neutral-900 text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900"
+        : "border-neutral-200 bg-white text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400"
+    }`;
+
+  return (
+    <div className="space-y-4">
+      {/* Palette */}
+      <div className="rounded-xl border border-neutral-100 p-3 dark:border-neutral-800">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+          Add a block
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {BLOCK_ORDER.map((type) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => onAdd(type)}
+              title={BLOCK_META[type].hint}
+              className="rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] font-medium text-neutral-600 hover:border-neutral-400 hover:text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
+            >
+              + {BLOCK_META[type].label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {blocks.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-neutral-200 py-10 text-center dark:border-neutral-800">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            No blocks yet. Add one above, or start from a layout.
+          </p>
+          <button
+            type="button"
+            onClick={onSeed}
+            className="rounded-lg bg-neutral-900 px-3 py-1.5 text-[11px] font-semibold text-white dark:bg-neutral-100 dark:text-neutral-900"
+          >
+            Add starter layout
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {blocks.map((block, idx) => (
+            <div
+              key={block._id}
+              className="overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800"
+            >
+              <BlockCardHeader
+                index={idx}
+                total={blocks.length}
+                label={BLOCK_META[block.type].label}
+                onMove={onMove}
+                onRemove={() => onRemove(block._id)}
+              />
+              <div className="space-y-3 p-3">
+                {block.type === "heading" && (
+                  <>
+                    <input
+                      type="text"
+                      value={block.eyebrow}
+                      onChange={(e) =>
+                        onUpdate(block._id, { eyebrow: e.target.value })
+                      }
+                      onFocus={focus}
+                      placeholder="Eyebrow (small label, optional)"
+                      className={inputCls}
+                    />
+                    <input
+                      type="text"
+                      value={block.text}
+                      onChange={(e) =>
+                        onUpdate(block._id, { text: e.target.value })
+                      }
+                      onFocus={focus}
+                      placeholder="Heading text"
+                      className={inputCls}
+                    />
+                    <div className="flex gap-1.5">
+                      {(["left", "center"] as const).map((a) => (
+                        <button
+                          key={a}
+                          type="button"
+                          onClick={() => onUpdate(block._id, { align: a })}
+                          className={toggleCls(block.align === a)}
+                        >
+                          {a === "left" ? "Align left" : "Align center"}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {block.type === "text" && (
+                  <>
+                    <div className="flex gap-1.5">
+                      {(["normal", "quote"] as const).map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => onUpdate(block._id, { style: s })}
+                          className={toggleCls(block.style === s)}
+                        >
+                          {s === "normal" ? "Paragraph" : "Pull quote"}
+                        </button>
+                      ))}
+                    </div>
+                    <textarea
+                      value={block.text}
+                      onChange={(e) =>
+                        onUpdate(block._id, { text: e.target.value })
+                      }
+                      onFocus={focus}
+                      placeholder="Body copy. Supports {{firstName}} and other variables."
+                      rows={3}
+                      className={inputCls}
+                    />
+                  </>
+                )}
+
+                {block.type === "image" && (
+                  <>
+                    <input
+                      type="text"
+                      value={block.url}
+                      onChange={(e) =>
+                        onUpdate(block._id, { url: e.target.value })
+                      }
+                      onFocus={focus}
+                      placeholder="Image URL (https://...)"
+                      className={inputCls}
+                    />
+                    <input
+                      type="text"
+                      value={block.href}
+                      onChange={(e) =>
+                        onUpdate(block._id, { href: e.target.value })
+                      }
+                      onFocus={focus}
+                      placeholder="Link URL when clicked (optional)"
+                      className={inputCls}
+                    />
+                    <input
+                      type="text"
+                      value={block.alt}
+                      onChange={(e) =>
+                        onUpdate(block._id, { alt: e.target.value })
+                      }
+                      onFocus={focus}
+                      placeholder="Alt text (optional)"
+                      className={inputCls}
+                    />
+                  </>
+                )}
+
+                {block.type === "button" && (
+                  <>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <input
+                        type="text"
+                        value={block.text}
+                        onChange={(e) =>
+                          onUpdate(block._id, { text: e.target.value })
+                        }
+                        onFocus={focus}
+                        placeholder="Button label"
+                        className={inputCls}
+                      />
+                      <input
+                        type="text"
+                        value={block.url}
+                        onChange={(e) =>
+                          onUpdate(block._id, { url: e.target.value })
+                        }
+                        onFocus={focus}
+                        placeholder="/products or https://..."
+                        className={inputCls}
+                      />
+                    </div>
+                    <div className="flex gap-1.5">
+                      {(["primary", "secondary"] as const).map((v) => (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => onUpdate(block._id, { variant: v })}
+                          className={toggleCls(block.variant === v)}
+                        >
+                          {v === "primary" ? "Solid" : "Outline"}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {block.type === "coupon" && (
+                  <>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <input
+                        type="text"
+                        value={block.code}
+                        onChange={(e) =>
+                          onUpdate(block._id, {
+                            code: e.target.value.toUpperCase(),
+                          })
+                        }
+                        placeholder="CODE20"
+                        className={`${inputCls} uppercase`}
+                      />
+                      <input
+                        type="text"
+                        value={block.label}
+                        onChange={(e) =>
+                          onUpdate(block._id, { label: e.target.value })
+                        }
+                        onFocus={focus}
+                        placeholder="Label (default: USE CODE)"
+                        className={inputCls}
+                      />
+                    </div>
+                    <input
+                      type="datetime-local"
+                      value={block.deadline}
+                      onChange={(e) =>
+                        onUpdate(block._id, { deadline: e.target.value })
+                      }
+                      className={inputCls}
+                    />
+                  </>
+                )}
+
+                {block.type === "spacer" && (
+                  <div className="flex gap-1.5">
+                    {(["sm", "md", "lg"] as const).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => onUpdate(block._id, { size: s })}
+                        className={toggleCls(block.size === s)}
+                      >
+                        {s.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {block.type === "products" && (
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                    Renders the products you choose in the Products step, as a
+                    2-up grid.
+                  </p>
+                )}
+
+                {block.type === "divider" && (
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                    A thin horizontal rule between sections.
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CampaignEditorPage() {
@@ -376,9 +867,38 @@ export default function CampaignEditorPage() {
   const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [blocks, setBlocks] = useState<EditorBlock[]>([]);
 
   const set = (patch: Partial<Campaign>) =>
     setCampaign((p) => ({ ...p, ...patch }));
+
+  // ── Block helpers (CUSTOM campaigns) ─────────────────────────────────────────
+  const addBlock = (type: BlockType) =>
+    setBlocks((prev) => [...prev, createBlock(type)]);
+
+  const removeBlock = (id: string) =>
+    setBlocks((prev) => prev.filter((b) => b._id !== id));
+
+  const updateBlock = (id: string, patch: Record<string, unknown>) =>
+    setBlocks((prev) =>
+      prev.map((b) => (b._id === id ? ({ ...b, ...patch } as EditorBlock) : b)),
+    );
+
+  const moveBlock = (fromIndex: number, toIndex: number) =>
+    setBlocks((prev) => {
+      if (
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= prev.length ||
+        toIndex >= prev.length
+      )
+        return prev;
+      const copy = [...prev];
+      const [item] = copy.splice(fromIndex, 1);
+      if (!item) return prev;
+      copy.splice(toIndex, 0, item);
+      return copy;
+    });
 
   // Subscriber count for Send step
   const [subscriberCount, setSubscriberCount] = useState<number | null>(null);
@@ -410,6 +930,7 @@ export default function CampaignEditorPage() {
           setSelectedProducts(
             d.campaign.products?.map((p: { id: string }) => p.id) || [],
           );
+          setBlocks(toEditorBlocks(d.campaign.blocks));
           // pick up heroImageUrl if present
           if (d.campaign.heroImageUrl)
             set({ heroImageUrl: d.campaign.heroImageUrl });
@@ -442,9 +963,12 @@ export default function CampaignEditorPage() {
   }, []);
 
   // ── Validation ───────────────────────────────────────────────────────────────
+  const productsRequired = campaign.type !== "CUSTOM";
+
   const canAdvance = useMemo(() => {
     if (step === 1) return !!(campaign.name.trim() && campaign.subject.trim());
-    if (step === 3) return selectedProducts.length > 0;
+    if (step === 3)
+      return productsRequired ? selectedProducts.length > 0 : true;
     if (step === 4) return !previewLoading; // allow advancing even if no preview generated
     if (step === 5 && sendMode === "scheduled") return !!scheduledAt;
     return true;
@@ -452,6 +976,7 @@ export default function CampaignEditorPage() {
     step,
     campaign.name,
     campaign.subject,
+    productsRequired,
     selectedProducts.length,
     previewLoading,
     sendMode,
@@ -484,6 +1009,10 @@ export default function CampaignEditorPage() {
         couponCode: campaign.couponCode,
         saleDeadline: campaign.saleDeadline,
         discountNote: campaign.discountNote,
+        blocks:
+          campaign.type === "CUSTOM"
+            ? blocks.map(({ _id, ...rest }) => rest)
+            : [],
         productIds: selectedProducts,
       });
       const existingCampaignId = campaign.id || (!isNew ? campaignId : "");
@@ -528,7 +1057,7 @@ export default function CampaignEditorPage() {
   async function generatePreview({
     stayOnPreview = true,
   }: { stayOnPreview?: boolean } = {}) {
-    if (selectedProducts.length === 0) {
+    if (productsRequired && selectedProducts.length === 0) {
       toast.error("Select at least one product");
       return;
     }
@@ -659,7 +1188,7 @@ export default function CampaignEditorPage() {
 
   // ── Send / schedule ──────────────────────────────────────────────────────────
   async function handleSend() {
-    if (selectedProducts.length === 0) {
+    if (productsRequired && selectedProducts.length === 0) {
       toast.error("Select at least one product");
       return;
     }
@@ -717,6 +1246,11 @@ export default function CampaignEditorPage() {
   const applyTemplatePreset = (type = campaign.type) => {
     set({ type, ...TEMPLATE_PRESETS[type] });
     toast.success("Template applied — you can edit every field");
+  };
+
+  const seedStarterBlocks = () => {
+    setBlocks(starterBlocks());
+    toast.success("Starter layout added — edit or reorder the blocks");
   };
 
   // ── Loading screen ───────────────────────────────────────────────────────────
@@ -863,21 +1397,25 @@ export default function CampaignEditorPage() {
                     <div className="mb-3 flex items-start justify-between gap-3">
                       <div>
                         <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-                          Saved campaign templates
+                          {campaign.type === "CUSTOM"
+                            ? "Personalization variables"
+                            : "Saved campaign templates"}
                         </p>
                         <p className="mt-1 text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400">
-                          Start with Sales, New Arrival, or Collection copy,
-                          then change the discount, terms, CTA, and message
-                          however you want.
+                          {campaign.type === "CUSTOM"
+                            ? "Focus a text or heading block, then click a variable to insert it. Works in any block's copy."
+                            : "Start with Sales, New Arrival, or Collection copy, then change the discount, terms, CTA, and message however you want."}
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => applyTemplatePreset()}
-                        className="shrink-0 rounded-lg bg-neutral-900 px-3 py-1.5 text-[11px] font-semibold text-white dark:bg-neutral-100 dark:text-neutral-900"
-                      >
-                        Apply {selectedType.label}
-                      </button>
+                      {campaign.type !== "CUSTOM" && (
+                        <button
+                          type="button"
+                          onClick={() => applyTemplatePreset()}
+                          className="shrink-0 rounded-lg bg-neutral-900 px-3 py-1.5 text-[11px] font-semibold text-white dark:bg-neutral-100 dark:text-neutral-900"
+                        >
+                          Apply {selectedType.label}
+                        </button>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {AVAILABLE_VARIABLES.map((variable) => (
@@ -893,117 +1431,141 @@ export default function CampaignEditorPage() {
                     </div>
                   </div>
 
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <FieldLabel htmlFor="htitle" optional>
-                        Header Title
-                      </FieldLabel>
-                      <input
-                        id="htitle"
-                        type="text"
-                        value={campaign.headerTitle}
-                        onChange={(e) => set({ headerTitle: e.target.value })}
-                        onFocus={(e) =>
-                          (lastFocusedRef.current =
-                            e.target as HTMLInputElement)
-                        }
-                        placeholder="e.g. Just Arrived!"
-                        className={inputCls}
-                      />
-                    </div>
-                    <div>
-                      <FieldLabel htmlFor="hsub" optional>
-                        Main message / offer details
-                      </FieldLabel>
-                      <textarea
-                        id="hsub"
-                        value={campaign.headerSubtitle}
-                        onChange={(e) =>
-                          set({ headerSubtitle: e.target.value })
-                        }
-                        onFocus={(e) =>
-                          (lastFocusedRef.current =
-                            e.target as HTMLTextAreaElement)
-                        }
-                        placeholder="e.g. Use code SAVE20 before Friday. Supports {{firstName}} and other variables."
-                        rows={4}
-                        className={inputCls}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <FieldLabel htmlFor="ctatext" optional>
-                        CTA Button Label
-                      </FieldLabel>
-                      <input
-                        id="ctatext"
-                        type="text"
-                        value={campaign.ctaButtonText}
-                        onChange={(e) => set({ ctaButtonText: e.target.value })}
-                        onFocus={(e) =>
-                          (lastFocusedRef.current =
-                            e.target as HTMLInputElement)
-                        }
-                        placeholder="Shop Now"
-                        className={inputCls}
-                      />
-                    </div>
-                    <div>
-                      <FieldLabel htmlFor="ctaurl" optional>
-                        CTA Button URL
-                      </FieldLabel>
-                      <input
-                        id="ctaurl"
-                        type="text"
-                        value={campaign.ctaButtonUrl}
-                        onChange={(e) => set({ ctaButtonUrl: e.target.value })}
-                        onFocus={(e) =>
-                          (lastFocusedRef.current =
-                            e.target as HTMLInputElement)
-                        }
-                        placeholder="/products or https://..."
-                        className={inputCls}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <FieldLabel htmlFor="footer" optional>
-                      Extra notes, terms, or closing copy
-                    </FieldLabel>
-                    <textarea
-                      id="footer"
-                      value={campaign.footerText}
-                      onChange={(e) => set({ footerText: e.target.value })}
-                      onFocus={(e) =>
-                        (lastFocusedRef.current =
-                          e.target as HTMLTextAreaElement)
-                      }
-                      placeholder="e.g. These styles are flying off the shelves — grab yours before they're gone."
-                      rows={3}
-                      className={inputCls}
+                  {campaign.type === "CUSTOM" && (
+                    <BlockBuilder
+                      blocks={blocks}
+                      onAdd={addBlock}
+                      onRemove={removeBlock}
+                      onUpdate={updateBlock}
+                      onMove={moveBlock}
+                      onSeed={seedStarterBlocks}
+                      lastFocusedRef={lastFocusedRef}
                     />
+                  )}
 
-                    <div>
-                      <FieldLabel htmlFor="heroImageUrl" optional>
-                        Hero image URL
-                      </FieldLabel>
-                      <input
-                        id="heroImageUrl"
-                        type="text"
-                        value={campaign.heroImageUrl || ""}
-                        onChange={(e) => set({ heroImageUrl: e.target.value })}
-                        onFocus={(e) =>
-                          (lastFocusedRef.current =
-                            e.target as HTMLInputElement)
-                        }
-                        placeholder="https://... (optional)"
-                        className={inputCls}
-                      />
-                    </div>
-                  </div>
+                  {campaign.type !== "CUSTOM" && (
+                    <>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <FieldLabel htmlFor="htitle" optional>
+                            Header Title
+                          </FieldLabel>
+                          <input
+                            id="htitle"
+                            type="text"
+                            value={campaign.headerTitle}
+                            onChange={(e) =>
+                              set({ headerTitle: e.target.value })
+                            }
+                            onFocus={(e) =>
+                              (lastFocusedRef.current =
+                                e.target as HTMLInputElement)
+                            }
+                            placeholder="e.g. Just Arrived!"
+                            className={inputCls}
+                          />
+                        </div>
+                        <div>
+                          <FieldLabel htmlFor="hsub" optional>
+                            Main message / offer details
+                          </FieldLabel>
+                          <textarea
+                            id="hsub"
+                            value={campaign.headerSubtitle}
+                            onChange={(e) =>
+                              set({ headerSubtitle: e.target.value })
+                            }
+                            onFocus={(e) =>
+                              (lastFocusedRef.current =
+                                e.target as HTMLTextAreaElement)
+                            }
+                            placeholder="e.g. Use code SAVE20 before Friday. Supports {{firstName}} and other variables."
+                            rows={4}
+                            className={inputCls}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <FieldLabel htmlFor="ctatext" optional>
+                            CTA Button Label
+                          </FieldLabel>
+                          <input
+                            id="ctatext"
+                            type="text"
+                            value={campaign.ctaButtonText}
+                            onChange={(e) =>
+                              set({ ctaButtonText: e.target.value })
+                            }
+                            onFocus={(e) =>
+                              (lastFocusedRef.current =
+                                e.target as HTMLInputElement)
+                            }
+                            placeholder="Shop Now"
+                            className={inputCls}
+                          />
+                        </div>
+                        <div>
+                          <FieldLabel htmlFor="ctaurl" optional>
+                            CTA Button URL
+                          </FieldLabel>
+                          <input
+                            id="ctaurl"
+                            type="text"
+                            value={campaign.ctaButtonUrl}
+                            onChange={(e) =>
+                              set({ ctaButtonUrl: e.target.value })
+                            }
+                            onFocus={(e) =>
+                              (lastFocusedRef.current =
+                                e.target as HTMLInputElement)
+                            }
+                            placeholder="/products or https://..."
+                            className={inputCls}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <FieldLabel htmlFor="footer" optional>
+                          Extra notes, terms, or closing copy
+                        </FieldLabel>
+                        <textarea
+                          id="footer"
+                          value={campaign.footerText}
+                          onChange={(e) => set({ footerText: e.target.value })}
+                          onFocus={(e) =>
+                            (lastFocusedRef.current =
+                              e.target as HTMLTextAreaElement)
+                          }
+                          placeholder="e.g. These styles are flying off the shelves — grab yours before they're gone."
+                          rows={3}
+                          className={inputCls}
+                        />
+
+                        <div>
+                          <FieldLabel htmlFor="heroImageUrl" optional>
+                            Hero image URL
+                          </FieldLabel>
+                          <input
+                            id="heroImageUrl"
+                            type="text"
+                            value={campaign.heroImageUrl || ""}
+                            onChange={(e) =>
+                              set({ heroImageUrl: e.target.value })
+                            }
+                            onFocus={(e) =>
+                              (lastFocusedRef.current =
+                                e.target as HTMLInputElement)
+                            }
+                            placeholder="https://... (optional)"
+                            className={inputCls}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   {campaign.type === "SALE" && (
                     <div className="border-t border-neutral-100 pt-5 dark:border-neutral-800">

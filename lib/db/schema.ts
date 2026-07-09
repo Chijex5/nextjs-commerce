@@ -868,7 +868,7 @@ export const emailCampaigns = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     name: varchar("name", { length: 255 }).notNull(),
-    type: varchar("type", { length: 50 }).notNull(), // JUST_ARRIVED, SALE, COLLECTION
+    type: varchar("type", { length: 50 }).notNull(), // JUST_ARRIVED, SALE, COLLECTION, CUSTOM
     subject: text("subject").notNull(),
     preheader: text("preheader"),
     headerTitle: text("header_title"),
@@ -881,6 +881,8 @@ export const emailCampaigns = pgTable(
     couponCode: varchar("coupon_code", { length: 50 }),
     saleDeadline: timestamp("sale_deadline"),
     discountNote: text("discount_note"),
+    // Ordered content blocks for CUSTOM campaigns (ignored by fixed templates)
+    blocks: jsonb("blocks").default([]).notNull(),
     status: varchar("status", { length: 50 }).default("draft").notNull(), // DRAFT, SCHEDULED, SENT
     scheduledAt: timestamp("scheduled_at"),
     sentAt: timestamp("sent_at"),

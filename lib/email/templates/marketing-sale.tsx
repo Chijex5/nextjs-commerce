@@ -4,6 +4,7 @@ import {
   MarketingSubscriber,
   formatSaleDate,
   normalizeUrl,
+  renderCouponBox,
   renderHeroImage,
   renderProductGrid,
   renderVariables,
@@ -32,7 +33,6 @@ export function buildSaleContent(
     siteUrl,
   );
   const deadline = formatSaleDate(campaign.saleDeadline);
-  const couponCode = campaign.couponCode?.trim().toUpperCase();
   const discountNote = renderVariables(campaign.discountNote, context);
 
   // discountPercentage is a number — use it directly, no escapeHtml needed
@@ -57,19 +57,7 @@ export function buildSaleContent(
       </tr>
     </table>
 
-    ${
-      couponCode
-        ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;margin:16px 0;">
-            <tr>
-              <td style="padding:14px 20px;text-align:center;border:1.5px dashed #111111;border-radius:2px;">
-                <p style="margin:0 0 6px;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#9ca3af;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;">USE CODE</p>
-                <p style="margin:0;font-size:20px;font-weight:700;letter-spacing:0.15em;font-family:'Courier New',Courier,monospace;color:#111111;line-height:1.4;">${escapeHtml(couponCode)}</p>
-                ${deadline ? `<p style="margin:6px 0 0;font-size:11px;color:#9ca3af;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;">Offer ends ${escapeHtml(deadline)}</p>` : ""}
-              </td>
-            </tr>
-          </table>`
-        : ""
-    }
+    ${renderCouponBox(campaign.couponCode, { deadline })}
 
     ${renderProductGrid(campaign.products || [], siteUrl, { discountPercentage: discountPct })}
 
