@@ -1,49 +1,40 @@
 import Footer from "components/layout/footer";
-import Media from "components/home/media";
-import Price from "components/price";
-import { Gallery } from "components/product/gallery";
-import { ProductDescription } from "components/product/product-description";
+import { ProductCard } from "components/product/product-card";
+import { ProductGallery } from "components/product/product-gallery";
+import { ProductPurchase } from "components/product/product-purchase";
 import { ProductReviewsSection } from "components/product/product-reviews-section";
+import Prose from "components/prose";
 import { HIDDEN_PRODUCT_TAG } from "lib/constants";
-import type { Image as ProductImage } from "lib/database";
 import {
-  getProduct,
-  getProductRecommendations,
-  getProductReviewAggregate,
-} from "lib/database";
+  getProductReviews,
+  getProductView,
+  getRelatedProducts,
+} from "lib/data/product";
+import { isMockData } from "lib/data/source";
+import type { Product } from "lib/shopify/types";
 import { canonicalUrl, siteName } from "lib/seo";
+import { ArrowUpRight, Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
+import type { ReactNode } from "react";
 
-/* Image-led craft band shown on every product page. `imageUrl` is a
-   swappable demo photo (Unsplash, free for commercial use) — blank it out
-   to fall back to the on-brand mock placeholder, or set your own shot. */
-const CRAFT_BAND = {
-  imageUrl:
-    "https://images.unsplash.com/photo-1477517787936-70ba786643fd?w=1600&q=80&auto=format&fit=crop",
-  caption: "The craft — hands, leather, and the making of a pair.",
-};
+type Props = { params: Promise<{ handle: string }> };
 
-export async function generateMetadata(props: {
-  params: Promise<{ handle: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params;
-  const product = await getProduct(params.handle);
-
+  const product = await getProductView(params.handle);
   if (!product) return notFound();
 
-  const { url, width, height, altText: alt } = product.featuredImage || {};
   const indexable = !product.tags.includes(HIDDEN_PRODUCT_TAG);
   const title = product.seo.title || product.title;
   const description = product.seo.description || product.description;
-  const canonicalPath = `/product/${product.handle}`;
+  const path = `/product/${product.handle}`;
 
   return {
     title,
     description,
-    alternates: { canonical: canonicalUrl(canonicalPath) },
+    alternates: { canonical: canonicalUrl(path) },
     robots: {
       index: indexable,
       follow: indexable,
@@ -52,33 +43,226 @@ export async function generateMetadata(props: {
     openGraph: {
       title,
       description,
-      url: canonicalUrl(canonicalPath),
+      url: canonicalUrl(path),
       type: "website",
-      images: [`${canonicalUrl(canonicalPath)}/opengraph-image`],
+      images: [`${canonicalUrl(path)}/opengraph-image`],
     },
     twitter: {
       card: "summary_large_image",
       title: `${title} | ${siteName}`,
       description,
-      images: [`${canonicalUrl(canonicalPath)}/opengraph-image`],
+      images: [`${canonicalUrl(path)}/opengraph-image`],
     },
   };
 }
 
-export default async function ProductPage(props: {
-  params: Promise<{ handle: string }>;
-}) {
+export default async function ProductPage(props: Props) {
   const params = await props.params;
-  const product = await getProduct(params.handle);
-
+  const product = await getProductView(params.handle);
   if (!product) return notFound();
 
-  const reviewAggregate = await getProductReviewAggregate(product.id);
-  const averageRating = Number(reviewAggregate.averageRating);
-  const hasValidAverageRating =
-    Number.isFinite(averageRating) && averageRating > 0;
+  const [reviews, related] = await Promise.all([
+    getProductReviews(product.id),
+    getRelatedProducts(product),
+  ]);
+  const rating = Number(reviews.averageRating);
+  const hasRating =
+    reviews.reviewCount > 0 && Number.isFinite(rating) && rating > 0;
 
-  const productJsonLd: Record<string, unknown> = {
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            productJsonLd(
+              product,
+              hasRating ? rating : null,
+              reviews.reviewCount,
+            ),
+          ),
+        }}
+      />
+
+      <div className="bg-canvas text-fg">
+        <nav
+          aria-label="Breadcrumb"
+          className="label hidden gap-2 px-12 pb-6 pt-6 text-fg-3 md:flex"
+        >
+          <Link href="/" className="hover:text-fg">
+            Home
+          </Link>
+          <span>/</span>
+          <Link href="/products" className="hover:text-fg">
+            Shop
+          </Link>
+          <span>/</span>
+          <span className="text-fg">{product.title}</span>
+        </nav>
+
+        <div className="md:grid md:grid-cols-12 md:gap-10 md:px-12">
+          <div className="md:col-span-7">
+            <ProductGallery
+              images={product.images.slice(0, 6).map((img) => ({
+                src: img.url,
+                alt: img.altText || product.title,
+              }))}
+            />
+          </div>
+
+          <div className="px-4 pb-12 pt-6 sm:px-8 md:col-span-5 md:px-0 md:pt-0">
+            <div className="md:sticky md:top-24">
+              <p className="label text-fg-3">(Handmade in Lagos)</p>
+              <h1 className="display mt-3 text-[clamp(2.8rem,6vw,5.5rem)]">
+                {product.title}
+              </h1>
+              {hasRating ? (
+                <a
+                  href="#reviews"
+                  className="label mt-3 inline-block text-fg-2"
+                >
+                  ★ {rating.toFixed(1)} · {reviews.reviewCount}{" "}
+                  {reviews.reviewCount === 1 ? "review" : "reviews"}
+                </a>
+              ) : null}
+
+              <ProductPurchase product={product} />
+
+              <p className="mt-5 text-sm text-fg-2">
+                Delivered anywhere in Nigeria — the fee for your state is shown
+                before you pay.
+              </p>
+
+              <div className="mt-8 border-t border-line">
+                {product.descriptionHtml ? (
+                  <Disclosure title="Details" open>
+                    <Prose
+                      html={product.descriptionHtml}
+                      className="!mx-0 !max-w-none !text-[15px] !leading-relaxed !text-fg-2"
+                    />
+                  </Disclosure>
+                ) : null}
+                <Disclosure title="Size & fit">
+                  <p>
+                    Not sure of your size? Check the{" "}
+                    <Link href="/sizing-guide" className="underline">
+                      sizing guide
+                    </Link>
+                    , or message us on WhatsApp and we&apos;ll help.
+                  </p>
+                </Disclosure>
+                <Disclosure title="Delivery">
+                  <p>
+                    We deliver across Nigeria. The delivery fee for your state
+                    is calculated at checkout before payment. Questions about
+                    timing?{" "}
+                    <Link href="/contact" className="underline">
+                      Contact us
+                    </Link>
+                    .
+                  </p>
+                </Disclosure>
+                <Disclosure title="Care">
+                  <p>
+                    How to keep your pair looking its best:{" "}
+                    <Link href="/care-instructions" className="underline">
+                      care instructions
+                    </Link>
+                    .
+                  </p>
+                </Disclosure>
+              </div>
+
+              <Link
+                href="/custom-orders"
+                className="group mt-8 flex items-center justify-between gap-4 bg-fg p-5 text-canvas"
+              >
+                <span>
+                  <span className="label opacity-60">Want it different?</span>
+                  <span className="mt-1 block font-medium">
+                    Change the strap, colour or size — order it custom.
+                  </span>
+                </span>
+                <ArrowUpRight className="size-5 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {!isMockData ? (
+          <section
+            id="reviews"
+            className="mt-16 border-t border-line px-4 py-16 sm:px-8 md:px-12"
+          >
+            <h2 className="display mb-10 text-[clamp(2.6rem,7vw,6rem)]">
+              Reviews
+            </h2>
+            <ProductReviewsSection
+              productId={product.id}
+              productHandle={product.handle}
+            />
+          </section>
+        ) : null}
+
+        {related.length ? (
+          <section className="border-t border-line py-16 sm:py-20">
+            <div className="label mb-8 flex items-baseline justify-between px-4 sm:px-8 md:px-12">
+              <span className="text-fg-3">You may also like</span>
+              <Link href="/products" className="link-underline">
+                Shop all
+              </Link>
+            </div>
+            <ul className="rail flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 sm:scroll-px-8 sm:gap-4 sm:px-8 md:scroll-px-12 md:px-12">
+              {related.map((p, i) => (
+                <li
+                  key={p.id}
+                  className="w-[62vw] shrink-0 snap-start sm:w-[38vw] md:w-[24vw] lg:w-[19vw]"
+                >
+                  <ProductCard
+                    product={p}
+                    index={i}
+                    sizes="(min-width:1024px) 19vw, (min-width:768px) 24vw, 62vw"
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+      </div>
+
+      <Footer />
+    </>
+  );
+}
+
+function Disclosure({
+  title,
+  open,
+  children,
+}: {
+  title: string;
+  open?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <details open={open} className="group border-b border-line">
+      <summary className="label flex h-14 cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
+        {title}
+        <Plus className="size-4 transition-transform duration-300 group-open:rotate-45" />
+      </summary>
+      <div className="pb-6 text-[15px] leading-relaxed text-fg-2">
+        {children}
+      </div>
+    </details>
+  );
+}
+
+function productJsonLd(
+  product: Product,
+  rating: number | null,
+  reviewCount: number,
+) {
+  const data: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.title,
@@ -97,464 +281,12 @@ export default async function ProductPage(props: {
       offerCount: product.variants.length,
     },
   };
-
-  if (reviewAggregate.reviewCount > 0 && hasValidAverageRating) {
-    productJsonLd.aggregateRating = {
+  if (rating !== null) {
+    data.aggregateRating = {
       "@type": "AggregateRating",
-      ratingValue: Number(averageRating.toFixed(1)),
-      reviewCount: reviewAggregate.reviewCount,
+      ratingValue: Number(rating.toFixed(1)),
+      reviewCount,
     };
   }
-
-  return (
-    <>
-      <style>{`
-
-        :root {
-          --espresso:   var(--brand-espresso);
-          --charcoal:   var(--brand-charcoal);
-          --cream:      var(--brand-cream);
-          --sand:       var(--brand-sand);
-          --muted:      var(--brand-muted);
-          --terra:      var(--brand-terra);
-          --gold:       var(--brand-gold);
-          --border:     rgba(var(--brand-fg-rgb),0.09);
-          --border-mid: rgba(var(--brand-fg-rgb),0.18);
-        }
-
-        .pp-root {
-          background: var(--espresso);
-          min-height: 100vh;
-          font-family: var(--font-dm-sans), sans-serif;
-          color: var(--cream);
-        }
-
-        /* ── BREADCRUMB ── */
-        .pp-breadcrumb {
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          gap: 8px;
-          font-size: 10px;
-          font-weight: 500;
-          letter-spacing: 0.22em;
-          text-transform: uppercase;
-          color: var(--muted);
-          padding: 24px 48px 0;
-        }
-        .pp-breadcrumb a {
-          color: inherit;
-          text-decoration: none;
-          transition: color 0.2s;
-        }
-        .pp-breadcrumb a:hover { color: var(--cream); }
-        .pp-breadcrumb-sep { color: var(--border-mid); }
-        .pp-breadcrumb-current { color: var(--sand); }
-
-        /* ── PRODUCT SHELL ── */
-        .pp-shell {
-          margin: 20px 48px 0;
-          border: 1px solid var(--border);
-          background: rgba(var(--brand-bg-rgb),0.9);
-        }
-        .pp-inner {
-          display: grid;
-          grid-template-columns: 1.2fr 0.8fr;
-          gap: 0;
-          align-items: start;
-        }
-        .pp-gallery-col {
-          border-right: 1px solid var(--border);
-          padding: 32px;
-        }
-        .pp-info-col {
-          padding: 40px;
-          position: sticky;
-          top: 24px;
-        }
-
-        /* ── CRAFT BAND ── */
-        .pp-craft {
-          position: relative;
-          margin: 2px 48px 0;
-          border: 1px solid var(--border);
-          border-top: none;
-          overflow: hidden;
-          min-height: clamp(320px, 46vh, 520px);
-          display: flex;
-        }
-        .pp-craft-scrim {
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(90deg, rgba(6,4,2,0.88) 0%, rgba(6,4,2,0.35) 45%, rgba(6,4,2,0.12) 100%);
-        }
-        .pp-craft-body {
-          position: relative;
-          z-index: 2;
-          margin-top: auto;
-          padding: clamp(28px, 4vw, 56px);
-          max-width: 620px;
-        }
-        .pp-craft-eyebrow {
-          font-size: 10px;
-          font-weight: 500;
-          letter-spacing: 0.26em;
-          text-transform: uppercase;
-          color: var(--terra);
-          margin-bottom: 14px;
-        }
-        /* Craft band sits over a fixed dark scrim, so its text stays light
-           in both themes (kept off the theme tokens on purpose). */
-        .pp-craft-title {
-          font-family: var(--font-cormorant-garamond), serif;
-          font-size: clamp(26px, 3.4vw, 44px);
-          font-weight: 600;
-          line-height: 1.04;
-          color: #f2e8d5;
-          margin-bottom: 14px;
-        }
-        .pp-craft-sub {
-          font-size: 13px;
-          line-height: 1.7;
-          color: #c9b99a;
-          max-width: 440px;
-        }
-
-        /* ── REVIEWS SECTION ── */
-        .pp-reviews-wrap {
-          margin: 2px 48px 0;
-          border: 1px solid var(--border);
-          border-top: none;
-          background: rgba(var(--brand-bg-rgb),0.6);
-        }
-
-        /* ── RELATED ── */
-        .pp-related {
-          margin: 2px 48px 0;
-          border: 1px solid var(--border);
-          border-top: none;
-          background: rgba(var(--brand-bg-rgb),0.5);
-          padding: 40px;
-        }
-        .pp-related-eyebrow {
-          font-size: 10px;
-          font-weight: 500;
-          letter-spacing: 0.26em;
-          text-transform: uppercase;
-          color: var(--terra);
-          margin-bottom: 8px;
-        }
-        .pp-related-title {
-          font-family: var(--font-cormorant-garamond), serif;
-          font-size: clamp(26px, 3vw, 36px);
-          font-weight: 300;
-          color: var(--cream);
-          line-height: 1.05;
-        }
-        .pp-related-header {
-          display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
-          gap: 16px;
-          flex-wrap: wrap;
-          padding-bottom: 28px;
-          border-bottom: 1px solid var(--border);
-          margin-bottom: 28px;
-        }
-        .pp-related-link {
-          font-size: 10px;
-          font-weight: 500;
-          letter-spacing: 0.16em;
-          text-transform: uppercase;
-          color: var(--muted);
-          text-decoration: none;
-          transition: color 0.2s;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          flex-shrink: 0;
-        }
-        .pp-related-link::after { content: '→'; }
-        .pp-related-link:hover { color: var(--cream); }
-
-        .pp-related-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-          gap: 12px;
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-        .pp-related-card {
-          display: block;
-          text-decoration: none;
-          transition: transform 0.5s cubic-bezier(0.16,1,0.3,1);
-        }
-        .pp-related-card:hover { transform: translateY(-4px); }
-        .pp-related-img {
-          position: relative;
-          aspect-ratio: 3/4;
-          overflow: hidden;
-          background: var(--charcoal);
-        }
-        .pp-related-img img,
-        .pp-related-img > div[role="img"] {
-          object-fit: cover;
-          transition: transform 0.7s cubic-bezier(0.16,1,0.3,1);
-        }
-        .pp-related-card:hover .pp-related-img img,
-        .pp-related-card:hover .pp-related-img > div[role="img"] {
-          transform: scale(1.06);
-        }
-        .pp-related-info {
-          padding: 14px 2px 0;
-        }
-        .pp-related-name {
-          font-size: 13px;
-          color: var(--sand);
-          line-height: 1.35;
-          margin-bottom: 5px;
-          display: -webkit-box;
-          -webkit-line-clamp: 1;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-        .pp-related-price {
-          font-family: var(--font-bebas-neue), sans-serif;
-          font-size: 17px;
-          letter-spacing: 0.02em;
-          color: var(--gold);
-        }
-
-        /* ── ACCENT LINE ── */
-        .pp-accent-line {
-          height: 1px;
-          background: linear-gradient(90deg, var(--terra) 0%, var(--gold) 50%, transparent 100%);
-          margin-bottom: 28px;
-        }
-
-        /* ── RESPONSIVE ── */
-        @media (max-width: 1024px) {
-          .pp-breadcrumb { padding: 20px 24px 0; }
-          .pp-shell { margin: 16px 24px 0; }
-          .pp-inner { grid-template-columns: 1fr; }
-          .pp-gallery-col { border-right: none; border-bottom: 1px solid var(--border); padding: 24px; }
-          .pp-info-col { padding: 24px; position: static; }
-          .pp-craft { margin: 2px 24px 0; }
-          .pp-reviews-wrap { margin: 2px 24px 0; }
-          .pp-related { margin: 2px 24px 0; padding: 24px; }
-        }
-        @media (max-width: 640px) {
-          .pp-breadcrumb { padding: 16px 16px 0; }
-          .pp-shell { margin: 12px 16px 0; }
-          .pp-gallery-col { padding: 16px; }
-          .pp-info-col { padding: 16px; }
-          .pp-craft { margin: 2px 16px 0; }
-          .pp-reviews-wrap { margin: 2px 16px 0; }
-          .pp-related { margin: 2px 16px 0; padding: 16px; }
-          .pp-related-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-      `}</style>
-
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
-      />
-
-      <div className="pp-root">
-        {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="pp-breadcrumb">
-          <Link href="/">Home</Link>
-          <span className="pp-breadcrumb-sep" aria-hidden="true">
-            /
-          </span>
-          <Link href="/products">Shop</Link>
-          <span className="pp-breadcrumb-sep" aria-hidden="true">
-            /
-          </span>
-          <span className="pp-breadcrumb-current">{product.title}</span>
-        </nav>
-
-        {/* Main product shell */}
-        <div className="pp-shell">
-          <div className="pp-inner">
-            {/* Gallery */}
-            <div className="pp-gallery-col">
-              <Suspense
-                fallback={
-                  <div
-                    style={{
-                      aspectRatio: "3/4",
-                      background: "rgba(var(--brand-fg-rgb),0.02)",
-                      border: "1px solid var(--border)",
-                    }}
-                  />
-                }
-              >
-                <Gallery
-                  images={product.images
-                    .slice(0, 5)
-                    .map((image: ProductImage) => ({
-                      src: image.url,
-                      altText: image.altText,
-                      width: image.width,
-                      height: image.height,
-                    }))}
-                />
-              </Suspense>
-            </div>
-
-            {/* Info panel */}
-            <div className="pp-info-col">
-              <Suspense fallback={null}>
-                <ProductDescription
-                  product={product}
-                  reviewAggregate={reviewAggregate}
-                />
-              </Suspense>
-              <div
-                style={{
-                  marginTop: 20,
-                  paddingTop: 20,
-                  borderTop: "1px solid var(--border)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 16,
-                  flexWrap: "wrap",
-                }}
-              >
-                <div>
-                  <p
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 500,
-                      letterSpacing: "0.22em",
-                      textTransform: "uppercase",
-                      color: "var(--terra)",
-                      marginBottom: 6,
-                    }}
-                  >
-                    Sizing help
-                  </p>
-                  <p
-                    style={{
-                      fontSize: 13,
-                      color: "var(--muted)",
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    Use the guide before checkout if you want a second opinion
-                    on fit.
-                  </p>
-                </div>
-                <Link
-                  href="/sizing-guide"
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 500,
-                    letterSpacing: "0.18em",
-                    textTransform: "uppercase",
-                    color: "var(--cream)",
-                    textDecoration: "none",
-                    borderBottom: "1px solid var(--terra)",
-                    paddingBottom: 2,
-                  }}
-                >
-                  Open sizing guide
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Image-led craft band */}
-        <section className="pp-craft" aria-label="Handcrafted quality">
-          <Media
-            src={CRAFT_BAND.imageUrl}
-            alt="Handcrafted footwear at the workbench"
-            caption={CRAFT_BAND.caption}
-            sizes="(min-width: 768px) 90vw, 100vw"
-            tone={4}
-            brightness={0.7}
-          />
-          <div className="pp-craft-scrim" />
-          <div className="pp-craft-body">
-            <p className="pp-craft-eyebrow">The Craft</p>
-            <h2 className="pp-craft-title">
-              Every pair cut, stitched, and finished by hand.
-            </h2>
-            <p className="pp-craft-sub">
-              No factory line, no shortcuts — premium leathers and fabrics,
-              chosen for how they wear over years, not seasons.
-            </p>
-          </div>
-        </section>
-
-        {/* Reviews */}
-        <div className="pp-reviews-wrap">
-          <ProductReviewsSection
-            productId={product.id}
-            productHandle={product.handle}
-          />
-        </div>
-
-        {/* Related products */}
-        <RelatedProducts id={product.id} />
-
-        <Footer />
-      </div>
-    </>
-  );
-}
-
-async function RelatedProducts({ id }: { id: string }) {
-  const relatedProducts = await getProductRecommendations(id);
-  if (!relatedProducts.length) return null;
-
-  return (
-    <section className="pp-related">
-      <div className="pp-accent-line" />
-      <div className="pp-related-header">
-        <div>
-          <p className="pp-related-eyebrow">You may also like</p>
-          <h2 className="pp-related-title">Related products</h2>
-        </div>
-        <Link href="/products" className="pp-related-link">
-          Shop all
-        </Link>
-      </div>
-
-      <ul className="pp-related-grid">
-        {relatedProducts.map((product, index) => (
-          <li key={`${product.handle}-${index}`}>
-            <Link
-              className="pp-related-card"
-              href={`/product/${product.handle}`}
-              prefetch={true}
-            >
-              <div className="pp-related-img">
-                <Media
-                  src={product.featuredImage?.url}
-                  alt={product.featuredImage?.altText || product.title}
-                  caption="Related product shot."
-                  sizes="(min-width: 1280px) 18vw, (min-width: 1024px) 22vw, (min-width: 640px) 35vw, 50vw"
-                  tone={index}
-                />
-              </div>
-              <div className="pp-related-info">
-                <p className="pp-related-name">{product.title}</p>
-                <Price
-                  amount={product.priceRange.maxVariantPrice.amount}
-                  currencyCode={product.priceRange.maxVariantPrice.currencyCode}
-                  currencyCodeClassName="hidden"
-                  className="pp-related-price"
-                />
-              </div>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
+  return data;
 }

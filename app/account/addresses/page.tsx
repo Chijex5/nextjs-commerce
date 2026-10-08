@@ -276,7 +276,7 @@ export default function AddressesPage() {
         .ad-btn-primary {
           border: none;
           background: var(--brand-terra);
-          color: var(--brand-cream);
+          color: var(--brand-on-accent);
           font-size: 0.62rem;
           font-weight: 500;
           letter-spacing: 0.2em;

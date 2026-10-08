@@ -17,102 +17,109 @@
     border-color: var(--color-gray-200, currentColor);
   }
 
-  /* Fallback font definitions using system fonts */
+  /* Font roles. Real faces are loaded with next/font in app/layout.tsx; the
+     legacy names below are kept so older pages pick up the new type system
+     without touching every file. */
   :root {
-    --font-inter:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-      Arial, sans-serif;
-    --font-dm-sans:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-      Arial, sans-serif;
-    --font-bebas-neue: "Trebuchet MS", sans-serif;
-    --font-cormorant-garamond: Georgia, serif;
+    --ff-body: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    --ff-head: var(--font-archivo), "Arial Narrow", ui-sans-serif, sans-serif;
+
+    --font-inter: var(--ff-body);
+    --font-dm-sans: var(--ff-body);
+    --font-bebas-neue: var(--ff-head);
+    --font-cormorant-garamond: var(--ff-body);
   }
 
   /* ------------------------------------------------------------------ */
-  /* Brand design tokens                                                */
+  /* Brand design tokens — street editorial, pure black & white         */
   /* ------------------------------------------------------------------ */
-  /* The site uses a bespoke warm palette (cream / espresso / terra).   */
-  /* Every hardcoded hex + rgba across the pages now resolves through   */
-  /* these tokens, so a single definition drives both themes.           */
-  /*                                                                    */
-  /*  :root  = LIGHT theme values (warm paper + espresso ink)           */
-  /*  .dark  = DARK  theme values (the original espresso + cream look)  */
-  /*                                                                    */
-  /* Solid tokens hold a color; *-rgb tokens hold a bare "r,g,b" triple */
-  /* so overlays keep their opacity but flip their base color per theme */
-  /* (e.g. rgba(var(--brand-fg-rgb), 0.09) is a cream tint on dark and  */
-  /* an ink tint on light — the design intent is preserved either way). */
+  /* No accent colour: photography brings all the colour. Token names   */
+  /* are legacy (terra/gold/cream…) and will be renamed in the design-  */
+  /* system phase; their VALUES are the new palette:                    */
+  /*   cream → text   espresso → page   terra → emphasis (= text colour)*/
+  /*   gold  → neutral grey                                            */
   :root {
-    /* Surfaces — light: clean near-white canvas (neutral, not brown).
-       Warmth comes only from the terra/gold accents, never the background. */
-    --brand-void: #ececeb; /* deepest inset / well */
-    --brand-espresso: #f6f6f5; /* page background — soft off-white */
-    --brand-charcoal: #ffffff; /* card / panel — crisp white */
-    --brand-surface2: #ffffff; /* elevated / hovered surface */
+    --brand-void: #ececec;
+    --brand-espresso: #ffffff;
+    --brand-charcoal: #ffffff;
+    --brand-surface2: #f5f5f5;
 
-    /* Text — light: near-black neutral ink (warm-stone, not brown) */
-    --brand-cream: #1c1917; /* primary text */
-    --brand-sand: #57534e; /* secondary text */
-    --brand-muted: #78716c; /* tertiary / placeholder */
+    --brand-cream: #000000;
+    --brand-sand: #2b2b2b;
+    --brand-muted: #6b6b6b;
 
-    /* Accents — warm brand colors, deepened for contrast on white */
-    --brand-terra: #a8481c; /* primary accent */
-    --brand-terra-dark: #8f3d18;
-    --brand-terra-light: #b85426;
-    --brand-terra-pale: #c56a3d;
-    --brand-gold: #8a6410; /* secondary accent */
-    --brand-gold-light: #a67c1e;
+    --brand-terra: #000000;
+    --brand-terra-dark: #000000;
+    --brand-terra-light: #2b2b2b;
+    --brand-terra-pale: #6b6b6b;
+    --brand-gold: #4a4a4a;
+    --brand-gold-light: #6b6b6b;
     --brand-success: #2f6b41;
+    --brand-on-accent: #ffffff; /* text on accent (terra) backgrounds */
 
-    /* Overlay bases (bare r,g,b — used inside rgba(...)) */
-    --brand-fg-rgb: 28, 25, 23; /* ink tint — borders / dividers */
-    --brand-bg-rgb: 244, 244, 243; /* surface tint */
-    --brand-hi-rgb: 0, 0, 0; /* highlight / divider */
-    --brand-terra-rgb: 168, 72, 28;
-    --brand-gold-rgb: 138, 100, 16;
-    --brand-muted-rgb: 120, 113, 108;
+    --brand-fg-rgb: 0, 0, 0;
+    --brand-bg-rgb: 255, 255, 255;
+    --brand-hi-rgb: 0, 0, 0;
+    --brand-terra-rgb: 0, 0, 0;
+    --brand-gold-rgb: 74, 74, 74;
+    --brand-muted-rgb: 107, 107, 107;
     --brand-success-rgb: 47, 107, 65;
 
     color-scheme: light;
   }
 
   .dark {
-    /* Surfaces — dark: the original espresso stack */
-    --brand-void: #060402;
-    --brand-espresso: #0a0704;
-    --brand-charcoal: #100c06;
-    --brand-surface2: #191209;
+    --brand-void: #111111;
+    --brand-espresso: #000000;
+    --brand-charcoal: #0a0a0a;
+    --brand-surface2: #141414;
 
-    /* Text — dark: cream */
-    --brand-cream: #f2e8d5;
-    --brand-sand: #c9b99a;
-    --brand-muted: #6a5a48;
+    --brand-cream: #ffffff;
+    --brand-sand: #d4d4d4;
+    --brand-muted: #8f8f8f;
 
-    /* Accents */
-    --brand-terra: #bf5a28;
-    --brand-terra-dark: #a34d22;
-    --brand-terra-light: #d97b3a;
-    --brand-terra-pale: #f0b08b;
-    --brand-gold: #c0892a;
-    --brand-gold-light: #d4a84b;
+    --brand-terra: #ffffff;
+    --brand-terra-dark: #ffffff;
+    --brand-terra-light: #d4d4d4;
+    --brand-terra-pale: #8f8f8f;
+    --brand-gold: #b5b5b5;
+    --brand-gold-light: #d4d4d4;
     --brand-success: #4a8c5c;
+    --brand-on-accent: #000000;
 
-    /* Overlay bases */
-    --brand-fg-rgb: 242, 232, 213;
-    --brand-bg-rgb: 16, 12, 6;
+    --brand-fg-rgb: 255, 255, 255;
+    --brand-bg-rgb: 0, 0, 0;
     --brand-hi-rgb: 255, 255, 255;
-    --brand-terra-rgb: 191, 90, 40;
-    --brand-gold-rgb: 192, 137, 42;
-    --brand-muted-rgb: 106, 90, 72;
+    --brand-terra-rgb: 255, 255, 255;
+    --brand-gold-rgb: 181, 181, 181;
+    --brand-muted-rgb: 143, 143, 143;
     --brand-success-rgb: 74, 140, 92;
 
     color-scheme: dark;
   }
 }
 
+/* Fixed brand constants (same in both themes) */
 @theme {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --color-ink: #000000;
+  --color-paper: #ffffff;
+  --ease-atelier: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Theme-aware semantic colours → bg-canvas, text-fg, border-line, … */
+@theme inline {
+  --font-sans: var(--ff-body);
+  --font-head: var(--ff-head);
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --color-canvas: var(--brand-espresso);
+  --color-plate: var(--brand-void);
+  --color-panel: var(--brand-charcoal);
+  --color-fg: var(--brand-cream);
+  --color-fg-2: var(--brand-sand);
+  --color-fg-3: var(--brand-muted);
+  --color-accent: var(--brand-terra);
+  --color-line: rgba(var(--brand-fg-rgb), 0.14);
 }
 
 @supports (font: -apple-system-body) and (-webkit-appearance: none) {
@@ -123,8 +130,10 @@
 
 a,
 input,
-button {
-  @apply focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 dark:focus-visible:ring-neutral-600 dark:focus-visible:ring-offset-neutral-900;
+button,
+select,
+textarea {
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -175,6 +184,19 @@ button {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
   }
 }
 
@@ -236,5 +258,62 @@ button {
       animation: none;
       transform: translateX(0);
     }
+  }
+}
+
+/* ── Design system utilities (shared across storefront pages) ─────────── */
+@layer components {
+  /* Condensed heavy display type for headlines */
+  .display {
+    font-family: var(--ff-head);
+    font-weight: 800;
+    font-stretch: 66%;
+    text-transform: uppercase;
+    line-height: 0.84;
+    letter-spacing: -0.01em;
+  }
+
+  /* Small monospace uppercase label (indexes, captions, meta) */
+  .label {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .link-underline {
+    background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1px
+      no-repeat;
+    padding-bottom: 2px;
+    transition: background-size 0.45s var(--ease-atelier);
+  }
+  .link-underline:hover {
+    background-size: 0% 1px;
+    background-position: 100% 100%;
+  }
+
+  /* Hide scrollbars on swipe rails */
+  .rail {
+    scrollbar-width: none;
+  }
+  .rail::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Scroll reveal (see components/home/reveal.tsx). Only hides content when
+   scripts run and motion is welcome, so nothing is ever stuck invisible. */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(40px);
+    transition:
+      opacity 1s var(--ease-atelier),
+      transform 1s var(--ease-atelier);
+    transition-delay: var(--d, 0ms);
+  }
+  [data-reveal][data-shown] {
+    opacity: 1;
+    transform: none;
   }
 }

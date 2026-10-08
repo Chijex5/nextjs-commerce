@@ -122,7 +122,7 @@ export function ReviewList({
     <>
       <style>{`
         .rl-root {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           color: var(--cream, var(--brand-cream));
           display: flex;
           flex-direction: column;
@@ -146,7 +146,7 @@ export function ReviewList({
           gap: 20px;
         }
         .rl-score-num {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--ff-body);
           font-size: 52px;
           font-weight: 300;
           line-height: 1;
@@ -168,7 +168,7 @@ export function ReviewList({
           background: var(--terra, var(--brand-terra));
           border: none;
           color: var(--cream, var(--brand-cream));
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.2em;
@@ -187,7 +187,7 @@ export function ReviewList({
           background: rgba(var(--brand-fg-rgb),0.02);
         }
         .rl-form-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--ff-body);
           font-size: 22px;
           font-weight: 300;
           color: var(--cream, var(--brand-cream));
@@ -239,7 +239,7 @@ export function ReviewList({
           background: rgba(var(--brand-bg-rgb),0.6);
           border: 1px solid rgba(var(--brand-fg-rgb),0.09);
           color: var(--cream, var(--brand-cream));
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: 11px;
           letter-spacing: 0.1em;
           padding: 7px 12px;
@@ -260,7 +260,7 @@ export function ReviewList({
           margin-top: 20px;
         }
         .rl-empty-text {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--ff-body);
           font-size: 20px;
           font-weight: 300;
           font-style: italic;

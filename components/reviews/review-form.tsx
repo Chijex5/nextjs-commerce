@@ -70,7 +70,7 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
       >
         <h3
           style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "var(--ff-body)",
             fontSize: "22px",
             fontWeight: 300,
             color: "var(--cream, var(--brand-cream))",
@@ -100,7 +100,7 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
           display: flex;
           flex-direction: column;
           gap: 20px;
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
         }
         .rf-label {
           display: block;
@@ -118,7 +118,7 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
           background: rgba(var(--brand-bg-rgb),0.6);
           border: 1px solid rgba(var(--brand-fg-rgb),0.09);
           color: var(--cream, var(--brand-cream));
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: 13px;
           padding: 12px 16px;
           outline: none;
@@ -163,7 +163,7 @@ export function ReviewForm({ productId, orderId, onSuccess }: ReviewFormProps) {
           background: var(--terra, var(--brand-terra));
           border: none;
           color: var(--cream, var(--brand-cream));
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.2em;

@@ -8,6 +8,7 @@ import {
 } from "next/cache";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { isMockData } from "../data/source";
 import { db } from "../db/client";
 import * as dbQueries from "../db/queries";
 import { customOrders, sizeGuides } from "../db/schema";
@@ -112,6 +113,7 @@ export async function updateCart(
 }
 
 export async function getCart(): Promise<Cart | undefined> {
+  if (isMockData) return undefined;
   const cookieStore = await cookies();
   const cartId = cookieStore.get("cartId")?.value;
 
@@ -301,6 +303,7 @@ export async function getMenu(handle: string): Promise<Menu[]> {
   cacheTag(TAGS.collections);
   cacheLife("days");
 
+  if (isMockData) return [];
   return dbQueries.getMenu(handle);
 }
 

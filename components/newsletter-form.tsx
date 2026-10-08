@@ -37,38 +37,34 @@ export default function NewsletterForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+    <form onSubmit={handleSubmit} className="space-y-3">
       <input
         type="text"
-        placeholder="Name (optional)"
+        placeholder="First name (optional)"
+        autoComplete="given-name"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="rounded-md border border-neutral-300 px-4 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+        className="h-12 w-full border-b border-line bg-transparent text-base text-fg outline-none transition-colors placeholder:text-fg-3 focus:border-fg"
       />
-      <div className="flex gap-2">
+      <div className="flex items-end gap-3">
         <input
           type="email"
-          placeholder="Enter your email"
+          inputMode="email"
+          autoComplete="email"
+          placeholder="Email address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="flex-1 rounded-md border border-neutral-300 px-4 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+          className="h-12 min-w-0 flex-1 border-b border-line bg-transparent text-base text-fg outline-none transition-colors placeholder:text-fg-3 focus:border-fg"
         />
         <button
           type="submit"
           disabled={loading}
-          className="rounded-md bg-black px-6 py-2 text-sm text-white hover:bg-neutral-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+          className="h-12 shrink-0 bg-fg px-6 text-sm font-semibold uppercase tracking-wide text-canvas transition-[opacity,transform] hover:opacity-85 active:scale-[0.97] disabled:opacity-50"
         >
-          {loading ? (
-            <LoadingDots className="bg-white dark:bg-black" />
-          ) : (
-            "Subscribe"
-          )}
+          {loading ? <LoadingDots className="bg-canvas" /> : "Join"}
         </button>
       </div>
-      <p className="text-xs text-neutral-500 dark:text-neutral-400">
-        Get notified about new designs and special offers. Unsubscribe anytime.
-      </p>
     </form>
   );
 }

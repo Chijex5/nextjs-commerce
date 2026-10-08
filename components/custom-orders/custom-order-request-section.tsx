@@ -412,7 +412,7 @@ export default function CustomOrderRequestSection() {
           background: var(--dp-charcoal);
           border: 1px solid var(--dp-border);
           color: var(--dp-cream);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: .82rem;
           padding: .8rem 1rem;
           outline: none;
@@ -423,7 +423,7 @@ export default function CustomOrderRequestSection() {
         .co-input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.4); }
 
         .co-label {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: .58rem;
           font-weight: 500;
           letter-spacing: .2em;
@@ -442,18 +442,18 @@ export default function CustomOrderRequestSection() {
         .dp-btn-solid {
           display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
           background: var(--dp-cream); color: var(--dp-ink);
-          font-family: 'DM Sans', sans-serif; font-weight: 500;
+          font-family: var(--ff-body); font-weight: 500;
           font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
           padding: .9rem 2.1rem; border: none; cursor: pointer;
           transition: background .22s, color .22s;
         }
-        .dp-btn-solid:hover:not(:disabled) { background: var(--dp-ember); color: var(--dp-cream); }
+        .dp-btn-solid:hover:not(:disabled) { background: var(--dp-ember); color: var(--brand-on-accent); }
         .dp-btn-solid:disabled { opacity: .5; cursor: not-allowed; }
 
         .dp-btn-ember {
           display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-          background: var(--dp-ember); color: var(--dp-cream);
-          font-family: 'DM Sans', sans-serif; font-weight: 500;
+          background: var(--dp-ember); color: var(--brand-on-accent);
+          font-family: var(--ff-body); font-weight: 500;
           font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
           padding: .9rem 2.1rem; border: none; cursor: pointer;
           transition: opacity .22s;
@@ -465,7 +465,7 @@ export default function CustomOrderRequestSection() {
           display: inline-flex; align-items: center; gap: .5rem;
           border: 1px solid var(--dp-border); color: var(--dp-sand);
           background: transparent;
-          font-family: 'DM Sans', sans-serif; font-weight: 500;
+          font-family: var(--ff-body); font-weight: 500;
           font-size: .65rem; letter-spacing: .14em; text-transform: uppercase;
           padding: .65rem 1.25rem; cursor: pointer; text-decoration: none;
           transition: border-color .22s, color .22s;
@@ -491,7 +491,7 @@ export default function CustomOrderRequestSection() {
 
         .status-chip {
           display: inline-flex; align-items: center; gap: .35rem;
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: .58rem; font-weight: 500;
           letter-spacing: .1em; text-transform: uppercase;
           padding: 2px 7px;
@@ -531,7 +531,7 @@ export default function CustomOrderRequestSection() {
                 <style>{`@keyframes dp-spin { to { transform: rotate(360deg); } }`}</style>
                 <p
                   style={{
-                    fontFamily: "DM Sans, sans-serif",
+                    fontFamily: "var(--ff-body)",
                     fontSize: ".75rem",
                     color: "var(--dp-muted)",
                   }}
@@ -560,7 +560,7 @@ export default function CustomOrderRequestSection() {
                   </p>
                   <p
                     style={{
-                      fontFamily: "DM Sans, sans-serif",
+                      fontFamily: "var(--ff-body)",
                       fontSize: ".9rem",
                       fontWeight: 500,
                       color: "var(--dp-cream)",
@@ -608,7 +608,7 @@ export default function CustomOrderRequestSection() {
                   {quote.note && (
                     <p
                       style={{
-                        fontFamily: "DM Sans, sans-serif",
+                        fontFamily: "var(--ff-body)",
                         fontSize: ".75rem",
                         color: "var(--dp-muted)",
                         lineHeight: 1.6,
@@ -620,7 +620,7 @@ export default function CustomOrderRequestSection() {
                   {quote.expiresAt && (
                     <p
                       style={{
-                        fontFamily: "DM Sans, sans-serif",
+                        fontFamily: "var(--ff-body)",
                         fontSize: ".62rem",
                         color: "var(--dp-muted)",
                         marginTop: ".5rem",
@@ -670,7 +670,7 @@ export default function CustomOrderRequestSection() {
                 ) : (
                   <p
                     style={{
-                      fontFamily: "DM Sans, sans-serif",
+                      fontFamily: "var(--ff-body)",
                       fontSize: ".75rem",
                       color: "var(--dp-muted)",
                     }}
@@ -682,7 +682,7 @@ export default function CustomOrderRequestSection() {
             ) : (
               <p
                 style={{
-                  fontFamily: "DM Sans, sans-serif",
+                  fontFamily: "var(--ff-body)",
                   fontSize: ".75rem",
                   color: "var(--dp-muted)",
                 }}
@@ -711,7 +711,7 @@ export default function CustomOrderRequestSection() {
           </h2>
           <p
             style={{
-              fontFamily: "DM Sans, sans-serif",
+              fontFamily: "var(--ff-body)",
               fontSize: ".75rem",
               color: "var(--dp-muted)",
               lineHeight: 1.7,
@@ -867,7 +867,7 @@ export default function CustomOrderRequestSection() {
                 <div>
                   <p
                     style={{
-                      fontFamily: "DM Sans, sans-serif",
+                      fontFamily: "var(--ff-body)",
                       fontSize: ".78rem",
                       fontWeight: 500,
                       color: "var(--dp-cream)",
@@ -878,7 +878,7 @@ export default function CustomOrderRequestSection() {
                   </p>
                   <p
                     style={{
-                      fontFamily: "DM Sans, sans-serif",
+                      fontFamily: "var(--ff-body)",
                       fontSize: ".65rem",
                       color: "var(--dp-muted)",
                     }}
@@ -919,7 +919,7 @@ export default function CustomOrderRequestSection() {
                   <ImagePlus size={22} />
                   <span
                     style={{
-                      fontFamily: "DM Sans, sans-serif",
+                      fontFamily: "var(--ff-body)",
                       fontSize: ".72rem",
                       letterSpacing: ".08em",
                     }}
@@ -960,7 +960,7 @@ export default function CustomOrderRequestSection() {
                       >
                         <p
                           style={{
-                            fontFamily: "DM Sans, sans-serif",
+                            fontFamily: "var(--ff-body)",
                             fontSize: ".65rem",
                             color: "var(--dp-sand)",
                             overflow: "hidden",
@@ -1103,7 +1103,7 @@ export default function CustomOrderRequestSection() {
                 />
                 <p
                   style={{
-                    fontFamily: "DM Sans, sans-serif",
+                    fontFamily: "var(--ff-body)",
                     fontSize: ".78rem",
                     fontWeight: 500,
                     color: "var(--dp-cream)",
@@ -1114,7 +1114,7 @@ export default function CustomOrderRequestSection() {
               </div>
               <p
                 style={{
-                  fontFamily: "DM Sans, sans-serif",
+                  fontFamily: "var(--ff-body)",
                   fontSize: ".72rem",
                   color: "var(--dp-muted)",
                   lineHeight: 1.6,

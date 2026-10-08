@@ -1,0 +1,99 @@
+/* Home page — street editorial. Pure black & white; photos carry the colour. */
+
+/* Inline photo "words" inside the manifesto paragraph */
+.inline-photo {
+  position: relative;
+  display: inline-block;
+  width: 1.9em;
+  height: 0.78em;
+  margin: 0 0 0 0.14em;
+  overflow: hidden;
+  vertical-align: baseline;
+  transform: translateY(0.04em);
+  border-radius: 999px;
+}
+
+/* Marquee ticker */
+@keyframes ticker {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.ticker {
+  animation: ticker 32s linear infinite;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Hero lines rise out of a mask on load (pure CSS, runs before hydration) */
+  @keyframes line-up {
+    from {
+      transform: translateY(105%);
+    }
+  }
+  .line > span {
+    display: block;
+    animation: line-up 1.2s var(--ease-atelier) both;
+    animation-delay: var(--d, 0ms);
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  .fade-in {
+    animation: fade-in 1s ease-out both;
+    animation-delay: var(--d, 0ms);
+  }
+  @keyframes hero-zoom {
+    from {
+      transform: scale(1.15);
+    }
+  }
+  .hero-zoom {
+    animation: hero-zoom 2.4s var(--ease-atelier) both;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker {
+    animation: none;
+  }
+}
+.line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.04em;
+}
+
+/* Scroll-driven effects (Chrome/Edge/Safari 26+). Older browsers simply show
+   the photos in full colour with no parallax. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Photos "develop" from black & white into colour as they scroll in */
+    @keyframes develop {
+      from {
+        filter: grayscale(1) contrast(1.1);
+      }
+      to {
+        filter: grayscale(0) contrast(1);
+      }
+    }
+    .develop {
+      animation: develop linear both;
+      animation-timeline: view();
+      animation-range: entry 20% cover 50%;
+    }
+
+    @keyframes parallax {
+      from {
+        transform: translateY(-12%) scale(1.15);
+      }
+      to {
+        transform: translateY(12%) scale(1.15);
+      }
+    }
+    .parallax {
+      animation: parallax linear both;
+      animation-timeline: view();
+    }
+  }
+}

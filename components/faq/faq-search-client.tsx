@@ -89,7 +89,7 @@ export default function FAQSearchClient({ initialQuestions }: Props) {
             onClick={() => handleFilterChange(t)}
             className={`rounded-full border px-4 py-1.5 text-xs font-normal tracking-wide transition-all ${
               activeFilter === t
-                ? "border-[var(--brand-terra-light)] bg-[var(--brand-terra-light)] text-white"
+                ? "border-[var(--brand-terra-light)] bg-[var(--brand-terra-light)] text-[var(--brand-on-accent)]"
                 : "border-white/15 text-[var(--brand-sand)] hover:border-white/30 hover:text-[var(--brand-cream)]"
             }`}
           >

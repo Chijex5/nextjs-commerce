@@ -1,9 +1,7 @@
-import FooterMenu, { FooterMenuItem } from "components/layout/footer-menu";
-import LogoSquare from "components/logo-square";
 import NewsletterForm from "components/newsletter-form";
 import { getMenu } from "lib/database";
+import type { Menu } from "lib/shopify/types";
 import Link from "next/link";
-import { Suspense } from "react";
 import { FaInstagram, FaSnapchat, FaTiktok, FaWhatsapp } from "react-icons/fa";
 
 const { COMPANY_NAME, SITE_NAME } = process.env;
@@ -12,429 +10,119 @@ const SOCIAL_LINKS = [
   {
     label: "Instagram",
     href: "https://instagram.com/d__footprint",
-    icon: <FaInstagram />,
+    icon: FaInstagram,
   },
-  {
-    label: "WhatsApp",
-    href: "https://wa.me/2348121993874",
-    icon: <FaWhatsapp />,
-  },
-  {
-    label: "TikTok",
-    href: "https://tiktok.com/@d_footprint",
-    icon: <FaTiktok />,
-  },
+  { label: "TikTok", href: "https://tiktok.com/@d_footprint", icon: FaTiktok },
+  { label: "WhatsApp", href: "https://wa.me/2348121993874", icon: FaWhatsapp },
   {
     label: "Snapchat",
     href: "https://snapchat.com/t/To9LQPVS",
-    icon: <FaSnapchat />,
+    icon: FaSnapchat,
   },
 ];
 
+const SHOP_FALLBACK: Menu[] = [
+  { title: "All designs", path: "/products" },
+  { title: "New in", path: "/search?sort=latest-desc" },
+  { title: "Best sellers", path: "/search?sort=trending-desc" },
+  { title: "Custom orders", path: "/custom-orders" },
+];
+
+const HELP: Menu[] = [
+  { title: "Sizing guide", path: "/sizing-guide" },
+  { title: "Care instructions", path: "/care-instructions" },
+  { title: "Shipping & returns", path: "/shipping-returns" },
+  { title: "FAQ", path: "/faq" },
+  { title: "Track an order", path: "/orders" },
+];
+
+const HOUSE: Menu[] = [
+  { title: "About us", path: "/about-us" },
+  { title: "Contact", path: "/contact" },
+  { title: "Privacy policy", path: "/privacy-policy" },
+];
+
 export default async function Footer() {
-  const currentYear = new Date().getFullYear();
-  const copyrightDate = 2023 + (currentYear > 2023 ? `-${currentYear}` : "");
   const menu = await getMenu("footer-menu");
-  const copyrightName = COMPANY_NAME || SITE_NAME || "";
+  const year = new Date().getFullYear();
+  const name = COMPANY_NAME || SITE_NAME || "D'FOOTPRINT";
 
   return (
-    <>
-      <style>{`
+    <footer className="border-t border-line bg-canvas text-fg">
+      <div className="grid gap-12 px-4 py-16 sm:px-8 md:px-12 lg:grid-cols-12 lg:gap-6 lg:py-20">
+        <div className="lg:col-span-5">
+          <p className="display text-[clamp(2.4rem,6vw,4.5rem)]">
+            First to know.
+          </p>
+          <p className="mt-4 max-w-[38ch] text-fg-2">
+            New designs, restocks and the odd offer. No spam — unsubscribe any
+            time.
+          </p>
+          <div className="mt-6 max-w-md">
+            <NewsletterForm />
+          </div>
+        </div>
 
-        :root {
-          --dp-ink:     var(--brand-espresso);
-          --dp-void:    #06040200;
-          --dp-charcoal: var(--brand-surface2);
-          --dp-cream:   var(--brand-cream);
-          --dp-sand:    var(--brand-sand);
-          --dp-muted:   var(--brand-muted);
-          --dp-ember:   var(--brand-terra);
-          --dp-gold:    var(--brand-gold);
-          --dp-border:  rgba(var(--brand-fg-rgb),0.09);
-        }
-
-        .dp-footer-wordmark { font-family: var(--font-bebas-neue), sans-serif; letter-spacing: 0.1em; }
-        .dp-footer-serif    { font-family: var(--font-cormorant-garamond), serif; }
-        .dp-footer-sans     { font-family: var(--font-dm-sans), sans-serif; }
-
-        .dp-footer-link {
-          font-family: var(--font-dm-sans), sans-serif;
-          font-size: 0.78rem;
-          color: var(--dp-muted);
-          text-decoration: none;
-          display: inline-flex;
-          align-items: center;
-          gap: 0.4rem;
-          padding: 0.2rem 0;
-          position: relative;
-          transition: color 0.2s;
-        }
-        .dp-footer-link::after {
-          content: '';
-          position: absolute;
-          bottom: 0; left: 0;
-          width: 0; height: 1px;
-          background: var(--dp-ember);
-          transition: width 0.3s cubic-bezier(0.16,1,0.3,1);
-        }
-        .dp-footer-link:hover { color: var(--dp-cream); }
-        .dp-footer-link:hover::after { width: 100%; }
-
-        .dp-footer-social {
-          display: flex; align-items: center; justify-content: center;
-          width: 2.1rem; height: 2.1rem;
-          border: 1px solid var(--dp-border);
-          color: var(--dp-muted);
-          text-decoration: none;
-          transition: border-color 0.2s, color 0.2s, background 0.2s;
-        }
-        .dp-footer-social:hover {
-          border-color: var(--dp-ember);
-          color: var(--dp-ember);
-          background: rgba(var(--brand-terra-rgb),0.06);
-        }
-
-        .dp-footer-label {
-          font-family: var(--font-dm-sans), sans-serif;
-          font-size: 0.6rem;
-          font-weight: 500;
-          letter-spacing: 0.26em;
-          text-transform: uppercase;
-          color: var(--dp-ember);
-          margin-bottom: 1.1rem;
-          display: block;
-        }
-
-        /* Newsletter input override */
-        .dp-newsletter-wrap input,
-        .dp-newsletter-wrap [type="email"] {
-          background: rgba(var(--brand-fg-rgb),0.04) !important;
-          border: none !important;
-          border-bottom: 1px solid var(--dp-border) !important;
-          border-radius: 0 !important;
-          color: var(--dp-cream) !important;
-          font-family: var(--font-dm-sans), sans-serif !important;
-          font-size: 0.8rem !important;
-          padding: 0.6rem 0 !important;
-          outline: none !important;
-          width: 100% !important;
-          transition: border-color 0.2s !important;
-        }
-        .dp-newsletter-wrap input::placeholder { color: var(--dp-muted) !important; }
-        .dp-newsletter-wrap input:focus { border-bottom-color: var(--dp-ember) !important; }
-        .dp-newsletter-wrap button,
-        .dp-newsletter-wrap [type="submit"] {
-          background: var(--dp-ember) !important;
-          color: var(--dp-cream) !important;
-          border: none !important;
-          border-radius: 0 !important;
-          font-family: var(--font-dm-sans), sans-serif !important;
-          font-size: 0.68rem !important;
-          font-weight: 500 !important;
-          letter-spacing: 0.14em !important;
-          text-transform: uppercase !important;
-          padding: 0.65rem 1.4rem !important;
-          cursor: pointer !important;
-          transition: opacity 0.2s !important;
-          white-space: nowrap !important;
-          flex-shrink: 0 !important;
-        }
-        .dp-newsletter-wrap button:hover { opacity: 0.85 !important; }
-      `}</style>
-
-      <footer
-        className="dp-footer-sans"
-        style={{
-          background: "var(--dp-charcoal)",
-          color: "var(--dp-muted)",
-          borderTop: "1px solid var(--dp-border)",
-        }}
-      >
-        {/* ── TOP ACCENT LINE ─────────────────────────────────── */}
-        <div
-          style={{
-            height: 2,
-            background:
-              "linear-gradient(90deg, var(--dp-ember) 0%, var(--dp-gold) 50%, transparent 100%)",
-          }}
+        <FooterColumn
+          title="Shop"
+          items={menu.length ? menu : SHOP_FALLBACK}
+          className="lg:col-span-2 lg:col-start-7"
         />
-
-        {/* ── MAIN FOOTER GRID ────────────────────────────────── */}
-        <div
-          className="mx-auto w-full"
-          style={{
-            maxWidth: 1800,
-            display: "grid",
-            gridTemplateColumns: "repeat(1, 1fr)",
-            gap: "3rem",
-            padding: "4rem clamp(1.5rem, 4vw, 4rem) 3rem",
-          }}
-        >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(1, 1fr)",
-              gap: "3rem",
-            }}
-            className="md:grid-cols-[1.4fr_0.9fr_0.9fr_1.3fr]"
-          >
-            {/* ── COL 1: Brand ──────────────────────────────────── */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "1.25rem",
-              }}
-            >
-              <Link
-                href="/"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.6rem",
-                  textDecoration: "none",
-                }}
-              >
-                <LogoSquare size="sm" />
-                <span
-                  className="dp-footer-wordmark"
-                  style={{ fontSize: "1.1rem", color: "var(--dp-cream)" }}
-                >
-                  {SITE_NAME}
-                </span>
-              </Link>
-
-              <p
-                className="dp-footer-serif"
-                style={{
-                  fontSize: "1.05rem",
-                  fontWeight: 300,
-                  fontStyle: "italic",
-                  color: "var(--dp-sand)",
-                  lineHeight: 1.6,
-                  maxWidth: 280,
-                }}
-              >
-                Handcrafted footwear made with care in Lagos, Nigeria.
-              </p>
-
-              <p
-                style={{
-                  fontSize: "0.74rem",
-                  color: "var(--dp-muted)",
-                  lineHeight: 1.65,
-                  maxWidth: 300,
-                }}
-              >
-                Built for daily comfort and timeless style. Every pair shaped by
-                hand, designed to last.
-              </p>
-
-              {/* Socials */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  paddingTop: "0.25rem",
-                }}
-              >
-                {SOCIAL_LINKS.map(({ label, href, icon }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="dp-footer-social"
-                    aria-label={label}
-                  >
-                    {icon}
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            {/* ── COL 2: Quick links ────────────────────────────── */}
-            <div>
-              <span className="dp-footer-label">Navigate</span>
-              <Suspense
-                fallback={
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "0.6rem",
-                    }}
-                  >
-                    {[80, 60, 90, 70].map((w) => (
-                      <div
-                        key={w}
-                        style={{
-                          height: "0.75rem",
-                          width: `${w}%`,
-                          borderRadius: 2,
-                          background: "rgba(var(--brand-fg-rgb),0.07)",
-                          animation: "pulse 1.5s ease-in-out infinite",
-                        }}
-                      />
-                    ))}
-                  </div>
-                }
-              >
-                <FooterMenu menu={menu} />
-              </Suspense>
-            </div>
-
-            {/* ── COL 3: Info ───────────────────────────────────── */}
-            <div>
-              <span className="dp-footer-label">Info</span>
-              <ul
-                style={{
-                  listStyle: "none",
-                  margin: 0,
-                  padding: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.65rem",
-                }}
-              >
-                <FooterMenu
-                  menu={[
-                    { title: "About Us", path: "/about-us" },
-                    { title: "Sizing Guide", path: "/sizing-guide" },
-                    { title: "Care Instructions", path: "/care-instructions" },
-                    { title: "FAQ", path: "/faq" },
-                    { title: "Privacy Policy", path: "/privacy-policy" },
-                    { title: "Shipping Returns", path: "/shipping-returns" },
-                  ]}
-                />
-              </ul>
-            </div>
-
-            {/* ── COL 4: Newsletter ─────────────────────────────── */}
-            <div>
-              <span className="dp-footer-label">Stay in the loop</span>
-              <p
-                style={{
-                  fontSize: "0.78rem",
-                  color: "var(--dp-muted)",
-                  lineHeight: 1.65,
-                  marginBottom: "1.25rem",
-                }}
-              >
-                New drops, restocks, and exclusive offers — straight to your
-                inbox.
-              </p>
-              <div className="dp-newsletter-wrap">
-                <NewsletterForm />
-              </div>
-
-              {/* Contact nudge */}
-              <div
-                style={{
-                  marginTop: "1.75rem",
-                  paddingTop: "1.25rem",
-                  borderTop: "1px solid var(--dp-border)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.35rem",
-                }}
-              >
-                <span
-                  className="dp-footer-label"
-                  style={{ marginBottom: "0.4rem" }}
-                >
-                  Get in touch
-                </span>
+        <FooterColumn title="Help" items={HELP} className="lg:col-span-2" />
+        <div className="lg:col-span-2">
+          <FooterColumn title="House" items={HOUSE} />
+          <ul className="mt-8 flex gap-2">
+            {SOCIAL_LINKS.map(({ label, href, icon: Icon }) => (
+              <li key={label}>
                 <a
-                  href="mailto:hello@dfootprint.me"
-                  className="dp-footer-link"
-                  style={{ fontSize: "0.74rem" }}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="grid size-10 place-items-center border border-line transition-colors hover:border-fg hover:bg-fg hover:text-canvas"
                 >
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                    <polyline points="22,6 12,13 2,6" />
-                  </svg>
-                  hello@dfootprint.me
+                  <Icon className="size-4" />
                 </a>
-                <a
-                  href="https://wa.me/2348121993874"
-                  className="dp-footer-link"
-                  style={{ fontSize: "0.74rem" }}
-                >
-                  <FaWhatsapp style={{ marginRight: "0.3rem" }} />
-                  WhatsApp us
-                </a>
-              </div>
-            </div>
-          </div>
+              </li>
+            ))}
+          </ul>
         </div>
+      </div>
 
-        {/* ── BOTTOM BAR ──────────────────────────────────────── */}
-        <div style={{ borderTop: "1px solid var(--dp-border)" }}>
-          <div
-            className="mx-auto w-full"
-            style={{
-              maxWidth: 1800,
-              padding: "1.1rem clamp(1.5rem, 4vw, 4rem)",
-              display: "flex",
-              flexWrap: "wrap",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "0.75rem",
-            }}
-          >
-            <p
-              style={{
-                fontSize: "0.65rem",
-                color: "var(--dp-muted)",
-                letterSpacing: "0.06em",
-              }}
-            >
-              &copy; {copyrightDate}{" "}
-              <span style={{ color: "var(--dp-sand)" }}>
-                {copyrightName}
-                {copyrightName.length && !copyrightName.endsWith(".")
-                  ? "."
-                  : ""}
-              </span>{" "}
-              All rights reserved.
-            </p>
+      <div className="label flex flex-col gap-2 border-t border-line px-4 py-5 text-fg-3 sm:flex-row sm:justify-between sm:px-8 md:px-12">
+        <span>
+          © {year} {name}
+        </span>
+        <span>Handmade in Lagos, Nigeria</span>
+      </div>
+    </footer>
+  );
+}
 
-            {/* Centre: tiny wordmark */}
-            <span
-              className="dp-footer-wordmark"
-              style={{
-                fontSize: "0.75rem",
-                color: "var(--dp-muted)",
-                letterSpacing: "0.2em",
-                opacity: 0.5,
-              }}
+function FooterColumn({
+  title,
+  items,
+  className,
+}: {
+  title: string;
+  items: Menu[];
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <p className="label mb-5 text-fg-3">{title}</p>
+      <ul className="space-y-2.5">
+        {items.map((item) => (
+          <li key={item.path}>
+            <Link
+              href={item.path}
+              className="text-sm text-fg-2 transition-colors hover:text-fg"
             >
-              D&apos;FOOTPRINT
-            </span>
-
-            <p
-              style={{
-                fontSize: "0.65rem",
-                color: "var(--dp-muted)",
-                letterSpacing: "0.06em",
-              }}
-            >
-              Quality handmade footwear for every occasion.
-            </p>
-          </div>
-        </div>
-      </footer>
-    </>
+              {item.title}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

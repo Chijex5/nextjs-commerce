@@ -1,9 +1,9 @@
 import { getMenu } from "lib/database";
-import NavbarClient from "./navbar-client";
+import SiteHeader from "./site-header";
 
 export async function Navbar() {
   const menu = await getMenu("main-menu");
-  const { SITE_NAME } = process.env;
+  const siteName = process.env.SITE_NAME || "D'FOOTPRINT";
 
-  return <NavbarClient menu={menu} siteName={SITE_NAME} />;
+  return <SiteHeader menu={menu} siteName={siteName} />;
 }
