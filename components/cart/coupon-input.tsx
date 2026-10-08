@@ -246,7 +246,7 @@ export default function CouponInput({
               </svg>
               <span
                 style={{
-                  fontFamily: "DM Sans, sans-serif",
+                  fontFamily: "var(--ff-body)",
                   fontSize: "0.68rem",
                   fontWeight: 500,
                   color: "var(--dp-sand, var(--brand-sand))",
@@ -257,7 +257,7 @@ export default function CouponInput({
               </span>
               <span
                 style={{
-                  fontFamily: "DM Sans, sans-serif",
+                  fontFamily: "var(--ff-body)",
                   fontSize: "0.58rem",
                   fontWeight: 600,
                   letterSpacing: "0.16em",
@@ -273,7 +273,7 @@ export default function CouponInput({
             <button
               onClick={handleRemove}
               style={{
-                fontFamily: "DM Sans, sans-serif",
+                fontFamily: "var(--ff-body)",
                 fontSize: "0.6rem",
                 fontWeight: 500,
                 letterSpacing: "0.1em",
@@ -307,7 +307,7 @@ export default function CouponInput({
           >
             <span
               style={{
-                fontFamily: "DM Sans, sans-serif",
+                fontFamily: "var(--ff-body)",
                 fontSize: "0.68rem",
                 color: "var(--dp-muted, var(--brand-muted))",
               }}
@@ -328,7 +328,7 @@ export default function CouponInput({
           {appliedCoupon.description && (
             <p
               style={{
-                fontFamily: "DM Sans, sans-serif",
+                fontFamily: "var(--ff-body)",
                 fontSize: "0.62rem",
                 color: "var(--dp-muted, var(--brand-muted))",
                 lineHeight: 1.5,
@@ -381,7 +381,7 @@ export default function CouponInput({
               </svg>
               <span
                 style={{
-                  fontFamily: "DM Sans, sans-serif",
+                  fontFamily: "var(--ff-body)",
                   fontSize: "0.72rem",
                   fontWeight: 500,
                   color: "var(--dp-sand, var(--brand-sand))",
@@ -391,7 +391,7 @@ export default function CouponInput({
               </span>
               <span
                 style={{
-                  fontFamily: "DM Sans, sans-serif",
+                  fontFamily: "var(--ff-body)",
                   fontSize: "0.58rem",
                   fontWeight: 600,
                   letterSpacing: "0.18em",
@@ -406,7 +406,7 @@ export default function CouponInput({
             </div>
             <p
               style={{
-                fontFamily: "DM Sans, sans-serif",
+                fontFamily: "var(--ff-body)",
                 fontSize: "0.72rem",
                 color: "var(--dp-muted, var(--brand-muted))",
               }}
@@ -426,7 +426,7 @@ export default function CouponInput({
             {appliedCoupon.description && (
               <p
                 style={{
-                  fontFamily: "DM Sans, sans-serif",
+                  fontFamily: "var(--ff-body)",
                   fontSize: "0.65rem",
                   color: "var(--dp-muted, var(--brand-muted))",
                   marginTop: "0.25rem",
@@ -440,7 +440,7 @@ export default function CouponInput({
           <button
             onClick={handleRemove}
             style={{
-              fontFamily: "DM Sans, sans-serif",
+              fontFamily: "var(--ff-body)",
               fontSize: "0.62rem",
               fontWeight: 500,
               letterSpacing: "0.1em",
@@ -486,7 +486,7 @@ export default function CouponInput({
         >
           <span
             style={{
-              fontFamily: "DM Sans, sans-serif",
+              fontFamily: "var(--ff-body)",
               fontSize: "0.58rem",
               fontWeight: 500,
               letterSpacing: "0.22em",
@@ -498,7 +498,7 @@ export default function CouponInput({
           </span>
           <span
             style={{
-              fontFamily: "DM Sans, sans-serif",
+              fontFamily: "var(--ff-body)",
               fontSize: "0.6rem",
               color: "var(--dp-muted, var(--brand-muted))",
             }}
@@ -524,7 +524,7 @@ export default function CouponInput({
                 "1px solid var(--dp-border, rgba(var(--brand-fg-rgb),0.09))",
               borderRight: "none",
               color: "var(--dp-cream, var(--brand-cream))",
-              fontFamily: "DM Sans, sans-serif",
+              fontFamily: "var(--ff-body)",
               fontSize: "0.72rem",
               letterSpacing: "0.12em",
               textTransform: "uppercase",
@@ -563,7 +563,7 @@ export default function CouponInput({
                 loading || !code.trim()
                   ? "var(--dp-muted, var(--brand-muted))"
                   : "var(--dp-cream, var(--brand-cream))",
-              fontFamily: "DM Sans, sans-serif",
+              fontFamily: "var(--ff-body)",
               fontSize: "0.62rem",
               fontWeight: 500,
               letterSpacing: "0.14em",
@@ -594,7 +594,7 @@ export default function CouponInput({
         style={{
           display: "block",
           marginBottom: "0.75rem",
-          fontFamily: "DM Sans, sans-serif",
+          fontFamily: "var(--ff-body)",
           fontSize: "0.58rem",
           fontWeight: 500,
           letterSpacing: "0.22em",
@@ -623,7 +623,7 @@ export default function CouponInput({
               "1px solid var(--dp-border, rgba(var(--brand-fg-rgb),0.09))",
             borderRight: "none",
             color: "var(--dp-cream, var(--brand-cream))",
-            fontFamily: "DM Sans, sans-serif",
+            fontFamily: "var(--ff-body)",
             fontSize: "0.75rem",
             letterSpacing: "0.1em",
             textTransform: "uppercase",
@@ -662,7 +662,7 @@ export default function CouponInput({
               loading || !code.trim()
                 ? "var(--dp-muted, var(--brand-muted))"
                 : "var(--dp-cream, var(--brand-cream))",
-            fontFamily: "DM Sans, sans-serif",
+            fontFamily: "var(--ff-body)",
             fontSize: "0.68rem",
             fontWeight: 500,
             letterSpacing: "0.14em",
@@ -687,7 +687,7 @@ export default function CouponInput({
 
       <p
         style={{
-          fontFamily: "DM Sans, sans-serif",
+          fontFamily: "var(--ff-body)",
           fontSize: "0.62rem",
           color: "var(--dp-muted, var(--brand-muted))",
           marginTop: "0.5rem",

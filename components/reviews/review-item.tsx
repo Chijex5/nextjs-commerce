@@ -43,7 +43,7 @@ export function ReviewItem({
         .ri-root {
           padding: 28px 0;
           border-bottom: 1px solid rgba(var(--brand-fg-rgb),0.07);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
         }
         .ri-root:first-child { padding-top: 20px; }
         .ri-root:last-child { border-bottom: none; padding-bottom: 0; }
@@ -86,7 +86,7 @@ export function ReviewItem({
         }
 
         .ri-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--ff-body);
           font-size: 19px;
           font-weight: 400;
           color: var(--cream, var(--brand-cream));
@@ -131,7 +131,7 @@ export function ReviewItem({
           background: transparent;
           border: 1px solid rgba(var(--brand-fg-rgb),0.09);
           color: var(--muted, var(--brand-muted));
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: 11px;
           letter-spacing: 0.1em;
           text-transform: uppercase;

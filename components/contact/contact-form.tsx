@@ -233,7 +233,7 @@ export default function ContactForm() {
           min-width: 140px;
           background: var(--terra);
           border: none;
-          color: var(--cream);
+          color: var(--brand-on-accent);
           font-family: var(--font-dm-sans), sans-serif;
           font-size: 10px;
           font-weight: 500;

@@ -36,7 +36,7 @@ export default function OrderActions({
           border-top: none;
           background: rgba(var(--brand-bg-rgb),0.7);
           padding: 36px 48px;
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
         }
         .oa-accent {
           height: 1px;
@@ -44,7 +44,7 @@ export default function OrderActions({
           margin-bottom: 28px;
         }
         .oa-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--ff-body);
           font-size: 26px;
           font-weight: 300;
           color: var(--cream, var(--brand-cream));
@@ -70,7 +70,7 @@ export default function OrderActions({
           background: var(--terra, var(--brand-terra));
           border: none;
           color: var(--cream, var(--brand-cream));
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.2em;
@@ -91,7 +91,7 @@ export default function OrderActions({
           background: transparent;
           border: 1px solid rgba(var(--brand-fg-rgb),0.18);
           color: var(--muted, var(--brand-muted));
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.2em;

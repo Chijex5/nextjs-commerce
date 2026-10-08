@@ -74,7 +74,7 @@ export default function OrderStatusStepper({
         }
 
         .oss-label {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: 13px;
           font-weight: 400;
           color: rgba(var(--brand-fg-rgb),0.25);

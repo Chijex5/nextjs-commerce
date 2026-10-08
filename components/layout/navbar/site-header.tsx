@@ -50,8 +50,10 @@ export default function SiteHeader({
 
   useEffect(() => setSearchOpen(false), [pathname]);
 
+  // Links carrying a query (e.g. "New in") are shortcuts into /search, so
+  // they are never shown as the current section.
   const isActive = (path: string) =>
-    path !== "/" && pathname.startsWith(path.split("?")[0]!);
+    path !== "/" && !path.includes("?") && pathname.startsWith(path);
 
   return (
     <>
