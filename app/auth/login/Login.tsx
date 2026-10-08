@@ -141,7 +141,7 @@ export default function Login() {
           padding: .9rem 1.5rem; border: none; cursor: pointer;
           transition: background .2s, color .2s;
         }
-        .lc-btn-primary:hover:not(:disabled) { background: var(--dp-ember); color: var(--dp-cream); }
+        .lc-btn-primary:hover:not(:disabled) { background: var(--dp-ember); color: var(--brand-on-accent); }
         .lc-btn-primary:disabled { opacity: .4; cursor: not-allowed; }
 
         .lc-btn-toggle {

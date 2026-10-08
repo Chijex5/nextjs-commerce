@@ -91,7 +91,7 @@ export default async function HomePage() {
       <Cursor />
 
       {/* ── HERO: street triptych + giant type ─────────────────────── */}
-      <section className="relative h-[calc(100svh-4rem)] min-h-[560px] overflow-hidden bg-ink text-paper">
+      <section className="relative h-[calc(100svh-7.5rem-env(safe-area-inset-bottom))] min-h-[520px] md:h-[calc(100svh-4rem)] overflow-hidden bg-ink text-paper">
         <div className="absolute inset-0 grid grid-cols-1 gap-[3px] md:grid-cols-3">
           {HERO_PHOTOS.map((photo, i) => (
             <div

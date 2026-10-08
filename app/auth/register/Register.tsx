@@ -223,7 +223,7 @@ export default function Register() {
           transition: background .2s, color .2s, opacity .2s;
           -webkit-tap-highlight-color: transparent;
         }
-        .rc-btn:hover:not(:disabled) { background: var(--dp-ember); color: var(--dp-cream); }
+        .rc-btn:hover:not(:disabled) { background: var(--dp-ember); color: var(--brand-on-accent); }
         .rc-btn:disabled { opacity: .45; cursor: not-allowed; }
 
         /* ───── terms + footer ───── */

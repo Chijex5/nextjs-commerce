@@ -80,7 +80,7 @@ export default async function SearchPage(props: {
           padding: .9rem 2rem; border: none; cursor: pointer;
           transition: background .22s, color .22s; flex-shrink: 0;
         }
-        .dp-btn-solid:hover { background: var(--dp-ember); color: var(--dp-cream); }
+        .dp-btn-solid:hover { background: var(--dp-ember); color: var(--brand-on-accent); }
 
         .suggestion-pill {
           font-family: 'DM Sans', sans-serif;

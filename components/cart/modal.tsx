@@ -53,7 +53,19 @@ function logCouponDebug(message: string, payload?: unknown) {
   console.debug(`[coupon][cart-modal] ${message}`, payload);
 }
 
-export default function CartModal() {
+/** Window event any part of the UI can dispatch to open the bag. */
+export const OPEN_CART_EVENT = "dfp:open-cart";
+
+export function openCartDrawer() {
+  window.dispatchEvent(new Event(OPEN_CART_EVENT));
+}
+
+export default function CartModal({
+  trigger,
+}: {
+  /** Custom trigger; defaults to the bag icon button. Pass null for none. */
+  trigger?: ((open: () => void, quantity: number) => ReactNode) | null;
+} = {}) {
   const { cart } = useCart();
   const { data: session, status } = useUserSession();
   const [isOpen, setIsOpen] = useState(false);
@@ -270,6 +282,12 @@ export default function CartModal() {
   }, [isOpen, cart?.totalQuantity, quantityRef]);
 
   useEffect(() => {
+    const open = () => setIsOpen(true);
+    window.addEventListener(OPEN_CART_EVENT, open);
+    return () => window.removeEventListener(OPEN_CART_EVENT, open);
+  }, []);
+
+  useEffect(() => {
     const shouldOpen = searchParams.get("view-cart") === "1";
     if (!shouldOpen || hasHandledViewCartParamRef.current) return;
     hasHandledViewCartParamRef.current = true;
@@ -389,9 +407,13 @@ export default function CartModal() {
         .dp-cart-scroll::-webkit-scrollbar-thumb { background: var(--dp-border); }
       `}</style>
 
-      <button aria-label="Open cart" onClick={openCart}>
-        <OpenCart quantity={cart?.totalQuantity} />
-      </button>
+      {trigger === undefined ? (
+        <button aria-label="Open cart" onClick={openCart}>
+          <OpenCart quantity={cart?.totalQuantity} />
+        </button>
+      ) : trigger ? (
+        trigger(openCart, cart?.totalQuantity ?? 0)
+      ) : null}
 
       <Transition show={isOpen}>
         <Dialog onClose={closeCart} className="relative z-50">
@@ -569,7 +591,7 @@ export default function CartModal() {
                       alignItems: "center",
                       gap: "0.4rem",
                       background: "var(--dp-ember)",
-                      color: "var(--dp-cream)",
+                      color: "var(--brand-on-accent)",
                       fontFamily: "var(--font-dm-sans), sans-serif",
                       fontWeight: 500,
                       fontSize: "0.68rem",
@@ -1317,7 +1339,7 @@ export default function CartModal() {
                       onClick={handleSaveNote}
                       style={{
                         background: "var(--dp-ember)",
-                        color: "var(--dp-cream)",
+                        color: "var(--brand-on-accent)",
                         border: "none",
                         cursor: "pointer",
                         padding: "0.75rem",

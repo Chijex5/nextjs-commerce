@@ -16,7 +16,7 @@ import {
   siteTagline,
 } from "lib/seo";
 import { baseUrl } from "lib/utils";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { headers } from "next/headers";
 import Script from "next/script";
@@ -28,6 +28,15 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 const FB_PIXEL_ID = process.env.NEXT_PUBLIC_FB_PIXEL_ID;
 const TIKTOK_PIXEL_ID = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID;
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
+
+export const viewport: Viewport = {
+  // Lets the bottom tab bar sit under the iPhone home indicator safely.
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
@@ -205,7 +214,13 @@ export default async function RootLayout({
           {!isAdminRoute ? <TikTokIdentify /> : null}
           {!isAdminRoute ? <Navbar /> : null}
           {!isAdminRoute ? <FirstVisitSignupPopup /> : null}
-          <main>
+          <main
+            className={
+              isAdminRoute
+                ? undefined
+                : "pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0"
+            }
+          >
             <PageTransition>{children}</PageTransition>
             <Toaster closeButton />
           </main>

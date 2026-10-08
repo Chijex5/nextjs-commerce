@@ -119,12 +119,12 @@ export default async function CustomOrdersPage() {
         .dp-zoom:hover img { transform:scale(1.07); }
 
         .dp-btn-solid  { display:inline-flex;align-items:center;gap:.5rem;background:var(--dp-cream);color:var(--dp-ink);font-family:var(--font-dm-sans),sans-serif;font-weight:500;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;padding:.9rem 2.1rem;text-decoration:none;transition:background .22s,color .22s; }
-        .dp-btn-solid:hover  { background:var(--dp-ember);color:var(--dp-cream); }
+        .dp-btn-solid:hover  { background:var(--dp-ember);color:var(--brand-on-accent); }
 
         .dp-btn-ghost  { display:inline-flex;align-items:center;gap:.5rem;border:1px solid rgba(var(--brand-fg-rgb),.28);color:var(--dp-cream);font-family:var(--font-dm-sans),sans-serif;font-weight:500;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;padding:.9rem 2.1rem;text-decoration:none;transition:border-color .22s,background .22s; }
         .dp-btn-ghost:hover  { border-color:var(--dp-cream);background:rgba(var(--brand-fg-rgb),.06); }
 
-        .dp-btn-ember  { display:inline-flex;align-items:center;gap:.5rem;background:var(--dp-ember);color:var(--dp-cream);font-family:var(--font-dm-sans),sans-serif;font-weight:500;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;padding:.9rem 2.1rem;text-decoration:none;transition:opacity .22s; }
+        .dp-btn-ember  { display:inline-flex;align-items:center;gap:.5rem;background:var(--dp-ember);color:var(--brand-on-accent);font-family:var(--font-dm-sans),sans-serif;font-weight:500;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;padding:.9rem 2.1rem;text-decoration:none;transition:opacity .22s; }
         .dp-btn-ember:hover  { opacity:.88; }
 
         .dp-rule  { border:none;border-top:1px solid var(--dp-border); }

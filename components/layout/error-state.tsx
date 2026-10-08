@@ -110,7 +110,7 @@ export function ErrorState({
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.98 }}
             transition={buttonTransition}
-            className="inline-flex items-center justify-center rounded-[2px] bg-[var(--brand-terra)] px-7 py-3.5 text-[13px] font-medium uppercase tracking-[0.05em] text-[var(--brand-cream)] transition-colors hover:bg-[var(--brand-terra-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-terra)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brand-espresso)]"
+            className="inline-flex items-center justify-center rounded-[2px] bg-[var(--brand-terra)] px-7 py-3.5 text-[13px] font-medium uppercase tracking-[0.05em] text-[var(--brand-on-accent)] transition-colors hover:bg-[var(--brand-terra-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-terra)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brand-espresso)]"
           >
             Try again
           </motion.button>

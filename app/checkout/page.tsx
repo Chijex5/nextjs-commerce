@@ -1431,7 +1431,7 @@ export default function CheckoutPage() {
                                 top: 2,
                                 right: 2,
                                 background: "var(--dp-ember)",
-                                color: "var(--dp-cream)",
+                                color: "var(--brand-on-accent)",
                                 fontFamily: "var(--font-dm-sans), sans-serif",
                                 fontSize: "0.55rem",
                                 fontWeight: 600,

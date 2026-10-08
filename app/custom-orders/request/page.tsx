@@ -219,7 +219,7 @@ export default function CustomOrderRequestPage() {
                 alignItems: "center",
                 gap: ".5rem",
                 background: "var(--dp-ember)",
-                color: "var(--dp-cream)",
+                color: "var(--brand-on-accent)",
                 fontFamily: "DM Sans, sans-serif",
                 fontWeight: 500,
                 fontSize: ".68rem",

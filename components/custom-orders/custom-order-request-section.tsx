@@ -447,12 +447,12 @@ export default function CustomOrderRequestSection() {
           padding: .9rem 2.1rem; border: none; cursor: pointer;
           transition: background .22s, color .22s;
         }
-        .dp-btn-solid:hover:not(:disabled) { background: var(--dp-ember); color: var(--dp-cream); }
+        .dp-btn-solid:hover:not(:disabled) { background: var(--dp-ember); color: var(--brand-on-accent); }
         .dp-btn-solid:disabled { opacity: .5; cursor: not-allowed; }
 
         .dp-btn-ember {
           display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-          background: var(--dp-ember); color: var(--dp-cream);
+          background: var(--dp-ember); color: var(--brand-on-accent);
           font-family: 'DM Sans', sans-serif; font-weight: 500;
           font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
           padding: .9rem 2.1rem; border: none; cursor: pointer;
