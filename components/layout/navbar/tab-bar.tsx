@@ -8,7 +8,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-const HIDDEN_ON = ["/checkout", "/order"];
+// Product pages show their own sticky "Add to bag" bar instead.
+const HIDDEN_ON = ["/checkout", "/order", "/product/"];
 
 function tap() {
   try {
