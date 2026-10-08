@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import LogoIcon from "components/icons/logo";
+import { Menu, X } from "lucide-react";
 import ThemeToggleButton from "../theme-toggle-button";
+import "./admin.css";
 
 type AdminLayoutShellProps = {
   children: React.ReactNode;
@@ -81,32 +84,37 @@ function SidebarNav({
   pathname: string;
   onNavigate?: () => void;
 }) {
+  let n = 0;
   return (
-    <nav className="space-y-6">
+    <nav className="space-y-7">
       {NAV_GROUPS.map((group) => (
         <div key={group.label}>
-          <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-400 dark:text-neutral-500">
-            {group.label}
-          </p>
-          <ul className="space-y-0.5">
+          <p className="label mb-2 px-3 text-white/40">{group.label}</p>
+          <ul>
             {group.items.map((item) => {
               const active = isActive(pathname, item.href);
+              n += 1;
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
                     onClick={onNavigate}
+                    aria-current={active ? "page" : undefined}
                     className={[
-                      "group relative flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                      "group flex items-center gap-3 px-3 py-2 text-sm transition-colors",
                       active
-                        ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
-                        : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100",
+                        ? "bg-white text-black"
+                        : "text-white/70 hover:bg-white/10 hover:text-white",
                     ].join(" ")}
                   >
-                    {/* Active indicator bar */}
-                    {active && (
-                      <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-white/40 dark:bg-neutral-900/40" />
-                    )}
+                    <span
+                      className={[
+                        "font-mono text-[10px]",
+                        active ? "text-black/50" : "text-white/30",
+                      ].join(" ")}
+                    >
+                      {String(n).padStart(2, "0")}
+                    </span>
                     {item.label}
                   </Link>
                 </li>
@@ -118,6 +126,13 @@ function SidebarNav({
     </nav>
   );
 }
+
+const MOBILE_TABS: NavItem[] = [
+  { href: "/admin/dashboard", label: "Home" },
+  { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/products", label: "Products" },
+  { href: "/admin/custom-order-requests", label: "Requests" },
+];
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Main shell
@@ -193,81 +208,68 @@ export default function AdminLayoutShell({
     ? new Date(adminProfile.lastLoginAt).toLocaleString()
     : "Not available";
 
+  const brand = (
+    <Link href="/" className="flex items-center gap-2.5 text-white">
+      <LogoIcon className="!size-9 !fill-white" />
+      <span>
+        <span className="display block text-xl leading-none">
+          D&apos;Footprint
+        </span>
+        <span className="label text-white/50">Admin</span>
+      </span>
+    </Link>
+  );
+
+  const accountLinks = (onClick?: () => void) => (
+    <div className="space-y-1.5 px-3 py-4">
+      <Link
+        href="/admin/account"
+        onClick={onClick}
+        className="label flex h-10 items-center justify-between border border-white/15 px-3 text-white/70 hover:border-white hover:text-white"
+      >
+        Account settings <span>→</span>
+      </Link>
+      <Link
+        href="/api/auth/signout"
+        onClick={onClick}
+        className="label flex h-10 items-center justify-between border border-white/15 px-3 text-white/70 hover:border-white hover:text-white"
+      >
+        Log out <span>→</span>
+      </Link>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-      <div className="lg:grid lg:min-h-screen lg:grid-cols-[15rem_minmax(0,1fr)]">
+    <div className="admin-shell min-h-screen bg-canvas text-fg">
+      <div className="lg:grid lg:min-h-screen lg:grid-cols-[16rem_minmax(0,1fr)]">
         {/* ── Desktop sidebar ── */}
-        <aside className="hidden border-r border-neutral-200 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col dark:border-neutral-800 dark:bg-neutral-900">
-          {/* Wordmark */}
-          <div className="px-5 py-6">
-            <Link href="/" className="block">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400 transition-colors hover:text-neutral-900 dark:text-neutral-500 dark:hover:text-neutral-100">
-                D&apos;FOOTPRINT
-              </p>
-              <p className="mt-0.5 text-[11px] font-medium text-neutral-300 dark:text-neutral-600">
-                Admin
-              </p>
-            </Link>
-          </div>
-
-          <div className="mx-4 h-px bg-neutral-100 dark:bg-neutral-800" />
-
-          {/* Nav */}
-          <div className="no-scrollbar flex-1 overflow-y-auto px-3 py-5">
+        <aside className="hidden border-r border-white/10 bg-ink lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
+          <div className="px-5 py-6">{brand}</div>
+          <div className="no-scrollbar flex-1 overflow-y-auto px-2 py-4">
             <SidebarNav pathname={pathname || ""} />
           </div>
-
-          <div className="mx-4 h-px bg-neutral-100 dark:bg-neutral-800" />
-
-          {/* Footer */}
-          <div className="px-4 py-4">
-            <Link
-              href="/admin/account"
-              className="mb-2 flex w-full items-center justify-center rounded-lg border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
-            >
-              Account settings
-            </Link>
-
-            <Link
-              href="/api/auth/signout"
-              className="flex w-full items-center justify-center rounded-lg border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
-            >
-              Log out
-            </Link>
-          </div>
+          <div className="border-t border-white/10">{accountLinks()}</div>
         </aside>
 
         {/* ── Content ── */}
-        <div className="min-w-0">
-          {/* Top header */}
-          <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-neutral-200 bg-white px-4 dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="min-w-0 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
+          <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-3 border-b border-line bg-canvas/90 px-4 backdrop-blur-md lg:h-16 lg:px-8">
             <button
               type="button"
               aria-label="Open admin menu"
               onClick={() => setMobileMenuOpen(true)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 lg:hidden"
+              className="grid size-10 place-items-center border border-line lg:hidden"
             >
-              <svg
-                className="h-4 w-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M4 7h16M4 12h16M4 17h16"
-                />
-              </svg>
+              <Menu className="size-4" />
             </button>
 
-            <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+            <p className="label min-w-0 flex-1 truncate">
+              <span className="text-fg-3">Admin / </span>
               {currentPage}
             </p>
 
             <div className="flex items-center gap-2">
-              <ThemeToggleButton className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800" />
+              <ThemeToggleButton className="grid size-10 place-items-center border border-line text-fg-2 hover:border-fg hover:text-fg" />
 
               <div className="relative" ref={profileMenuRef}>
                 <button
@@ -276,7 +278,7 @@ export default function AdminLayoutShell({
                   aria-haspopup="menu"
                   aria-expanded={profileMenuOpen}
                   onClick={() => setProfileMenuOpen((open) => !open)}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-neutral-800 bg-neutral-900 px-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-neutral-800 dark:border-neutral-200 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+                  className="grid size-10 place-items-center bg-fg font-mono text-xs text-canvas"
                 >
                   {initials}
                 </button>
@@ -285,40 +287,33 @@ export default function AdminLayoutShell({
                   <div
                     role="menu"
                     aria-label="Admin profile menu"
-                    className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl ring-1 ring-black/5 dark:border-neutral-700 dark:bg-neutral-900 dark:ring-white/10"
+                    className="animate-fade-in absolute right-0 z-50 mt-2 w-72 border border-line bg-canvas p-1 shadow-xl"
                   >
-                    <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-3 dark:border-neutral-800 dark:bg-neutral-800/50">
-                      <p className="truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                        {displayName}
-                      </p>
-                      <p className="truncate text-xs text-neutral-500 dark:text-neutral-400">
+                    <div className="border-b border-line px-3 py-3">
+                      <p className="truncate font-medium">{displayName}</p>
+                      <p className="truncate text-xs text-fg-3">
                         {adminProfile?.email || "Unknown email"}
                       </p>
-                      <span className="mt-2 inline-flex rounded-full border border-neutral-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-600 dark:border-neutral-700 dark:text-neutral-300">
-                        {roleLabel}
-                      </span>
-                      <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
-                        Last login: {lastLoginLabel}
+                      <p className="label mt-2 text-fg-3">
+                        {roleLabel} · Last login {lastLoginLabel}
                       </p>
                     </div>
-                    <div className="mt-1 py-1">
-                      <Link
-                        href="/admin/account"
-                        role="menuitem"
-                        onClick={() => setProfileMenuOpen(false)}
-                        className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-900 hover:text-white dark:text-neutral-300 dark:hover:bg-neutral-100 dark:hover:text-neutral-900"
-                      >
-                        Account settings
-                      </Link>
-                      <Link
-                        href="/api/auth/signout"
-                        role="menuitem"
-                        onClick={() => setProfileMenuOpen(false)}
-                        className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-900 hover:text-white dark:text-neutral-300 dark:hover:bg-neutral-100 dark:hover:text-neutral-900"
-                      >
-                        Log out
-                      </Link>
-                    </div>
+                    <Link
+                      href="/admin/account"
+                      role="menuitem"
+                      onClick={() => setProfileMenuOpen(false)}
+                      className="block px-3 py-2.5 text-sm hover:bg-fg hover:text-canvas"
+                    >
+                      Account settings
+                    </Link>
+                    <Link
+                      href="/api/auth/signout"
+                      role="menuitem"
+                      onClick={() => setProfileMenuOpen(false)}
+                      className="block px-3 py-2.5 text-sm hover:bg-fg hover:text-canvas"
+                    >
+                      Log out
+                    </Link>
                   </div>
                 )}
               </div>
@@ -329,78 +324,72 @@ export default function AdminLayoutShell({
         </div>
       </div>
 
+      {/* ── Mobile bottom tabs ── */}
+      <nav
+        aria-label="Admin quick links"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-canvas/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
+      >
+        <ul className="grid h-16 grid-cols-5">
+          {MOBILE_TABS.map((tab) => {
+            const active = isActive(pathname || "", tab.href);
+            return (
+              <li key={tab.href}>
+                <Link
+                  href={tab.href}
+                  aria-current={active ? "page" : undefined}
+                  className={[
+                    "flex h-full items-center justify-center font-mono text-[11px] uppercase tracking-wide",
+                    active
+                      ? "text-fg underline underline-offset-4"
+                      : "text-fg-3",
+                  ].join(" ")}
+                >
+                  {tab.label}
+                </Link>
+              </li>
+            );
+          })}
+          <li>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="flex h-full w-full items-center justify-center font-mono text-[11px] uppercase tracking-wide text-fg-3"
+            >
+              More
+            </button>
+          </li>
+        </ul>
+      </nav>
+
       {/* ── Mobile drawer ── */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          {/* Backdrop */}
           <button
             type="button"
             aria-label="Close admin menu"
-            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/50"
             onClick={() => setMobileMenuOpen(false)}
           />
-
-          {/* Drawer */}
-          <aside className="relative flex h-full w-72 max-w-[85%] flex-col border-r border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-            {/* Drawer header */}
+          <aside className="animate-slide-up absolute inset-x-0 bottom-0 flex max-h-[88svh] flex-col bg-ink pb-[env(safe-area-inset-bottom)]">
             <div className="flex items-center justify-between px-5 py-5">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">
-                  D&apos;FOOTPRINT
-                </p>
-                <p className="mt-0.5 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                  Admin Panel
-                </p>
-              </div>
+              {brand}
               <button
                 type="button"
                 aria-label="Close admin menu"
                 onClick={() => setMobileMenuOpen(false)}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                className="label flex h-10 items-center gap-1.5 text-white"
               >
-                <svg
-                  className="h-4 w-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                Close <X className="size-4" />
               </button>
             </div>
-
-            <div className="mx-4 h-px bg-neutral-100 dark:bg-neutral-800" />
-
-            <div className="no-scrollbar flex-1 overflow-y-auto px-3 py-5">
+            <div className="no-scrollbar flex-1 overflow-y-auto px-2 py-2">
               <SidebarNav
                 pathname={pathname || ""}
                 onNavigate={() => setMobileMenuOpen(false)}
               />
             </div>
-
-            <div className="mx-4 h-px bg-neutral-100 dark:bg-neutral-800" />
-
-            <div className="px-4 py-4">
-              <Link
-                href="/admin/account"
-                onClick={() => setMobileMenuOpen(false)}
-                className="mb-2 flex w-full items-center justify-center rounded-lg border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
-              >
-                Account settings
-              </Link>
-
-              <Link
-                href="/api/auth/signout"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex w-full items-center justify-center rounded-lg border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
-              >
-                Log out
-              </Link>
+            <div className="border-t border-white/10">
+              {accountLinks(() => setMobileMenuOpen(false))}
             </div>
           </aside>
         </div>

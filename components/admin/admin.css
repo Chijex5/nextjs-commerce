@@ -1,0 +1,112 @@
+/*
+ * Admin skin. The admin screens are ~26k lines of neutral Tailwind classes;
+ * rather than rewrite every one, these scoped (unlayered, so they beat
+ * Tailwind utilities) rules bring them into the black & white editorial
+ * system: square corners, no drop shadows, Archivo page titles and KPI
+ * numbers, mono labels and table headers, app-sized inputs on phones.
+ * Status colours (green/amber/red pills) are left alone on purpose.
+ */
+
+/* Square everything except pills, avatars and toggles. */
+.admin-shell [class*="rounded"]:not([class*="rounded-full"]) {
+  border-radius: 0;
+}
+
+.admin-shell [class*="shadow-sm"],
+.admin-shell [class*="shadow-md"] {
+  box-shadow: none;
+}
+
+/* Page canvas: pages wrap themselves in neutral-50/900 full-height divs. */
+.admin-shell main > .min-h-screen {
+  min-height: calc(100svh - 3.5rem);
+  background: var(--brand-espresso);
+}
+
+/* Page titles. */
+.admin-shell main h1 {
+  font-family: var(--ff-head);
+  font-weight: 800;
+  font-stretch: 66%;
+  text-transform: uppercase;
+  line-height: 0.88;
+  letter-spacing: -0.01em;
+  font-size: clamp(2.25rem, 6vw, 3.75rem);
+}
+
+/* Section headings inside cards. */
+.admin-shell main h2 {
+  letter-spacing: -0.01em;
+}
+
+/* Small uppercase captions → mono labels. */
+.admin-shell main .uppercase:is(.text-xs, .text-\[10px\], .text-\[11px\]),
+.admin-shell th {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Big numbers (KPIs, totals). */
+.admin-shell
+  main
+  :is(p, span, div):is(.text-2xl, .text-3xl):is(.font-semibold, .font-bold) {
+  font-family: var(--ff-head);
+  font-weight: 800;
+  font-stretch: 75%;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.admin-shell main :is(p, span, div).text-3xl:is(.font-semibold, .font-bold) {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+}
+
+.admin-shell main :is(p, span, div).text-2xl:is(.font-semibold, .font-bold) {
+  font-size: 2rem;
+}
+
+.admin-shell table {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Form controls: crisp focus, no blue/grey glow. */
+.admin-shell
+  :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea
+  ):focus-visible {
+  outline: 2px solid var(--brand-cream);
+  outline-offset: -1px;
+  box-shadow: none;
+}
+
+.admin-shell :is(input[type="checkbox"], input[type="radio"]) {
+  accent-color: var(--brand-cream);
+}
+
+/* Phones: 16px controls so iOS never zooms, 44px tap targets. */
+@media (max-width: 767px) {
+  .admin-shell
+    :is(
+      input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+      select,
+      textarea
+    ) {
+    font-size: 16px;
+  }
+
+  .admin-shell
+    :is(
+      input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+          [type="file"]
+        ),
+      select
+    ) {
+    min-height: 44px;
+  }
+}

@@ -1,6 +1,8 @@
 "use client";
 
 import { ErrorState } from "components/layout/error-state";
+// The root layout (and its CSS) is replaced when this renders.
+import "./globals.css";
 
 export default function GlobalError({
   error,
@@ -10,8 +12,8 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <html>
-      <body>
+    <html lang="en">
+      <body className="bg-canvas font-sans text-fg antialiased">
         <ErrorState
           error={error}
           resetAction={reset}

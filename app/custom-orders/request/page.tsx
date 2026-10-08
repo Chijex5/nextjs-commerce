@@ -67,22 +67,6 @@ export default function CustomOrderRequestPage() {
           }}
         >
           {/* Ghost watermark */}
-          <span
-            className="dp-wordmark"
-            aria-hidden
-            style={{
-              position: "absolute",
-              bottom: "-.75rem",
-              right: "1rem",
-              fontSize: "6rem",
-              color: "rgba(var(--brand-fg-rgb),0.04)",
-              lineHeight: 1,
-              userSelect: "none",
-              pointerEvents: "none",
-            }}
-          >
-            BESPOKE
-          </span>
 
           <div style={{ position: "relative", zIndex: 1 }}>
             <p className="dp-label" style={{ marginBottom: ".75rem" }}>
