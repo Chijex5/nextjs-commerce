@@ -1,5 +1,6 @@
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { isMockData } from "../data/source";
 import * as schema from "./schema";
 
 const {
@@ -13,13 +14,18 @@ const {
   NODE_ENV,
 } = process.env;
 
-if (!AMAZON_DB_HOST) throw new Error("AMAZON_DB_HOST is not set");
-if (!AMAZON_DB_PORT) throw new Error("AMAZON_DB_PORT is not set");
-if (!AMAZON_DB_NAME) throw new Error("AMAZON_DB_NAME is not set");
-if (!AMAZON_DB_USER) throw new Error("AMAZON_DB_USER is not set");
-if (!AMAZON_DB_PASSWORD) throw new Error("AMAZON_DB_PASSWORD is not set");
+// In mock mode (DATA_SOURCE=mock) the storefront never queries Postgres, so
+// the connection settings may be absent. postgres() connects lazily, so the
+// client below is created but never opens a connection.
+if (!isMockData) {
+  if (!AMAZON_DB_HOST) throw new Error("AMAZON_DB_HOST is not set");
+  if (!AMAZON_DB_PORT) throw new Error("AMAZON_DB_PORT is not set");
+  if (!AMAZON_DB_NAME) throw new Error("AMAZON_DB_NAME is not set");
+  if (!AMAZON_DB_USER) throw new Error("AMAZON_DB_USER is not set");
+  if (!AMAZON_DB_PASSWORD) throw new Error("AMAZON_DB_PASSWORD is not set");
+}
 
-const port = Number(AMAZON_DB_PORT);
+const port = Number(AMAZON_DB_PORT ?? 5432);
 if (!Number.isFinite(port)) throw new Error("AMAZON_DB_PORT must be a number");
 
 const ssl = { rejectUnauthorized: false };

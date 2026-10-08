@@ -1,0 +1,151 @@
+/* Home page — "Lagos Atelier". Utilities shared across the home sections. */
+
+.display {
+  font-family: var(--ff-head);
+  font-weight: 800;
+  font-stretch: 68%;
+  text-transform: uppercase;
+  line-height: 0.86;
+  letter-spacing: -0.012em;
+}
+
+/* The one editorial accent word inside a display headline. */
+.display .accent,
+.accent {
+  font-family: var(--ff-accent);
+  font-style: italic;
+  font-weight: 400;
+  font-stretch: normal;
+  text-transform: none;
+  letter-spacing: -0.02em;
+}
+
+/* Animated underline for text links */
+.link-underline {
+  background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1px
+    no-repeat;
+  padding-bottom: 2px;
+  transition: background-size 0.45s var(--ease-atelier);
+}
+.link-underline:hover {
+  background-size: 0% 1px;
+  background-position: 100% 100%;
+}
+
+/* Hide scrollbars on swipe rails */
+.rail {
+  scrollbar-width: none;
+}
+.rail::-webkit-scrollbar {
+  display: none;
+}
+
+/* Stitched divider: a dashed pink thread */
+.stitch-x {
+  height: 1px;
+  background-image: linear-gradient(
+    90deg,
+    var(--color-accent) 0 6px,
+    transparent 6px 12px
+  );
+  background-size: 12px 1px;
+}
+.stitch-y {
+  width: 1px;
+  background-image: linear-gradient(
+    180deg,
+    var(--color-accent) 0 6px,
+    transparent 6px 12px
+  );
+  background-size: 1px 12px;
+}
+
+/* Subtle paper grain on the dark bands (inline SVG noise, ~300 bytes). */
+.grain {
+  position: relative;
+  isolation: isolate;
+}
+.grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Motion ───────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  /* Hero entrance: staggered rise, pure CSS so it runs before hydration. */
+  @keyframes home-rise {
+    from {
+      opacity: 0;
+      transform: translateY(0.35em);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .rise {
+    animation: home-rise 1.1s var(--ease-atelier) both;
+    animation-delay: var(--d, 0ms);
+  }
+
+  /* Pair drawing: outline is stitched in, then thread + straps appear. */
+  @keyframes pair-draw {
+    from {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes pair-fade {
+    from {
+      opacity: 0;
+    }
+  }
+  .pair-draw {
+    animation: pair-draw 2.2s var(--ease-atelier) 0.3s both;
+  }
+  .pair-fade {
+    animation: pair-fade 0.9s ease-out both;
+  }
+  .pair-fade-1 {
+    animation-delay: 1.4s;
+  }
+  .pair-fade-2 {
+    animation-delay: 1.9s;
+  }
+
+  /* Gentle float on the hero drawing */
+  @keyframes home-float {
+    50% {
+      transform: translateY(-10px) rotate(-1deg);
+    }
+  }
+  .float {
+    animation: home-float 7s ease-in-out 2.4s infinite;
+  }
+}
+
+/* Scroll reveal (see components/home/reveal.tsx). Only hides content when
+   scripts run and motion is welcome, so nothing is ever stuck invisible. */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 0.9s var(--ease-atelier),
+      transform 0.9s var(--ease-atelier);
+    transition-delay: var(--d, 0ms);
+  }
+  [data-reveal][data-shown] {
+    opacity: 1;
+    transform: none;
+  }
+}

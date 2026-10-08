@@ -7,7 +7,6 @@ import { CartProvider } from "components/cart/cart-context";
 import FirstVisitSignupPopup from "components/onboarding/first-visit-signup";
 import { Navbar } from "components/layout/navbar";
 import PageTransition from "components/layout/page-transition";
-import { WelcomeToast } from "components/welcome-toast";
 import { getCart } from "lib/database";
 import {
   canonicalUrl,
@@ -18,6 +17,7 @@ import {
 } from "lib/seo";
 import { baseUrl } from "lib/utils";
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 import { headers } from "next/headers";
 import Script from "next/script";
 import { ReactNode, Suspense } from "react";
@@ -56,22 +56,40 @@ export const metadata: Metadata = {
   },
 };
 
-// Fallback font objects for production builds without network access
-const inter = {
-  variable: "--font-inter",
-};
+// Brand typefaces — self-hosted (no network needed at build time).
+//  • Geist          → body / UI copy
+//  • Archivo (var)  → display headlines; its width axis gives the condensed cut
+//  • Instrument Serif italic → the single editorial accent word per headline
+const geistSans = localFont({
+  src: "../fonts/geist-variable.woff2",
+  variable: "--font-geist-sans",
+  weight: "100 900",
+  display: "swap",
+});
 
-const dmSans = {
-  variable: "--font-dm-sans",
-};
+const geistMono = localFont({
+  src: "../fonts/geist-mono-regular.woff2",
+  variable: "--font-geist-mono",
+  weight: "400",
+  display: "swap",
+  preload: false,
+});
 
-const bebasNeue = {
-  variable: "--font-bebas-neue",
-};
+const archivo = localFont({
+  src: "../fonts/archivo-latin-wdth-normal.woff2",
+  variable: "--font-archivo",
+  weight: "100 900",
+  display: "swap",
+  declarations: [{ prop: "font-stretch", value: "62% 125%" }],
+});
 
-const cormorantGaramond = {
-  variable: "--font-cormorant-garamond",
-};
+const instrumentSerif = localFont({
+  src: "../fonts/instrument-serif-latin-400-italic.woff2",
+  variable: "--font-instrument",
+  weight: "400",
+  style: "italic",
+  display: "swap",
+});
 
 export default async function RootLayout({
   children,
@@ -86,11 +104,11 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${dmSans.variable} ${bebasNeue.variable} ${cormorantGaramond.variable}`}
+      className={`${geistSans.variable} ${geistMono.variable} ${archivo.variable} ${instrumentSerif.variable}`}
       suppressHydrationWarning
     >
       <Analytics />
-      <body className="bg-neutral-50 font-sans text-black selection:bg-teal-300 dark:bg-neutral-900 dark:text-white dark:selection:bg-pink-500 dark:selection:text-white">
+      <body className="bg-canvas font-sans text-fg antialiased selection:bg-signal selection:text-ink">
         {/* Seed the theme from localStorage / system preference before first
             paint so there is no flash of the wrong theme. Mirrors the logic in
             components/theme-toggle.tsx. */}
@@ -199,7 +217,6 @@ export default async function RootLayout({
           <main>
             <PageTransition>{children}</PageTransition>
             <Toaster closeButton />
-            {!isAdminRoute ? <WelcomeToast /> : null}
           </main>
         </CartProvider>
       </body>
