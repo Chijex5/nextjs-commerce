@@ -3,13 +3,11 @@ import Login from "./Login";
 
 function LoginSkeleton() {
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950 md:p-8">
-      <div className="h-6 w-32 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
-      <div className="mt-6 space-y-3">
-        <div className="h-11 animate-pulse rounded-xl bg-neutral-200 dark:bg-neutral-800" />
-        <div className="h-11 animate-pulse rounded-xl bg-neutral-200 dark:bg-neutral-800" />
-        <div className="h-11 animate-pulse rounded-full bg-neutral-300 dark:bg-neutral-700" />
-      </div>
+    <div aria-busy className="space-y-6">
+      <div className="h-3 w-24 animate-pulse bg-plate" />
+      <div className="h-16 w-3/4 animate-pulse bg-plate" />
+      <div className="h-12 animate-pulse bg-plate" />
+      <div className="h-14 animate-pulse bg-plate" />
     </div>
   );
 }
