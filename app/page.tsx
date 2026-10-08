@@ -1,7 +1,7 @@
 import Footer from "components/layout/footer";
 import { Cursor } from "components/home/cursor";
 import { HorizontalScroll } from "components/home/horizontal-scroll";
-import { ProductCard } from "components/home/product-card";
+import { ProductCard } from "components/product/product-card";
 import { Reveal } from "components/home/reveal";
 import {
   CITY_PHOTO,

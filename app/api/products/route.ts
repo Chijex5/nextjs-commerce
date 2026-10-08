@@ -1,5 +1,4 @@
-import { defaultSort, sorting } from "lib/constants";
-import { getProducts } from "lib/database";
+import { getShopPage } from "lib/data/shop";
 import { NextRequest, NextResponse } from "next/server";
 
 const DEFAULT_LIMIT = 24;
@@ -12,31 +11,30 @@ function parsePositiveInt(value: string | null, fallback: number): number {
   return parsed;
 }
 
+/** Paginated products for the shop grid's infinite scroll. */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
-    const sortSlug = searchParams.get("sort");
-    const query = searchParams.get("q")?.trim() || undefined;
-
-    const selectedSort =
-      sorting.find((item) => item.slug === sortSlug) || defaultSort;
-
     const offset = parsePositiveInt(searchParams.get("offset"), 0);
-    const requestedLimit = parsePositiveInt(searchParams.get("limit"), DEFAULT_LIMIT);
-    const limit = Math.max(1, Math.min(MAX_LIMIT, requestedLimit));
+    const limit = Math.max(
+      1,
+      Math.min(
+        MAX_LIMIT,
+        parsePositiveInt(searchParams.get("limit"), DEFAULT_LIMIT),
+      ),
+    );
 
-    const products = await getProducts({
-      query,
-      sortKey: selectedSort.sortKey,
-      reverse: selectedSort.reverse,
+    const page = await getShopPage({
+      q: searchParams.get("q") ?? undefined,
+      sort: searchParams.get("sort"),
+      collection: searchParams.get("collection") ?? undefined,
       offset,
       limit,
     });
 
     return NextResponse.json({
-      products,
-      hasMore: products.length === limit,
-      nextOffset: offset + products.length,
+      ...page,
+      nextOffset: offset + page.products.length,
     });
   } catch (error) {
     console.error("Failed to fetch paginated products:", error);

@@ -1,11 +1,11 @@
-import type { HomeProduct } from "lib/data/home";
+import type { CardProduct } from "lib/data/types";
 import Image from "next/image";
 import Link from "next/link";
 
 export function formatNaira({
   amount,
   currencyCode,
-}: HomeProduct["price"]): string {
+}: CardProduct["price"]): string {
   return new Intl.NumberFormat("en-NG", {
     style: "currency",
     currency: currencyCode,
@@ -19,10 +19,12 @@ export function ProductCard({
   product,
   index,
   sizes,
+  priority,
 }: {
-  product: HomeProduct;
+  product: CardProduct;
   index: number;
   sizes: string;
+  priority?: boolean;
 }) {
   return (
     <Link
@@ -38,6 +40,7 @@ export function ProductCard({
             alt={product.image.alt}
             fill
             sizes={sizes}
+            priority={priority}
             className="object-cover transition-transform duration-[1.2s] ease-atelier group-hover:scale-[1.06]"
           />
         ) : (
