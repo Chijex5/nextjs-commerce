@@ -1,26 +1,34 @@
-/* Home page — "Lagos Atelier". Utilities shared across the home sections. */
+/* Home page — street editorial. Pure black & white; photos carry the colour. */
 
 .display {
   font-family: var(--ff-head);
   font-weight: 800;
-  font-stretch: 68%;
+  font-stretch: 66%;
   text-transform: uppercase;
-  line-height: 0.86;
-  letter-spacing: -0.012em;
+  line-height: 0.84;
+  letter-spacing: -0.01em;
 }
 
-/* The one editorial accent word inside a display headline. */
-.display .accent,
-.accent {
-  font-family: var(--ff-accent);
-  font-style: italic;
-  font-weight: 400;
-  font-stretch: normal;
-  text-transform: none;
-  letter-spacing: -0.02em;
+.label {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-/* Animated underline for text links */
+/* Inline photo "words" inside the manifesto paragraph */
+.inline-photo {
+  position: relative;
+  display: inline-block;
+  width: 1.9em;
+  height: 0.78em;
+  margin: 0 0 0 0.14em;
+  overflow: hidden;
+  vertical-align: baseline;
+  transform: translateY(0.04em);
+  border-radius: 999px;
+}
+
 .link-underline {
   background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1px
     no-repeat;
@@ -32,7 +40,6 @@
   background-position: 100% 100%;
 }
 
-/* Hide scrollbars on swipe rails */
 .rail {
   scrollbar-width: none;
 }
@@ -40,96 +47,88 @@
   display: none;
 }
 
-/* Stitched divider: a dashed pink thread */
-.stitch-x {
-  height: 1px;
-  background-image: linear-gradient(
-    90deg,
-    var(--color-accent) 0 6px,
-    transparent 6px 12px
-  );
-  background-size: 12px 1px;
+/* Marquee ticker */
+@keyframes ticker {
+  to {
+    transform: translateX(-50%);
+  }
 }
-.stitch-y {
-  width: 1px;
-  background-image: linear-gradient(
-    180deg,
-    var(--color-accent) 0 6px,
-    transparent 6px 12px
-  );
-  background-size: 1px 12px;
+.ticker {
+  animation: ticker 32s linear infinite;
 }
 
-/* Subtle paper grain on the dark bands (inline SVG noise, ~300 bytes). */
-.grain {
-  position: relative;
-  isolation: isolate;
-}
-.grain::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.07;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-/* ── Motion ───────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: no-preference) {
-  /* Hero entrance: staggered rise, pure CSS so it runs before hydration. */
-  @keyframes home-rise {
+  /* Hero lines rise out of a mask on load (pure CSS, runs before hydration) */
+  @keyframes line-up {
     from {
-      opacity: 0;
-      transform: translateY(0.35em);
-    }
-    to {
-      opacity: 1;
-      transform: none;
+      transform: translateY(105%);
     }
   }
-  .rise {
-    animation: home-rise 1.1s var(--ease-atelier) both;
+  .line > span {
+    display: block;
+    animation: line-up 1.2s var(--ease-atelier) both;
     animation-delay: var(--d, 0ms);
   }
-
-  /* Pair drawing: outline is stitched in, then thread + straps appear. */
-  @keyframes pair-draw {
-    from {
-      stroke-dasharray: 1;
-      stroke-dashoffset: 1;
-    }
-    to {
-      stroke-dasharray: 1;
-      stroke-dashoffset: 0;
-    }
-  }
-  @keyframes pair-fade {
+  @keyframes fade-in {
     from {
       opacity: 0;
     }
   }
-  .pair-draw {
-    animation: pair-draw 2.2s var(--ease-atelier) 0.3s both;
+  .fade-in {
+    animation: fade-in 1s ease-out both;
+    animation-delay: var(--d, 0ms);
   }
-  .pair-fade {
-    animation: pair-fade 0.9s ease-out both;
-  }
-  .pair-fade-1 {
-    animation-delay: 1.4s;
-  }
-  .pair-fade-2 {
-    animation-delay: 1.9s;
-  }
-
-  /* Gentle float on the hero drawing */
-  @keyframes home-float {
-    50% {
-      transform: translateY(-10px) rotate(-1deg);
+  @keyframes hero-zoom {
+    from {
+      transform: scale(1.15);
     }
   }
-  .float {
-    animation: home-float 7s ease-in-out 2.4s infinite;
+  .hero-zoom {
+    animation: hero-zoom 2.4s var(--ease-atelier) both;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker {
+    animation: none;
+  }
+}
+.line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.04em;
+}
+
+/* Scroll-driven effects (Chrome/Edge/Safari 26+). Older browsers simply show
+   the photos in full colour with no parallax. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Photos "develop" from black & white into colour as they scroll in */
+    @keyframes develop {
+      from {
+        filter: grayscale(1) contrast(1.1);
+      }
+      to {
+        filter: grayscale(0) contrast(1);
+      }
+    }
+    .develop {
+      animation: develop linear both;
+      animation-timeline: view();
+      animation-range: entry 20% cover 50%;
+    }
+
+    @keyframes parallax {
+      from {
+        transform: translateY(-12%) scale(1.15);
+      }
+      to {
+        transform: translateY(12%) scale(1.15);
+      }
+    }
+    .parallax {
+      animation: parallax linear both;
+      animation-timeline: view();
+    }
   }
 }
 
@@ -138,10 +137,10 @@
 @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
   [data-reveal] {
     opacity: 0;
-    transform: translateY(28px);
+    transform: translateY(40px);
     transition:
-      opacity 0.9s var(--ease-atelier),
-      transform 0.9s var(--ease-atelier);
+      opacity 1s var(--ease-atelier),
+      transform 1s var(--ease-atelier);
     transition-delay: var(--d, 0ms);
   }
   [data-reveal][data-shown] {

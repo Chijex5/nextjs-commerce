@@ -59,7 +59,7 @@ export const metadata: Metadata = {
 // Brand typefaces — self-hosted (no network needed at build time).
 //  • Geist          → body / UI copy
 //  • Archivo (var)  → display headlines; its width axis gives the condensed cut
-//  • Instrument Serif italic → the single editorial accent word per headline
+//  • Geist Mono     → small technical labels (prices, indexes, captions)
 const geistSans = localFont({
   src: "../fonts/geist-variable.woff2",
   variable: "--font-geist-sans",
@@ -72,7 +72,6 @@ const geistMono = localFont({
   variable: "--font-geist-mono",
   weight: "400",
   display: "swap",
-  preload: false,
 });
 
 const archivo = localFont({
@@ -81,14 +80,6 @@ const archivo = localFont({
   weight: "100 900",
   display: "swap",
   declarations: [{ prop: "font-stretch", value: "62% 125%" }],
-});
-
-const instrumentSerif = localFont({
-  src: "../fonts/instrument-serif-latin-400-italic.woff2",
-  variable: "--font-instrument",
-  weight: "400",
-  style: "italic",
-  display: "swap",
 });
 
 export default async function RootLayout({
@@ -104,11 +95,11 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${archivo.variable} ${instrumentSerif.variable}`}
+      className={`${geistSans.variable} ${geistMono.variable} ${archivo.variable}`}
       suppressHydrationWarning
     >
       <Analytics />
-      <body className="bg-canvas font-sans text-fg antialiased selection:bg-signal selection:text-ink">
+      <body className="bg-canvas font-sans text-fg antialiased selection:bg-fg selection:text-canvas">
         {/* Seed the theme from localStorage / system preference before first
             paint so there is no flash of the wrong theme. Mirrors the logic in
             components/theme-toggle.tsx. */}

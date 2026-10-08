@@ -23,7 +23,7 @@
   :root {
     --ff-body: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
     --ff-head: var(--font-archivo), "Arial Narrow", ui-sans-serif, sans-serif;
-    --ff-accent: var(--font-instrument), Georgia, serif;
+    --ff-accent: Georgia, serif;
 
     --font-inter: var(--ff-body);
     --font-dm-sans: var(--ff-body);
@@ -32,78 +32,66 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* Brand design tokens — "Lagos Atelier"                              */
+  /* Brand design tokens — street editorial, pure black & white         */
   /* ------------------------------------------------------------------ */
-  /* Brand colours are BLACK + PINK. To keep the brand open to everyone  */
-  /* (not just womenswear), black and a warm bone white carry ~95% of   */
-  /* every screen, and pink is a saturated *signal* — used for actions, */
-  /* stitches, numbers and focus — never as a large pastel wash.        */
-  /*                                                                    */
-  /* Token names are legacy (terra/gold/cream…) and will be renamed in  */
-  /* the design-system phase; their VALUES are the new palette:         */
-  /*   terra*  → pink accent      gold* → neutral stone (secondary)     */
-  /*   cream   → primary text     espresso → page background            */
+  /* No accent colour: photography brings all the colour. Token names   */
+  /* are legacy (terra/gold/cream…) and will be renamed in the design-  */
+  /* system phase; their VALUES are the new palette:                    */
+  /*   cream → text   espresso → page   terra → emphasis (= text colour)*/
+  /*   gold  → neutral grey                                            */
   :root {
-    /* Surfaces — light: warm bone paper */
-    --brand-void: #e7e4dd; /* inset / plate */
-    --brand-espresso: #f2f0eb; /* page background */
-    --brand-charcoal: #ffffff; /* card / panel */
-    --brand-surface2: #ffffff; /* elevated surface */
+    --brand-void: #ececec;
+    --brand-espresso: #ffffff;
+    --brand-charcoal: #ffffff;
+    --brand-surface2: #f5f5f5;
 
-    /* Text — light: ink */
-    --brand-cream: #0b0b0c; /* primary text */
-    --brand-sand: #3d3d40; /* secondary text */
-    --brand-muted: #66666b; /* tertiary text */
+    --brand-cream: #000000;
+    --brand-sand: #2b2b2b;
+    --brand-muted: #6b6b6b;
 
-    /* Accent — pink, deepened so it passes AA as text on bone */
-    --brand-terra: #c8155f;
-    --brand-terra-dark: #a8104f;
-    --brand-terra-light: #e02a74;
-    --brand-terra-pale: #ff7fb0;
-    --brand-gold: #57534e; /* secondary = neutral stone */
-    --brand-gold-light: #78716c;
+    --brand-terra: #000000;
+    --brand-terra-dark: #000000;
+    --brand-terra-light: #2b2b2b;
+    --brand-terra-pale: #6b6b6b;
+    --brand-gold: #4a4a4a;
+    --brand-gold-light: #6b6b6b;
     --brand-success: #2f6b41;
 
-    /* Overlay bases (bare r,g,b — used inside rgba(...)) */
-    --brand-fg-rgb: 11, 11, 12;
-    --brand-bg-rgb: 242, 240, 235;
+    --brand-fg-rgb: 0, 0, 0;
+    --brand-bg-rgb: 255, 255, 255;
     --brand-hi-rgb: 0, 0, 0;
-    --brand-terra-rgb: 200, 21, 95;
-    --brand-gold-rgb: 87, 83, 78;
-    --brand-muted-rgb: 102, 102, 107;
+    --brand-terra-rgb: 0, 0, 0;
+    --brand-gold-rgb: 74, 74, 74;
+    --brand-muted-rgb: 107, 107, 107;
     --brand-success-rgb: 47, 107, 65;
 
     color-scheme: light;
   }
 
   .dark {
-    /* Surfaces — dark: true black */
-    --brand-void: #050505;
-    --brand-espresso: #0b0b0c;
-    --brand-charcoal: #141416;
-    --brand-surface2: #1b1b1e;
+    --brand-void: #111111;
+    --brand-espresso: #000000;
+    --brand-charcoal: #0a0a0a;
+    --brand-surface2: #141414;
 
-    /* Text — dark: bone */
-    --brand-cream: #f2f0eb;
-    --brand-sand: #bdbab3;
-    --brand-muted: #8a8780;
+    --brand-cream: #ffffff;
+    --brand-sand: #d4d4d4;
+    --brand-muted: #8f8f8f;
 
-    /* Accent — full signal pink on black */
-    --brand-terra: #ff4f94;
-    --brand-terra-dark: #e63e80;
-    --brand-terra-light: #ff6ea6;
-    --brand-terra-pale: #ff9cc2;
-    --brand-gold: #a8a29e;
-    --brand-gold-light: #d6d3d1;
+    --brand-terra: #ffffff;
+    --brand-terra-dark: #ffffff;
+    --brand-terra-light: #d4d4d4;
+    --brand-terra-pale: #8f8f8f;
+    --brand-gold: #b5b5b5;
+    --brand-gold-light: #d4d4d4;
     --brand-success: #4a8c5c;
 
-    /* Overlay bases */
-    --brand-fg-rgb: 242, 240, 235;
-    --brand-bg-rgb: 20, 20, 22;
+    --brand-fg-rgb: 255, 255, 255;
+    --brand-bg-rgb: 0, 0, 0;
     --brand-hi-rgb: 255, 255, 255;
-    --brand-terra-rgb: 255, 79, 148;
-    --brand-gold-rgb: 168, 162, 158;
-    --brand-muted-rgb: 138, 135, 128;
+    --brand-terra-rgb: 255, 255, 255;
+    --brand-gold-rgb: 181, 181, 181;
+    --brand-muted-rgb: 143, 143, 143;
     --brand-success-rgb: 74, 140, 92;
 
     color-scheme: dark;
@@ -112,9 +100,8 @@
 
 /* Fixed brand constants (same in both themes) */
 @theme {
-  --color-ink: #0b0b0c;
-  --color-bone: #f2f0eb;
-  --color-signal: #ff3e8a;
+  --color-ink: #000000;
+  --color-paper: #ffffff;
   --ease-atelier: cubic-bezier(0.16, 1, 0.3, 1);
 }
 

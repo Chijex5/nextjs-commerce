@@ -1,8 +1,6 @@
-import clsx from "clsx";
 import type { HomeProduct } from "lib/data/home";
 import Image from "next/image";
 import Link from "next/link";
-import { PairIllustration, pairStyleFor } from "./pair-illustration";
 
 export function formatNaira({
   amount,
@@ -16,97 +14,51 @@ export function formatNaira({
   }).format(Number(amount));
 }
 
-/**
- * Product tile. Shows the product photo when there is one, otherwise an
- * illustrated plate so the grid never looks broken while photos are pending.
- */
+/** Editorial product tile: photo first, one mono caption line underneath. */
 export function ProductCard({
   product,
   index,
-  size = "default",
   sizes,
-  priority,
 }: {
   product: HomeProduct;
   index: number;
-  size?: "default" | "feature";
   sizes: string;
-  priority?: boolean;
 }) {
-  const number = String(index + 1).padStart(2, "0");
-
   return (
     <Link
       href={`/product/${product.handle}`}
       prefetch={false}
-      className="group block h-full outline-none active:scale-[0.985] transition-transform duration-200"
+      data-cursor="View"
+      className="group block outline-none transition-transform duration-200 active:scale-[0.98]"
     >
-      <div
-        className={clsx(
-          "relative overflow-hidden bg-plate",
-          size === "feature"
-            ? "aspect-[4/5] lg:aspect-auto lg:h-full lg:min-h-[560px]"
-            : "aspect-[4/5]",
-          "ring-accent ring-offset-2 ring-offset-canvas group-focus-visible:ring-2",
-        )}
-      >
+      <div className="relative aspect-[4/5] overflow-hidden bg-plate ring-fg ring-offset-2 ring-offset-canvas group-focus-visible:ring-2">
         {product.image ? (
           <Image
             src={product.image.url}
             alt={product.image.alt}
             fill
             sizes={sizes}
-            priority={priority}
-            className="object-cover transition-transform duration-700 ease-atelier group-hover:scale-[1.04]"
+            className="object-cover transition-transform duration-[1.2s] ease-atelier group-hover:scale-[1.06]"
           />
         ) : (
-          <div className="absolute inset-0 grid place-items-center text-fg">
-            <PairIllustration
-              style={pairStyleFor(product.handle)}
-              className={clsx(
-                "transition-transform duration-700 ease-atelier group-hover:-translate-y-1.5 group-hover:rotate-[-2deg]",
-                size === "feature" ? "w-[62%]" : "w-[70%]",
-              )}
-            />
-          </div>
+          <span className="absolute inset-0 grid place-items-center font-mono text-xs uppercase tracking-widest text-fg-3">
+            Photo soon
+          </span>
         )}
-
-        <span className="absolute left-3 top-3 font-mono text-[11px] tracking-wider text-fg-3 mix-blend-normal">
-          No.{number}
-        </span>
         {!product.available ? (
-          <span className="absolute right-3 top-3 bg-canvas px-2 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-fg">
+          <span className="absolute left-0 top-0 bg-fg px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-canvas">
             Sold out
           </span>
         ) : null}
-        <span
-          aria-hidden
-          className="absolute bottom-3 right-3 grid size-9 translate-y-2 place-items-center rounded-full bg-signal text-ink opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100"
-        >
-          <svg viewBox="0 0 16 16" className="size-3.5" fill="none">
-            <path
-              d="M3 8h10M9 4l4 4-4 4"
-              stroke="currentColor"
-              strokeWidth="1.6"
-            />
-          </svg>
-        </span>
       </div>
-
-      <div className="mt-3 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
-        <h3
-          className={clsx(
-            "line-clamp-2 min-w-0 font-medium text-fg sm:line-clamp-1",
-            size === "feature"
-              ? "text-base sm:text-lg"
-              : "text-sm sm:text-[15px]",
-          )}
-        >
-          {product.title}
-        </h3>
-        <p className="shrink-0 text-sm tabular-nums text-fg-2">
-          {formatNaira(product.price)}
-        </p>
+      <div className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 font-mono text-[11px] uppercase leading-snug tracking-[0.06em] sm:text-xs">
+        <span className="text-fg-3">{String(index + 1).padStart(3, "0")}</span>
+        <span className="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:gap-3">
+          <span className="line-clamp-2 text-fg">{product.title}</span>
+          <span className="shrink-0 text-fg-2">
+            {formatNaira(product.price)}
+          </span>
+        </span>
       </div>
     </Link>
   );

@@ -170,14 +170,7 @@ export default async function Footer() {
             padding: "4rem clamp(1.5rem, 4vw, 4rem) 3rem",
           }}
         >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(1, 1fr)",
-              gap: "3rem",
-            }}
-            className="md:grid-cols-[1.4fr_0.9fr_0.9fr_1.3fr]"
-          >
+          <div className="grid grid-cols-1 gap-12 md:grid-cols-[1.4fr_0.9fr_0.9fr_1.3fr]">
             {/* ── COL 1: Brand ──────────────────────────────────── */}
             <div
               style={{
