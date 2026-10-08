@@ -354,9 +354,11 @@ export type PublishedSizeGuide = typeof sizeGuides.$inferSelect;
 export async function getPublishedSizeGuides(
   limit: number = 6,
 ): Promise<PublishedSizeGuide[]> {
-  "use cache";getPublishedSizeGuides
+  "use cache";
   cacheTag(TAGS.sizeGuides);
   cacheLife("hours");
+
+  if (isMockData) return [];
 
   return db
     .select()

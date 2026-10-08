@@ -1,0 +1,112 @@
+/* Editorial bridge — restyles the older help/content pages (care, sizing,
+   contact, FAQ, CMS pages, custom-order request) in the black & white
+   editorial system without rewriting their content or logic. Applied by
+   wrapping a route in <div class="ed-bridge">. */
+
+.ed-bridge h1 {
+  font-family: var(--ff-head) !important;
+  font-weight: 800 !important;
+  font-stretch: 66%;
+  font-style: normal !important;
+  text-transform: uppercase;
+  line-height: 0.86 !important;
+  letter-spacing: -0.01em !important;
+  font-size: clamp(3rem, 10vw, 7.5rem) !important;
+}
+.ed-bridge h1 :is(em, i, span) {
+  font-style: normal !important;
+  font-family: inherit !important;
+  color: inherit !important;
+}
+
+.ed-bridge
+  :is(
+    .ci-section-title,
+    .sg-section-title,
+    .ci-card-title,
+    .sg-card-title,
+    .sg-step-title,
+    .ci-dos-title,
+    .ci-donts-title,
+    h2.dp-serif
+  ) {
+  font-family: var(--ff-head) !important;
+  font-weight: 800 !important;
+  font-stretch: 66%;
+  font-style: normal !important;
+  text-transform: uppercase;
+  line-height: 0.9 !important;
+  letter-spacing: -0.005em !important;
+}
+.ed-bridge :is(.ci-section-title, .sg-section-title, h2.dp-serif) {
+  font-size: clamp(2.2rem, 5vw, 3.75rem) !important;
+}
+
+.ed-bridge
+  :is(
+    .ci-label,
+    .sg-label,
+    .pg-eyebrow,
+    .pg-meta-label,
+    .cf-eyebrow,
+    .cf-label,
+    .co-label,
+    .dp-label
+  ) {
+  font-family: var(--font-geist-mono), monospace !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase;
+  color: var(--brand-muted) !important;
+}
+
+.ed-bridge .pg-accent {
+  display: none;
+}
+
+/* 16px fields so iOS never zooms; square corners throughout. */
+.ed-bridge
+  :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    select,
+    textarea
+  ) {
+  font-size: 16px !important;
+  border-radius: 0 !important;
+}
+.ed-bridge input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.ed-bridge select {
+  min-height: 48px;
+}
+.ed-bridge :is(.rounded, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl) {
+  border-radius: 0 !important;
+}
+
+.ed-bridge
+  :is(
+    .ci-btn-primary,
+    .sg-btn-primary,
+    .cf-submit,
+    .dp-btn-solid,
+    .dp-btn-ember
+  ) {
+  background: var(--brand-cream) !important;
+  color: var(--brand-espresso) !important;
+  border-radius: 0 !important;
+  min-height: 48px;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em !important;
+}
+.ed-bridge :is(.ci-btn, .sg-btn, .sg-btn-secondary, .dp-btn-ghost) {
+  border-radius: 0 !important;
+  min-height: 48px;
+}
+
+/* Drop the old tinted glows: flat paper, photography supplies the colour. */
+.ed-bridge :is(.ci-root, .sg-root) {
+  background: var(--brand-espresso) !important;
+}
+.ed-bridge [style*="radial-gradient"] {
+  display: none !important;
+}
