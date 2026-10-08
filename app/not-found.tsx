@@ -1,112 +1,135 @@
 "use client";
 
+import { ParticleLogo } from "components/brand/particle-logo";
+import { buttonClass } from "components/ui/button";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+const LINKS = [
+  { href: "/products", label: "Shop all designs" },
+  { href: "/custom-orders", label: "Custom orders" },
+  { href: "/contact", label: "Contact us" },
+];
+
+/**
+ * 404: the D'FOOTPRINT mark as a field of particles you can push around
+ * with the cursor (or a finger), over a giant 404 and a way back.
+ */
 export default function NotFound() {
-  const [query, setQuery] = useState("");
   const router = useRouter();
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const [query, setQuery] = useState("");
 
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    if (query.trim()) {
-      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
-    }
-  }
+  useEffect(() => {
+    if (!canvas.current) return;
+    const reduce = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    let logo: ParticleLogo | undefined;
+    let cancelled = false;
+
+    (async () => {
+      const color = getComputedStyle(document.documentElement)
+        .getPropertyValue("--brand-cream")
+        .trim();
+      const size = Math.min(
+        460,
+        Math.round(
+          Math.min(
+            window.innerWidth * (window.innerWidth >= 768 ? 0.4 : 0.8),
+            window.innerHeight * (window.innerWidth >= 768 ? 0.6 : 0.45),
+          ),
+        ),
+      );
+      logo = await new ParticleLogo(canvas.current!, {
+        src: "/brand/logo-mark.svg",
+        color: color || "#000",
+        logoSize: size,
+        step: size > 320 ? 4 : 3,
+        radius: 90,
+      }).init();
+      if (cancelled) return logo.destroy();
+      if (reduce) {
+        logo.progress = 1;
+        return;
+      }
+      const { gsap } = await import("gsap");
+      gsap.to(logo, { progress: 1, duration: 2, ease: "power3.out" });
+    })().catch(() => {
+      /* decorative only */
+    });
+
+    return () => {
+      cancelled = true;
+      logo?.destroy();
+    };
+  }, []);
 
   return (
-    <section className="mx-auto max-w-5xl px-4 py-12 md:px-6 md:py-16">
-      {/* Brand bar */}
-      <div className="mb-10 flex items-center gap-3">
-        <span className="rounded-full border border-neutral-300 bg-neutral-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">
-          D&apos;FOOTPRINT
-        </span>
-      </div>
+    <section className="relative flex min-h-[calc(100svh-3.5rem)] flex-col overflow-hidden bg-canvas text-fg md:min-h-[calc(100svh-4rem)]">
+      <p
+        aria-hidden
+        className="display pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 select-none text-center text-[48vw] leading-none text-fg/[0.04] md:text-[38vw]"
+      >
+        404
+      </p>
+      <canvas
+        ref={canvas}
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[58%] w-full md:inset-y-0 md:left-1/2 md:h-full md:w-1/2"
+      />
 
-      <div className="grid gap-8 rounded-3xl border border-neutral-200 bg-white/90 p-6 shadow-sm backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-950/90 md:p-8 sm:grid-cols-2 sm:items-start">
-        {/* Left — copy + actions */}
-        <div>
-          <span className="mb-4 inline-block rounded-full bg-amber-50 px-3 py-1 text-[11px] font-medium uppercase tracking-widest text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
-            Page not found
-          </span>
+      <div className="relative mt-auto px-4 pb-10 sm:px-8 md:px-12">
+        <p className="label text-fg-3">(404) — Page not found</p>
+        <h1 className="display mt-3 text-[clamp(3rem,9vw,7rem)]">
+          Lost your footing?
+        </h1>
+        <p className="mt-4 max-w-[46ch] text-fg-2">
+          This page has walked off. Search for what you were after, or pick up
+          where the good stuff is.
+        </p>
 
-          <h1 className="mb-3 font-serif text-4xl font-bold leading-tight tracking-tight text-neutral-900 md:text-5xl dark:text-neutral-100">
-            This page stepped out.{" "}
-            <span className="text-amber-700 dark:text-amber-300">
-              Your next pair didn&apos;t.
-            </span>
-          </h1>
-
-          <p className="mb-6 max-w-sm text-sm leading-7 text-neutral-500 dark:text-neutral-400">
-            The link might be broken or the page moved. Search below, browse the
-            shop, or pick a quick route.
-          </p>
-
-          <form
-            onSubmit={handleSearch}
-            className="mb-5 flex overflow-hidden rounded-xl border border-neutral-300 focus-within:border-neutral-500 dark:border-neutral-700 dark:focus-within:border-neutral-500"
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (query.trim())
+              router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+          }}
+          className="mt-8 flex max-w-xl items-end gap-3 border-b-2 border-fg"
+        >
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            type="search"
+            enterKeyHint="search"
+            placeholder="Search slides, slippers…"
+            aria-label="Search the store"
+            className="h-14 min-w-0 flex-1 bg-transparent text-lg outline-none placeholder:text-fg-3 focus-visible:outline-none"
+          />
+          <button
+            type="submit"
+            aria-label="Search"
+            className="mb-1 grid size-12 place-items-center bg-fg text-canvas"
           >
-            <input
-              type="search"
-              placeholder="Search styles, collections…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="h-11 w-full bg-transparent px-4 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none dark:text-neutral-100"
-              autoComplete="off"
-            />
-            <button
-              type="submit"
-              className="bg-neutral-900 px-4 text-xs font-medium uppercase tracking-wide text-white hover:bg-neutral-700 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-            >
-              Search
-            </button>
-          </form>
+            <ArrowRight className="size-5" />
+          </button>
+        </form>
 
-          <div className="flex flex-wrap gap-3">
+        <div className="mt-8 flex flex-wrap gap-2">
+          <Link href="/" className={buttonClass("solid", "md")}>
+            Back home
+          </Link>
+          {LINKS.map((l) => (
             <Link
-              href="/"
-              className="rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+              key={l.href}
+              href={l.href}
+              className={buttonClass("outline", "md")}
             >
-              Back to homepage
+              {l.label}
             </Link>
-            <Link
-              href="/products"
-              className="rounded-lg border border-neutral-300 px-5 py-2.5 text-sm font-medium text-neutral-900 hover:border-neutral-500 dark:border-neutral-700 dark:text-neutral-100 dark:hover:border-neutral-500"
-            >
-              Browse products
-            </Link>
-          </div>
-        </div>
-
-        {/* Right — 404 + quick links */}
-        <div>
-          <div className="mb-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-8 text-center dark:border-neutral-800 dark:bg-neutral-900/80">
-            <p className="font-serif text-8xl font-bold leading-none text-neutral-900/10 dark:text-white/10">
-              404
-            </p>
-          </div>
-
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
-            Quick routes
-          </p>
-          <nav className="flex flex-col gap-0.5">
-            {[
-              { href: "/products?sort=latest-desc", label: "New arrivals" },
-              { href: "/custom-orders", label: "Custom orders" },
-              { href: "/about-us", label: "About D'Footprint" },
-              { href: "/contact", label: "Contact support" },
-            ].map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                className="flex items-center justify-between rounded-lg border border-transparent px-3 py-2.5 text-sm text-neutral-700 hover:border-neutral-200 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:border-neutral-800 dark:hover:bg-neutral-900"
-              >
-                {label}
-                <span className="text-neutral-400">→</span>
-              </Link>
-            ))}
-          </nav>
+          ))}
         </div>
       </div>
     </section>

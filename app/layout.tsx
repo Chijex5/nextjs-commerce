@@ -4,6 +4,8 @@ import TikTokIdentify from "components/analytics/tiktok-identify";
 import AbandonedCartRecovery from "components/cart/abandoned-cart-recovery";
 import AbandonedCartTracker from "components/cart/abandoned-cart-tracker";
 import { CartProvider } from "components/cart/cart-context";
+import { IntroLoader, INTRO_SKIP_SCRIPT } from "components/brand/intro-loader";
+import { SmoothScroll } from "components/brand/smooth-scroll";
 import { Cursor } from "components/home/cursor";
 import FirstVisitSignupPopup from "components/onboarding/first-visit-signup";
 import { Navbar } from "components/layout/navbar";
@@ -118,6 +120,9 @@ export default async function RootLayout({
             __html: `(function(){try{var t=localStorage.getItem('theme');var d=document.documentElement;var m=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||((!t||t==='system')&&m)){d.classList.add('dark');d.style.colorScheme='dark';}else{d.classList.remove('dark');d.style.colorScheme='light';}}catch(e){}})();`,
           }}
         />
+        {!isAdminRoute ? (
+          <script dangerouslySetInnerHTML={{ __html: INTRO_SKIP_SCRIPT }} />
+        ) : null}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -215,6 +220,8 @@ export default async function RootLayout({
           {!isAdminRoute ? <TikTokIdentify /> : null}
           {!isAdminRoute ? <Navbar /> : null}
           {!isAdminRoute ? <Cursor /> : null}
+          {!isAdminRoute ? <IntroLoader /> : null}
+          {!isAdminRoute ? <SmoothScroll /> : null}
           {!isAdminRoute ? <FirstVisitSignupPopup /> : null}
           <main
             className={
