@@ -57,7 +57,6 @@ export default async function UnsubscribePage(props: {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
         :root {
           --espresso:   var(--brand-espresso);
@@ -77,7 +76,7 @@ export default async function UnsubscribePage(props: {
           align-items: center;
           justify-content: center;
           padding: 48px 24px;
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
         }
 
         .us-card {
@@ -150,7 +149,7 @@ export default async function UnsubscribePage(props: {
         }
 
         .us-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--ff-body);
           font-size: clamp(30px, 5vw, 44px);
           font-weight: 300;
           line-height: 1.05;
@@ -184,7 +183,7 @@ export default async function UnsubscribePage(props: {
           gap: 6px;
           background: var(--terra);
           color: var(--cream);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.2em;

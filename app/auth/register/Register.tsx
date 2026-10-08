@@ -114,7 +114,7 @@ export default function Register() {
         @media (min-width: 480px) { .rc-gift { margin: -2rem -1.75rem 1.5rem; padding: 1rem 1.75rem; } }
         @media (min-width: 960px) { .rc-gift { display: none; } }
         .rc-gift-tag {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: .58rem; font-weight: 600;
           letter-spacing: .22em; text-transform: uppercase;
           color: var(--dp-ember);
@@ -125,7 +125,7 @@ export default function Register() {
           color: var(--dp-cream); margin: .3rem 0 0;
         }
         .rc-gift-sub {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: .78rem; line-height: 1.5;
           color: var(--dp-sand); margin: .35rem 0 0;
         }
@@ -144,7 +144,7 @@ export default function Register() {
         .rc-fields { display: flex; flex-direction: column; gap: 1rem; }
         .rc-field  { display: flex; flex-direction: column; gap: .45rem; }
         .rc-label {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: .72rem; font-weight: 500;
           letter-spacing: .1em; text-transform: uppercase;
           color: var(--dp-sand);
@@ -156,7 +156,7 @@ export default function Register() {
           border: 1px solid var(--dp-border);
           border-radius: 9px;
           color: var(--dp-cream);
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           /* 16px keeps iOS Safari from auto-zooming the page on focus */
           font-size: 16px; line-height: 1.2;
           min-height: 52px;
@@ -197,14 +197,14 @@ export default function Register() {
           transition: width .4s cubic-bezier(.16,1,.3,1), background .4s;
         }
         .rc-strength-label {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: .62rem; font-weight: 600; letter-spacing: .06em;
           min-width: 3.2rem; text-align: right;
         }
 
         /* inline messages */
         .rc-msg {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: .72rem; letter-spacing: .01em;
           margin: .15rem 0 0; line-height: 1.4;
         }
@@ -217,7 +217,7 @@ export default function Register() {
           width: 100%; margin-top: .5rem;
           min-height: 54px;
           background: var(--dp-cream); color: var(--dp-ink);
-          font-family: 'DM Sans', sans-serif; font-weight: 600;
+          font-family: var(--ff-body); font-weight: 600;
           font-size: .78rem; letter-spacing: .12em; text-transform: uppercase;
           padding: 1rem 1.5rem; border: none; border-radius: 9px; cursor: pointer;
           transition: background .2s, color .2s, opacity .2s;
@@ -228,7 +228,7 @@ export default function Register() {
 
         /* ───── terms + footer ───── */
         .rc-terms {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: .72rem; color: var(--dp-muted);
           margin-top: 1rem; line-height: 1.6; text-align: center;
         }
@@ -245,7 +245,7 @@ export default function Register() {
           justify-content: space-between; flex-wrap: wrap; gap: .6rem;
         }
         .rc-footer-text {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: .8rem; color: var(--dp-muted); margin: 0;
         }
         .rc-link {
@@ -254,7 +254,7 @@ export default function Register() {
         }
         .rc-link:hover { border-color: var(--dp-ember); }
         .rc-skip {
-          font-family: 'DM Sans', sans-serif; font-size: .8rem;
+          font-family: var(--ff-body); font-size: .8rem;
           color: var(--dp-muted); text-decoration: none; transition: color .18s;
         }
         .rc-skip:hover { color: var(--dp-sand); }

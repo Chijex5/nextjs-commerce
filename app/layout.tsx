@@ -4,6 +4,7 @@ import TikTokIdentify from "components/analytics/tiktok-identify";
 import AbandonedCartRecovery from "components/cart/abandoned-cart-recovery";
 import AbandonedCartTracker from "components/cart/abandoned-cart-tracker";
 import { CartProvider } from "components/cart/cart-context";
+import { Cursor } from "components/home/cursor";
 import FirstVisitSignupPopup from "components/onboarding/first-visit-signup";
 import { Navbar } from "components/layout/navbar";
 import PageTransition from "components/layout/page-transition";
@@ -213,6 +214,7 @@ export default async function RootLayout({
           {!isAdminRoute ? <AbandonedCartTracker /> : null}
           {!isAdminRoute ? <TikTokIdentify /> : null}
           {!isAdminRoute ? <Navbar /> : null}
+          {!isAdminRoute ? <Cursor /> : null}
           {!isAdminRoute ? <FirstVisitSignupPopup /> : null}
           <main
             className={

@@ -81,7 +81,7 @@ export default function Login() {
 
         /* tiny heading — same weight as the layout's left-column eyebrow */
         .lc-heading {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--ff-body);
           font-size: 1.35rem; font-weight: 600;
           color: var(--dp-cream); line-height: 1.1;
           margin-bottom: 1.5rem;
@@ -91,7 +91,7 @@ export default function Login() {
         .lc-fields { display: flex; flex-direction: column; gap: .85rem; }
         .lc-field  { display: flex; flex-direction: column; gap: .38rem; }
         .lc-label {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: .55rem; font-weight: 500;
           letter-spacing: .2em; text-transform: uppercase;
           color: var(--dp-muted);
@@ -102,7 +102,7 @@ export default function Login() {
           background: transparent;
           border: 1px solid var(--dp-border);
           color: var(--dp-cream);
-          font-family: 'DM Sans', sans-serif; font-size: .82rem;
+          font-family: var(--ff-body); font-size: .82rem;
           padding: .74rem .9rem; outline: none;
           transition: border-color .2s, background .18s;
           -webkit-appearance: none;
@@ -136,7 +136,7 @@ export default function Login() {
           display: flex; align-items: center; justify-content: center; gap: .45rem;
           width: 100%; margin-top: .3rem;
           background: var(--dp-cream); color: var(--dp-ink);
-          font-family: 'DM Sans', sans-serif; font-weight: 600;
+          font-family: var(--ff-body); font-weight: 600;
           font-size: .67rem; letter-spacing: .14em; text-transform: uppercase;
           padding: .9rem 1.5rem; border: none; cursor: pointer;
           transition: background .2s, color .2s;
@@ -147,7 +147,7 @@ export default function Login() {
         .lc-btn-toggle {
           display: flex; align-items: center; justify-content: center;
           width: 100%; background: transparent; border: none;
-          font-family: 'DM Sans', sans-serif; font-size: .65rem;
+          font-family: var(--ff-body); font-size: .65rem;
           color: var(--dp-muted); cursor: pointer; padding: .38rem 0;
           transition: color .2s;
         }
@@ -166,7 +166,7 @@ export default function Login() {
         .lc-divider::before,
         .lc-divider::after { content:''; flex:1; height:1px; background: var(--dp-border); }
         .lc-divider span {
-          font-family: 'DM Sans', sans-serif; font-size: .55rem;
+          font-family: var(--ff-body); font-size: .55rem;
           letter-spacing: .18em; text-transform: uppercase;
           color: var(--dp-muted); white-space: nowrap;
         }
@@ -179,7 +179,7 @@ export default function Login() {
           justify-content: space-between; flex-wrap: wrap; gap: .4rem;
         }
         .lc-footer-text {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: .65rem; color: var(--dp-muted); margin: 0;
         }
         .lc-link {
@@ -188,7 +188,7 @@ export default function Login() {
         }
         .lc-link:hover { border-color: var(--dp-ember); }
         .lc-skip {
-          font-family: 'DM Sans', sans-serif; font-size: .65rem;
+          font-family: var(--ff-body); font-size: .65rem;
           color: var(--dp-muted); text-decoration: none; transition: color .18s;
         }
         .lc-skip:hover { color: var(--dp-sand); }
@@ -362,7 +362,7 @@ export default function Login() {
           {!usePassword && (
             <p
               style={{
-                fontFamily: "DM Sans,sans-serif",
+                fontFamily: "var(--ff-body)",
                 fontSize: ".6rem",
                 color: "var(--dp-muted)",
                 marginTop: ".5rem",
