@@ -1,25 +1,11 @@
 import Footer from "components/layout/footer";
+import "../editorial-bridge.css";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <div
-        style={{
-          background: "var(--brand-espresso)",
-          minHeight: "100vh",
-          paddingTop: "48px",
-          paddingBottom: "80px",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "900px",
-            margin: "0 auto",
-            padding: "0 24px",
-          }}
-        >
-          {children}
-        </div>
+      <div className="ed-bridge bg-canvas px-4 pb-24 pt-10 text-fg sm:px-8 sm:pt-14 md:px-12">
+        <div className="max-w-4xl">{children}</div>
       </div>
       <Footer />
     </>
