@@ -89,7 +89,7 @@ export function ProductReviewsSection({
       <style>{`
         .pr-root {
           padding: 40px;
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
         }
 
         .pr-header {
@@ -106,7 +106,7 @@ export function ProductReviewsSection({
           margin-bottom: 10px;
         }
         .pr-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--ff-body);
           font-size: clamp(24px, 3vw, 34px);
           font-weight: 300;
           color: var(--cream, var(--brand-cream));
@@ -154,7 +154,7 @@ export function ProductReviewsSection({
           gap: 8px;
           background: var(--terra, var(--brand-terra));
           color: var(--cream, var(--brand-cream));
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: 10px;
           font-weight: 500;
           letter-spacing: 0.18em;

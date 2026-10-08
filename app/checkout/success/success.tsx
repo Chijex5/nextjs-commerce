@@ -121,7 +121,7 @@ export default function CheckoutSuccess() {
           padding: 0.85rem 1.75rem; text-decoration: none;
           transition: background 0.2s, color 0.2s;
         }
-        .dp-btn-primary:hover { background: var(--dp-ember); color: var(--dp-cream); }
+        .dp-btn-primary:hover { background: var(--dp-ember); color: var(--brand-on-accent); }
 
         .dp-btn-ghost {
           display: inline-flex; align-items: center; gap: 0.4rem;

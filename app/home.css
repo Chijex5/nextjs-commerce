@@ -1,21 +1,5 @@
 /* Home page — street editorial. Pure black & white; photos carry the colour. */
 
-.display {
-  font-family: var(--ff-head);
-  font-weight: 800;
-  font-stretch: 66%;
-  text-transform: uppercase;
-  line-height: 0.84;
-  letter-spacing: -0.01em;
-}
-
-.label {
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 /* Inline photo "words" inside the manifesto paragraph */
 .inline-photo {
   position: relative;
@@ -27,24 +11,6 @@
   vertical-align: baseline;
   transform: translateY(0.04em);
   border-radius: 999px;
-}
-
-.link-underline {
-  background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1px
-    no-repeat;
-  padding-bottom: 2px;
-  transition: background-size 0.45s var(--ease-atelier);
-}
-.link-underline:hover {
-  background-size: 0% 1px;
-  background-position: 100% 100%;
-}
-
-.rail {
-  scrollbar-width: none;
-}
-.rail::-webkit-scrollbar {
-  display: none;
 }
 
 /* Marquee ticker */
@@ -129,22 +95,5 @@
       animation: parallax linear both;
       animation-timeline: view();
     }
-  }
-}
-
-/* Scroll reveal (see components/home/reveal.tsx). Only hides content when
-   scripts run and motion is welcome, so nothing is ever stuck invisible. */
-@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
-  [data-reveal] {
-    opacity: 0;
-    transform: translateY(40px);
-    transition:
-      opacity 1s var(--ease-atelier),
-      transform 1s var(--ease-atelier);
-    transition-delay: var(--d, 0ms);
-  }
-  [data-reveal][data-shown] {
-    opacity: 1;
-    transform: none;
   }
 }

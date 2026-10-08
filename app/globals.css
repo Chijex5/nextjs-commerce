@@ -23,12 +23,11 @@
   :root {
     --ff-body: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
     --ff-head: var(--font-archivo), "Arial Narrow", ui-sans-serif, sans-serif;
-    --ff-accent: Georgia, serif;
 
     --font-inter: var(--ff-body);
     --font-dm-sans: var(--ff-body);
     --font-bebas-neue: var(--ff-head);
-    --font-cormorant-garamond: var(--ff-accent);
+    --font-cormorant-garamond: var(--ff-body);
   }
 
   /* ------------------------------------------------------------------ */
@@ -56,6 +55,7 @@
     --brand-gold: #4a4a4a;
     --brand-gold-light: #6b6b6b;
     --brand-success: #2f6b41;
+    --brand-on-accent: #ffffff; /* text on accent (terra) backgrounds */
 
     --brand-fg-rgb: 0, 0, 0;
     --brand-bg-rgb: 255, 255, 255;
@@ -85,6 +85,7 @@
     --brand-gold: #b5b5b5;
     --brand-gold-light: #d4d4d4;
     --brand-success: #4a8c5c;
+    --brand-on-accent: #000000;
 
     --brand-fg-rgb: 255, 255, 255;
     --brand-bg-rgb: 0, 0, 0;
@@ -109,7 +110,6 @@
 @theme inline {
   --font-sans: var(--ff-body);
   --font-head: var(--ff-head);
-  --font-accent: var(--ff-accent);
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
   --color-canvas: var(--brand-espresso);
@@ -130,8 +130,10 @@
 
 a,
 input,
-button {
-  @apply focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 dark:focus-visible:ring-neutral-600 dark:focus-visible:ring-offset-neutral-900;
+button,
+select,
+textarea {
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -182,6 +184,19 @@ button {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
   }
 }
 
@@ -243,5 +258,62 @@ button {
       animation: none;
       transform: translateX(0);
     }
+  }
+}
+
+/* ── Design system utilities (shared across storefront pages) ─────────── */
+@layer components {
+  /* Condensed heavy display type for headlines */
+  .display {
+    font-family: var(--ff-head);
+    font-weight: 800;
+    font-stretch: 66%;
+    text-transform: uppercase;
+    line-height: 0.84;
+    letter-spacing: -0.01em;
+  }
+
+  /* Small monospace uppercase label (indexes, captions, meta) */
+  .label {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .link-underline {
+    background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1px
+      no-repeat;
+    padding-bottom: 2px;
+    transition: background-size 0.45s var(--ease-atelier);
+  }
+  .link-underline:hover {
+    background-size: 0% 1px;
+    background-position: 100% 100%;
+  }
+
+  /* Hide scrollbars on swipe rails */
+  .rail {
+    scrollbar-width: none;
+  }
+  .rail::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Scroll reveal (see components/home/reveal.tsx). Only hides content when
+   scripts run and motion is welcome, so nothing is ever stuck invisible. */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(40px);
+    transition:
+      opacity 1s var(--ease-atelier),
+      transform 1s var(--ease-atelier);
+    transition-delay: var(--d, 0ms);
+  }
+  [data-reveal][data-shown] {
+    opacity: 1;
+    transform: none;
   }
 }

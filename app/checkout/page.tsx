@@ -147,14 +147,16 @@ function PhoneValidationHint({ value }: { value: string }) {
 }
 
 /* ── Shared input style ─────────────────────────────────── */
+// 16px text: anything smaller makes iOS Safari zoom in on focus.
 const INPUT_STYLE: React.CSSProperties = {
   width: "100%",
-  background: "rgba(var(--brand-fg-rgb),0.04)",
-  border: "1px solid rgba(var(--brand-fg-rgb),0.09)",
+  height: "3rem",
+  background: "transparent",
+  border: "1px solid rgba(var(--brand-fg-rgb),0.18)",
   color: "var(--dp-cream)",
-  fontFamily: "var(--font-dm-sans), sans-serif",
-  fontSize: "0.82rem",
-  padding: "0.65rem 0.75rem",
+  fontFamily: "var(--ff-body)",
+  fontSize: "1rem",
+  padding: "0 0.9rem",
   outline: "none",
   transition: "border-color 0.2s",
 };
@@ -164,12 +166,13 @@ const PHONE_PREFIX_STYLE: React.CSSProperties = {
   alignItems: "center",
   gap: "0.5rem",
   flexShrink: 0,
-  padding: "0.65rem 0.75rem",
-  background: "rgba(var(--brand-fg-rgb),0.03)",
-  border: "1px solid rgba(var(--brand-fg-rgb),0.09)",
+  padding: "0 0.9rem",
+  height: "3rem",
+  background: "rgba(var(--brand-fg-rgb),0.04)",
+  border: "1px solid rgba(var(--brand-fg-rgb),0.18)",
   borderRight: "none",
-  fontFamily: "var(--font-dm-sans), sans-serif",
-  fontSize: "0.78rem",
+  fontFamily: "var(--ff-body)",
+  fontSize: "1rem",
   color: "var(--dp-muted)",
 };
 
@@ -183,7 +186,7 @@ function DPInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
         props.onFocus?.(e);
       }}
       onBlur={(e) => {
-        e.currentTarget.style.borderColor = "rgba(var(--brand-fg-rgb),0.09)";
+        e.currentTarget.style.borderColor = "rgba(var(--brand-fg-rgb),0.18)";
         props.onBlur?.(e);
       }}
     />
@@ -198,26 +201,8 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div
-      style={{
-        background: "var(--dp-charcoal)",
-        border: "1px solid var(--dp-border)",
-        padding: "1.5rem clamp(1.25rem,3vw,2rem)",
-      }}
-    >
-      <p
-        style={{
-          fontFamily: "var(--font-dm-sans), sans-serif",
-          fontSize: "0.6rem",
-          fontWeight: 500,
-          letterSpacing: "0.26em",
-          textTransform: "uppercase",
-          color: "var(--dp-ember)",
-          marginBottom: "1.25rem",
-        }}
-      >
-        {label}
-      </p>
+    <div className="border-t border-fg pt-5">
+      <p className="label mb-5 text-fg-3">{label}</p>
       {children}
     </div>
   );
@@ -473,7 +458,7 @@ function StepIndicator({
                   fontSize: "0.65rem",
                   fontWeight: 600,
                   color: isCurrent
-                    ? "var(--dp-cream)"
+                    ? "var(--brand-on-accent)"
                     : isDone
                       ? "var(--dp-green)"
                       : "var(--dp-muted)",
@@ -911,8 +896,9 @@ export default function CheckoutPage() {
           border-radius: 0 !important;
           color: var(--dp-cream) !important;
           font-family: var(--font-dm-sans), sans-serif !important;
-          font-size: 0.82rem !important;
-          padding: 0.65rem 0.75rem !important;
+          font-size: 1rem !important;
+          min-height: 3rem !important;
+          padding: 0.75rem 0.9rem !important;
           outline: none !important;
           transition: border-color 0.2s !important;
         }
@@ -937,7 +923,7 @@ export default function CheckoutPage() {
           content: '';
           position: absolute; top: 2px; left: 5px;
           width: 4px; height: 7px;
-          border: 1.5px solid var(--dp-cream);
+          border: 1.5px solid var(--brand-on-accent);
           border-top: none; border-left: none;
           transform: rotate(45deg);
         }
@@ -972,45 +958,17 @@ export default function CheckoutPage() {
       >
         <div
           style={{
-            height: 2,
-            background:
-              "linear-gradient(90deg, var(--dp-ember), var(--dp-gold) 50%, transparent 100%)",
-          }}
-        />
-
-        <div
-          style={{
             maxWidth: 1400,
             margin: "0 auto",
             padding: "3rem clamp(1rem,4vw,3rem) 5rem",
           }}
         >
           {/* Page header */}
-          <div style={{ marginBottom: "2.5rem" }}>
-            <p
-              style={{
-                fontFamily: "var(--font-dm-sans), sans-serif",
-                fontSize: "0.6rem",
-                fontWeight: 500,
-                letterSpacing: "0.26em",
-                textTransform: "uppercase",
-                color: "var(--dp-ember)",
-                marginBottom: "0.5rem",
-              }}
-            >
-              D&apos;FOOTPRINT
+          <div className="mb-10 flex items-end justify-between gap-6">
+            <h1 className="display text-[clamp(3.4rem,10vw,7rem)]">Checkout</h1>
+            <p className="label mb-2 hidden text-fg-3 sm:block">
+              Secure payment · Paystack
             </p>
-            <h1
-              style={{
-                fontFamily: "var(--font-bebas-neue), sans-serif",
-                fontSize: "clamp(2rem,5vw,3.5rem)",
-                letterSpacing: "0.08em",
-                color: "var(--dp-cream)",
-                lineHeight: 1,
-              }}
-            >
-              Checkout
-            </h1>
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -1319,42 +1277,10 @@ export default function CheckoutPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    background: submitting
-                      ? "var(--dp-muted)"
-                      : "var(--dp-cream)",
-                    color: "var(--dp-ink)",
-                    border: "none",
-                    cursor: submitting ? "not-allowed" : "pointer",
-                    padding: "0.9rem",
-                    fontFamily: "var(--font-dm-sans), sans-serif",
-                    fontWeight: 500,
-                    fontSize: "0.72rem",
-                    letterSpacing: "0.14em",
-                    textTransform: "uppercase",
-                    transition: "background 0.2s, color 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!submitting) {
-                      (e.currentTarget as HTMLButtonElement).style.background =
-                        "var(--dp-ember)";
-                      (e.currentTarget as HTMLButtonElement).style.color =
-                        "var(--dp-cream)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!submitting) {
-                      (e.currentTarget as HTMLButtonElement).style.background =
-                        "var(--dp-cream)";
-                      (e.currentTarget as HTMLButtonElement).style.color =
-                        "var(--dp-ink)";
-                    }
-                  }}
+                  className="flex h-14 w-full items-center justify-center bg-fg text-sm font-semibold uppercase tracking-wide text-canvas transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
                 >
                   {submitting ? (
-                    <LoadingDots className="bg-neutral-600" />
+                    <LoadingDots className="bg-canvas" />
                   ) : (
                     ctaLabel
                   )}
@@ -1369,13 +1295,6 @@ export default function CheckoutPage() {
                     border: "1px solid var(--dp-border)",
                   }}
                 >
-                  <div
-                    style={{
-                      height: 2,
-                      background:
-                        "linear-gradient(90deg, var(--dp-ember), transparent 80%)",
-                    }}
-                  />
                   <div style={{ padding: "1.5rem" }}>
                     <p
                       style={{
@@ -1431,7 +1350,7 @@ export default function CheckoutPage() {
                                 top: 2,
                                 right: 2,
                                 background: "var(--dp-ember)",
-                                color: "var(--dp-cream)",
+                                color: "var(--brand-on-accent)",
                                 fontFamily: "var(--font-dm-sans), sans-serif",
                                 fontSize: "0.55rem",
                                 fontWeight: 600,
