@@ -1,39 +1,19 @@
 import "dotenv/config";
-import fs from "node:fs";
-import path from "node:path";
+import { config } from "dotenv";
 import { defineConfig } from "drizzle-kit";
 
-const {
-  AMAZON_DB_HOST,
-  AMAZON_DB_PORT,
-  AMAZON_DB_USER,
-  AMAZON_DB_PASSWORD,
-  AMAZON_DB_NAME,
-  AMAZON_DB_CA_PATH,
-  NODE_ENV,
-} = process.env;
+// Neon writes its vars to .env.local (via `vercel env pull`); load it too.
+config({ path: ".env.local", quiet: true });
 
-if (!AMAZON_DB_HOST) throw new Error("AMAZON_DB_HOST missing");
-if (!AMAZON_DB_PORT) throw new Error("AMAZON_DB_PORT missing");
-if (!AMAZON_DB_USER) throw new Error("AMAZON_DB_USER missing");
-if (!AMAZON_DB_PASSWORD) throw new Error("AMAZON_DB_PASSWORD missing");
-if (!AMAZON_DB_NAME) throw new Error("AMAZON_DB_NAME missing");
-
-const useStrictSSL = NODE_ENV === "production" && !!AMAZON_DB_CA_PATH;
+// Migrations need the direct (unpooled) endpoint, not PgBouncer.
+const url =
+  process.env.NEON_DATABASE_URL_UNPOOLED ?? process.env.NEON_DATABASE_URL;
+if (!url) throw new Error("NEON_DATABASE_URL_UNPOOLED missing");
 
 export default defineConfig({
   schema: "./lib/db/schema.ts",
   out: "./drizzle",
   dialect: "postgresql",
-  dbCredentials: {
-    host: AMAZON_DB_HOST,
-    port: Number(AMAZON_DB_PORT),
-    user: AMAZON_DB_USER,
-    password: AMAZON_DB_PASSWORD,
-    database: AMAZON_DB_NAME,
-    ssl: {
-      rejectUnauthorized: false,
-    },
-  },
+  dbCredentials: { url },
   strict: true,
 });

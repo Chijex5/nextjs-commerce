@@ -3,32 +3,14 @@ import postgres from "postgres";
 import { isMockData } from "../data/source";
 import * as schema from "./schema";
 
-const {
-  AMAZON_DB_HOST,
-  AMAZON_DB_PORT,
-  AMAZON_DB_NAME,
-  AMAZON_DB_USER,
-  AMAZON_DB_PASSWORD,
-  AMAZON_DB_SSL = "require",
-  AMAZON_DB_CA,
-  NODE_ENV,
-} = process.env;
+const { NEON_DATABASE_URL, NODE_ENV } = process.env;
 
 // In mock mode (DATA_SOURCE=mock) the storefront never queries Postgres, so
 // the connection settings may be absent. postgres() connects lazily, so the
 // client below is created but never opens a connection.
-if (!isMockData) {
-  if (!AMAZON_DB_HOST) throw new Error("AMAZON_DB_HOST is not set");
-  if (!AMAZON_DB_PORT) throw new Error("AMAZON_DB_PORT is not set");
-  if (!AMAZON_DB_NAME) throw new Error("AMAZON_DB_NAME is not set");
-  if (!AMAZON_DB_USER) throw new Error("AMAZON_DB_USER is not set");
-  if (!AMAZON_DB_PASSWORD) throw new Error("AMAZON_DB_PASSWORD is not set");
+if (!isMockData && !NEON_DATABASE_URL) {
+  throw new Error("NEON_DATABASE_URL is not set");
 }
-
-const port = Number(AMAZON_DB_PORT ?? 5432);
-if (!Number.isFinite(port)) throw new Error("AMAZON_DB_PORT must be a number");
-
-const ssl = { rejectUnauthorized: false };
 
 const globalForDb = globalThis as unknown as {
   drizzleClient?: PostgresJsDatabase<typeof schema>;
@@ -42,13 +24,9 @@ const poolMax = Number(process.env.DB_POOL_MAX ?? 5);
 
 const sql =
   globalForDb.drizzleSql ??
-  postgres({
-    host: AMAZON_DB_HOST,
-    port,
-    database: AMAZON_DB_NAME,
-    username: AMAZON_DB_USER,
-    password: AMAZON_DB_PASSWORD,
-    ssl,
+  // Pooled Neon endpoint (PgBouncer in transaction mode) — hence prepare: false.
+  postgres(NEON_DATABASE_URL ?? "", {
+    ssl: "require",
     max: Number.isFinite(poolMax) && poolMax > 0 ? poolMax : 5,
     idle_timeout: 20,
     prepare: false,
