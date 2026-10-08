@@ -6,6 +6,7 @@ import { useCart } from "components/cart/cart-context";
 import { Home, LayoutGrid, Search, ShoppingBag, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useMounted } from "hooks/useMounted";
 import type { ReactNode } from "react";
 
 // Product pages show their own sticky "Add to bag" bar instead.
@@ -23,7 +24,8 @@ function tap() {
 export function TabBar({ onSearch }: { onSearch: () => void }) {
   const pathname = usePathname();
   const { cart } = useCart();
-  const count = cart?.totalQuantity ?? 0;
+  const mounted = useMounted();
+  const count = mounted ? (cart?.totalQuantity ?? 0) : 0;
 
   if (HIDDEN_ON.some((p) => pathname.startsWith(p))) return null;
 
