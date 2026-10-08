@@ -1,7 +1,8 @@
 "use client";
 
+import { buttonClass } from "components/ui/button";
+import { RotateCcw } from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 
 type ErrorStateProps = {
   error: Error & { digest?: string };
@@ -14,16 +15,7 @@ type ErrorStateProps = {
   supportHref?: string;
 };
 
-const containerTransition = {
-  duration: 0.4,
-  ease: [0.22, 1, 0.36, 1],
-};
-
-const buttonTransition = {
-  duration: 0.18,
-  ease: "easeOut",
-};
-
+/** Full-page error in the editorial system: huge type, two clear ways out. */
 export function ErrorState({
   error,
   resetAction,
@@ -35,120 +27,40 @@ export function ErrorState({
   supportHref = "/contact",
 }: ErrorStateProps) {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[var(--brand-espresso)] px-6 py-20 sm:px-10 sm:py-24">
-      {/* Grain texture overlay */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-40"
-        style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E\")",
-        }}
-      />
+    <section className="flex min-h-[80svh] flex-col justify-between bg-canvas px-4 pb-10 pt-10 text-fg sm:px-8 sm:pt-14 md:px-12">
+      <div className="label flex justify-between text-fg-3">
+        <span>(Error)</span>
+        {error.digest ? <span>Ref {error.digest}</span> : null}
+      </div>
 
-      {/* Decorative concentric rings */}
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--brand-gold)]/[0.07]" />
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--brand-terra)]/[0.06]" />
-
-      {/* Vertical deco rule */}
-      <div className="pointer-events-none absolute bottom-0 left-12 top-0 w-px bg-gradient-to-b from-transparent via-[var(--brand-gold)]/10 to-transparent" />
-
-      <motion.section
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={containerTransition}
-        className="relative z-10 mx-auto flex min-h-[calc(100vh-10rem)] w-full max-w-2xl flex-col justify-center"
-      >
-        {/* Status badge */}
-        <div className="mb-8 inline-flex w-fit items-center gap-2 rounded-[2px] border border-[var(--brand-terra)]/30 bg-[var(--brand-terra)]/10 px-3.5 py-1.5">
-          <span className="inline-block h-[7px] w-[7px] animate-pulse rounded-full bg-[var(--brand-terra)]" />
-          <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--brand-terra)]">
-            Error encountered
-          </span>
-        </div>
-
-        {/* Eyebrow */}
-        <p className="mb-3.5 text-[10px] font-normal uppercase tracking-[0.2em] text-[var(--brand-gold)]/60">
-          Something went wrong
-        </p>
-
-        {/* Headline */}
-        <h1
-          className="text-balance text-4xl font-semibold leading-[1.15] tracking-[-0.01em] text-[var(--brand-cream)] sm:text-5xl"
-          style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-        >
-          {title.split(" ").map((word, i, arr) =>
-            i === arr.length - 1 ? (
-              <span key={i} className="text-[var(--brand-terra)]">
-                {word}
-              </span>
-            ) : (
-              <span key={i}>{word} </span>
-            ),
-          )}
-        </h1>
-
-        {/* Gold divider */}
-        <div className="my-7 h-px w-10 bg-gradient-to-r from-[var(--brand-gold)] to-transparent" />
-
-        {/* Message */}
-        <p className="max-w-md text-pretty text-[15px] font-light leading-[1.8] text-[var(--brand-cream)]/60">
-          {message}
-        </p>
-
-        {/* Reassurance */}
-        {reassurance && (
-          <p className="mt-2 max-w-md text-[13px] font-light leading-relaxed text-[var(--brand-cream)]/35">
-            {reassurance}
-          </p>
-        )}
-
-        {/* Actions */}
-        <div className="mt-10 flex w-full flex-col gap-3 sm:max-w-sm sm:flex-row">
-          <motion.button
+      <div className="py-16">
+        <h1 className="display text-[clamp(3.6rem,12vw,10rem)]">{title}</h1>
+        <p className="mt-6 max-w-[48ch] text-lg text-fg-2">{message}</p>
+        {reassurance ? (
+          <p className="mt-2 max-w-[48ch] text-fg-3">{reassurance}</p>
+        ) : null}
+        <div className="mt-10 flex flex-col gap-2 sm:flex-row">
+          <button
             type="button"
             onClick={resetAction}
-            whileHover={{ y: -1 }}
-            whileTap={{ scale: 0.98 }}
-            transition={buttonTransition}
-            className="inline-flex items-center justify-center rounded-[2px] bg-[var(--brand-terra)] px-7 py-3.5 text-[13px] font-medium uppercase tracking-[0.05em] text-[var(--brand-on-accent)] transition-colors hover:bg-[var(--brand-terra-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-terra)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brand-espresso)]"
+            className={buttonClass("solid")}
           >
+            <RotateCcw className="size-4" />
             Try again
-          </motion.button>
-
-          <motion.div
-            whileHover={{ y: -1 }}
-            whileTap={{ scale: 0.98 }}
-            transition={buttonTransition}
-            className="flex"
-          >
-            <Link
-              href={secondaryHref}
-              className="inline-flex w-full items-center justify-center rounded-[2px] border border-[var(--brand-cream)]/20 px-7 py-3.5 text-[13px] font-normal uppercase tracking-[0.05em] text-[var(--brand-cream)]/70 transition-colors hover:border-[var(--brand-cream)]/40 hover:text-[var(--brand-cream)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-cream)]/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brand-espresso)]"
-            >
-              {secondaryLabel}
-            </Link>
-          </motion.div>
+          </button>
+          <Link href={secondaryHref} className={buttonClass("outline")}>
+            {secondaryLabel}
+          </Link>
         </div>
+      </div>
 
-        {/* Footer */}
-        <div className="mt-8 flex flex-wrap items-center gap-5">
-          <span className="text-[12px] text-[var(--brand-cream)]/35">
-            Need help?{" "}
-            <Link
-              href={supportHref}
-              className="border-b border-[var(--brand-cream)]/20 pb-px font-medium text-[var(--brand-cream)]/50 transition-colors hover:border-[var(--brand-gold)]/60 hover:text-[var(--brand-gold)]"
-            >
-              Contact support
-            </Link>
-          </span>
-
-          {error.digest && (
-            <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--brand-gold)]/30">
-              Ref: {error.digest}
-            </span>
-          )}
-        </div>
-      </motion.section>
-    </main>
+      <p className="text-sm text-fg-3">
+        Still stuck?{" "}
+        <Link href={supportHref} className="underline">
+          Contact us
+        </Link>{" "}
+        and we&apos;ll sort it out.
+      </p>
+    </section>
   );
 }

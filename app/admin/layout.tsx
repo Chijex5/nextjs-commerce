@@ -1,6 +1,7 @@
 import AdminLayoutShell from "components/admin/AdminLayoutShell";
 import { eq } from "drizzle-orm";
 import { authOptions } from "lib/auth";
+import { isMockData } from "lib/data/source";
 import { db } from "lib/db";
 import { adminUsers } from "lib/db/schema";
 import type { Metadata } from "next";
@@ -27,7 +28,15 @@ export default async function AdminLayout({
     lastLoginAt: string | null;
   } | null = null;
 
-  if (session?.user?.id) {
+  if (session?.user?.id && isMockData) {
+    // Mock mode has no database; show a placeholder profile in the shell.
+    adminProfile = {
+      name: "Demo Admin",
+      email: session.user.email ?? "admin@example.com",
+      role: session.user.role ?? "admin",
+      lastLoginAt: null,
+    };
+  } else if (session?.user?.id) {
     const [admin] = await db
       .select({
         email: adminUsers.email,

@@ -313,6 +313,7 @@ export async function getPage(handle: string): Promise<Page | undefined> {
   cacheTag(TAGS.pages);
   cacheLife("days");
 
+  if (isMockData) return undefined;
   return dbQueries.getPage(handle);
 }
 
@@ -329,6 +330,7 @@ export async function getPages(): Promise<Page[]> {
   cacheTag(TAGS.pages);
   cacheLife("days");
 
+  if (isMockData) return [];
   return dbQueries.getPages();
 }
 
@@ -354,9 +356,11 @@ export type PublishedSizeGuide = typeof sizeGuides.$inferSelect;
 export async function getPublishedSizeGuides(
   limit: number = 6,
 ): Promise<PublishedSizeGuide[]> {
-  "use cache";getPublishedSizeGuides
+  "use cache";
   cacheTag(TAGS.sizeGuides);
   cacheLife("hours");
+
+  if (isMockData) return [];
 
   return db
     .select()

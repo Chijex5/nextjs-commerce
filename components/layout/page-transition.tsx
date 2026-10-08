@@ -1,25 +1,10 @@
-"use client";
-
-import { motion, MotionConfig } from "framer-motion";
-import { pageFadeIn } from "lib/motion";
 import type { ReactNode } from "react";
 
 /**
- * Wraps every page in a fade-in entry animation.
- * MotionConfig ensures all child animations respect
- * `prefers-reduced-motion` automatically.
+ * Page entry fade. Pure CSS (see .page-enter in globals.css) so it runs on
+ * first paint — it never waits for JavaScript, which previously kept every
+ * page invisible until hydration finished on slower phones.
  */
 export default function PageTransition({ children }: { children: ReactNode }) {
-  return (
-    <MotionConfig reducedMotion="user">
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={pageFadeIn}
-        style={{ minHeight: "inherit" }}
-      >
-        {children}
-      </motion.div>
-    </MotionConfig>
-  );
+  return <div className="page-enter">{children}</div>;
 }

@@ -82,7 +82,7 @@ export function TabBar({ onSearch }: { onSearch: () => void }) {
 }
 
 const itemClass =
-  "flex h-full w-full flex-col items-center justify-center gap-1 font-mono text-[10px] uppercase tracking-wider transition-[opacity,transform] active:scale-90";
+  "flex h-full w-full flex-col items-center justify-center gap-1 font-mono text-[11px] uppercase tracking-wide transition-[opacity,transform] active:scale-90";
 
 function Tab({
   href,
@@ -101,7 +101,7 @@ function Tab({
         href={href}
         onClick={tap}
         aria-current={active ? "page" : undefined}
-        className={clsx(itemClass, active ? "opacity-100" : "opacity-50")}
+        className={clsx(itemClass, active ? "text-fg" : "text-fg-3")}
       >
         {children}
         {label}
@@ -124,7 +124,7 @@ function TabButton({
       <button
         type="button"
         onClick={onClick}
-        className={clsx(itemClass, "opacity-50")}
+        className={clsx(itemClass, "text-fg-3")}
       >
         {children}
         {label}

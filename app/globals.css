@@ -317,3 +317,84 @@ textarea {
     transform: none;
   }
 }
+
+/* Page entry: a short CSS-only fade that starts on first paint. Opacity
+   only — a transform here would trap position:fixed children (sticky bars). */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes page-enter {
+    from {
+      opacity: 0.001;
+    }
+  }
+  .page-enter {
+    animation: page-enter 0.4s ease-out backwards;
+  }
+}
+
+/* Intro loader (components/brand/intro-loader.tsx) */
+html[data-intro="skip"] .intro-loader {
+  display: none;
+}
+html[data-intro-active] {
+  overflow: hidden;
+}
+/* Hold page entrance animations until the intro curtain lifts. */
+html[data-intro-active] :is(.line > span, .fade-in, .hero-zoom, .page-enter) {
+  animation-play-state: paused;
+}
+/* Fallback if scripts never run: get out of the way. */
+@keyframes intro-fallback {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+.intro-loader {
+  animation: intro-fallback 0.4s ease 4.5s forwards;
+}
+
+/* Ink-fill brand loader (components/page-loader.tsx) */
+.ink-logo {
+  display: block;
+  -webkit-mask: url("/brand/logo-mark.svg") center / contain no-repeat;
+  mask: url("/brand/logo-mark.svg") center / contain no-repeat;
+  background: linear-gradient(
+      to top,
+      var(--brand-cream) 50%,
+      rgba(var(--brand-fg-rgb), 0.12) 50%
+    )
+    0 0 / 100% 200%;
+  animation: ink-fill 1.6s cubic-bezier(0.65, 0, 0.35, 1) infinite alternate;
+}
+@keyframes ink-fill {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 100%;
+  }
+}
+.ink-dots::after {
+  content: "";
+  animation: ink-dots 1.2s steps(4) infinite;
+}
+@keyframes ink-dots {
+  0% {
+    content: "";
+  }
+  25% {
+    content: ".";
+  }
+  50% {
+    content: "..";
+  }
+  75% {
+    content: "...";
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ink-logo {
+    animation: none;
+    background-position: 0 100%;
+  }
+}
