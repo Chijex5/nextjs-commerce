@@ -1,0 +1,161 @@
+/* Account area — brings the existing account screens into the black & white
+   editorial system without touching their logic. Scoped under .account-shell
+   so these rules win over the page's own <style> block. */
+
+.account-shell .ac-hero-name {
+  font-family: var(--ff-head);
+  font-weight: 800;
+  font-stretch: 66%;
+  text-transform: uppercase;
+  line-height: 0.86;
+  font-size: clamp(2.4rem, 7vw, 4.5rem);
+  letter-spacing: -0.01em;
+}
+.account-shell .ac-avatar {
+  border-radius: 0;
+  background: var(--brand-cream);
+  color: var(--brand-espresso);
+  font-family: var(--font-geist-mono), monospace;
+}
+.account-shell .ac-stat-label,
+.account-shell .ac-info-label,
+.account-shell .ac-insight-label,
+.account-shell .ac-summary-metric-label,
+.account-shell .ac-panel-title,
+.account-shell .ac-right-title,
+.account-shell .ac-modal-eyebrow {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand-muted);
+}
+.account-shell .ac-stat-value,
+.account-shell .ac-insight-value,
+.account-shell .ac-summary-metric-value,
+.account-shell .ac-order-amount {
+  font-family: var(--font-geist-mono), monospace;
+}
+.account-shell .ac-panel,
+.account-shell .ac-right-panel {
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--brand-cream);
+  border-radius: 0;
+}
+.account-shell .ac-panel-accent {
+  display: none;
+}
+.account-shell .ac-input {
+  font-size: 16px; /* no iOS zoom */
+  min-height: 48px;
+  background: transparent;
+  border-radius: 0;
+}
+.account-shell .ac-btn-primary,
+.account-shell .ac-btn-ghost,
+.account-shell .ac-danger-btn {
+  min-height: 44px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border-radius: 0;
+}
+.account-shell .ac-btn-primary {
+  background: var(--brand-cream);
+  color: var(--brand-espresso);
+}
+.account-shell .ac-btn-primary:hover {
+  opacity: 0.85;
+  background: var(--brand-cream);
+}
+.account-shell .ac-quick-link {
+  border-radius: 0;
+}
+
+/* ── Orders (/orders) and order detail (/order/[id]) ─────────────────── */
+.account-shell .op-hero-title,
+.account-shell .od-hero-title,
+.account-shell .oa-title {
+  font-family: var(--ff-head);
+  font-weight: 800;
+  font-stretch: 66%;
+  font-style: normal;
+  text-transform: uppercase;
+  line-height: 0.86;
+  letter-spacing: -0.01em;
+}
+.account-shell .op-hero-title em {
+  font-style: normal;
+  color: inherit;
+}
+.account-shell .op-hero-eyebrow,
+.account-shell .od-hero-eyebrow,
+.account-shell .op-card-eyebrow,
+.account-shell .op-panel-title,
+.account-shell .od-panel-title,
+.account-shell .od-meta-label,
+.account-shell .od-delivery-cell-label,
+.account-shell .od-tracking-eyebrow {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand-muted);
+}
+.account-shell .op-card-number,
+.account-shell .op-cr-number,
+.account-shell .od-tracking-number,
+.account-shell .od-meta-value {
+  font-family: var(--font-geist-mono), monospace;
+}
+.account-shell .op-accent,
+.account-shell .od-accent-line,
+.account-shell .oa-accent {
+  display: none;
+}
+.account-shell .op-panel,
+.account-shell .od-panel,
+.account-shell .op-order-card,
+.account-shell .op-cr-card {
+  border-radius: 0;
+}
+.account-shell .op-input {
+  font-size: 16px;
+  min-height: 48px;
+  border-radius: 0;
+  background: transparent;
+}
+.account-shell .op-btn-primary,
+.account-shell .op-form-submit,
+.account-shell .op-empty-cta,
+.account-shell .oa-btn-primary {
+  background: var(--brand-cream);
+  color: var(--brand-espresso);
+  border-radius: 0;
+  min-height: 44px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.account-shell .op-btn-secondary,
+.account-shell .op-empty-cta-ghost,
+.account-shell .oa-btn-secondary {
+  border-radius: 0;
+  min-height: 44px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.account-shell .op-hero::before,
+.account-shell .op-hero::after,
+.account-shell .od-hero::before,
+.account-shell .od-hero::after {
+  display: none;
+}
+.account-shell .op-empty-text {
+  font-style: normal;
+  font-family: var(--ff-body);
+}

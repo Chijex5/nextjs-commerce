@@ -344,7 +344,7 @@ export default function OrdersPageClient() {
           gap: 8px;
           background: var(--terra);
           border: none;
-          color: var(--cream);
+          color: var(--brand-on-accent);
           font-family: var(--font-dm-sans), sans-serif;
           font-size: 10px;
           font-weight: 500;
@@ -592,7 +592,7 @@ export default function OrdersPageClient() {
           gap: 6px;
           background: var(--terra);
           border: none;
-          color: var(--cream);
+          color: var(--brand-on-accent);
           font-family: var(--font-dm-sans), sans-serif;
           font-size: 10px;
           font-weight: 500;
@@ -724,7 +724,7 @@ export default function OrdersPageClient() {
         }
         .op-mode-btn-active {
           background: var(--terra);
-          color: var(--cream);
+          color: var(--brand-on-accent);
         }
 
         /* Form inputs */
@@ -747,7 +747,7 @@ export default function OrdersPageClient() {
           width: 100%;
           background: var(--terra);
           border: none;
-          color: var(--cream);
+          color: var(--brand-on-accent);
           font-family: var(--font-dm-sans), sans-serif;
           font-size: 10px;
           font-weight: 500;

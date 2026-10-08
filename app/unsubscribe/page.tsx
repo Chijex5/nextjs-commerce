@@ -182,7 +182,7 @@ export default async function UnsubscribePage(props: {
           align-items: center;
           gap: 6px;
           background: var(--terra);
-          color: var(--cream);
+          color: var(--brand-on-accent);
           font-family: var(--ff-body);
           font-size: 10px;
           font-weight: 500;
