@@ -1,5 +1,4 @@
 import clsx from "clsx";
-import LogoIcon from "./icons/logo";
 
 interface PageLoaderProps {
   size?: "sm" | "md" | "lg";
@@ -8,113 +7,44 @@ interface PageLoaderProps {
   className?: string;
 }
 
-const sizeClasses = {
-  sm: {
-    outer: "h-11 w-11",
-    inner: "h-8 w-8",
-    logo: "h-5 w-5",
-  },
-  md: {
-    outer: "h-[72px] w-[72px]",
-    inner: "h-[52px] w-[52px]",
-    logo: "h-7 w-7",
-  },
-  lg: {
-    outer: "h-[108px] w-[108px]",
-    inner: "h-20 w-20",
-    logo: "h-10 w-10",
-  },
-};
+const SIZES = { sm: "size-10", md: "size-16", lg: "size-24" };
 
+/**
+ * Brand loader: the D'FOOTPRINT mark filling with ink from the bottom up.
+ * Pure CSS (a mask over an animated gradient) so it costs nothing to show.
+ */
 const PageLoader = ({
   size = "md",
-  message = "Loading…",
+  message = "Loading",
   fullScreen = false,
   className,
 }: PageLoaderProps) => {
-  const sizes = sizeClasses[size];
-
-  const loaderContent = (
-    <div className="flex flex-col items-center justify-center gap-5">
-      {/* Dual-ring branded spinner */}
-      <div className="relative flex items-center justify-center">
-        {/* Outer ring — terracotta lead */}
-        <div
-          className={clsx(
-            "animate-spin rounded-full border-[1.5px]",
-            "border-[var(--brand-cream)]/[0.07] border-t-[var(--brand-terra)]",
-            sizes.outer,
-          )}
-          style={{
-            animationDuration: "1.2s",
-            animationTimingFunction: "cubic-bezier(0.5,0,0.5,1)",
-          }}
-        />
-
-        {/* Inner ring — gold, counter-rotates */}
-        <div
-          className={clsx(
-            "absolute animate-spin rounded-full border-[1.5px]",
-            "border-[var(--brand-cream)]/[0.04] border-b-[var(--brand-gold)]/50",
-            sizes.inner,
-          )}
-          style={{
-            animationDuration: "1.8s",
-            animationDirection: "reverse",
-            animationTimingFunction: "cubic-bezier(0.5,0,0.5,1)",
-          }}
-        />
-
-        {/* Logo centred */}
-        <div className="absolute flex items-center justify-center">
-          <div className="flex items-center justify-center rounded-[3px] bg-[var(--brand-cream)]/[0.05]">
-            <LogoIcon
-              className={clsx(sizes.logo, "text-[var(--brand-cream)]/60")}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Message */}
-      {message && (
-        <p
-          className="text-center text-[11px] uppercase tracking-[0.12em] text-[var(--brand-cream)]/40"
-          style={{ fontFamily: "inherit" }}
-        >
+  const content = (
+    <div
+      role="status"
+      aria-live="polite"
+      className={clsx("flex flex-col items-center gap-4", className)}
+    >
+      <span aria-hidden className={clsx("ink-logo", SIZES[size])} />
+      {message ? (
+        <span className="label text-fg-3">
           {message}
-        </p>
+          <span className="ink-dots" />
+        </span>
+      ) : (
+        <span className="sr-only">Loading</span>
       )}
     </div>
   );
 
-  /* fullScreen mode — fixed overlay covers entire viewport */
   if (fullScreen) {
     return (
-      <div
-        className={clsx(
-          "fixed inset-0 z-50 flex items-center justify-center bg-[var(--brand-espresso)]",
-          className,
-        )}
-      >
-        {/* Subtle grain texture */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-30"
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E\")",
-          }}
-        />
-        {loaderContent}
+      <div className="flex min-h-[60svh] items-center justify-center bg-canvas">
+        {content}
       </div>
     );
   }
-
-  /* Default inline mode */
-  return (
-    <div className={clsx("flex items-center justify-center py-12", className)}>
-      {loaderContent}
-    </div>
-  );
+  return content;
 };
 
 export default PageLoader;

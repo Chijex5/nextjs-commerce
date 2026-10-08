@@ -3,7 +3,15 @@
 import { useUserSession } from "hooks/useUserSession";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import LoadingDots from "components/loading-dots";
+import { buttonClass } from "components/ui/button";
+import { Field } from "components/ui/field";
+import { LOOKS } from "lib/data/editorial";
+import { X } from "lucide-react";
+import Image from "next/image";
 import { toast } from "sonner";
+
+const INVITE_PHOTO = LOOKS[1]!;
 
 const COOKIE_NAME = "first_visit_signup_shown";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
@@ -235,461 +243,173 @@ export default function FirstVisitSignupPopup() {
   if (!isOpen) return null;
 
   const submitting = usePassword ? loading : magicLoading;
+  const update =
+    (key: keyof typeof formData) =>
+    (event: React.ChangeEvent<HTMLInputElement>) =>
+      setFormData((d) => ({ ...d, [key]: event.target.value }));
 
   return (
     <div
-      className="dfp-invite-overlay"
+      className="fixed inset-0 z-[80] flex items-end justify-center bg-black/55 md:items-center md:p-6"
       onMouseDown={(event) => {
-        // click on the backdrop (not the card) dismisses
         if (event.target === event.currentTarget) setIsOpen(false);
       }}
     >
-      <style>{`
-        .dfp-invite-overlay {
-          --dp-ink: #0A0704;
-          --dp-card: #1E1510;
-          --dp-cream: #F2E8D5;
-          --dp-sand: #C9B99A;
-          --dp-muted: #6A5A48;
-          --dp-ember: #BF5A28;
-          --dp-gold: #C0892A;
-          --dp-border: rgba(242,232,213,0.09);
-
-          position: fixed;
-          inset: 0;
-          z-index: 60;
-          display: flex;
-          align-items: flex-end;
-          justify-content: center;
-          padding: 0;
-          background: rgba(5,3,2,0.72);
-          backdrop-filter: blur(4px);
-          -webkit-backdrop-filter: blur(4px);
-          animation: dfp-fade .35s ease both;
-          font-family: var(--font-dm-sans), system-ui, sans-serif;
-        }
-        @media (min-width: 640px) {
-          .dfp-invite-overlay {
-            align-items: center;
-            padding: 1.5rem;
-          }
-        }
-
-        .dfp-invite-card {
-          position: relative;
-          width: 100%;
-          max-width: 460px;
-          max-height: 92vh;
-          overflow-y: auto;
-          color: var(--dp-cream);
-          background:
-            radial-gradient(ellipse 90% 60% at 12% -10%, rgba(191,90,40,0.18) 0%, transparent 62%),
-            radial-gradient(ellipse 70% 50% at 100% 110%, rgba(192,137,42,0.12) 0%, transparent 60%),
-            var(--dp-card);
-          border: 1px solid var(--dp-border);
-          border-top: 1px solid rgba(242,232,213,0.14);
-          border-radius: 18px 18px 0 0;
-          padding: 2rem 1.5rem 1.75rem;
-          box-shadow: 0 -8px 60px rgba(0,0,0,0.55);
-          animation: dfp-rise .45s cubic-bezier(.16,1,.3,1) both;
-        }
-        @media (min-width: 640px) {
-          .dfp-invite-card {
-            border-radius: 18px;
-            padding: 2.5rem 2.25rem 2rem;
-            box-shadow: 0 30px 80px rgba(0,0,0,0.6);
-          }
-        }
-
-        .dfp-close {
-          position: absolute;
-          top: .9rem;
-          right: .9rem;
-          width: 2rem;
-          height: 2rem;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 999px;
-          border: 1px solid var(--dp-border);
-          background: rgba(10,7,4,0.4);
-          color: var(--dp-sand);
-          cursor: pointer;
-          transition: color .2s, border-color .2s, background .2s;
-        }
-        .dfp-close:hover { color: var(--dp-cream); border-color: rgba(242,232,213,0.24); }
-        .dfp-close:focus-visible { outline: 2px solid var(--dp-gold); outline-offset: 2px; }
-
-        .dfp-wordmark {
-          font-family: var(--font-bebas-neue), var(--font-dm-sans), sans-serif;
-          font-size: 1.05rem;
-          letter-spacing: .06em;
-          color: var(--dp-cream);
-        }
-        .dfp-label {
-          font-size: .6rem;
-          font-weight: 600;
-          letter-spacing: .26em;
-          text-transform: uppercase;
-          color: var(--dp-ember);
-        }
-        .dfp-headline {
-          font-family: var(--font-cormorant-garamond), Georgia, serif;
-          font-weight: 500;
-          font-size: 1.85rem;
-          line-height: 1.12;
-          letter-spacing: -.01em;
-          color: var(--dp-cream);
-          margin: .6rem 0 0;
-        }
-        .dfp-headline em { color: var(--dp-gold); font-style: italic; }
-        .dfp-sub {
-          font-size: .9rem;
-          line-height: 1.55;
-          color: var(--dp-sand);
-          margin: .7rem 0 0;
-        }
-
-        .dfp-perks {
-          list-style: none;
-          margin: 1.15rem 0 0;
-          padding: 0;
-          display: flex;
-          flex-direction: column;
-          gap: .6rem;
-        }
-        .dfp-perks li {
-          display: flex;
-          align-items: flex-start;
-          gap: .6rem;
-          font-size: .82rem;
-          line-height: 1.4;
-          color: var(--dp-cream);
-        }
-        .dfp-perks svg { flex-shrink: 0; margin-top: .05rem; color: var(--dp-ember); }
-
-        .dfp-form { margin-top: 1.5rem; display: flex; flex-direction: column; gap: .75rem; }
-        .dfp-field { display: flex; flex-direction: column; gap: .35rem; }
-        .dfp-field label {
-          font-size: .68rem;
-          font-weight: 500;
-          letter-spacing: .12em;
-          text-transform: uppercase;
-          color: var(--dp-muted);
-        }
-        .dfp-input {
-          width: 100%;
-          box-sizing: border-box;
-          background: rgba(10,7,4,0.55);
-          border: 1px solid var(--dp-border);
-          border-radius: 10px;
-          padding: .8rem .9rem;
-          font-size: .95rem;
-          color: var(--dp-cream);
-          font-family: inherit;
-          transition: border-color .2s, box-shadow .2s;
-        }
-        .dfp-input::placeholder { color: var(--dp-muted); }
-        .dfp-input:focus {
-          outline: none;
-          border-color: var(--dp-gold);
-          box-shadow: 0 0 0 3px rgba(192,137,42,0.16);
-        }
-
-        .dfp-primary {
-          width: 100%;
-          box-sizing: border-box;
-          margin-top: .25rem;
-          padding: .9rem 1rem;
-          border: none;
-          border-radius: 10px;
-          cursor: pointer;
-          font-family: inherit;
-          font-size: .9rem;
-          font-weight: 600;
-          letter-spacing: .02em;
-          color: #1A0E06;
-          background: linear-gradient(100deg, var(--dp-gold) 0%, var(--dp-ember) 100%);
-          transition: filter .2s, transform .05s;
-        }
-        .dfp-primary:hover { filter: brightness(1.07); }
-        .dfp-primary:active { transform: translateY(1px); }
-        .dfp-primary:disabled { opacity: .6; cursor: default; }
-
-        .dfp-ghost {
-          width: 100%;
-          box-sizing: border-box;
-          padding: .55rem;
-          background: none;
-          border: none;
-          cursor: pointer;
-          font-family: inherit;
-          font-size: .8rem;
-          color: var(--dp-sand);
-          text-decoration: underline;
-          text-underline-offset: 3px;
-          transition: color .2s;
-        }
-        .dfp-ghost:hover { color: var(--dp-cream); }
-
-        .dfp-fineprint {
-          margin: .3rem 0 0;
-          font-size: .72rem;
-          line-height: 1.45;
-          color: var(--dp-muted);
-          text-align: center;
-        }
-
-        .dfp-sent {
-          margin-top: 1.5rem;
-          padding: 1.1rem;
-          border: 1px solid var(--dp-border);
-          border-radius: 12px;
-          background: rgba(10,7,4,0.4);
-          font-size: .9rem;
-          line-height: 1.55;
-          color: var(--dp-sand);
-        }
-
-        .dfp-primary:focus-visible,
-        .dfp-ghost:focus-visible { outline: 2px solid var(--dp-gold); outline-offset: 2px; }
-
-        @keyframes dfp-fade { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes dfp-rise { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
-        @media (prefers-reduced-motion: reduce) {
-          .dfp-invite-overlay, .dfp-invite-card { animation: none; }
-        }
-      `}</style>
-
       <div
         ref={dialogRef}
-        className="dfp-invite-card"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="dfp-invite-heading"
-        aria-describedby="dfp-invite-sub"
+        aria-labelledby="invite-title"
+        className="animate-slide-up grid max-h-[92svh] w-full overflow-hidden bg-canvas text-fg md:max-w-4xl md:grid-cols-2"
       >
-        <button
-          type="button"
-          onClick={() => setIsOpen(false)}
-          className="dfp-close"
-          aria-label="Close"
-        >
-          <svg
-            width="15"
-            height="15"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
+        <div className="relative hidden bg-ink md:block">
+          <Image
+            src={INVITE_PHOTO.src}
+            alt={INVITE_PHOTO.alt}
+            fill
+            sizes="448px"
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+          <p className="label absolute bottom-6 left-6 text-white/80">
+            Handmade in Lagos
+          </p>
+        </div>
+
+        <div className="relative overflow-y-auto px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-6 sm:px-8 sm:pt-8">
+          <button
+            type="button"
+            onClick={() => setIsOpen(false)}
+            aria-label="Close"
+            className="label absolute right-4 top-4 flex h-9 items-center gap-1.5"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
+            Close <X className="size-4" />
+          </button>
 
-        <span className="dfp-wordmark">D&apos;FOOTPRINT</span>
-
-        {sent ? (
-          <div className="dfp-sent" role="status">
-            <p style={{ margin: 0, color: "var(--dp-cream)", fontWeight: 600 }}>
-              Check your inbox.
-            </p>
-            <p style={{ margin: ".4rem 0 0" }}>
-              We&apos;ve sent a one-time link to{" "}
-              <strong style={{ color: "var(--dp-cream)" }}>
-                {formData.email}
-              </strong>
-              . Open it to finish setting up your account — your 10% welcome
-              code is waiting inside.
-            </p>
-          </div>
-        ) : (
-          <>
-            <p className="dfp-label" style={{ marginTop: "1.25rem" }}>
-              Members get first look
-            </p>
-            <h2 id="dfp-invite-heading" className="dfp-headline">
-              Take <em>10% off</em> your first pair.
-            </h2>
-            <p id="dfp-invite-sub" className="dfp-sub">
-              Join D&apos;FOOTPRINT and we&apos;ll send a welcome code for your
-              first order — plus a heads-up whenever a new pair drops.
-            </p>
-
-            <ul className="dfp-perks">
-              <li>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                10% off your first pair, sent the moment you join
-              </li>
-              <li>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                Be first to know when new drops land
-              </li>
-              <li>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                Saved sizes and faster checkout next time
-              </li>
-            </ul>
-
-            <form
-              className="dfp-form"
-              onSubmit={usePassword ? handlePasswordSignup : handleMagicLink}
-            >
-              {usePassword && (
-                <div className="dfp-field">
-                  <label htmlFor="popup-name">Full name (optional)</label>
-                  <input
-                    id="popup-name"
-                    type="text"
-                    className="dfp-input"
-                    value={formData.name}
-                    onChange={(event) =>
-                      setFormData({ ...formData, name: event.target.value })
-                    }
-                    placeholder="Jane Doe"
-                  />
-                </div>
-              )}
-
-              <div className="dfp-field">
-                <label htmlFor="popup-email">Email</label>
-                <input
-                  id="popup-email"
-                  ref={emailRef}
-                  type="email"
-                  className="dfp-input"
-                  value={formData.email}
-                  onChange={(event) =>
-                    setFormData({ ...formData, email: event.target.value })
-                  }
-                  required
-                  autoComplete="email"
-                  placeholder="you@email.com"
-                />
-              </div>
-
-              {usePassword && (
-                <>
-                  <div className="dfp-field">
-                    <label htmlFor="popup-password">Password</label>
-                    <input
-                      id="popup-password"
-                      type="password"
-                      className="dfp-input"
-                      value={formData.password}
-                      onChange={(event) =>
-                        setFormData({
-                          ...formData,
-                          password: event.target.value,
-                        })
-                      }
-                      required
-                      minLength={8}
-                      autoComplete="new-password"
-                      placeholder="••••••••"
-                    />
-                  </div>
-                  <div className="dfp-field">
-                    <label htmlFor="popup-confirm">Confirm password</label>
-                    <input
-                      id="popup-confirm"
-                      type="password"
-                      className="dfp-input"
-                      value={formData.confirmPassword}
-                      onChange={(event) =>
-                        setFormData({
-                          ...formData,
-                          confirmPassword: event.target.value,
-                        })
-                      }
-                      required
-                      autoComplete="new-password"
-                      placeholder="••••••••"
-                    />
-                  </div>
-                </>
-              )}
-
-              <button
-                type="submit"
-                className="dfp-primary"
-                disabled={submitting}
+          {sent ? (
+            <div className="pt-8">
+              <p className="label text-fg-3">(Almost there)</p>
+              <h2
+                id="invite-title"
+                className="display mt-3 text-[clamp(3rem,8vw,4.5rem)]"
               >
-                {usePassword
-                  ? loading
-                    ? "Creating your account…"
-                    : "Claim 10% & create account"
-                  : magicLoading
-                    ? "Sending your link…"
-                    : "Email me my 10% code"}
-              </button>
-
-              {!usePassword && (
-                <p className="dfp-fineprint">
-                  No password needed — we&apos;ll email a one-time link to
-                  finish. Your code lands right after.
-                </p>
-              )}
-
+                Check your inbox.
+              </h2>
+              <p className="mt-4 text-fg-2">
+                We sent a link to{" "}
+                <strong className="text-fg">{formData.email}</strong>. Open it
+                to finish setting up your account — your 10% welcome code lands
+                right after.
+              </p>
               <button
                 type="button"
-                className="dfp-ghost"
-                onClick={() => setUsePassword((current) => !current)}
+                onClick={() => setIsOpen(false)}
+                className={buttonClass("solid", "lg", "mt-8 w-full")}
               >
-                {usePassword
-                  ? "Prefer a one-time email link instead?"
-                  : "Rather set a password now?"}
+                Keep browsing
               </button>
-            </form>
-          </>
-        )}
+            </div>
+          ) : (
+            <>
+              <p className="label pr-20 text-fg-3">(Welcome gift)</p>
+              <h2
+                id="invite-title"
+                className="display mt-3 text-[clamp(3rem,8vw,4.75rem)]"
+              >
+                10% off your
+                <br />
+                first pair.
+              </h2>
+              <p className="mt-4 text-fg-2">
+                Join D&apos;FOOTPRINT and we&apos;ll send a welcome code for
+                your first order — plus a heads-up whenever a new pair drops.
+              </p>
+
+              <form
+                onSubmit={usePassword ? handlePasswordSignup : handleMagicLink}
+                className="mt-6 space-y-5"
+              >
+                {usePassword ? (
+                  <Field
+                    label="Full name (optional)"
+                    autoComplete="name"
+                    value={formData.name}
+                    onChange={update("name")}
+                  />
+                ) : null}
+                <Field
+                  ref={emailRef}
+                  label="Email"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  required
+                  value={formData.email}
+                  onChange={update("email")}
+                  placeholder="you@example.com"
+                />
+                {usePassword ? (
+                  <>
+                    <Field
+                      label="Password"
+                      type="password"
+                      autoComplete="new-password"
+                      required
+                      minLength={8}
+                      value={formData.password}
+                      onChange={update("password")}
+                    />
+                    <Field
+                      label="Confirm password"
+                      type="password"
+                      autoComplete="new-password"
+                      required
+                      value={formData.confirmPassword}
+                      onChange={update("confirmPassword")}
+                    />
+                  </>
+                ) : null}
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className={buttonClass("solid", "lg", "w-full !h-14")}
+                >
+                  {submitting ? (
+                    <LoadingDots className="bg-canvas" />
+                  ) : usePassword ? (
+                    "Create account & claim 10%"
+                  ) : (
+                    "Email me my 10% code"
+                  )}
+                </button>
+              </form>
+
+              <p className="mt-4 text-xs text-fg-3">
+                {usePassword
+                  ? "You'll be signed in straight away."
+                  : "No password needed — we'll email a one-time link to finish. Your code lands right after."}
+              </p>
+              <div className="mt-6 flex items-center justify-between border-t border-line pt-4">
+                <button
+                  type="button"
+                  onClick={() => setUsePassword((v) => !v)}
+                  className="label link-underline"
+                >
+                  {usePassword
+                    ? "Use an email link instead"
+                    : "Set a password instead"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="label text-fg-3 hover:text-fg"
+                >
+                  No thanks
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

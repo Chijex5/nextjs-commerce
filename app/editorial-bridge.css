@@ -44,6 +44,7 @@
 
 .ed-bridge
   :is(
+    .us-eyebrow,
     .ci-label,
     .sg-label,
     .pg-eyebrow,
@@ -61,7 +62,7 @@
   color: var(--brand-muted) !important;
 }
 
-.ed-bridge .pg-accent {
+.ed-bridge :is(.pg-accent, .us-accent) {
   display: none;
 }
 
@@ -89,7 +90,9 @@
     .sg-btn-primary,
     .cf-submit,
     .dp-btn-solid,
-    .dp-btn-ember
+    .dp-btn-ember,
+    .dp-btn-primary,
+    .us-cta
   ) {
   background: var(--brand-cream) !important;
   color: var(--brand-espresso) !important;

@@ -6,6 +6,7 @@ import {
   useId,
   useState,
   type InputHTMLAttributes,
+  type Ref,
   type ReactNode,
 } from "react";
 
@@ -20,8 +21,10 @@ export function Field({
   error,
   className,
   type = "text",
+  ref,
   ...props
 }: InputHTMLAttributes<HTMLInputElement> & {
+  ref?: Ref<HTMLInputElement>;
   label: string;
   hint?: ReactNode;
   error?: boolean;
@@ -38,6 +41,7 @@ export function Field({
       </label>
       <div className="relative">
         <input
+          ref={ref}
           id={id}
           type={isPassword && reveal ? "text" : type}
           aria-invalid={error || undefined}
