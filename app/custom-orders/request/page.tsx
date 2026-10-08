@@ -37,7 +37,7 @@ export default function CustomOrderRequestPage() {
       <style>{`
         .cor-nav-link {
           display: inline-flex; align-items: center; gap: .4rem;
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
           font-size: .65rem; font-weight: 500;
           letter-spacing: .14em; text-transform: uppercase;
           color: var(--dp-muted);
@@ -111,7 +111,7 @@ export default function CustomOrderRequestPage() {
 
             <p
               style={{
-                fontFamily: "DM Sans, sans-serif",
+                fontFamily: "var(--ff-body)",
                 fontSize: ".78rem",
                 color: "var(--dp-muted)",
                 lineHeight: 1.7,
@@ -163,7 +163,7 @@ export default function CustomOrderRequestPage() {
                 <style>{`@keyframes dp-spin { to { transform: rotate(360deg); } }`}</style>
                 <p
                   style={{
-                    fontFamily: "DM Sans, sans-serif",
+                    fontFamily: "var(--ff-body)",
                     fontSize: ".75rem",
                     color: "var(--dp-muted)",
                     letterSpacing: ".08em",
@@ -202,7 +202,7 @@ export default function CustomOrderRequestPage() {
             </p>
             <p
               style={{
-                fontFamily: "DM Sans, sans-serif",
+                fontFamily: "var(--ff-body)",
                 fontSize: ".75rem",
                 color: "var(--dp-muted)",
                 lineHeight: 1.65,
@@ -220,7 +220,7 @@ export default function CustomOrderRequestPage() {
                 gap: ".5rem",
                 background: "var(--dp-ember)",
                 color: "var(--brand-on-accent)",
-                fontFamily: "DM Sans, sans-serif",
+                fontFamily: "var(--ff-body)",
                 fontWeight: 500,
                 fontSize: ".68rem",
                 letterSpacing: ".12em",

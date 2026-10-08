@@ -20,12 +20,15 @@ export default async function Image(props: Props) {
   }
 
   const price = product.priceRange?.minVariantPrice
-    ? `NGN ${Number(product.priceRange.minVariantPrice.amount).toLocaleString("en-NG", {
-        minimumFractionDigits: 2,
-      })}`
+    ? `NGN ${Number(product.priceRange.minVariantPrice.amount).toLocaleString(
+        "en-NG",
+        {
+          minimumFractionDigits: 2,
+        },
+      )}`
     : undefined;
 
-    console.log("Generating OG image for product:", product);
+  console.log("Generating OG image for product:", product);
 
   // next/og ImageResponse does not support WebP — rewrite Cloudinary URLs to JPEG
   const rawImage = product.images?.[0]?.url ?? null;

@@ -29,7 +29,7 @@ export default function OrderFinancialSummary({
           border-top: none;
           background: rgba(var(--brand-bg-rgb),0.7);
           padding: 36px 48px;
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--ff-body);
         }
         .ofs-accent {
           height: 1px;
@@ -37,7 +37,7 @@ export default function OrderFinancialSummary({
           margin-bottom: 28px;
         }
         .ofs-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--ff-body);
           font-size: 26px;
           font-weight: 300;
           color: var(--cream, var(--brand-cream));
@@ -126,7 +126,7 @@ export default function OrderFinancialSummary({
           color: var(--terra, var(--brand-terra));
         }
         .ofs-grand-value {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: var(--ff-body);
           font-size: 24px;
           font-weight: 400;
           color: var(--gold, var(--brand-gold));
@@ -134,7 +134,7 @@ export default function OrderFinancialSummary({
         .ofs-grand-value p,
         .ofs-grand-value span {
           color: var(--gold, var(--brand-gold)) !important;
-          font-family: 'Cormorant Garamond', serif !important;
+          font-family: var(--ff-body) !important;
           font-size: 24px !important;
           font-weight: 400 !important;
         }

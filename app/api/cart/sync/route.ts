@@ -1,10 +1,11 @@
 import {
-    addToCart,
-    createCart,
-    getCart,
-    removeFromCart,
-    updateCart,
+  addToCart,
+  createCart,
+  getCart,
+  removeFromCart,
+  updateCart,
 } from "lib/database";
+import { isMockData } from "lib/data/source";
 import { NextRequest, NextResponse } from "next/server";
 
 type SyncItem = {
@@ -13,6 +14,9 @@ type SyncItem = {
 };
 
 export async function POST(request: NextRequest) {
+  // Mock mode keeps the bag in the browser only (no database to sync to).
+  if (isMockData) return NextResponse.json({ ok: true, cart: null });
+
   try {
     const body = (await request.json()) as { items?: SyncItem[] };
     const items = Array.isArray(body?.items) ? body.items : [];

@@ -23,12 +23,11 @@
   :root {
     --ff-body: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
     --ff-head: var(--font-archivo), "Arial Narrow", ui-sans-serif, sans-serif;
-    --ff-accent: Georgia, serif;
 
     --font-inter: var(--ff-body);
     --font-dm-sans: var(--ff-body);
     --font-bebas-neue: var(--ff-head);
-    --font-cormorant-garamond: var(--ff-accent);
+    --font-cormorant-garamond: var(--ff-body);
   }
 
   /* ------------------------------------------------------------------ */
@@ -111,7 +110,6 @@
 @theme inline {
   --font-sans: var(--ff-body);
   --font-head: var(--ff-head);
-  --font-accent: var(--ff-accent);
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
   --color-canvas: var(--brand-espresso);
@@ -186,6 +184,19 @@ textarea {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
   }
 }
 
