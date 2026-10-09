@@ -1,17 +1,17 @@
-import { getServerSession } from "next-auth";
+import { OrderDetail } from "components/admin/orders/order-detail";
+import { and, eq, ne, or, sql } from "drizzle-orm";
 import { authOptions } from "lib/auth";
-import { redirect, notFound } from "next/navigation";
-import AdminNav from "components/admin/AdminNav";
-import OrderDetailView from "components/admin/OrderDetailView";
 import { db } from "lib/db";
 import {
   customOrderRequests,
   orderItems,
   orders,
   paymentTransactions,
-  users,
 } from "lib/db/schema";
-import { eq, or } from "drizzle-orm";
+import { getServerSession } from "next-auth";
+import { notFound, redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminOrderDetailPage({
   params,
@@ -19,54 +19,35 @@ export default async function AdminOrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await getServerSession(authOptions);
-
-  if (!session) {
-    redirect("/admin/login");
-  }
+  if (!session) redirect("/admin/login");
 
   const { id } = await params;
-
   const [order] = await db
     .select()
     .from(orders)
     .where(eq(orders.id, id))
     .limit(1);
+  if (!order) notFound();
 
-  if (!order) {
-    notFound();
-  }
-
-  const [items, user, customRequest, payment] = await Promise.all([
+  const [items, customRequest, payment, [history]] = await Promise.all([
     db.select().from(orderItems).where(eq(orderItems.orderId, id)),
-    order.userId
-      ? db
-          .select({
-            id: users.id,
-            name: users.name,
-            email: users.email,
-            phone: users.phone,
-          })
-          .from(users)
-          .where(eq(users.id, order.userId))
-          .limit(1)
-          .then((rows) => rows[0] ?? null)
-      : Promise.resolve(null),
     order.customOrderRequestId
       ? db
-          .select({ requestNumber: customOrderRequests.requestNumber })
+          .select({
+            id: customOrderRequests.id,
+            requestNumber: customOrderRequests.requestNumber,
+          })
           .from(customOrderRequests)
           .where(eq(customOrderRequests.id, order.customOrderRequestId))
           .limit(1)
-          .then((rows) => rows[0] ?? null)
-      : Promise.resolve(null),
+          .then((r) => r[0] ?? null)
+      : null,
     db
       .select({
         id: paymentTransactions.id,
-        provider: paymentTransactions.provider,
         reference: paymentTransactions.reference,
-        source: paymentTransactions.source,
         status: paymentTransactions.status,
-        paystackStatus: paymentTransactions.paystackStatus,
+        amount: paymentTransactions.amount,
         conflictCode: paymentTransactions.conflictCode,
         conflictMessage: paymentTransactions.conflictMessage,
         updatedAt: paymentTransactions.updatedAt,
@@ -81,26 +62,78 @@ export default async function AdminOrderDetailPage({
           : eq(paymentTransactions.orderId, order.id),
       )
       .limit(1)
-      .then((rows) => rows[0] ?? null),
+      .then((r) => r[0] ?? null),
+    // The customer's other paid orders, matched by email like Shopify does.
+    db
+      .select({
+        orders: sql<number>`count(*)`,
+        spent: sql<string>`coalesce(sum(${orders.totalAmount}), 0)`,
+        first: sql<string | null>`min(${orders.createdAt})::text`,
+      })
+      .from(orders)
+      .where(
+        and(
+          sql`lower(${orders.email}) = lower(${order.email})`,
+          ne(orders.status, "cancelled"),
+        ),
+      ),
   ]);
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-      <AdminNav currentPage="orders" userEmail={session.user?.email} />
-
-      <div className="py-6 sm:py-10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <OrderDetailView
-            order={{
-              ...order,
-              customRequestNumber: customRequest?.requestNumber || null,
-              items,
-              user,
-              payment,
-            }}
-          />
-        </div>
-      </div>
-    </div>
+    <OrderDetail
+      order={{
+        id: order.id,
+        orderNumber: order.orderNumber,
+        orderType: order.orderType,
+        customerName: order.customerName,
+        email: order.email,
+        phone: order.phone,
+        userId: order.userId,
+        status: order.status,
+        deliveryStatus: order.deliveryStatus,
+        estimatedArrival: order.estimatedArrival?.toISOString() ?? null,
+        shippingAddress: (order.shippingAddress ?? {}) as Record<
+          string,
+          string | undefined
+        >,
+        subtotal: Number(order.subtotalAmount),
+        discount: Number(order.discountAmount),
+        couponCode: order.couponCode,
+        shipping: Number(order.shippingAmount),
+        tax: Number(order.taxAmount),
+        total: Number(order.totalAmount),
+        notes: order.notes,
+        trackingNumber: order.trackingNumber,
+        acknowledgedAt: order.acknowledgedAt?.toISOString() ?? null,
+        acknowledgedBy: order.acknowledgedBy,
+        createdAt: order.createdAt.toISOString(),
+        updatedAt: order.updatedAt.toISOString(),
+        items: items.map((i) => ({
+          id: i.id,
+          productId: i.productId,
+          title: i.productTitle,
+          variant: i.variantTitle,
+          quantity: i.quantity,
+          price: Number(i.price),
+          total: Number(i.totalAmount),
+          image: i.productImage,
+        })),
+        customRequest,
+        payment: payment
+          ? {
+              ...payment,
+              amount: payment.amount / 100,
+              updatedAt: payment.updatedAt.toISOString(),
+            }
+          : null,
+        customer: {
+          orders: Number(history?.orders ?? 0),
+          spent: Number(history?.spent ?? 0),
+          firstOrderAt: history?.first
+            ? new Date(history.first.replace(" ", "T") + "Z").toISOString()
+            : null,
+        },
+      }}
+    />
   );
 }

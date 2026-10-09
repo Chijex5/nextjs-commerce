@@ -13,7 +13,10 @@ import {
 } from "lib/db/schema";
 import { CreateProductSchema } from "@/lib/validation/product-schema";
 import { validateAndSanitizeDescription } from "@/lib/validation/sanitize";
-import { validateCollectionIds, generateUniqueHandle } from "@/lib/validation/product-helpers";
+import {
+  validateCollectionIds,
+  generateUniqueHandle,
+} from "@/lib/validation/product-helpers";
 import { ZodError } from "zod";
 import { and, asc, eq, inArray, ne } from "drizzle-orm";
 
@@ -37,6 +40,53 @@ export async function DELETE(
     console.error("Error deleting product:", error);
     return NextResponse.json(
       { error: "Failed to delete product" },
+      { status: 500 },
+    );
+  }
+}
+
+/**
+ * Quick edits from the product list (show/hide in the shop). PUT replaces the
+ * whole product, including variants, so it isn't safe for one-field changes.
+ */
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const session = await requireAdminSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const body = (await request.json().catch(() => ({}))) as {
+      availableForSale?: unknown;
+    };
+    if (typeof body.availableForSale !== "boolean") {
+      return NextResponse.json(
+        { error: "availableForSale must be a boolean" },
+        { status: 400 },
+      );
+    }
+
+    const [updated] = await db
+      .update(products)
+      .set({ availableForSale: body.availableForSale, updatedAt: new Date() })
+      .where(eq(products.id, id))
+      .returning({
+        id: products.id,
+        availableForSale: products.availableForSale,
+      });
+
+    if (!updated) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+    return NextResponse.json({ product: updated });
+  } catch (error) {
+    console.error("Error updating product availability:", error);
+    return NextResponse.json(
+      { error: "Failed to update product" },
       { status: 500 },
     );
   }
@@ -76,10 +126,7 @@ export async function GET(
         .from(productVariants)
         .where(eq(productVariants.productId, id))
         .orderBy(asc(productVariants.createdAt)),
-      db
-        .select()
-        .from(productOptions)
-        .where(eq(productOptions.productId, id)),
+      db.select().from(productOptions).where(eq(productOptions.productId, id)),
       db
         .select({
           id: productCollections.id,
@@ -140,7 +187,9 @@ export async function PUT(
       validatedData = CreateProductSchema.parse(body);
     } catch (error) {
       if (error instanceof ZodError) {
-        const messages = error.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join("; ");
+        const messages = error.errors
+          .map((e) => `${e.path.join(".")}: ${e.message}`)
+          .join("; ");
         return NextResponse.json(
           { error: "Validation failed", details: messages },
           { status: 400 },
@@ -150,9 +199,14 @@ export async function PUT(
     }
 
     if (validatedData.collectionIds.length > 0) {
-      const collectionCheck = await validateCollectionIds(validatedData.collectionIds);
+      const collectionCheck = await validateCollectionIds(
+        validatedData.collectionIds,
+      );
       if (!collectionCheck.valid) {
-        return NextResponse.json({ error: collectionCheck.error }, { status: 400 });
+        return NextResponse.json(
+          { error: collectionCheck.error },
+          { status: 400 },
+        );
       }
     }
 
@@ -160,7 +214,10 @@ export async function PUT(
     if (sanitizedHtml) {
       const sanitizationResult = validateAndSanitizeDescription(sanitizedHtml);
       if (!sanitizationResult.valid) {
-        return NextResponse.json({ error: sanitizationResult.error }, { status: 400 });
+        return NextResponse.json(
+          { error: sanitizationResult.error },
+          { status: 400 },
+        );
       }
       sanitizedHtml = sanitizationResult.sanitized;
     }
@@ -169,7 +226,9 @@ export async function PUT(
     const handleConflict = await db
       .select({ id: products.id })
       .from(products)
-      .where(and(eq(products.handle, validatedData.handle), ne(products.id, id)))
+      .where(
+        and(eq(products.handle, validatedData.handle), ne(products.id, id)),
+      )
       .limit(1);
 
     if (handleConflict.length > 0) {
@@ -194,6 +253,7 @@ export async function PUT(
           seoTitle: bodyWithSanitized.seoTitle,
           seoDescription: bodyWithSanitized.seoDescription,
           tags: bodyWithSanitized.tags || [],
+          updatedAt: new Date(),
         })
         .where(eq(products.id, id))
         .returning();
@@ -232,9 +292,7 @@ export async function PUT(
         await tx
           .delete(productVariants)
           .where(eq(productVariants.productId, id));
-        await tx
-          .delete(productOptions)
-          .where(eq(productOptions.productId, id));
+        await tx.delete(productOptions).where(eq(productOptions.productId, id));
 
         const sizes = bodyWithSanitized.sizes || [];
         const colors = bodyWithSanitized.colors || [];
@@ -358,11 +416,13 @@ export async function PUT(
 
         if (bodyWithSanitized.collectionIds.length > 0) {
           await tx.insert(productCollections).values(
-            bodyWithSanitized.collectionIds.map((collectionId: string, index: number) => ({
-              productId: id,
-              collectionId,
-              position: index,
-            })),
+            bodyWithSanitized.collectionIds.map(
+              (collectionId: string, index: number) => ({
+                productId: id,
+                collectionId,
+                position: index,
+              }),
+            ),
           );
         }
       }

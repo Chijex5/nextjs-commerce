@@ -1,53 +1,49 @@
-import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
+import {
+  ShowcaseManager,
+  type ShowcaseItem,
+} from "components/admin/showcase/showcase-manager";
+import { Page, PageHeader } from "components/admin/ui";
+import { asc, desc } from "drizzle-orm";
 import { authOptions } from "lib/auth";
 import { db } from "lib/db";
 import { customOrders } from "lib/db/schema";
-import { asc, desc } from "drizzle-orm";
-import AdminNav from "components/admin/AdminNav";
-import CustomOrdersManagement from "components/admin/CustomOrdersManagement";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 
-const toDetailsArray = (value: unknown): string[] => {
-  if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === "string");
-};
+export const dynamic = "force-dynamic";
 
-export default async function AdminCustomOrdersPage() {
+export default async function ShowcasePage() {
   const session = await getServerSession(authOptions);
+  if (!session) redirect("/admin/login");
 
-  if (!session) {
-    redirect("/admin/login");
-  }
-
-  const orderRows = await db
+  const rows = await db
     .select()
     .from(customOrders)
     .orderBy(asc(customOrders.position), desc(customOrders.updatedAt));
-
-  const mappedOrders = orderRows.map((order) => ({
-    ...order,
-    details: toDetailsArray(order.details),
+  const items: ShowcaseItem[] = rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    customerStory: r.customerStory ?? "",
+    beforeImage: r.beforeImage ?? "",
+    afterImage: r.afterImage ?? "",
+    details: Array.isArray(r.details)
+      ? (r.details as unknown[]).filter(
+          (d): d is string => typeof d === "string",
+        )
+      : [],
+    completionTime: r.completionTime ?? "",
+    position: r.position,
+    isPublished: r.isPublished,
   }));
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-      <AdminNav currentPage="custom-orders" userEmail={session.user?.email} />
-
-      <div className="py-6 sm:py-10">
-        <div className="mx-auto max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-3xl">
-              Custom Showcase
-            </h1>
-            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-              Manage the before-and-after stories shown on the Custom Orders
-              gallery page.
-            </p>
-          </div>
-
-          <CustomOrdersManagement customOrders={mappedOrders} />
-        </div>
-      </div>
-    </div>
+    <Page>
+      <PageHeader
+        eyebrow="Catalog"
+        title="Custom showcase"
+        description="Before-and-after stories on the Custom orders page. The first six published entries show, in this order."
+      />
+      <ShowcaseManager items={items} />
+    </Page>
   );
 }

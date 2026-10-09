@@ -290,14 +290,10 @@ function FieldInput({
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between">
-        <label className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+        <label className="text-xs font-semibold uppercase tracking-wider text-fg-3">
           {label}
         </label>
-        {hint && (
-          <span className="text-[10px] text-neutral-400 dark:text-neutral-500">
-            {hint}
-          </span>
-        )}
+        {hint && <span className="text-[10px] text-fg-3">{hint}</span>}
       </div>
       {children}
     </div>
@@ -305,7 +301,7 @@ function FieldInput({
 }
 
 const inputCls =
-  "w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 transition placeholder-neutral-400 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-400/20 dark:border-neutral-700 dark:bg-neutral-800/50 dark:text-neutral-100 dark:placeholder-neutral-500 dark:focus:bg-neutral-800";
+  "w-full border border-line bg-plate px-3 py-2 text-sm text-fg transition placeholder-neutral-400 focus:border-slate-400 focus:bg-canvas focus:outline-none focus:ring-2 focus:ring-slate-400/20";
 
 // ─── SectionHeader ──────────────────────────────────────────────────────────────
 
@@ -319,12 +315,10 @@ function SectionHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-neutral-100 pb-2 dark:border-neutral-800">
+    <div className="flex items-center justify-between border-b border-line pb-2">
       <div className="flex items-center gap-2">
-        <Icon className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-        <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-          {label}
-        </span>
+        <Icon className="h-4 w-4 text-slate-500" />
+        <span className="text-sm font-semibold text-fg">{label}</span>
       </div>
       {action}
     </div>
@@ -351,7 +345,7 @@ function DescriptionModal({
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm max-w-none min-h-[200px] px-4 py-4 text-sm text-neutral-800 focus:outline-none dark:prose-invert dark:text-neutral-100",
+          "prose prose-sm max-w-none min-h-[200px] px-4 py-4 text-sm text-fg focus:outline-none",
       },
     },
     onUpdate: ({ editor: e }) => {
@@ -393,61 +387,59 @@ function DescriptionModal({
         className="absolute inset-0 bg-neutral-950/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-800 dark:bg-neutral-950">
-        <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4 dark:border-neutral-800">
+      <div className="relative w-full max-w-2xl overflow-hidden border border-line bg-canvas">
+        <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+            <p className="text-xs font-semibold uppercase tracking-wider text-fg-3">
               Rich Text
             </p>
-            <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-              Edit Description
-            </h3>
+            <h3 className="text-base font-bold text-fg">Edit Description</h3>
           </div>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-neutral-400 hover:border-neutral-300 hover:text-neutral-700 dark:border-neutral-700"
+            className="flex h-8 w-8 items-center justify-center border border-line text-fg-3 hover:border-line hover:text-fg-2"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="overflow-hidden">
-          <div className="flex items-center gap-1 border-b border-neutral-100 bg-neutral-50 px-3 py-2 dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="flex items-center gap-1 border-b border-line bg-plate px-3 py-2">
             {toolbarButtons.map(({ icon: Icon, label, action, active }) => (
               <button
                 key={label}
                 type="button"
                 title={label}
                 onClick={action}
-                className={`flex h-7 w-7 items-center justify-center rounded-md transition ${active() ? "bg-slate-700 text-white" : "text-neutral-500 hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-700"}`}
+                className={`flex h-7 w-7 items-center justify-center transition ${active() ? "bg-slate-700 text-canvas" : "text-fg-3 hover:bg-plate"}`}
               >
                 <Icon className="h-3.5 w-3.5" />
               </button>
             ))}
           </div>
-          <div className="min-h-[200px] bg-white dark:bg-neutral-950">
+          <div className="min-h-[200px] bg-canvas">
             {editor ? (
               <EditorContent editor={editor} />
             ) : (
-              <div className="px-4 py-4 text-sm text-neutral-400">Loading…</div>
+              <div className="px-4 py-4 text-sm text-fg-3">Loading…</div>
             )}
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-neutral-200 px-5 py-4 dark:border-neutral-800">
-          <span className="text-xs text-neutral-400">
+        <div className="flex items-center justify-between border-t border-line px-5 py-4">
+          <span className="text-xs text-fg-3">
             {localText.length} characters
           </span>
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="rounded-lg border border-neutral-200 px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+              className="border border-line px-4 py-2 text-sm text-fg-2 hover:bg-plate"
             >
               Cancel
             </button>
             <button
               onClick={() => onSave(localHtml, localText)}
-              className="flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-white"
+              className="flex items-center gap-2 bg-slate-800 px-4 py-2 text-sm font-semibold text-canvas hover:bg-slate-700"
             >
               <Check className="h-3.5 w-3.5" />
               Save description
@@ -485,45 +477,43 @@ function CollectionsModal({
         className="absolute inset-0 bg-neutral-950/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-800 dark:bg-neutral-950">
-        <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4 dark:border-neutral-800">
-          <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-            Assign to Collections
-          </h3>
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+      <div className="relative w-full max-w-sm overflow-hidden border border-line bg-canvas">
+        <div className="flex items-center justify-between border-b border-line px-5 py-4">
+          <h3 className="text-sm font-bold text-fg">Assign to Collections</h3>
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
             {local.length} selected
           </span>
         </div>
 
-        <div className="border-b border-neutral-100 px-4 py-2.5 dark:border-neutral-800">
+        <div className="border-b border-line px-4 py-2.5">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-400" />
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-fg-3" />
             <input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search collections…"
-              className="w-full rounded-lg border border-neutral-200 bg-neutral-50 py-1.5 pl-8 pr-3 text-sm text-neutral-900 focus:border-slate-400 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              className="w-full border border-line bg-plate py-1.5 pl-8 pr-3 text-sm text-fg focus:border-slate-400 focus:outline-none"
             />
           </div>
         </div>
 
         <div className="max-h-64 overflow-y-auto">
           {filtered.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-neutral-400">
+            <div className="px-4 py-8 text-center text-sm text-fg-3">
               No collections found
             </div>
           ) : (
             filtered.map((c) => (
               <label
                 key={c.id}
-                className="flex cursor-pointer items-center gap-3 px-4 py-2.5 transition hover:bg-neutral-50 dark:hover:bg-neutral-900"
+                className="flex cursor-pointer items-center gap-3 px-4 py-2.5 transition hover:bg-plate"
               >
                 <div
-                  className={`flex h-4 w-4 items-center justify-center rounded border transition ${local.includes(c.id) ? "border-slate-600 bg-slate-700" : "border-neutral-300 dark:border-neutral-600"}`}
+                  className={`flex h-4 w-4 items-center justify-center border transition ${local.includes(c.id) ? "border-slate-600 bg-slate-700" : "border-line"}`}
                 >
                   {local.includes(c.id) && (
-                    <Check className="h-2.5 w-2.5 text-white" />
+                    <Check className="h-2.5 w-2.5 text-canvas" />
                   )}
                 </div>
                 <input
@@ -538,24 +528,22 @@ function CollectionsModal({
                     )
                   }
                 />
-                <span className="text-sm text-neutral-700 dark:text-neutral-200">
-                  {c.title}
-                </span>
+                <span className="text-sm text-fg-2">{c.title}</span>
               </label>
             ))
           )}
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-neutral-200 px-5 py-4 dark:border-neutral-800">
+        <div className="flex justify-end gap-3 border-t border-line px-5 py-4">
           <button
             onClick={onClose}
-            className="rounded-lg border border-neutral-200 px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+            className="border border-line px-4 py-2 text-sm text-fg-2 hover:bg-plate"
           >
             Cancel
           </button>
           <button
             onClick={() => onSave(local)}
-            className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900"
+            className="bg-slate-800 px-4 py-2 text-sm font-semibold text-canvas hover:bg-slate-700"
           >
             Apply
           </button>
@@ -591,19 +579,19 @@ function PriceRuleRow({
         value={valueA}
         onChange={(e) => onChangeA(e.target.value)}
         placeholder={labelA}
-        className="min-w-0 flex-1 rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-xs text-neutral-800 focus:border-slate-400 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+        className="min-w-0 flex-1 border border-line bg-canvas px-2.5 py-1.5 text-xs text-fg focus:border-slate-400 focus:outline-none"
       />
       <input
         type="number"
         value={valueB}
         onChange={(e) => onChangeB(e.target.value)}
         placeholder={labelB}
-        className="min-w-0 flex-1 rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-xs text-neutral-800 focus:border-slate-400 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+        className="min-w-0 flex-1 border border-line bg-canvas px-2.5 py-1.5 text-xs text-fg focus:border-slate-400 focus:outline-none"
       />
       <button
         type="button"
         onClick={onRemove}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-red-100 text-red-400 transition hover:border-red-300 hover:bg-red-50 dark:border-red-900/30 dark:hover:bg-red-900/20"
+        className="flex h-7 w-7 shrink-0 items-center justify-center border border-red-100 text-red-400 transition hover:border-red-300 hover:bg-red-50"
       >
         <X className="h-3 w-3" />
       </button>
@@ -643,13 +631,11 @@ const TableCell = memo(function TableCell({
             e.stopPropagation();
             onCellChange(!(value as boolean));
           }}
-          className={`flex h-5 w-5 items-center justify-center rounded border-2 transition ${
-            value
-              ? "border-emerald-500 bg-emerald-500"
-              : "border-neutral-300 dark:border-neutral-600"
+          className={`flex h-5 w-5 items-center justify-center border-2 transition ${
+            value ? "border-emerald-500 bg-emerald-500" : "border-line"
           }`}
         >
-          {value && <Check className="h-3 w-3 text-white" />}
+          {value && <Check className="h-3 w-3 text-canvas" />}
         </button>
       </div>
     );
@@ -663,7 +649,7 @@ const TableCell = memo(function TableCell({
           e.stopPropagation();
           onOpenCollections();
         }}
-        className="flex w-full items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-1.5 text-xs text-neutral-600 transition hover:border-slate-300 hover:bg-white dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+        className="flex w-full items-center gap-1.5 border border-line bg-plate px-2.5 py-1.5 text-xs text-fg-2 transition hover:border-slate-300 hover:bg-canvas"
       >
         <Tag className="h-3 w-3 shrink-0" />
         {count > 0 ? `${count} collection${count > 1 ? "s" : ""}` : "Assign"}
@@ -679,11 +665,11 @@ const TableCell = memo(function TableCell({
           e.stopPropagation();
           onOpenDescription();
         }}
-        className="flex w-full items-center gap-1.5 truncate rounded-lg px-1 py-1 text-left text-xs text-neutral-600 transition hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+        className="flex w-full items-center gap-1.5 truncate px-1 py-1 text-left text-xs text-fg-2 transition hover:bg-plate"
       >
         <Pencil className="h-3 w-3 shrink-0 opacity-40" />
         <span className="truncate">
-          {preview || <em className="text-neutral-400">Click to write…</em>}
+          {preview || <em className="text-fg-3">Click to write…</em>}
         </span>
       </button>
     );
@@ -701,7 +687,7 @@ const TableCell = memo(function TableCell({
         }}
         autoFocus
         onClick={(e) => e.stopPropagation()}
-        className="w-full rounded-lg border border-slate-400 bg-white px-2 py-1 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-slate-400/20 dark:border-slate-500 dark:bg-neutral-800 dark:text-neutral-100"
+        className="w-full border border-slate-400 bg-canvas px-2 py-1 text-sm text-fg focus:outline-none focus:ring-2 focus:ring-slate-400/20"
       />
     );
   }
@@ -712,11 +698,9 @@ const TableCell = memo(function TableCell({
         e.stopPropagation();
         onStartEdit();
       }}
-      className="cursor-text truncate rounded-lg px-2 py-1 text-sm text-neutral-800 transition hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"
+      className="cursor-text truncate px-2 py-1 text-sm text-fg transition hover:bg-plate"
     >
-      {(value as string) || (
-        <span className="text-neutral-300 dark:text-neutral-600">—</span>
-      )}
+      {(value as string) || <span className="text-fg-3">—</span>}
     </div>
   );
 });
@@ -747,7 +731,7 @@ function ImageGrid({
           {images.map((img, index) => (
             <div
               key={img.url + index}
-              className="group relative aspect-square overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700"
+              className="group relative aspect-square overflow-hidden border border-line"
             >
               <img
                 src={img.url}
@@ -763,7 +747,7 @@ function ImageGrid({
                 {!img.isFeatured && (
                   <button
                     onClick={() => onSetFeatured(productId, index)}
-                    className="rounded-lg bg-amber-400 px-2.5 py-1 text-[10px] font-bold text-amber-900 hover:bg-amber-300"
+                    className="bg-amber-400 px-2.5 py-1 text-[10px] font-bold text-amber-900 hover:bg-amber-300"
                   >
                     Set featured
                   </button>
@@ -772,7 +756,7 @@ function ImageGrid({
                   {index > 0 && (
                     <button
                       onClick={() => onMove(productId, index, index - 1)}
-                      className="flex h-6 w-6 items-center justify-center rounded-md bg-white/80 text-neutral-800 hover:bg-white"
+                      className="flex h-6 w-6 items-center justify-center bg-canvas text-fg hover:bg-canvas"
                     >
                       <ArrowLeft className="h-3 w-3" />
                     </button>
@@ -780,14 +764,14 @@ function ImageGrid({
                   {index < images.length - 1 && (
                     <button
                       onClick={() => onMove(productId, index, index + 1)}
-                      className="flex h-6 w-6 items-center justify-center rounded-md bg-white/80 text-neutral-800 hover:bg-white"
+                      className="flex h-6 w-6 items-center justify-center bg-canvas text-fg hover:bg-canvas"
                     >
                       <ArrowRight className="h-3 w-3" />
                     </button>
                   )}
                   <button
                     onClick={() => onRemove(productId, index)}
-                    className="flex h-6 w-6 items-center justify-center rounded-md bg-red-500 text-white hover:bg-red-600"
+                    className="flex h-6 w-6 items-center justify-center bg-red-500 text-white hover:bg-red-600"
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>
@@ -803,7 +787,7 @@ function ImageGrid({
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-neutral-200 py-3 text-sm text-neutral-400 transition hover:border-slate-400 hover:text-slate-600 dark:border-neutral-700 dark:hover:border-slate-500"
+            className="flex w-full items-center justify-center gap-2 border-2 border-dashed border-line py-3 text-sm text-fg-3 transition hover:border-slate-400 hover:text-slate-600"
           >
             <Plus className="h-4 w-4" />
             Upload images ({images.length}/5)
@@ -864,35 +848,35 @@ function DetailPanel({
   onDeleteVariant: (variantId: string) => void;
 }) {
   return (
-    <div className="fixed inset-y-0 right-0 z-40 flex w-full max-w-[500px] flex-col border-l border-neutral-200 bg-white shadow-2xl dark:border-neutral-800 dark:bg-neutral-950">
+    <div className="fixed inset-y-0 right-0 z-40 flex w-full max-w-[500px] flex-col border-l border-line bg-canvas">
       {/* Panel Header */}
-      <div className="flex items-start justify-between border-b border-neutral-200 bg-gradient-to-r from-slate-50 to-white px-5 py-4 dark:border-neutral-800 dark:from-slate-950/40 dark:to-neutral-950">
+      <div className="flex items-start justify-between border-b border-line bg-gradient-to-r from-slate-50 to-white px-5 py-4">
         <div className="min-w-0 flex-1 pr-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
             {product.isNew ? "New product" : "Editing"}
           </p>
-          <h3 className="mt-0.5 truncate text-base font-bold text-neutral-900 dark:text-neutral-100">
+          <h3 className="mt-0.5 truncate text-base font-bold text-fg">
             {product.title || "Untitled product"}
           </h3>
           <div className="mt-1 flex items-center gap-2">
             {product.isNew && (
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
                 NEW
               </span>
             )}
             {product.isModified && !product.isNew && (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
                 UNSAVED
               </span>
             )}
-            <span className="text-[10px] text-neutral-400">
+            <span className="text-[10px] text-fg-3">
               {product.images.length}/5 images
             </span>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-neutral-200 text-neutral-400 transition hover:border-neutral-300 hover:text-neutral-700 dark:border-neutral-700"
+          className="flex h-8 w-8 shrink-0 items-center justify-center border border-line text-fg-3 transition hover:border-line hover:text-fg-2"
         >
           <X className="h-4 w-4" />
         </button>
@@ -900,7 +884,7 @@ function DetailPanel({
 
       {/* Panel Body */}
       <div className="flex-1 overflow-y-auto">
-        <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+        <div className="divide-y divide-line">
           {/* ── Core Details ── */}
           <section className="space-y-4 p-5">
             <SectionHeader icon={Package} label="Core Details" />
@@ -928,7 +912,7 @@ function DetailPanel({
             <FieldInput label="Description">
               <div
                 onClick={onOpenDescription}
-                className="cursor-pointer rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm text-neutral-500 transition hover:border-slate-300 hover:bg-white dark:border-neutral-700 dark:bg-neutral-800/50 dark:text-neutral-400"
+                className="cursor-pointer border border-line bg-plate px-3 py-2.5 text-sm text-fg-3 transition hover:border-slate-300 hover:bg-canvas"
               >
                 {stripHtml(product.descriptionHtml || product.description) || (
                   <span className="flex items-center gap-1.5 italic">
@@ -939,12 +923,12 @@ function DetailPanel({
               </div>
             </FieldInput>
 
-            <div className="flex items-center justify-between rounded-lg border border-neutral-200 px-3 py-2.5 dark:border-neutral-700">
+            <div className="flex items-center justify-between border border-line px-3 py-2.5">
               <div>
-                <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                <p className="text-sm font-medium text-fg">
                   Available for sale
                 </p>
-                <p className="text-xs text-neutral-400">
+                <p className="text-xs text-fg-3">
                   {product.availableForSale
                     ? "Visible to customers"
                     : "Hidden from store"}
@@ -955,12 +939,12 @@ function DetailPanel({
                 onClick={() =>
                   onCellChange("availableForSale", !product.availableForSale)
                 }
-                className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none ${product.availableForSale ? "bg-emerald-500" : "bg-neutral-300 dark:bg-neutral-600"}`}
+                className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none ${product.availableForSale ? "bg-emerald-500" : "bg-neutral-300"}`}
                 role="switch"
                 aria-checked={product.availableForSale}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${product.availableForSale ? "translate-x-4" : "translate-x-0"}`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-canvas shadow transition-transform ${product.availableForSale ? "translate-x-4" : "translate-x-0"}`}
                 />
               </button>
             </div>
@@ -1027,24 +1011,24 @@ function DetailPanel({
 
             {/* Regenerate toggle */}
             <div
-              className={`flex items-start gap-3 rounded-lg border px-3 py-3 transition ${product.generateVariants ? "border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/30" : "border-neutral-200 dark:border-neutral-700"}`}
+              className={`flex items-start gap-3 border px-3 py-3 transition ${product.generateVariants ? "border-slate-300 bg-slate-50" : "border-line"}`}
             >
               <button
                 type="button"
                 onClick={() =>
                   onUpdate({ generateVariants: !product.generateVariants })
                 }
-                className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition ${product.generateVariants ? "border-slate-600 bg-slate-700" : "border-neutral-300 dark:border-neutral-600"}`}
+                className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border-2 transition ${product.generateVariants ? "border-slate-600 bg-slate-700" : "border-line"}`}
               >
                 {product.generateVariants && (
-                  <Check className="h-2.5 w-2.5 text-white" />
+                  <Check className="h-2.5 w-2.5 text-canvas" />
                 )}
               </button>
               <div>
-                <p className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                <p className="text-xs font-semibold text-fg">
                   Regenerate variants from size & color
                 </p>
-                <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                <p className="text-[10px] text-fg-3">
                   All existing variants will be replaced on save
                 </p>
               </div>
@@ -1055,9 +1039,9 @@ function DetailPanel({
               label="Size-based price tiers"
               hint="highest matching tier wins"
             >
-              <div className="space-y-2 rounded-lg border border-neutral-200 p-3 dark:border-neutral-700">
+              <div className="space-y-2 border border-line p-3">
                 {product.sizePriceRules.length === 0 && (
-                  <p className="text-[11px] text-neutral-400 dark:text-neutral-500">
+                  <p className="text-[11px] text-fg-3">
                     e.g. from size 40 → ₦13,000 · from size 43 → ₦15,000
                   </p>
                 )}
@@ -1097,7 +1081,7 @@ function DetailPanel({
                       ],
                     })
                   }
-                  className="flex items-center gap-1.5 rounded-lg border border-dashed border-neutral-300 px-3 py-1.5 text-xs text-neutral-500 transition hover:border-slate-400 hover:text-slate-600 dark:border-neutral-700"
+                  className="flex items-center gap-1.5 border border-dashed border-line px-3 py-1.5 text-xs text-fg-3 transition hover:border-slate-400 hover:text-slate-600"
                 >
                   <Plus className="h-3 w-3" /> Add size tier
                 </button>
@@ -1126,9 +1110,9 @@ function DetailPanel({
 
             {/* Color price rules */}
             <FieldInput label="Color-specific prices">
-              <div className="space-y-2 rounded-lg border border-neutral-200 p-3 dark:border-neutral-700">
+              <div className="space-y-2 border border-line p-3">
                 {product.colorPriceRules.length === 0 && (
-                  <p className="text-[11px] text-neutral-400 dark:text-neutral-500">
+                  <p className="text-[11px] text-fg-3">
                     Override price for specific colors
                   </p>
                 )}
@@ -1168,7 +1152,7 @@ function DetailPanel({
                       ],
                     })
                   }
-                  className="flex items-center gap-1.5 rounded-lg border border-dashed border-neutral-300 px-3 py-1.5 text-xs text-neutral-500 transition hover:border-slate-400 hover:text-slate-600 dark:border-neutral-700"
+                  className="flex items-center gap-1.5 border border-dashed border-line px-3 py-1.5 text-xs text-fg-3 transition hover:border-slate-400 hover:text-slate-600"
                 >
                   <Plus className="h-3 w-3" /> Add color price
                 </button>
@@ -1184,9 +1168,9 @@ function DetailPanel({
                     .map((variant) => (
                       <div
                         key={variant.id}
-                        className="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700"
+                        className="overflow-hidden border border-line"
                       >
-                        <div className="flex items-center justify-between border-b border-neutral-100 bg-neutral-50 px-3 py-1.5 dark:border-neutral-800 dark:bg-neutral-800/50">
+                        <div className="flex items-center justify-between border-b border-line bg-plate px-3 py-1.5">
                           <input
                             type="text"
                             value={variant.title}
@@ -1197,11 +1181,11 @@ function DetailPanel({
                                 e.target.value,
                               )
                             }
-                            className="bg-transparent text-xs font-medium text-neutral-700 focus:outline-none dark:text-neutral-300"
+                            className="bg-transparent text-xs font-medium text-fg-2 focus:outline-none"
                           />
                           <button
                             onClick={() => onDeleteVariant(variant.id)}
-                            className="text-neutral-300 transition hover:text-red-500 dark:text-neutral-600"
+                            className="text-fg-3 transition hover:text-red-500"
                           >
                             <X className="h-3.5 w-3.5" />
                           </button>
@@ -1218,9 +1202,9 @@ function DetailPanel({
                               )
                             }
                             placeholder="Price"
-                            className="min-w-0 flex-1 rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs text-neutral-800 focus:border-slate-400 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                            className="min-w-0 flex-1 border border-line bg-canvas px-2 py-1 text-xs text-fg focus:border-slate-400 focus:outline-none"
                           />
-                          <label className="flex items-center gap-1.5 text-[11px] text-neutral-500">
+                          <label className="flex items-center gap-1.5 text-[11px] text-fg-3">
                             <input
                               type="checkbox"
                               checked={variant.availableForSale}
@@ -1231,7 +1215,7 @@ function DetailPanel({
                                   e.target.checked,
                                 )
                               }
-                              className="rounded"
+                              className=""
                             />
                             Available
                           </label>
@@ -1240,7 +1224,7 @@ function DetailPanel({
                     ))}
                   <button
                     onClick={onAddVariant}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-neutral-300 py-2 text-xs text-neutral-500 transition hover:border-slate-400 dark:border-neutral-700"
+                    className="flex w-full items-center justify-center gap-1.5 border border-dashed border-line py-2 text-xs text-fg-3 transition hover:border-slate-400"
                   >
                     <Plus className="h-3 w-3" /> Add variant
                   </button>
@@ -1264,22 +1248,22 @@ function DetailPanel({
             </FieldInput>
 
             <FieldInput label="Collections">
-              <div className="max-h-36 overflow-y-auto rounded-lg border border-neutral-200 dark:border-neutral-700">
+              <div className="max-h-36 overflow-y-auto border border-line">
                 {collections.length === 0 ? (
-                  <div className="px-3 py-4 text-center text-xs text-neutral-400">
+                  <div className="px-3 py-4 text-center text-xs text-fg-3">
                     No collections available
                   </div>
                 ) : (
                   collections.map((c) => (
                     <label
                       key={c.id}
-                      className="flex cursor-pointer items-center gap-2.5 border-b border-neutral-100 px-3 py-2 last:border-0 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
+                      className="flex cursor-pointer items-center gap-2.5 border-b border-line px-3 py-2 last:border-0 hover:bg-plate"
                     >
                       <div
-                        className={`flex h-4 w-4 items-center justify-center rounded border transition ${product.collections.includes(c.id) ? "border-slate-600 bg-slate-700" : "border-neutral-300 dark:border-neutral-600"}`}
+                        className={`flex h-4 w-4 items-center justify-center border transition ${product.collections.includes(c.id) ? "border-slate-600 bg-slate-700" : "border-line"}`}
                       >
                         {product.collections.includes(c.id) && (
-                          <Check className="h-2.5 w-2.5 text-white" />
+                          <Check className="h-2.5 w-2.5 text-canvas" />
                         )}
                       </div>
                       <input
@@ -1293,9 +1277,7 @@ function DetailPanel({
                           onUpdate({ collections: next });
                         }}
                       />
-                      <span className="text-xs text-neutral-700 dark:text-neutral-300">
-                        {c.title}
-                      </span>
+                      <span className="text-xs text-fg-2">{c.title}</span>
                     </label>
                   ))
                 )}
@@ -1978,18 +1960,18 @@ export default function BulkProductEditor() {
   return (
     <div className="flex h-full min-w-0 flex-col gap-0 overflow-x-hidden">
       {/* ── Sticky toolbar ── */}
-      <div className="sticky top-0 z-20 border-b w-full border-neutral-200 bg-white/95 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95">
+      <div className="sticky top-0 z-20 border-b w-full border-line bg-canvas backdrop-blur">
         {/* Primary bar */}
         <div className="flex items-center justify-between gap-4 px-5 py-3">
           <div className="min-w-0">
-            <h2 className="truncate text-base font-bold text-neutral-900 dark:text-neutral-100">
+            <h2 className="truncate text-base font-bold text-fg">
               {isCreateMode
                 ? "Bulk Create"
                 : selectedIds.length > 0
                   ? "Editing Selection"
                   : "Bulk Editor"}
             </h2>
-            <p className="text-xs text-neutral-400 dark:text-neutral-500">
+            <p className="text-xs text-fg-3">
               {isCreateMode
                 ? "Build multiple products row by row, save all at once."
                 : selectedIds.length > 0
@@ -2000,7 +1982,7 @@ export default function BulkProductEditor() {
 
           <div className="flex shrink-0 items-center gap-2">
             {(modifiedCount > 0 || deletedCount > 0) && (
-              <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-400 sm:block">
+              <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 sm:block">
                 {modifiedCount} changed
                 {deletedCount > 0 ? ` · ${deletedCount} to delete` : ""}
               </span>
@@ -2008,7 +1990,7 @@ export default function BulkProductEditor() {
 
             <button
               onClick={addNewRow}
-              className="flex items-center gap-1.5 rounded-lg bg-neutral-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+              className="flex items-center gap-1.5 bg-fg px-3 py-2 text-sm font-semibold text-canvas transition hover:opacity-85"
             >
               <Plus className="h-3.5 w-3.5" /> Add row
             </button>
@@ -2017,7 +1999,7 @@ export default function BulkProductEditor() {
               <button
                 onClick={duplicateRows}
                 disabled={selectedRows.size === 0}
-                className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                className="flex items-center gap-1.5 border border-line px-3 py-2 text-sm text-fg-2 transition hover:bg-plate disabled:opacity-40"
               >
                 <Copy className="h-3.5 w-3.5" />
                 <span className="hidden sm:block">Duplicate</span>
@@ -2028,7 +2010,7 @@ export default function BulkProductEditor() {
               <button
                 onClick={deleteSelected}
                 disabled={selectedRows.size === 0}
-                className="flex items-center gap-1.5 rounded-lg border border-red-100 px-3 py-2 text-sm text-red-500 transition hover:border-red-300 hover:bg-red-50 disabled:opacity-40 dark:border-red-900/30 dark:hover:bg-red-900/20"
+                className="flex items-center gap-1.5 border border-red-100 px-3 py-2 text-sm text-red-500 transition hover:border-red-300 hover:bg-red-50 disabled:opacity-40"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 <span className="hidden sm:block">Delete</span>
@@ -2038,7 +2020,7 @@ export default function BulkProductEditor() {
             <button
               onClick={saveAllChanges}
               disabled={saving || (modifiedCount === 0 && deletedCount === 0)}
-              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-1.5 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -2050,7 +2032,7 @@ export default function BulkProductEditor() {
 
             <Link
               href="/admin/products"
-              className="flex items-center gap-1 rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-500 transition hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800"
+              className="flex items-center gap-1 border border-line px-3 py-2 text-sm text-fg-3 transition hover:bg-plate"
             >
               <ChevronLeft className="h-3.5 w-3.5" /> Back
             </Link>
@@ -2058,24 +2040,24 @@ export default function BulkProductEditor() {
         </div>
 
         {/* Secondary bar */}
-        <div className="flex items-center gap-2 border-t border-neutral-100 px-5 py-2 dark:border-neutral-800/60">
+        <div className="flex items-center gap-2 border-t border-line px-5 py-2">
           {!isCreateMode && (
             <>
               <button
                 onClick={() => applyBulkAvailability(true)}
                 disabled={selectedRows.size === 0}
-                className="flex items-center gap-1.5 rounded-md bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-600 transition hover:bg-neutral-200 disabled:opacity-40 dark:bg-neutral-800 dark:text-neutral-300"
+                className="flex items-center gap-1.5 bg-plate px-3 py-1.5 text-xs font-medium text-fg-2 transition hover:bg-plate disabled:opacity-40"
               >
                 <Eye className="h-3 w-3" /> Set available
               </button>
               <button
                 onClick={() => applyBulkAvailability(false)}
                 disabled={selectedRows.size === 0}
-                className="flex items-center gap-1.5 rounded-md bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-600 transition hover:bg-neutral-200 disabled:opacity-40 dark:bg-neutral-800 dark:text-neutral-300"
+                className="flex items-center gap-1.5 bg-plate px-3 py-1.5 text-xs font-medium text-fg-2 transition hover:bg-plate disabled:opacity-40"
               >
                 <EyeOff className="h-3 w-3" /> Set unavailable
               </button>
-              <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
+              <div className="mx-1 h-4 w-px bg-plate" />
             </>
           )}
 
@@ -2083,7 +2065,7 @@ export default function BulkProductEditor() {
           <div className="relative" ref={columnMenuRef}>
             <button
               onClick={() => setShowColumnsMenu((v) => !v)}
-              className="flex items-center gap-1.5 rounded-md bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-600 transition hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300"
+              className="flex items-center gap-1.5 bg-plate px-3 py-1.5 text-xs font-medium text-fg-2 transition hover:bg-plate"
             >
               <Settings2 className="h-3 w-3" /> Columns
               <ChevronDown
@@ -2091,22 +2073,22 @@ export default function BulkProductEditor() {
               />
             </button>
             {showColumnsMenu && (
-              <div className="absolute left-0 top-full z-30 mt-1.5 min-w-[200px] overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
-                <div className="border-b border-neutral-100 px-3 py-2 dark:border-neutral-800">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+              <div className="absolute left-0 top-full z-30 mt-1.5 min-w-[200px] overflow-hidden border border-line bg-canvas">
+                <div className="border-b border-line px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-3">
                     Toggle columns
                   </p>
                 </div>
                 {DEFAULT_COLUMNS.map((col) => (
                   <label
                     key={col.key}
-                    className="flex cursor-pointer items-center gap-2.5 px-3 py-2 transition hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                    className="flex cursor-pointer items-center gap-2.5 px-3 py-2 transition hover:bg-plate"
                   >
                     <div
-                      className={`flex h-4 w-4 items-center justify-center rounded border transition ${visibleColumns.has(col.key) ? "border-slate-600 bg-slate-700" : "border-neutral-300 dark:border-neutral-600"}`}
+                      className={`flex h-4 w-4 items-center justify-center border transition ${visibleColumns.has(col.key) ? "border-slate-600 bg-slate-700" : "border-line"}`}
                     >
                       {visibleColumns.has(col.key) && (
-                        <Check className="h-2.5 w-2.5 text-white" />
+                        <Check className="h-2.5 w-2.5 text-canvas" />
                       )}
                     </div>
                     <input
@@ -2123,12 +2105,10 @@ export default function BulkProductEditor() {
                         });
                       }}
                     />
-                    <span className="text-sm text-neutral-700 dark:text-neutral-200">
+                    <span className="text-sm text-fg-2">
                       {col.label}
                       {col.optional && (
-                        <span className="ml-1 text-[10px] text-neutral-400">
-                          opt
-                        </span>
+                        <span className="ml-1 text-[10px] text-fg-3">opt</span>
                       )}
                     </span>
                   </label>
@@ -2140,7 +2120,7 @@ export default function BulkProductEditor() {
           {/* Search (non-create mode) */}
           {!isCreateMode && selectedIds.length === 0 && (
             <div className="relative ml-auto">
-              <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-neutral-400" />
+              <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-fg-3" />
               <input
                 type="search"
                 placeholder="Search products…"
@@ -2149,7 +2129,7 @@ export default function BulkProductEditor() {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="rounded-lg border border-neutral-200 bg-neutral-50 py-1.5 pl-7 pr-3 text-xs text-neutral-800 focus:border-slate-400 focus:bg-white focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                className="border border-line bg-plate py-1.5 pl-7 pr-3 text-xs text-fg focus:border-slate-400 focus:bg-canvas focus:outline-none"
               />
             </div>
           )}
@@ -2163,15 +2143,15 @@ export default function BulkProductEditor() {
         >
           {/* Summary / validation strip */}
           {(validationIssues.length > 0 || modifiedCount > 0) && (
-            <div className="flex items-center gap-3 border-b border-neutral-200 bg-neutral-50 px-5 py-2 dark:border-neutral-800 dark:bg-neutral-900/50">
+            <div className="flex items-center gap-3 border-b border-line bg-plate px-5 py-2">
               {modifiedCount > 0 && (
-                <span className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                <span className="flex items-center gap-1.5 text-xs text-amber-600">
                   <RefreshCw className="h-3 w-3" />
                   {modifiedCount} unsaved change{modifiedCount > 1 ? "s" : ""}
                 </span>
               )}
               {validationIssues.length > 0 && (
-                <span className="flex items-center gap-1.5 text-xs text-red-500 dark:text-red-400">
+                <span className="flex items-center gap-1.5 text-xs text-red-500">
                   <AlertTriangle className="h-3 w-3" />
                   {validationIssues.length} row
                   {validationIssues.length > 1 ? "s" : ""} need attention —{" "}
@@ -2195,52 +2175,52 @@ export default function BulkProductEditor() {
           <div className="flex-1 min-w-0 overflow-y-auto overflow-x-auto">
             {loading ? (
               <div className="flex flex-col items-center justify-center gap-4 py-24">
-                <Loader2 className="h-8 w-8 animate-spin text-neutral-300 dark:text-neutral-600" />
-                <p className="text-sm text-neutral-400">Loading products…</p>
+                <Loader2 className="h-8 w-8 animate-spin text-fg-3" />
+                <p className="text-sm text-fg-3">Loading products…</p>
               </div>
             ) : visibleProducts.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-4 py-24">
-                <Package className="h-10 w-10 text-neutral-200 dark:text-neutral-700" />
+                <Package className="h-10 w-10 text-neutral-200" />
                 <div className="text-center">
-                  <p className="text-sm font-semibold text-neutral-600 dark:text-neutral-400">
+                  <p className="text-sm font-semibold text-fg-2">
                     No products yet
                   </p>
-                  <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
+                  <p className="mt-1 text-xs text-fg-3">
                     Click "Add row" to create your first product.
                   </p>
                 </div>
               </div>
             ) : (
               <table className="min-w-full border-separate border-spacing-0 text-sm">
-                <thead className="sticky top-0 z-10 bg-neutral-50 dark:bg-neutral-900">
+                <thead className="sticky top-0 z-10 bg-plate">
                   <tr>
-                    <th className="w-10 border-b border-r border-neutral-200 px-3 py-2.5 dark:border-neutral-800">
+                    <th className="w-10 border-b border-r border-line px-3 py-2.5">
                       <button
                         onClick={toggleAllRows}
-                        className={`flex h-4 w-4 items-center justify-center rounded border-2 transition ${selectedRows.size === visibleProducts.length && visibleProducts.length > 0 ? "border-slate-600 bg-slate-700" : "border-neutral-300 dark:border-neutral-600"}`}
+                        className={`flex h-4 w-4 items-center justify-center border-2 transition ${selectedRows.size === visibleProducts.length && visibleProducts.length > 0 ? "border-slate-600 bg-slate-700" : "border-line"}`}
                       >
                         {selectedRows.size === visibleProducts.length &&
                           visibleProducts.length > 0 && (
-                            <Check className="h-2.5 w-2.5 text-white" />
+                            <Check className="h-2.5 w-2.5 text-canvas" />
                           )}
                       </button>
                     </th>
-                    <th className="border-b border-r border-neutral-200 px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:border-neutral-800 dark:text-neutral-500">
+                    <th className="border-b border-r border-line px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-fg-3">
                       #
                     </th>
                     {visibleCols.map((col) => (
                       <th
                         key={col.key}
                         style={{ minWidth: col.width, maxWidth: col.width }}
-                        className="border-b border-r border-neutral-200 px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-neutral-400 last:border-r-0 dark:border-neutral-800 dark:text-neutral-500"
+                        className="border-b border-r border-line px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-fg-3 last:border-r-0"
                       >
                         {col.label}
                       </th>
                     ))}
-                    <th className="w-24 border-b border-neutral-200 px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:border-neutral-800 dark:text-neutral-500">
+                    <th className="w-24 border-b border-line px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wider text-fg-3">
                       Status
                     </th>
-                    <th className="w-20 border-b border-neutral-200 px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:border-neutral-800 dark:text-neutral-500">
+                    <th className="w-20 border-b border-line px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wider text-fg-3">
                       Images
                     </th>
                   </tr>
@@ -2257,29 +2237,29 @@ export default function BulkProductEditor() {
                         }
                         className={`group cursor-pointer transition-colors ${
                           isActive
-                            ? "bg-slate-50 dark:bg-slate-900/40"
+                            ? "bg-slate-50"
                             : isSelected
-                              ? "bg-blue-50/50 dark:bg-blue-950/20"
-                              : "bg-white hover:bg-neutral-50/80 dark:bg-neutral-950 dark:hover:bg-neutral-900/60"
+                              ? "bg-blue-50/50"
+                              : "bg-canvas hover:bg-plate"
                         }`}
                       >
                         {/* Checkbox */}
                         <td
-                          className="border-b border-r border-neutral-100 px-3 py-2.5 dark:border-neutral-800/60"
+                          className="border-b border-r border-line px-3 py-2.5"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <button
                             onClick={() => toggleRow(product.id)}
-                            className={`flex h-4 w-4 items-center justify-center rounded border-2 transition ${isSelected ? "border-slate-600 bg-slate-700" : "border-neutral-300 dark:border-neutral-600"}`}
+                            className={`flex h-4 w-4 items-center justify-center border-2 transition ${isSelected ? "border-slate-600 bg-slate-700" : "border-line"}`}
                           >
                             {isSelected && (
-                              <Check className="h-2.5 w-2.5 text-white" />
+                              <Check className="h-2.5 w-2.5 text-canvas" />
                             )}
                           </button>
                         </td>
 
                         {/* Row number + indicator */}
-                        <td className="border-b border-r border-neutral-100 px-3 py-2.5 dark:border-neutral-800/60">
+                        <td className="border-b border-r border-line px-3 py-2.5">
                           <div className="flex items-center gap-2">
                             {product.isNew && (
                               <div
@@ -2294,9 +2274,9 @@ export default function BulkProductEditor() {
                               />
                             )}
                             {!product.isNew && !product.isModified && (
-                              <div className="h-1.5 w-1.5 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+                              <div className="h-1.5 w-1.5 rounded-full bg-plate" />
                             )}
-                            <span className="font-mono text-xs text-neutral-400">
+                            <span className="font-mono text-xs text-fg-3">
                               {rowIndex + 1}
                             </span>
                           </div>
@@ -2307,7 +2287,7 @@ export default function BulkProductEditor() {
                           <td
                             key={col.key}
                             style={{ minWidth: col.width, maxWidth: col.width }}
-                            className="border-b border-r border-neutral-100 px-2 py-1.5 last:border-r-0 dark:border-neutral-800/60"
+                            className="border-b border-r border-line px-2 py-1.5 last:border-r-0"
                           >
                             <TableCell
                               product={product}
@@ -2345,12 +2325,12 @@ export default function BulkProductEditor() {
                         ))}
 
                         {/* Status */}
-                        <td className="border-b border-neutral-100 px-3 py-2.5 text-center dark:border-neutral-800/60">
+                        <td className="border-b border-line px-3 py-2.5 text-center">
                           <span
                             className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                               product.availableForSale
-                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-plate text-fg-3"
                             }`}
                           >
                             {product.availableForSale ? (
@@ -2363,12 +2343,12 @@ export default function BulkProductEditor() {
                         </td>
 
                         {/* Images */}
-                        <td className="border-b border-neutral-100 px-3 py-2.5 text-center dark:border-neutral-800/60">
+                        <td className="border-b border-line px-3 py-2.5 text-center">
                           <span
                             className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                               product.images.length === 0
-                                ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                                : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+                                ? "bg-red-100 text-red-600"
+                                : "bg-plate text-fg-3"
                             }`}
                           >
                             {product.images.length}/5
@@ -2384,15 +2364,15 @@ export default function BulkProductEditor() {
 
           {/* Pagination */}
           {!isCreateMode && totalPages > 1 && selectedIds.length === 0 && (
-            <div className="flex items-center justify-between border-t border-neutral-200 px-5 py-3 dark:border-neutral-800">
+            <div className="flex items-center justify-between border-t border-line px-5 py-3">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-300"
+                className="flex items-center gap-1.5 border border-line px-3 py-1.5 text-sm text-fg-2 transition hover:bg-plate disabled:opacity-40"
               >
                 <ChevronLeft className="h-3.5 w-3.5" /> Previous
               </button>
-              <span className="text-xs text-neutral-400">
+              <span className="text-xs text-fg-3">
                 Page {currentPage} of {totalPages}
               </span>
               <button
@@ -2400,7 +2380,7 @@ export default function BulkProductEditor() {
                   setCurrentPage((p) => Math.min(totalPages, p + 1))
                 }
                 disabled={currentPage === totalPages}
-                className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-300"
+                className="flex items-center gap-1.5 border border-line px-3 py-1.5 text-sm text-fg-2 transition hover:bg-plate disabled:opacity-40"
               >
                 Next <ChevronRight className="h-3.5 w-3.5" />
               </button>

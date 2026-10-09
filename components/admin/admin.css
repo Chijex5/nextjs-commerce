@@ -110,3 +110,15 @@
     min-height: 44px;
   }
 }
+
+/* Product list columns: checkbox · product · status · price · collections · sold · menu */
+.products-grid {
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+}
+@media (min-width: 768px) {
+  .products-grid {
+    grid-template-columns:
+      2.5rem minmax(0, 2.4fr) 7rem minmax(0, 1fr) minmax(0, 1.2fr)
+      7rem 2.5rem;
+  }
+}

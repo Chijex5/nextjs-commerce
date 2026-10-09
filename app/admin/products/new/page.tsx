@@ -1,42 +1,45 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "../../../../lib/auth";
-import { redirect } from "next/navigation";
-import AdminNav from "../../../../components/admin/AdminNav";
-import ProductForm from "../../../../components/admin/ProductForm";
+import { ProductEditor } from "components/admin/products/product-editor";
+import { Page } from "components/admin/ui";
+import { asc } from "drizzle-orm";
+import { authOptions } from "lib/auth";
 import { db } from "lib/db";
 import { collections } from "lib/db/schema";
-import { asc } from "drizzle-orm";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 
 export default async function NewProductPage() {
   const session = await getServerSession(authOptions);
-
-  if (!session) {
-    redirect("/admin/login");
-  }
+  if (!session) redirect("/admin/login");
 
   const collectionRows = await db
-    .select()
+    .select({ id: collections.id, title: collections.title })
     .from(collections)
     .orderBy(asc(collections.title));
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-      <AdminNav currentPage="products" userEmail={session.user?.email} />
-
-      <div className="py-6 sm:py-10">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-3xl">
-              Add New Product
-            </h1>
-            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-              Fill in the product details below. Fields with * are required.
-            </p>
-          </div>
-
-          <ProductForm collections={collectionRows} />
-        </div>
-      </div>
-    </div>
+    <Page className="pt-0 lg:pt-0">
+      <ProductEditor
+        collections={collectionRows}
+        initial={{
+          title: "",
+          handle: "",
+          descriptionHtml: "",
+          availableForSale: true,
+          seoTitle: "",
+          seoDescription: "",
+          tags: [],
+          images: [],
+          collectionIds: [],
+          pricing: {
+            sizes: ["38", "39", "40", "41", "42", "43", "44"],
+            colors: [],
+            basePrice: 0,
+            sizeRules: [],
+            colorPrices: {},
+          },
+          pricingExact: true,
+        }}
+      />
+    </Page>
   );
 }

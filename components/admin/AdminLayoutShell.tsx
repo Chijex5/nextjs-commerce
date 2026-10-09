@@ -10,6 +10,8 @@ import "./admin.css";
 
 type AdminLayoutShellProps = {
   children: React.ReactNode;
+  /** Items waiting on a human, keyed by nav href. */
+  badges?: Record<string, { count: number; urgent?: boolean }>;
   adminProfile: {
     name: string | null;
     email: string;
@@ -32,8 +34,16 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Overview",
     items: [
-      { href: "/admin/dashboard", label: "Dashboard" },
+      { href: "/admin/dashboard", label: "Home" },
       { href: "/admin/analytics", label: "Analytics" },
+    ],
+  },
+  {
+    label: "Sales",
+    items: [
+      { href: "/admin/orders", label: "Orders" },
+      { href: "/admin/custom-order-requests", label: "Custom requests" },
+      { href: "/admin/payments", label: "Payments" },
     ],
   },
   {
@@ -41,26 +51,28 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/products", label: "Products" },
       { href: "/admin/collections", label: "Collections" },
+      { href: "/admin/custom-orders", label: "Custom showcase" },
       { href: "/admin/content", label: "Content" },
     ],
   },
   {
-    label: "Operations",
+    label: "Customers",
     items: [
-      { href: "/admin/orders", label: "Orders" },
+      { href: "/admin/users", label: "Customers" },
       { href: "/admin/reviews", label: "Reviews" },
-      { href: "/admin/campaigns", label: "Campaigns" },
-      { href: "/admin/custom-order-requests", label: "Custom Requests" },
-      { href: "/admin/custom-orders", label: "Custom Showcase" },
-      { href: "/admin/coupons", label: "Coupons" },
-      { href: "/admin/payments", label: "Payments" },
     ],
   },
   {
-    label: "Access",
+    label: "Marketing",
     items: [
-      { href: "/admin/users", label: "Users" },
-      { href: "/admin/admins", label: "Admins" },
+      { href: "/admin/campaigns", label: "Campaigns" },
+      { href: "/admin/coupons", label: "Coupons" },
+    ],
+  },
+  {
+    label: "Settings",
+    items: [
+      { href: "/admin/admins", label: "Team" },
       { href: "/admin/account", label: "Account" },
     ],
   },
@@ -80,11 +92,12 @@ function isActive(pathname: string, href: string) {
 function SidebarNav({
   pathname,
   onNavigate,
+  badges,
 }: {
   pathname: string;
   onNavigate?: () => void;
+  badges?: AdminLayoutShellProps["badges"];
 }) {
-  let n = 0;
   return (
     <nav className="space-y-7">
       {NAV_GROUPS.map((group) => (
@@ -93,7 +106,7 @@ function SidebarNav({
           <ul>
             {group.items.map((item) => {
               const active = isActive(pathname, item.href);
-              n += 1;
+              const badge = badges?.[item.href];
               return (
                 <li key={item.href}>
                   <Link
@@ -107,15 +120,21 @@ function SidebarNav({
                         : "text-white/70 hover:bg-white/10 hover:text-white",
                     ].join(" ")}
                   >
-                    <span
-                      className={[
-                        "font-mono text-[10px]",
-                        active ? "text-black/50" : "text-white/30",
-                      ].join(" ")}
-                    >
-                      {String(n).padStart(2, "0")}
-                    </span>
-                    {item.label}
+                    <span className="flex-1">{item.label}</span>
+                    {badge && badge.count > 0 ? (
+                      <span
+                        className={[
+                          "min-w-5 px-1.5 text-center font-mono text-[10px] leading-5 tabular-nums",
+                          badge.urgent
+                            ? "bg-red-600 text-white"
+                            : active
+                              ? "bg-black text-white"
+                              : "bg-white/15 text-white",
+                        ].join(" ")}
+                      >
+                        {badge.count > 99 ? "99+" : badge.count}
+                      </span>
+                    ) : null}
                   </Link>
                 </li>
               );
@@ -141,6 +160,7 @@ const MOBILE_TABS: NavItem[] = [
 export default function AdminLayoutShell({
   children,
   adminProfile,
+  badges,
 }: AdminLayoutShellProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -246,7 +266,7 @@ export default function AdminLayoutShell({
         <aside className="hidden border-r border-white/10 bg-ink lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
           <div className="px-5 py-6">{brand}</div>
           <div className="no-scrollbar flex-1 overflow-y-auto px-2 py-4">
-            <SidebarNav pathname={pathname || ""} />
+            <SidebarNav pathname={pathname || ""} badges={badges} />
           </div>
           <div className="border-t border-white/10">{accountLinks()}</div>
         </aside>
@@ -385,6 +405,7 @@ export default function AdminLayoutShell({
             <div className="no-scrollbar flex-1 overflow-y-auto px-2 py-2">
               <SidebarNav
                 pathname={pathname || ""}
+                badges={badges}
                 onNavigate={() => setMobileMenuOpen(false)}
               />
             </div>

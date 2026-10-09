@@ -8,6 +8,20 @@
       "when": 1791495250932,
       "tag": "0000_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791542007594,
+      "tag": "0001_marketing",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791546465272,
+      "tag": "0002_campaign_blocks",
+      "breakpoints": true
     }
   ]
 }

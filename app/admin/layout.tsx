@@ -1,6 +1,7 @@
 import AdminLayoutShell from "components/admin/AdminLayoutShell";
 import { eq } from "drizzle-orm";
 import { authOptions } from "lib/auth";
+import { getNavBadges, type NavBadges } from "lib/admin/metrics";
 import { isMockData } from "lib/data/source";
 import { db } from "lib/db";
 import { adminUsers } from "lib/db/schema";
@@ -27,6 +28,7 @@ export default async function AdminLayout({
     role: string;
     lastLoginAt: string | null;
   } | null = null;
+  let badges: NavBadges | undefined;
 
   if (session?.user?.id && isMockData) {
     // Mock mode has no database; show a placeholder profile in the shell.
@@ -37,16 +39,21 @@ export default async function AdminLayout({
       lastLoginAt: null,
     };
   } else if (session?.user?.id) {
-    const [admin] = await db
-      .select({
-        email: adminUsers.email,
-        name: adminUsers.name,
-        role: adminUsers.role,
-        lastLoginAt: adminUsers.lastLoginAt,
-      })
-      .from(adminUsers)
-      .where(eq(adminUsers.id, session.user.id))
-      .limit(1);
+    const [[admin], navBadges] = await Promise.all([
+      db
+        .select({
+          email: adminUsers.email,
+          name: adminUsers.name,
+          role: adminUsers.role,
+          lastLoginAt: adminUsers.lastLoginAt,
+        })
+        .from(adminUsers)
+        .where(eq(adminUsers.id, session.user.id))
+        .limit(1),
+      // Badges are a nicety; never let them take the admin down.
+      getNavBadges().catch(() => undefined),
+    ]);
+    badges = navBadges;
 
     if (admin) {
       adminProfile = {
@@ -59,6 +66,8 @@ export default async function AdminLayout({
   }
 
   return (
-    <AdminLayoutShell adminProfile={adminProfile}>{children}</AdminLayoutShell>
+    <AdminLayoutShell adminProfile={adminProfile} badges={badges}>
+      {children}
+    </AdminLayoutShell>
   );
 }

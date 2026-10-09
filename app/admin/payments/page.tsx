@@ -1,75 +1,118 @@
-import Link from "next/link";
-import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
-import { and, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm";
-import AdminNav from "components/admin/AdminNav";
+import {
+  EmptyState,
+  FilterBar,
+  Metric,
+  MetricGrid,
+  Page,
+  PageHeader,
+  Pagination,
+  Select,
+  PAYMENT_STATUS,
+  StatusPill,
+  ViewTabs,
+  type Tone,
+} from "components/admin/ui";
+import {
+  and,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  or,
+  sql,
+  type SQL,
+} from "drizzle-orm";
+import { count, money, percent, timeAgo } from "lib/admin/format";
 import { authOptions } from "lib/auth";
 import { db } from "lib/db";
 import { orders, paymentTransactions } from "lib/db/schema";
+import { getServerSession } from "next-auth";
+import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default async function AdminPaymentsPage({
+export const dynamic = "force-dynamic";
+
+const PAGE_SIZE = 30;
+
+const SOURCE_LABEL: Record<string, string> = {
+  catalog_checkout: "Shop checkout",
+  custom_quote: "Custom quote",
+};
+
+const VIEWS: Array<{ key: string; label: string; where?: SQL; tone?: Tone }> = [
+  { key: "all", label: "All" },
+  {
+    key: "conflict",
+    label: "Needs review",
+    where: eq(paymentTransactions.status, "conflict"),
+    tone: "critical",
+  },
+  { key: "paid", label: "Paid", where: eq(paymentTransactions.status, "paid") },
+  {
+    key: "failed",
+    label: "Failed",
+    where: eq(paymentTransactions.status, "failed"),
+  },
+  {
+    key: "unfinished",
+    label: "Unfinished",
+    where: inArray(paymentTransactions.status, ["initialized", "processing"]),
+  },
+  {
+    key: "duplicate",
+    label: "Duplicates",
+    where: eq(paymentTransactions.status, "duplicate"),
+  },
+];
+
+type Params = {
+  view?: string;
+  status?: string;
+  q?: string;
+  search?: string;
+  source?: string;
+  page?: string;
+};
+
+export default async function PaymentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    status?: string;
-    source?: string;
-    search?: string;
-    dateFrom?: string;
-    dateTo?: string;
-    page?: string;
-    perPage?: string;
-  }>;
+  searchParams: Promise<Params>;
 }) {
   const session = await getServerSession(authOptions);
-  if (!session) {
-    redirect("/admin/login");
-  }
+  if (!session) redirect("/admin/login");
 
   const params = await searchParams;
-  const page = Math.max(1, Number(params.page || 1));
-  const perPage = Math.min(100, Math.max(10, Number(params.perPage || 20)));
-  const statusFilter = params.status || "all";
-  const sourceFilter = params.source || "all";
-  const search = params.search?.trim() || "";
+  // `status` is the old param (dashboard and order pages link with ?status=conflict).
+  const legacy =
+    params.status === "initialized" || params.status === "processing"
+      ? "unfinished"
+      : params.status;
+  const view =
+    VIEWS.find((v) => v.key === (params.view ?? legacy)) ?? VIEWS[0]!;
+  const q = (params.q ?? params.search ?? "").trim();
+  const source = params.source ?? "all";
+  const page = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
 
-  const filters = [];
-
-  if (statusFilter !== "all") {
-    filters.push(eq(paymentTransactions.status, statusFilter));
-  }
-
-  if (sourceFilter !== "all") {
-    filters.push(eq(paymentTransactions.source, sourceFilter));
-  }
-
-  if (search) {
-    const like = `%${search}%`;
-    filters.push(
+  const narrowing: SQL[] = [];
+  if (q) {
+    const like = `%${q}%`;
+    narrowing.push(
       or(
         ilike(paymentTransactions.reference, like),
         ilike(paymentTransactions.conflictCode, like),
         ilike(orders.orderNumber, like),
-      ),
+        ilike(orders.email, like),
+        sql`${paymentTransactions.customer}->>'email' ilike ${like}`,
+      )!,
     );
   }
+  if (source !== "all") narrowing.push(eq(paymentTransactions.source, source));
+  const where = and(...narrowing, ...(view.where ? [view.where] : []));
 
-  if (params.dateFrom) {
-    const parsed = new Date(params.dateFrom);
-    if (!Number.isNaN(parsed.getTime())) {
-      filters.push(gte(paymentTransactions.createdAt, parsed));
-    }
-  }
-
-  if (params.dateTo) {
-    const parsed = new Date(params.dateTo);
-    if (!Number.isNaN(parsed.getTime())) {
-      filters.push(lte(paymentTransactions.createdAt, parsed));
-    }
-  }
-
-  const whereClause = filters.length ? and(...filters) : undefined;
-
-  const [rows, totalRows, conflictRows] = await Promise.all([
+  const since = new Date(Date.now() - 30 * 86_400_000);
+  const [rows, [totalRow], [countRow], [summary]] = await Promise.all([
     db
       .select({
         id: paymentTransactions.id,
@@ -77,241 +120,233 @@ export default async function AdminPaymentsPage({
         source: paymentTransactions.source,
         status: paymentTransactions.status,
         amount: paymentTransactions.amount,
-        currencyCode: paymentTransactions.currencyCode,
         paystackStatus: paymentTransactions.paystackStatus,
         conflictCode: paymentTransactions.conflictCode,
         conflictMessage: paymentTransactions.conflictMessage,
         orderId: paymentTransactions.orderId,
         orderNumber: orders.orderNumber,
-        updatedAt: paymentTransactions.updatedAt,
+        customerName: orders.customerName,
+        email: sql<
+          string | null
+        >`coalesce(${orders.email}, ${paymentTransactions.customer}->>'email')`,
         createdAt: paymentTransactions.createdAt,
       })
       .from(paymentTransactions)
       .leftJoin(orders, eq(paymentTransactions.orderId, orders.id))
-      .where(whereClause)
+      .where(where)
       .orderBy(desc(paymentTransactions.createdAt))
-      .limit(perPage)
-      .offset((page - 1) * perPage),
+      .limit(PAGE_SIZE)
+      .offset((page - 1) * PAGE_SIZE),
     db
       .select({ count: sql<number>`count(*)` })
       .from(paymentTransactions)
       .leftJoin(orders, eq(paymentTransactions.orderId, orders.id))
-      .where(whereClause),
+      .where(where),
     db
-      .select({ count: sql<number>`count(*)` })
+      .select(
+        Object.fromEntries(
+          VIEWS.map((v) => [
+            v.key,
+            sql<number>`count(*) filter (where ${v.where ?? sql`true`})`,
+          ]),
+        ),
+      )
       .from(paymentTransactions)
-      .where(eq(paymentTransactions.status, "conflict")),
+      .leftJoin(orders, eq(paymentTransactions.orderId, orders.id))
+      .where(narrowing.length ? and(...narrowing) : undefined),
+    db
+      .select({
+        collected: sql<string>`coalesce(sum(${paymentTransactions.amount}) filter (where ${paymentTransactions.status} = 'paid'), 0)`,
+        paid: sql<number>`count(*) filter (where ${paymentTransactions.status} = 'paid')`,
+        failed: sql<number>`count(*) filter (where ${paymentTransactions.status} = 'failed')`,
+        conflicts: sql<number>`count(*) filter (where ${paymentTransactions.status} = 'conflict')`,
+      })
+      .from(paymentTransactions)
+      .where(gte(paymentTransactions.createdAt, since)),
   ]);
 
-  const total = Number(totalRows[0]?.count ?? 0);
-  const totalPages = Math.max(1, Math.ceil(total / perPage));
-  const conflictCount = Number(conflictRows[0]?.count ?? 0);
+  const counts = (countRow ?? {}) as Record<string, unknown>;
+  const paid = Number(summary?.paid ?? 0);
+  const failed = Number(summary?.failed ?? 0);
+  const conflicts = Number(summary?.conflicts ?? 0);
+  const settled = paid + failed + conflicts;
+
+  const href = (
+    o: Partial<Record<"view" | "q" | "source" | "page", string>>,
+  ) => {
+    const m = { view: view.key, q, source, ...o };
+    const s = new URLSearchParams();
+    if (m.view !== "all") s.set("view", m.view);
+    if (m.q) s.set("q", m.q);
+    if (m.source !== "all") s.set("source", m.source);
+    if (o.page && o.page !== "1") s.set("page", o.page);
+    const str = s.toString();
+    return str ? `/admin/payments?${str}` : "/admin/payments";
+  };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-      <AdminNav currentPage="payments" userEmail={session.user?.email} />
+    <Page>
+      <PageHeader
+        eyebrow="Sales"
+        title="Payments"
+        description="Every Paystack checkout, including ones that never finished. Anything marked “Needs review” took money that didn't line up with an order."
+      />
 
-      <div className="py-6 sm:py-10">
-        <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-3xl">
-                Payments
-              </h1>
-              <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-                Paystack transaction ledger and conflict queue.
-              </p>
-            </div>
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-300">
-              Conflicts: <strong>{conflictCount}</strong>
-            </div>
-          </div>
+      <MetricGrid className="mb-8 grid-cols-2 lg:grid-cols-4">
+        <Metric
+          label="Collected · 30d"
+          value={money(Number(summary?.collected ?? 0) / 100)}
+          hint={`${count(paid)} payments`}
+        />
+        <Metric
+          label="Success rate · 30d"
+          value={percent(settled ? (paid / settled) * 100 : null)}
+          hint="Of payments that finished"
+        />
+        <Metric label="Failed · 30d" value={count(failed)} />
+        <Metric
+          label="Needs review"
+          value={count(Number(counts.conflict ?? 0))}
+          hint={
+            Number(counts.conflict ?? 0)
+              ? "Open the payment to resolve"
+              : "Nothing to review"
+          }
+          href={
+            Number(counts.conflict ?? 0)
+              ? href({ view: "conflict", page: "1" })
+              : undefined
+          }
+        />
+      </MetricGrid>
 
-          <form
-            action="/admin/payments"
-            method="get"
-            className="grid gap-3 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900 md:grid-cols-6"
-          >
-            <input
-              type="search"
-              name="search"
-              defaultValue={search}
-              placeholder="Reference / order / conflict"
-              className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 md:col-span-2"
-            />
-            <select
-              name="status"
-              defaultValue={statusFilter}
-              className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-            >
-              <option value="all">All Statuses</option>
-              <option value="initialized">Initialized</option>
-              <option value="processing">Processing</option>
-              <option value="paid">Paid</option>
-              <option value="conflict">Conflict</option>
-              <option value="failed">Failed</option>
-            </select>
-            <select
-              name="source"
-              defaultValue={sourceFilter}
-              className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-            >
-              <option value="all">All Sources</option>
-              <option value="catalog_checkout">Catalog Checkout</option>
-              <option value="custom_quote">Custom Quote</option>
-            </select>
-            <input
-              type="date"
-              name="dateFrom"
-              defaultValue={params.dateFrom}
-              className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-            />
-            <input
-              type="date"
-              name="dateTo"
-              defaultValue={params.dateTo}
-              className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-            />
-            <input type="hidden" name="perPage" value={String(perPage)} />
-            <button
-              type="submit"
-              className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white dark:bg-neutral-100 dark:text-neutral-900"
-            >
-              Filter
-            </button>
-          </form>
+      <ViewTabs
+        label="Payment views"
+        active={view.key}
+        hrefFor={(key) => href({ view: key, page: "1" })}
+        views={VIEWS.map((v) => ({
+          key: v.key,
+          label: v.label,
+          count: Number(counts[v.key] ?? 0),
+          tone: v.tone,
+        }))}
+      />
 
-          <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-            <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-800">
-              <thead className="bg-neutral-50 dark:bg-neutral-800">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">
-                    Reference
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">
-                    Source
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">
-                    Amount
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">
-                    Paystack
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">
-                    Local
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">
-                    Linked Order
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">
-                    Updated
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">
-                    Conflict
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
-                {rows.map((row) => (
-                  <tr key={row.id}>
-                    <td className="px-4 py-3 text-sm text-neutral-900 dark:text-neutral-100">
+      <FilterBar
+        action="/admin/payments"
+        search={q}
+        placeholder="Search reference, order number or email"
+        hidden={{ view: view.key === "all" ? undefined : view.key }}
+      >
+        <Select
+          name="source"
+          label="Source"
+          defaultValue={source}
+          options={[
+            { value: "all", label: "All sources" },
+            { value: "catalog_checkout", label: "Shop checkout" },
+            { value: "custom_quote", label: "Custom quote" },
+          ]}
+        />
+      </FilterBar>
+
+      {rows.length === 0 ? (
+        <div className="border border-line px-5">
+          <EmptyState title="No payments here">
+            {view.key === "conflict"
+              ? "Nothing needs review. Every payment matched its order."
+              : "Try another view or search."}
+          </EmptyState>
+        </div>
+      ) : (
+        <div className="border border-line">
+          <table className="w-full text-sm">
+            <thead className="hidden md:table-header-group">
+              <tr className="border-b border-line text-left text-fg-3">
+                <th className="px-4 py-2.5 font-normal">Payment</th>
+                <th className="px-3 py-2.5 font-normal">Customer</th>
+                <th className="px-3 py-2.5 font-normal">Status</th>
+                <th className="hidden px-3 py-2.5 font-normal lg:table-cell">
+                  Order
+                </th>
+                <th className="px-4 py-2.5 text-right font-normal">Amount</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {rows.map((r) => {
+                const s = PAYMENT_STATUS[r.status] ?? {
+                  label: r.status,
+                  tone: "neutral" as Tone,
+                };
+                return (
+                  <tr
+                    key={r.id}
+                    className="group relative transition-colors hover:bg-plate/60"
+                  >
+                    <td className="px-4 py-3">
                       <Link
-                        href={`/admin/payments/${row.id}`}
-                        className="font-mono text-xs hover:underline"
+                        href={`/admin/payments/${r.id}`}
+                        className="block max-w-[26ch] truncate font-mono text-xs text-fg after:absolute after:inset-0"
                       >
-                        {row.reference}
+                        {r.reference}
                       </Link>
+                      <p className="mt-0.5 text-xs text-fg-3">
+                        {SOURCE_LABEL[r.source] ?? r.source} ·{" "}
+                        {timeAgo(r.createdAt)}
+                      </p>
                     </td>
-                    <td className="px-4 py-3 text-sm text-neutral-600 dark:text-neutral-300">
-                      {row.source}
+                    <td className="hidden px-3 py-3 md:table-cell">
+                      <p className="max-w-[24ch] truncate text-fg">
+                        {r.customerName ?? "—"}
+                      </p>
+                      <p className="max-w-[28ch] truncate text-xs text-fg-3">
+                        {r.email ?? ""}
+                      </p>
                     </td>
-                    <td className="px-4 py-3 text-sm text-neutral-600 dark:text-neutral-300">
-                      {row.currencyCode} {(Number(row.amount) / 100).toFixed(2)}
+                    <td className="px-3 py-3">
+                      <StatusPill tone={s.tone}>{s.label}</StatusPill>
+                      {r.conflictCode ? (
+                        <p
+                          className="mt-1 max-w-[26ch] truncate text-xs text-red-700 dark:text-red-400"
+                          title={r.conflictMessage ?? undefined}
+                        >
+                          {r.conflictCode.replace(/_/g, " ")}
+                        </p>
+                      ) : r.status === "failed" && r.paystackStatus ? (
+                        <p className="mt-1 text-xs text-fg-3">
+                          {r.paystackStatus.replace(/_/g, " ")}
+                        </p>
+                      ) : null}
                     </td>
-                    <td className="px-4 py-3 text-sm text-neutral-600 dark:text-neutral-300">
-                      {row.paystackStatus || "-"}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <span className="rounded-full border border-neutral-300 px-2 py-0.5 text-xs dark:border-neutral-700">
-                        {row.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-neutral-600 dark:text-neutral-300">
-                      {row.orderId && row.orderNumber ? (
-                        <Link href={`/admin/orders/${row.orderId}`} className="hover:underline">
-                          {row.orderNumber}
+                    <td className="hidden px-3 py-3 lg:table-cell">
+                      {r.orderId && r.orderNumber ? (
+                        <Link
+                          href={`/admin/orders/${r.orderId}`}
+                          className="relative z-10 font-mono text-xs text-fg underline-offset-2 hover:underline"
+                        >
+                          {r.orderNumber}
                         </Link>
                       ) : (
-                        "-"
+                        <span className="text-xs text-fg-3">No order</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-neutral-600 dark:text-neutral-300">
-                      {row.updatedAt.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-neutral-600 dark:text-neutral-300">
-                      {row.conflictCode ? (
-                        <span title={row.conflictMessage || undefined}>
-                          {row.conflictCode}
-                        </span>
-                      ) : (
-                        "-"
-                      )}
+                    <td className="px-4 py-3 text-right font-medium tabular-nums">
+                      {money(r.amount / 100)}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="flex items-center justify-between text-sm text-neutral-600 dark:text-neutral-300">
-            <div>
-              Showing {(page - 1) * perPage + 1}-{Math.min(page * perPage, total)} of {total}
-            </div>
-            <div className="flex items-center gap-2">
-              {page > 1 ? (
-                <Link
-                  href={`/admin/payments?${new URLSearchParams({
-                    ...Object.fromEntries(
-                      Object.entries({
-                        status: statusFilter,
-                        source: sourceFilter,
-                        search,
-                        dateFrom: params.dateFrom || "",
-                        dateTo: params.dateTo || "",
-                        perPage: String(perPage),
-                        page: String(page - 1),
-                      }).filter(([, value]) => value && value !== "all"),
-                    ),
-                  }).toString()}`}
-                  className="rounded border border-neutral-300 px-3 py-1 dark:border-neutral-700"
-                >
-                  Previous
-                </Link>
-              ) : null}
-              {page < totalPages ? (
-                <Link
-                  href={`/admin/payments?${new URLSearchParams({
-                    ...Object.fromEntries(
-                      Object.entries({
-                        status: statusFilter,
-                        source: sourceFilter,
-                        search,
-                        dateFrom: params.dateFrom || "",
-                        dateTo: params.dateTo || "",
-                        perPage: String(perPage),
-                        page: String(page + 1),
-                      }).filter(([, value]) => value && value !== "all"),
-                    ),
-                  }).toString()}`}
-                  className="rounded border border-neutral-300 px-3 py-1 dark:border-neutral-700"
-                >
-                  Next
-                </Link>
-              ) : null}
-            </div>
-          </div>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      </div>
-    </div>
+      )}
+
+      <Pagination
+        page={page}
+        pageSize={PAGE_SIZE}
+        total={Number(totalRow?.count ?? 0)}
+        hrefFor={(p) => href({ page: String(p) })}
+      />
+    </Page>
   );
 }

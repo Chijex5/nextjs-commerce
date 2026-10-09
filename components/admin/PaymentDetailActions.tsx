@@ -1,5 +1,7 @@
 "use client";
 
+import { buttonClass } from "components/ui/button";
+import { Loader2, RefreshCw, Link2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -16,9 +18,9 @@ export default function PaymentDetailActions({
 
   if (provider !== "paystack") {
     return (
-      <div className="rounded-md border border-neutral-300 px-3 py-2 text-xs text-neutral-600 dark:border-neutral-700 dark:text-neutral-300">
-        Paystack actions are unavailable for provider: {provider}
-      </div>
+      <p className="text-xs text-fg-3">
+        Actions are only available for Paystack payments.
+      </p>
     );
   }
 
@@ -30,39 +32,51 @@ export default function PaymentDetailActions({
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || `Failed to ${action} payment`);
+        toast.error(data.error || "That didn't work. Try again in a moment.");
         return;
       }
       toast.success(
         action === "verify"
-          ? "Payment refreshed from Paystack"
+          ? "Updated with the latest status from Paystack"
           : data.success
-            ? "Payment reconciled"
-            : "Reconcile attempted",
+            ? "Matched to an order"
+            : "Tried again. Still couldn't match it. See the history below.",
       );
       router.refresh();
     } catch {
-      toast.error(`Failed to ${action} payment`);
+      toast.error("That didn't work. Try again in a moment.");
     } finally {
       setLoading(null);
     }
   };
 
   return (
-    <div className="flex gap-2">
+    <div className="flex flex-wrap gap-2">
       <button
+        type="button"
         onClick={() => runAction("verify")}
         disabled={Boolean(loading)}
-        className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+        className={buttonClass("outline", "md")}
       >
-        {loading === "verify" ? "Refreshing..." : "Refresh from Paystack"}
+        {loading === "verify" ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <RefreshCw className="size-4" />
+        )}
+        Check with Paystack
       </button>
       <button
+        type="button"
         onClick={() => runAction("reconcile")}
         disabled={Boolean(loading)}
-        className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+        className={buttonClass("solid", "md")}
       >
-        {loading === "reconcile" ? "Reconciling..." : "Retry Reconcile"}
+        {loading === "reconcile" ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <Link2 className="size-4" />
+        )}
+        Match to order again
       </button>
     </div>
   );

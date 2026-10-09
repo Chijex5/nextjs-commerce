@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "downlevelIteration": true,
     "allowJs": true,
     "skipLibCheck": true,
@@ -17,10 +21,16 @@
     "incremental": true,
     "baseUrl": ".",
     "noUncheckedIndexedAccess": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "paths": {
-      "@/*": ["./*"],
-      "@react-email/components": ["./lib/email/react-email-components.tsx"]
+      "@/*": [
+        "./*"
+      ],
+      "@react-email/components": [
+        "./lib/email/react-email-components.tsx"
+      ]
     },
     "plugins": [
       {
@@ -34,7 +44,10 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    ".next\\dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

@@ -556,6 +556,8 @@ export default function CheckoutPage() {
     grantsFreeShipping: boolean;
   } | null>(null);
   const [orderNote, setOrderNote] = useState("");
+  // Marketing consent: unticked by default (NDPA requires an active opt-in).
+  const [acceptsMarketing, setAcceptsMarketing] = useState(false);
   const tiktokIdentifyKeyRef = useRef<string | null>(null);
   const [formData, setFormData] = useState<CheckoutFormData>({
     email: "",
@@ -770,6 +772,7 @@ export default function CheckoutPage() {
         phone2: formData.shippingAddress.phone2,
         phone: formData.shippingAddress.phone1,
         notes: orderNote.trim() || undefined,
+        acceptsMarketing,
       };
       const response = await fetch("/api/checkout/initialize", {
         method: "POST",
@@ -1025,6 +1028,33 @@ export default function CheckoutPage() {
                           Your order confirmation and delivery updates will be
                           sent here.
                         </p>
+                        <label
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: "0.75rem",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={acceptsMarketing}
+                            onChange={(e) =>
+                              setAcceptsMarketing(e.target.checked)
+                            }
+                            className="dp-checkbox"
+                          />
+                          <span
+                            style={{
+                              fontFamily: "var(--font-dm-sans), sans-serif",
+                              fontSize: "0.78rem",
+                              color: "var(--dp-sand)",
+                              lineHeight: 1.5,
+                            }}
+                          >
+                            Email me new drops and offers. Unsubscribe anytime.
+                          </span>
+                        </label>
                       </div>
                     </SectionCard>
                   </div>

@@ -34,17 +34,17 @@ const SPEED_META: Record<
   safe: {
     label: "Safe",
     description: "3 concurrent · lower server load",
-    color: "text-green-600 dark:text-green-400",
+    color: "text-green-600",
   },
   balanced: {
     label: "Balanced",
     description: "6 concurrent · recommended",
-    color: "text-blue-600 dark:text-blue-400",
+    color: "text-blue-600",
   },
   fast: {
     label: "Fast",
     description: "10 concurrent · may hit rate limits",
-    color: "text-yellow-600 dark:text-yellow-400",
+    color: "text-yellow-600",
   },
 };
 
@@ -103,10 +103,10 @@ function StepIndicator({ current }: { current: ImportStep }) {
               <div
                 className={`flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-semibold transition-all ${
                   done
-                    ? "border-neutral-900 bg-neutral-900 text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900"
+                    ? "border-fg bg-fg text-canvas"
                     : active
-                      ? "border-neutral-900 bg-white text-neutral-900 dark:border-neutral-100 dark:bg-neutral-900 dark:text-neutral-100"
-                      : "border-neutral-200 bg-white text-neutral-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-600"
+                      ? "border-fg bg-canvas text-fg"
+                      : "border-line bg-canvas text-fg-3"
                 }`}
               >
                 {done ? (
@@ -129,11 +129,7 @@ function StepIndicator({ current }: { current: ImportStep }) {
               </div>
               <span
                 className={`text-[10px] font-semibold uppercase tracking-widest ${
-                  active
-                    ? "text-neutral-900 dark:text-neutral-100"
-                    : done
-                      ? "text-neutral-500 dark:text-neutral-400"
-                      : "text-neutral-300 dark:text-neutral-600"
+                  active ? "text-fg" : done ? "text-fg-3" : "text-fg-3"
                 }`}
               >
                 {step.label}
@@ -142,9 +138,7 @@ function StepIndicator({ current }: { current: ImportStep }) {
             {i < STEPS.length - 1 && (
               <div
                 className={`mx-2 mt-[-14px] h-px flex-1 transition-all ${
-                  done
-                    ? "bg-neutral-900 dark:bg-neutral-100"
-                    : "bg-neutral-200 dark:bg-neutral-800"
+                  done ? "bg-fg" : "bg-plate"
                 }`}
               />
             )}
@@ -347,20 +341,20 @@ export default function BulkImportWizard() {
 
       {/* ── Step: Upload ── */}
       {step === "upload" && (
-        <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-          <div className="border-b border-neutral-100 px-6 py-5 dark:border-neutral-800">
+        <div className="overflow-hidden border border-line bg-canvas">
+          <div className="border-b border-line px-6 py-5">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                <h2 className="text-base font-semibold text-fg">
                   Upload your CSV file
                 </h2>
-                <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
+                <p className="mt-0.5 text-sm text-fg-3">
                   Max 1,000 products · 5 MB file limit
                 </p>
               </div>
               <button
                 onClick={handleDownloadTemplate}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
+                className="inline-flex items-center gap-1.5 border border-line bg-plate px-3 py-1.5 text-xs font-medium text-fg-2 transition-colors hover:bg-plate"
               >
                 <svg
                   className="h-3.5 w-3.5"
@@ -389,22 +383,20 @@ export default function BulkImportWizard() {
               }}
               onDragLeave={() => setIsDragOver(false)}
               onDrop={handleDrop}
-              className={`group relative flex h-52 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all ${
+              className={`group relative flex h-52 w-full cursor-pointer flex-col items-center justify-center border-2 border-dashed transition-all ${
                 isDragOver
-                  ? "border-neutral-900 bg-neutral-50 dark:border-neutral-300 dark:bg-neutral-800"
-                  : "border-neutral-200 bg-neutral-50 hover:border-neutral-400 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800/50 dark:hover:border-neutral-500"
+                  ? "border-fg bg-plate"
+                  : "border-line bg-plate hover:border-line hover:bg-plate"
               }`}
             >
               <div className="flex flex-col items-center gap-3 text-center">
                 <div
                   className={`flex h-12 w-12 items-center justify-center rounded-full transition-colors ${
-                    isDragOver
-                      ? "bg-neutral-200 dark:bg-neutral-700"
-                      : "bg-neutral-100 dark:bg-neutral-800"
+                    isDragOver ? "bg-plate" : "bg-plate"
                   }`}
                 >
                   <svg
-                    className="h-6 w-6 text-neutral-400"
+                    className="h-6 w-6 text-fg-3"
                     fill="none"
                     viewBox="0 0 24 24"
                     strokeWidth="1.5"
@@ -418,12 +410,12 @@ export default function BulkImportWizard() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  <p className="text-sm font-medium text-fg-2">
                     {isDragOver ? "Drop it here" : "Drop your CSV here"}
                   </p>
-                  <p className="mt-0.5 text-xs text-neutral-400">
+                  <p className="mt-0.5 text-xs text-fg-3">
                     or{" "}
-                    <span className="font-semibold text-neutral-600 underline underline-offset-2 dark:text-neutral-300">
+                    <span className="font-semibold text-fg-2 underline underline-offset-2">
                       browse files
                     </span>
                   </p>
@@ -438,8 +430,8 @@ export default function BulkImportWizard() {
             </label>
 
             {/* Format guidelines */}
-            <div className="mt-4 rounded-lg border border-neutral-100 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-800/50">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+            <div className="mt-4 border border-line bg-plate p-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-fg-3">
                 Required columns
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -453,10 +445,8 @@ export default function BulkImportWizard() {
                 ].map((col, i) => (
                   <span
                     key={col}
-                    className={`rounded-md px-2 py-0.5 font-mono text-xs ${
-                      i < 2
-                        ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
-                        : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+                    className={` px-2 py-0.5 font-mono text-xs ${
+                      i < 2 ? "bg-fg text-canvas" : "bg-plate text-fg-3"
                     }`}
                   >
                     {col}
@@ -466,7 +456,7 @@ export default function BulkImportWizard() {
                   </span>
                 ))}
               </div>
-              <p className="mt-2.5 text-xs text-neutral-400">
+              <p className="mt-2.5 text-xs text-fg-3">
                 Handles & SEO fields are auto-generated. Images can be added
                 separately after import.
               </p>
@@ -477,24 +467,22 @@ export default function BulkImportWizard() {
 
       {/* ── Step: Preview ── */}
       {step === "preview" && (
-        <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-          <div className="border-b border-neutral-100 px-6 py-5 dark:border-neutral-800">
+        <div className="overflow-hidden border border-line bg-canvas">
+          <div className="border-b border-line px-6 py-5">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                <h2 className="text-base font-semibold text-fg">
                   Review before importing
                 </h2>
-                <p className="mt-0.5 text-sm text-neutral-500">
-                  <span className="font-medium text-neutral-900 dark:text-neutral-100">
-                    {products.length}
-                  </span>{" "}
+                <p className="mt-0.5 text-sm text-fg-3">
+                  <span className="font-medium text-fg">{products.length}</span>{" "}
                   products ready ·{" "}
-                  <span className="text-neutral-400">{file?.name}</span>
+                  <span className="text-fg-3">{file?.name}</span>
                 </p>
               </div>
               <button
                 onClick={resetWizard}
-                className="text-xs font-medium text-neutral-400 transition-colors hover:text-neutral-700 dark:hover:text-neutral-200"
+                className="text-xs font-medium text-fg-3 transition-colors hover:text-fg-2"
               >
                 ← Change file
               </button>
@@ -502,8 +490,8 @@ export default function BulkImportWizard() {
           </div>
 
           {/* Speed selector */}
-          <div className="border-b border-neutral-100 px-6 py-4 dark:border-neutral-800">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+          <div className="border-b border-line px-6 py-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-fg-3">
               Import speed
             </p>
             <div className="grid grid-cols-3 gap-2">
@@ -515,26 +503,22 @@ export default function BulkImportWizard() {
                     <button
                       key={mode}
                       onClick={() => setImportSpeed(mode)}
-                      className={`rounded-lg border px-3 py-2.5 text-left transition-all ${
+                      className={` border px-3 py-2.5 text-left transition-all ${
                         active
-                          ? "border-neutral-900 bg-neutral-900 dark:border-neutral-100 dark:bg-neutral-100"
-                          : "border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-neutral-600"
+                          ? "border-fg bg-fg"
+                          : "border-line bg-canvas hover:border-line hover:bg-plate"
                       }`}
                     >
                       <p
                         className={`text-xs font-semibold ${
-                          active
-                            ? "text-white dark:text-neutral-900"
-                            : "text-neutral-900 dark:text-neutral-100"
+                          active ? "text-canvas" : "text-fg"
                         }`}
                       >
                         {meta.label}
                       </p>
                       <p
                         className={`mt-0.5 text-[10px] ${
-                          active
-                            ? "text-neutral-300 dark:text-neutral-600"
-                            : "text-neutral-400"
+                          active ? "text-fg-3" : "text-fg-3"
                         }`}
                       >
                         {meta.description}
@@ -549,41 +533,38 @@ export default function BulkImportWizard() {
           {/* Preview table */}
           <div className="max-h-72 overflow-y-auto">
             <table className="min-w-full">
-              <thead className="sticky top-0 border-b border-neutral-100 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900">
+              <thead className="sticky top-0 border-b border-line bg-plate">
                 <tr>
-                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-neutral-400">
+                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-fg-3">
                     #
                   </th>
-                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-neutral-400">
+                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-fg-3">
                     Title
                   </th>
-                  <th className="px-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-widest text-neutral-400">
+                  <th className="px-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-widest text-fg-3">
                     Price
                   </th>
-                  <th className="px-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-widest text-neutral-400">
+                  <th className="px-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-widest text-fg-3">
                     Status
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+              <tbody className="divide-y divide-line">
                 {products.map((product, index) => (
-                  <tr
-                    key={index}
-                    className="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/60"
-                  >
-                    <td className="px-5 py-2.5 text-xs font-mono text-neutral-400">
+                  <tr key={index} className="transition-colors hover:bg-plate">
+                    <td className="px-5 py-2.5 text-xs font-mono text-fg-3">
                       {index + 1}
                     </td>
                     <td className="max-w-[200px] px-5 py-2.5">
-                      <p className="truncate text-sm text-neutral-900 dark:text-neutral-100">
+                      <p className="truncate text-sm text-fg">
                         {product.title}
                       </p>
                     </td>
-                    <td className="whitespace-nowrap px-5 py-2.5 text-right text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    <td className="whitespace-nowrap px-5 py-2.5 text-right text-sm font-medium text-fg-2">
                       ₦{parseFloat(product.price).toLocaleString()}
                     </td>
                     <td className="px-5 py-2.5 text-right">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700">
                         <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
                         Ready
                       </span>
@@ -594,10 +575,10 @@ export default function BulkImportWizard() {
             </table>
           </div>
 
-          <div className="flex items-center justify-between border-t border-neutral-100 px-6 py-4 dark:border-neutral-800">
-            <p className="text-xs text-neutral-400">
+          <div className="flex items-center justify-between border-t border-line px-6 py-4">
+            <p className="text-xs text-fg-3">
               Estimated time:{" "}
-              <span className="font-medium text-neutral-600 dark:text-neutral-300">
+              <span className="font-medium text-fg-2">
                 {formatEta(
                   products.length / IMPORT_SPEED_CONCURRENCY[importSpeed],
                 )}
@@ -606,14 +587,14 @@ export default function BulkImportWizard() {
             <div className="flex items-center gap-3">
               <button
                 onClick={resetWizard}
-                className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                className="border border-line bg-canvas px-4 py-2 text-sm font-medium text-fg-2 transition-colors hover:bg-plate"
               >
                 Cancel
               </button>
               <button
                 onClick={handleImport}
                 disabled={importing}
-                className="inline-flex items-center gap-2 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-800 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+                className="inline-flex items-center gap-2 bg-fg px-4 py-2 text-sm font-medium text-canvas transition-colors hover:bg-fg disabled:opacity-50"
               >
                 Import {products.length} products
                 <svg
@@ -637,7 +618,7 @@ export default function BulkImportWizard() {
 
       {/* ── Step: Importing ── */}
       {step === "importing" && (
-        <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="overflow-hidden border border-line bg-canvas">
           <div className="p-8">
             {/* Central progress display */}
             <div className="mb-8 flex flex-col items-center text-center">
@@ -655,7 +636,7 @@ export default function BulkImportWizard() {
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="6"
-                    className="text-neutral-100 dark:text-neutral-800"
+                    className="text-neutral-100"
                   />
                   {/* Progress */}
                   <circle
@@ -668,45 +649,45 @@ export default function BulkImportWizard() {
                     strokeLinecap="round"
                     strokeDasharray={`${2 * Math.PI * 40}`}
                     strokeDashoffset={`${2 * Math.PI * 40 * (1 - pct / 100)}`}
-                    className="text-neutral-900 transition-all duration-500 dark:text-neutral-100"
+                    className="text-fg transition-all duration-500"
                   />
                 </svg>
-                <span className="text-2xl font-semibold tabular-nums text-neutral-900 dark:text-neutral-100">
+                <span className="text-2xl font-semibold tabular-nums text-fg">
                   {pct}%
                 </span>
               </div>
 
-              <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+              <h2 className="text-base font-semibold text-fg">
                 Importing products…
               </h2>
-              <p className="mt-1 text-sm text-neutral-400">
+              <p className="mt-1 text-sm text-fg-3">
                 {progress.current} of {progress.total} completed
               </p>
             </div>
 
             {/* Metrics row */}
             <div className="mb-6 grid grid-cols-3 gap-3">
-              <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3 text-center dark:border-neutral-800 dark:bg-neutral-800/50">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+              <div className="border border-line bg-plate px-4 py-3 text-center">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-fg-3">
                   Done
                 </p>
-                <p className="mt-1 text-lg font-semibold tabular-nums text-neutral-900 dark:text-neutral-100">
+                <p className="mt-1 text-lg font-semibold tabular-nums text-fg">
                   {progress.current}
                 </p>
               </div>
-              <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3 text-center dark:border-neutral-800 dark:bg-neutral-800/50">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+              <div className="border border-line bg-plate px-4 py-3 text-center">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-fg-3">
                   Remaining
                 </p>
-                <p className="mt-1 text-lg font-semibold tabular-nums text-neutral-900 dark:text-neutral-100">
+                <p className="mt-1 text-lg font-semibold tabular-nums text-fg">
                   {progress.total - progress.current}
                 </p>
               </div>
-              <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3 text-center dark:border-neutral-800 dark:bg-neutral-800/50">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+              <div className="border border-line bg-plate px-4 py-3 text-center">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-fg-3">
                   ETA
                 </p>
-                <p className="mt-1 text-lg font-semibold tabular-nums text-neutral-900 dark:text-neutral-100">
+                <p className="mt-1 text-lg font-semibold tabular-nums text-fg">
                   {etaSeconds != null ? formatEta(etaSeconds) : "—"}
                 </p>
               </div>
@@ -714,19 +695,19 @@ export default function BulkImportWizard() {
 
             {/* Linear bar */}
             <div className="space-y-1.5">
-              <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-plate">
                 <div
-                  className="h-full rounded-full bg-neutral-900 transition-all duration-500 dark:bg-neutral-100"
+                  className="h-full rounded-full bg-fg transition-all duration-500"
                   style={{ width: `${pct}%` }}
                 />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-neutral-400">
+                <span className="text-xs text-fg-3">
                   {SPEED_META[importSpeed].label} mode ·{" "}
                   {IMPORT_SPEED_CONCURRENCY[importSpeed]} concurrent
                 </span>
                 {rate != null && (
-                  <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                  <span className="text-xs font-medium text-fg-3">
                     {rate.toFixed(1)} products/sec
                   </span>
                 )}
@@ -738,22 +719,22 @@ export default function BulkImportWizard() {
 
       {/* ── Step: Complete ── */}
       {step === "complete" && (
-        <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="overflow-hidden border border-line bg-canvas">
           {/* Header */}
-          <div className="border-b border-neutral-100 px-6 py-5 dark:border-neutral-800">
+          <div className="border-b border-line px-6 py-5">
             <div className="flex items-center gap-3">
               <div
                 className={`flex h-9 w-9 items-center justify-center rounded-full ${
                   results.failed === 0
-                    ? "bg-green-100 dark:bg-green-900/20"
+                    ? "bg-green-100"
                     : results.success === 0
-                      ? "bg-red-100 dark:bg-red-900/20"
-                      : "bg-yellow-100 dark:bg-yellow-900/20"
+                      ? "bg-red-100"
+                      : "bg-yellow-100"
                 }`}
               >
                 {results.failed === 0 ? (
                   <svg
-                    className="h-5 w-5 text-green-600 dark:text-green-400"
+                    className="h-5 w-5 text-green-600"
                     fill="none"
                     viewBox="0 0 24 24"
                     strokeWidth="2"
@@ -781,7 +762,7 @@ export default function BulkImportWizard() {
                   </svg>
                 ) : (
                   <svg
-                    className="h-5 w-5 text-yellow-600 dark:text-yellow-400"
+                    className="h-5 w-5 text-yellow-600"
                     fill="none"
                     viewBox="0 0 24 24"
                     strokeWidth="2"
@@ -796,14 +777,14 @@ export default function BulkImportWizard() {
                 )}
               </div>
               <div>
-                <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                <h2 className="text-base font-semibold text-fg">
                   {results.failed === 0
                     ? "Import complete"
                     : results.success === 0
                       ? "Import failed"
                       : "Import finished with errors"}
                 </h2>
-                <p className="text-sm text-neutral-400">
+                <p className="text-sm text-fg-3">
                   {results.success + results.failed} products processed
                 </p>
               </div>
@@ -811,32 +792,28 @@ export default function BulkImportWizard() {
           </div>
 
           {/* Result stats */}
-          <div className="grid grid-cols-2 divide-x divide-neutral-100 dark:divide-neutral-800">
+          <div className="grid grid-cols-2 divide-x divide-line">
             <div className="px-6 py-5">
-              <p className="text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+              <p className="text-xs font-semibold uppercase tracking-widest text-fg-3">
                 Imported
               </p>
-              <p className="mt-1 text-3xl font-semibold text-green-600 dark:text-green-400">
+              <p className="mt-1 text-3xl font-semibold text-green-600">
                 {results.success}
               </p>
-              <p className="mt-0.5 text-xs text-neutral-400">
-                products created
-              </p>
+              <p className="mt-0.5 text-xs text-fg-3">products created</p>
             </div>
             <div className="px-6 py-5">
-              <p className="text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+              <p className="text-xs font-semibold uppercase tracking-widest text-fg-3">
                 Failed
               </p>
               <p
                 className={`mt-1 text-3xl font-semibold ${
-                  results.failed > 0
-                    ? "text-red-500 dark:text-red-400"
-                    : "text-neutral-300 dark:text-neutral-700"
+                  results.failed > 0 ? "text-red-500" : "text-fg-3"
                 }`}
               >
                 {results.failed}
               </p>
-              <p className="mt-0.5 text-xs text-neutral-400">
+              <p className="mt-0.5 text-xs text-fg-3">
                 {results.failed > 0 ? "see errors below" : "no errors"}
               </p>
             </div>
@@ -844,23 +821,21 @@ export default function BulkImportWizard() {
 
           {/* Error list */}
           {results.errors.length > 0 && (
-            <div className="border-t border-neutral-100 dark:border-neutral-800">
+            <div className="border-t border-line">
               <div className="max-h-44 overflow-y-auto">
                 {results.errors.slice(0, 20).map((error, i) => (
                   <div
                     key={i}
-                    className="flex items-start gap-3 border-b border-neutral-100 px-5 py-3 last:border-0 dark:border-neutral-800"
+                    className="flex items-start gap-3 border-b border-line px-5 py-3 last:border-0"
                   >
-                    <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
+                    <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-red-100">
                       <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
                     </span>
-                    <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                      {error}
-                    </p>
+                    <p className="text-xs text-fg-2">{error}</p>
                   </div>
                 ))}
                 {results.errors.length > 20 && (
-                  <p className="px-5 py-3 text-xs text-neutral-400">
+                  <p className="px-5 py-3 text-xs text-fg-3">
                     +{results.errors.length - 20} more errors
                   </p>
                 )}
@@ -869,16 +844,16 @@ export default function BulkImportWizard() {
           )}
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 border-t border-neutral-100 px-6 py-4 dark:border-neutral-800">
+          <div className="flex items-center justify-end gap-3 border-t border-line px-6 py-4">
             <button
               onClick={resetWizard}
-              className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+              className="border border-line bg-canvas px-4 py-2 text-sm font-medium text-fg-2 transition-colors hover:bg-plate"
             >
               Import more
             </button>
             <button
               onClick={() => router.push("/admin/products")}
-              className="inline-flex items-center gap-2 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+              className="inline-flex items-center gap-2 bg-fg px-4 py-2 text-sm font-medium text-canvas transition-colors hover:bg-fg"
             >
               View products
               <svg

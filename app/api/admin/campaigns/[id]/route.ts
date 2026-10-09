@@ -1,4 +1,6 @@
 import { authOptions } from "@/lib/auth";
+import { parseBlocks } from "lib/email/blocks";
+import { normaliseAudience } from "lib/marketing/segments";
 import { db } from "@/lib/db";
 import {
   adminUsers,
@@ -123,9 +125,9 @@ export async function PATCH(
     }
 
     // Only allow updating DRAFT campaigns (or SCHEDULED before sending)
-    if (campaign.status === "SENT") {
+    if (campaign.status === "SENT" || campaign.status === "SENDING") {
       return NextResponse.json(
-        { error: "Cannot edit sent campaigns" },
+        { error: "Cannot edit a campaign that is sending or sent" },
         { status: 400 },
       );
     }
@@ -148,6 +150,9 @@ export async function PATCH(
       saleDeadline,
       discountNote,
       productIds, // Array of product IDs to include
+      audience,
+      frequencyCapHours,
+      content,
     } = body;
 
     // Update campaign fields
@@ -175,6 +180,16 @@ export async function PATCH(
       updates.saleDeadline = saleDeadline ? new Date(saleDeadline) : null;
     }
     if (discountNote !== undefined) updates.discountNote = discountNote;
+    if (audience !== undefined) updates.audience = normaliseAudience(audience);
+    if (content !== undefined)
+      updates.content = content === null ? null : parseBlocks(content);
+    if (frequencyCapHours !== undefined) {
+      const hours = Number(frequencyCapHours);
+      updates.frequencyCapHours =
+        Number.isFinite(hours) && hours >= 0
+          ? Math.min(Math.round(hours), 24 * 14)
+          : 48;
+    }
     if (scheduledAt !== undefined) {
       updates.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
       if (scheduledAt) {

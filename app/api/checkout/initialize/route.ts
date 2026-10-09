@@ -1,10 +1,11 @@
+import { subscribeEmail } from "lib/marketing/subscribe";
 import { createHash } from "crypto";
 import { validateCouponForCheckout } from "lib/coupon-validation";
 import { getCart } from "lib/database";
 import { handleApiError } from "lib/errors";
 import {
-    reconcilePaystackPayment,
-    registerInitializedPaymentTransaction,
+  reconcilePaystackPayment,
+  registerInitializedPaymentTransaction,
 } from "lib/payments/paystack-reconcile";
 import { calculateShippingAmount } from "lib/shipping";
 import { getUserSession } from "lib/user-session";
@@ -48,6 +49,8 @@ interface CheckoutData {
   saveAddress: boolean;
   couponCode?: string;
   notes?: string;
+  /** Ticked "Email me new drops and offers" at checkout. */
+  acceptsMarketing?: boolean;
 }
 
 const normalizeCheckoutAddress = (
@@ -118,6 +121,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Record marketing consent as soon as it's given, whether or not payment
+    // completes. Never block checkout on it.
+    if (body.acceptsMarketing === true) {
+      await subscribeEmail({
+        email: body.email,
+        name:
+          [shippingAddress.firstName, shippingAddress.lastName]
+            .filter(Boolean)
+            .join(" ") || null,
+        source: "checkout",
+      }).catch((err) =>
+        console.error("Failed to record checkout marketing consent:", err),
+      );
+    }
+
     // Get cart
     const cart = await getCart();
     if (!cart || cart.lines.length === 0) {
@@ -150,14 +168,13 @@ export async function POST(request: NextRequest) {
         discountAmount: computedDiscount,
         shippingDiscountAmount: computedShippingDiscount,
         productDiscountAmount: computedProductDiscount,
-      } =
-        await validateCouponForCheckout({
-          code: body.couponCode,
-          cartTotal: subtotal,
-          shippingAmount: shippingCost,
-          userId: session?.id,
-          sessionId: session?.id ? undefined : cart.id,
-        });
+      } = await validateCouponForCheckout({
+        code: body.couponCode,
+        cartTotal: subtotal,
+        shippingAmount: shippingCost,
+        userId: session?.id,
+        sessionId: session?.id ? undefined : cart.id,
+      });
 
       discountAmount = computedDiscount;
       shippingDiscountAmount = computedShippingDiscount;
@@ -171,7 +188,8 @@ export async function POST(request: NextRequest) {
     const amountInKobo = Math.round(totalAmount * 100);
 
     const checkoutMetadata = {
-      customer_name: `${shippingAddress.firstName || ""} ${shippingAddress.lastName || ""}`.trim(),
+      customer_name:
+        `${shippingAddress.firstName || ""} ${shippingAddress.lastName || ""}`.trim(),
       phone: primaryPhone,
       phone1: primaryPhone,
       phone2: secondaryPhone || null,
@@ -330,10 +348,7 @@ export async function POST(request: NextRequest) {
         },
       );
     } catch (fetchError: unknown) {
-      if (
-        fetchError instanceof Error &&
-        fetchError.name === "AbortError"
-      ) {
+      if (fetchError instanceof Error && fetchError.name === "AbortError") {
         return NextResponse.json(
           { error: "Payment gateway timed out. Please try again." },
           { status: 504 },

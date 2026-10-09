@@ -1,224 +1,60 @@
-import AdminNav from "components/admin/AdminNav";
-import AdminsManagement from "components/admin/AdminsManagement";
-import { and, desc, eq, gte, ilike, inArray, or, sql } from "drizzle-orm";
+import {
+  TeamManager,
+  type TeamMember,
+} from "components/admin/team/team-manager";
+import { Page, PageHeader } from "components/admin/ui";
+import { asc, desc, sql } from "drizzle-orm";
 import { authOptions } from "lib/auth";
 import { db } from "lib/db";
-import { adminUsers, orders } from "lib/db/schema";
+import { adminUsers } from "lib/db/schema";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
-export default async function AdminAdminsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{
-    search?: string;
-    page?: string;
-    perPage?: string;
-    status?: string;
-  }>;
-}) {
+export const dynamic = "force-dynamic";
+
+export default async function TeamPage() {
   const session = await getServerSession(authOptions);
+  if (!session) redirect("/admin/login");
 
-  if (!session) {
-    redirect("/admin/login");
-  }
-
-  const params = await searchParams;
-  const search = params.search || "";
-  const page = parseInt(params.page || "1");
-  const perPage = parseInt(params.perPage || "20");
-  const statusFilter = params.status || "all";
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
-  const filters = [];
-
-  if (statusFilter === "active") {
-    filters.push(eq(adminUsers.isActive, true));
-  } else if (statusFilter === "inactive") {
-    filters.push(eq(adminUsers.isActive, false));
-  }
-
-  if (search) {
-    const searchValue = `%${search}%`;
-    filters.push(
-      or(
-        ilike(adminUsers.email, searchValue),
-        ilike(adminUsers.name, searchValue),
-      ),
-    );
-  }
-
-  const whereClause = filters.length ? and(...filters) : undefined;
-
-  const [admins, totalResult, totalStats] = await Promise.all([
+  const [rows, activity] = await Promise.all([
     db
-      .select({
-        id: adminUsers.id,
-        email: adminUsers.email,
-        name: adminUsers.name,
-        role: adminUsers.role,
-        isActive: adminUsers.isActive,
-        createdAt: adminUsers.createdAt,
-        lastLoginAt: adminUsers.lastLoginAt,
-      })
+      .select()
       .from(adminUsers)
-      .where(whereClause)
-      .orderBy(desc(adminUsers.createdAt))
-      .limit(perPage)
-      .offset((page - 1) * perPage),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(adminUsers)
-      .where(whereClause),
-    Promise.all([
-      db.select({ count: sql<number>`count(*)` }).from(adminUsers),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(adminUsers)
-        .where(eq(adminUsers.isActive, true)),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(adminUsers)
-        .where(eq(adminUsers.isActive, false)),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(adminUsers)
-        .where(eq(adminUsers.role, "super_admin")),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(adminUsers)
-        .where(gte(adminUsers.lastLoginAt, thirtyDaysAgo)),
-    ]),
+      .orderBy(desc(adminUsers.isActive), asc(adminUsers.name)),
+    db.execute(sql`
+      select lower(acknowledged_by) as email, count(*) as confirmed, max(acknowledged_at)::text as last
+      from orders where acknowledged_by is not null
+        and acknowledged_at >= (now() at time zone 'UTC') - interval '30 days'
+      group by 1
+    `) as unknown as Promise<
+      Array<{ email: string; confirmed: unknown; last: string | null }>
+    >,
   ]);
+  const byEmail = new Map(activity.map((a) => [a.email, a]));
 
-  const [
-    totalAdminsResult,
-    activeAdminsResult,
-    inactiveAdminsResult,
-    superAdminsResult,
-    recentLoginAdminsResult,
-  ] = totalStats;
-  const totalAdmins = Number(totalAdminsResult[0]?.count ?? 0);
-  const activeAdmins = Number(activeAdminsResult[0]?.count ?? 0);
-  const inactiveAdmins = Number(inactiveAdminsResult[0]?.count ?? 0);
-  const superAdmins = Number(superAdminsResult[0]?.count ?? 0);
-  const recentLoginAdmins = Number(recentLoginAdminsResult[0]?.count ?? 0);
-
-  const adminEmails = admins.map((admin) => admin.email);
-  const handledOrderMetrics = adminEmails.length
-    ? await db
-        .select({
-          acknowledgedBy: orders.acknowledgedBy,
-          handledOrders: sql<number>`count(*)`,
-          handledValue: sql<string>`coalesce(sum(${orders.totalAmount}), '0')`,
-          lastHandledAt: sql<Date | null>`max(${orders.acknowledgedAt})`,
-        })
-        .from(orders)
-        .where(inArray(orders.acknowledgedBy, adminEmails))
-        .groupBy(orders.acknowledgedBy)
-    : [];
-
-  const metricsByEmail = new Map(
-    handledOrderMetrics
-      .filter((row): row is typeof row & { acknowledgedBy: string } =>
-        Boolean(row.acknowledgedBy),
-      )
-      .map((row) => [
-        row.acknowledgedBy,
-        {
-          handledOrders: Number(row.handledOrders),
-          handledValue: Number(row.handledValue ?? 0),
-          lastHandledAt: row.lastHandledAt,
-        },
-      ]),
-  );
-
-  const total = Number(totalResult[0]?.count ?? 0);
-  const totalPages = Math.ceil(total / perPage);
+  const members: TeamMember[] = rows.map((a) => ({
+    id: a.id,
+    email: a.email,
+    name: a.name,
+    role: a.role,
+    active: a.isActive,
+    lastLoginAt: a.lastLoginAt?.toISOString() ?? null,
+    createdAt: a.createdAt.toISOString(),
+    confirmed30d: Number(byEmail.get(a.email.toLowerCase())?.confirmed ?? 0),
+    isYou: a.id === session.user?.id,
+  }));
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-      <AdminNav currentPage="admins" userEmail={session.user?.email} />
-
-      <div className="py-6 sm:py-10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-3xl">
-                Admin Management
-              </h1>
-              <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-                Manage admin accounts and permissions ({total} total)
-              </p>
-            </div>
-          </div>
-
-          {/* Stats Overview */}
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-              <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                Total Admins
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-                {totalAdmins}
-              </div>
-            </div>
-            <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-              <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                Active Admins
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-green-600 dark:text-green-400">
-                {activeAdmins}
-              </div>
-            </div>
-            <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-              <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                Inactive Admins
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-neutral-600 dark:text-neutral-400">
-                {inactiveAdmins}
-              </div>
-            </div>
-            <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-              <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                Super Admins
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-blue-600 dark:text-blue-400">
-                {superAdmins}
-              </div>
-            </div>
-            <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-              <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                Logged In (30d)
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-indigo-600 dark:text-indigo-400">
-                {recentLoginAdmins}
-              </div>
-            </div>
-          </div>
-
-          {/* Admins Management Component */}
-          <AdminsManagement
-            admins={admins.map((admin) => ({
-              ...admin,
-              _metrics: {
-                handledOrders:
-                  metricsByEmail.get(admin.email)?.handledOrders || 0,
-                handledValue:
-                  metricsByEmail.get(admin.email)?.handledValue || 0,
-                lastHandledAt:
-                  metricsByEmail.get(admin.email)?.lastHandledAt || null,
-              },
-            }))}
-            currentPage={page}
-            totalPages={totalPages}
-            total={total}
-            perPage={perPage}
-            searchParams={params}
-          />
-        </div>
-      </div>
-    </div>
+    <Page>
+      <PageHeader
+        eyebrow="Settings"
+        title="Team"
+        description="People who can sign in to this admin. Owners can add, edit and remove team members; staff can do everything else."
+      />
+      <TeamManager
+        members={members}
+        canManage={session.user?.role === "super_admin"}
+      />
+    </Page>
   );
 }

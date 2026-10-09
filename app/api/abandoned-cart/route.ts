@@ -1,4 +1,6 @@
 import { sendAbandonedCartEmail } from "@/lib/email/order-emails";
+import { isCronAuthorized } from "lib/cron-auth";
+import { getFlowConfig, logFlowSend } from "lib/marketing/flows";
 import { and, desc, eq, isNotNull, lt, lte } from "drizzle-orm";
 import { db } from "lib/db";
 import { abandonedCarts, carts, users } from "lib/db/schema";
@@ -146,11 +148,18 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const cronSecret = process.env.CRON_SECRET;
-    const requestSecret = request.headers.get("x-cron-secret");
-
-    if (!cronSecret || requestSecret !== cronSecret) {
+    // Vercel Cron authenticates with `Authorization: Bearer`, which the old
+    // x-cron-secret-only check rejected, so scheduled runs never sent anything.
+    if (!isCronAuthorized(request)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!(await getFlowConfig("abandoned_cart")).enabled) {
+      return NextResponse.json({
+        success: true,
+        message: "Abandoned cart emails are switched off",
+        sent: 0,
+      });
     }
 
     const expiredCarts = await db
@@ -229,13 +238,22 @@ export async function GET(request: NextRequest) {
 
         const items = normalizeCartItems(cart.items);
 
-        await sendAbandonedCartEmail({
+        const sendResult = await sendAbandonedCartEmail({
           abandonedCartId: cart.id,
           customerName: cart.customerName,
           email: cart.email,
           items,
           cartTotal: Number(cart.cartTotal),
         });
+        // Leave the cart unsent so tomorrow's run retries it.
+        if (!sendResult.success)
+          throw new Error(sendResult.error ?? "Email failed");
+        await logFlowSend(
+          "abandoned_cart",
+          cart.email,
+          cart.id,
+          sendResult.data?.data?.id,
+        );
 
         await db
           .update(abandonedCarts)

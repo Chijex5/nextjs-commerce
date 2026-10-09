@@ -236,7 +236,7 @@ function RestockAlert() {
       const res = await fetch("/api/newsletter/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, source: "restock" }),
       });
       const data = await res.json();
       if (res.ok) {

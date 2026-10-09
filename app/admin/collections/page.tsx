@@ -1,115 +1,71 @@
-import { getServerSession } from "next-auth";
+import {
+  CollectionsGrid,
+  type CollectionCard,
+} from "components/admin/collections/collections-grid";
+import { Page, PageHeader } from "components/admin/ui";
+import { asc, sql } from "drizzle-orm";
 import { authOptions } from "lib/auth";
-import { redirect } from "next/navigation";
-import AdminNav from "components/admin/AdminNav";
-import CollectionsManagement from "components/admin/CollectionsManagement";
 import { db } from "lib/db";
-import { collections, productCollections } from "lib/db/schema";
-import { desc, ilike, inArray, or, sql } from "drizzle-orm";
+import { collections } from "lib/db/schema";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 
-export default async function AdminCollectionsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{
-    search?: string;
-    page?: string;
-  }>;
-}) {
+export const dynamic = "force-dynamic";
+
+export default async function CollectionsPage() {
   const session = await getServerSession(authOptions);
+  if (!session) redirect("/admin/login");
 
-  if (!session) {
-    redirect("/admin/login");
-  }
-
-  const params = await searchParams;
-  const search = params.search || "";
-  const page = parseInt(params.page || "1");
-  const perPage = 20;
-
-  const whereClause = search
-    ? or(
-        ilike(collections.title, `%${search}%`),
-        ilike(collections.handle, `%${search}%`),
-        ilike(collections.description, `%${search}%`),
-      )
-    : undefined;
-
-  const [collectionRows, totalResult] = await Promise.all([
-    db
-      .select({
-        id: collections.id,
-        handle: collections.handle,
-        title: collections.title,
-        description: collections.description,
-        seoTitle: collections.seoTitle,
-        seoDescription: collections.seoDescription,
-        createdAt: collections.createdAt,
-        updatedAt: collections.updatedAt,
-      })
-      .from(collections)
-      .where(whereClause)
-      .orderBy(desc(collections.createdAt))
-      .limit(perPage)
-      .offset((page - 1) * perPage),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(collections)
-      .where(whereClause),
+  const [rows, stats] = await Promise.all([
+    db.select().from(collections).orderBy(asc(collections.title)),
+    db.execute(sql`
+      select pc.collection_id,
+        count(distinct pc.product_id) as products,
+        count(distinct pc.product_id) filter (where p.available_for_sale) as active,
+        (select i.url from product_images i join product_collections pc2 on pc2.product_id = i.product_id
+          where pc2.collection_id = pc.collection_id order by i.is_featured desc, i.position asc limit 1) as cover,
+        coalesce((select sum(oi.total_amount) from order_items oi join orders o on o.id = oi.order_id
+          join product_collections pc3 on pc3.product_id = oi.product_id
+          where pc3.collection_id = pc.collection_id and o.status <> 'cancelled'
+            and o.created_at >= (now() at time zone 'UTC') - interval '30 days'), 0) as sales
+      from product_collections pc join products p on p.id = pc.product_id
+      group by pc.collection_id
+    `) as unknown as Promise<
+      Array<{
+        collection_id: string;
+        products: unknown;
+        active: unknown;
+        cover: string | null;
+        sales: unknown;
+      }>
+    >,
   ]);
 
-  const collectionIds = collectionRows.map((collection) => collection.id);
-  const collectionCounts = collectionIds.length
-    ? await db
-        .select({
-          collectionId: productCollections.collectionId,
-          count: sql<number>`count(*)`,
-        })
-        .from(productCollections)
-        .where(inArray(productCollections.collectionId, collectionIds))
-        .groupBy(productCollections.collectionId)
-    : [];
-
-  const countsByCollection = new Map(
-    collectionCounts.map((row) => [row.collectionId, Number(row.count)]),
-  );
-
-  const total = Number(totalResult[0]?.count ?? 0);
-  const totalPages = Math.ceil(total / perPage);
+  const statBy = new Map(stats.map((s) => [s.collection_id, s]));
+  const data: CollectionCard[] = rows.map((c) => {
+    const s = statBy.get(c.id);
+    return {
+      id: c.id,
+      handle: c.handle,
+      title: c.title,
+      description: c.description ?? "",
+      seoTitle: c.seoTitle ?? "",
+      seoDescription: c.seoDescription ?? "",
+      products: Number(s?.products ?? 0),
+      active: Number(s?.active ?? 0),
+      cover: s?.cover ?? null,
+      sales30d: Number(s?.sales ?? 0),
+    };
+  });
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-      <AdminNav currentPage="collections" userEmail={session.user?.email} />
-
-      <div className="py-6 sm:py-10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-3xl">
-                Collections
-              </h1>
-              <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-                Manage product collections and categories ({total} total)
-              </p>
-            </div>
-          </div>
-
-          {/* Collections Management Component */}
-          <CollectionsManagement
-            collections={collectionRows.map((collection) => ({
-              ...collection,
-              _count: {
-                productCollections: countsByCollection.get(collection.id) || 0,
-              },
-            }))}
-            currentPage={page}
-            totalPages={totalPages}
-            total={total}
-            perPage={perPage}
-            searchParams={params}
-          />
-        </div>
-      </div>
-    </div>
+    <Page>
+      <PageHeader
+        eyebrow="Catalog"
+        title="Collections"
+        description="Groups of products customers can browse, like “Slides” or “New in”. Add products to a collection from the product's page."
+      />
+      <CollectionsGrid collections={data} />
+    </Page>
   );
 }

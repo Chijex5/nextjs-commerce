@@ -1,4 +1,6 @@
 import { authOptions } from "@/lib/auth";
+import { parseBlocks } from "lib/email/blocks";
+import { normaliseAudience } from "lib/marketing/segments";
 import { db } from "@/lib/db";
 import { adminUsers, campaignProducts, emailCampaigns } from "@/lib/db/schema";
 import { desc, eq } from "drizzle-orm";
@@ -103,6 +105,9 @@ export async function POST(req: NextRequest) {
       saleDeadline,
       discountNote,
       productIds,
+      content,
+      audience,
+      frequencyCapHours,
     } = body;
 
     if (!name || !type || !subject) {
@@ -134,6 +139,14 @@ export async function POST(req: NextRequest) {
         couponCode: couponCode ? String(couponCode).toUpperCase() : null,
         saleDeadline: saleDeadline ? new Date(saleDeadline) : null,
         discountNote,
+        content:
+          content === undefined || content === null
+            ? null
+            : parseBlocks(content),
+        audience: normaliseAudience(audience),
+        frequencyCapHours: Number.isFinite(Number(frequencyCapHours))
+          ? Math.max(0, Math.round(Number(frequencyCapHours)))
+          : 48,
         status: "DRAFT",
         createdBy: admin.id,
       })

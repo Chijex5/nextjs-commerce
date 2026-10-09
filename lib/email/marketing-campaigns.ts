@@ -8,17 +8,8 @@ import {
   productVariants,
   products,
 } from "@/lib/db/schema";
-import {
-  renderMarketingCampaignEmail,
-  renderMarketingSubject,
-} from "@/lib/email/marketing-renderer";
-import { sendEmail } from "@/lib/email/resend";
-import {
-  renderVariables,
-  type MarketingSubscriber,
-} from "@/lib/email/templates/marketing-campaign-base";
 import crypto from "crypto";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { asc, eq, inArray } from "drizzle-orm";
 
 export type CampaignType = "JUST_ARRIVED" | "SALE" | "COLLECTION";
 
@@ -29,7 +20,7 @@ function toCampaignType(type: string): CampaignType {
     ? (type as CampaignType)
     : "COLLECTION";
 }
-export type CampaignStatus = "DRAFT" | "SCHEDULED" | "SENT";
+export type CampaignStatus = "DRAFT" | "SCHEDULED" | "SENDING" | "SENT";
 export type EmailLogStatus =
   | "SENT"
   | "OPENED"
@@ -169,96 +160,9 @@ export async function getActiveSubscribers() {
 }
 
 /**
- * Send campaign to all active subscribers
- */
-export async function sendMarketingCampaign(campaignId: string) {
-  const campaign = await getCampaignWithProducts(campaignId);
-  const subscribers = await getActiveSubscribers();
-
-  if (subscribers.length === 0) {
-    console.warn(`No active subscribers for campaign: ${campaignId}`);
-    return { sent: 0, failed: 0 };
-  }
-
-  let sent = 0;
-  let failed = 0;
-
-  for (const subscriber of subscribers) {
-    try {
-      const unsubscribeUrl = getUnsubscribeUrl(subscriber.email);
-      const emailHtml = renderMarketingCampaignEmail(
-        campaign,
-        subscriber,
-        unsubscribeUrl,
-      );
-
-      // Render all template variables
-      const renderedSubject = renderMarketingSubject(campaign, subscriber);
-      const renderedPreheader = renderVariables(campaign?.preheader || "", {
-        campaign,
-        subscriber: subscriber as MarketingSubscriber,
-        siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-      });
-
-      // Send email via Resend
-      const result = await sendEmail({
-        to: subscriber.email,
-        subject: renderedSubject,
-        html: emailHtml,
-        preheader: renderedPreheader,
-        headers: {
-          "List-Unsubscribe": `<${unsubscribeUrl}>`,
-          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-        },
-      });
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      // Log the send
-      await db.insert(campaignEmailLogs).values({
-        campaignId,
-        subscriberEmail: subscriber.email,
-        status: "SENT",
-        resendMessageId: result.data?.data?.id,
-      });
-
-      sent++;
-    } catch (error) {
-      console.error(
-        `Failed to send campaign ${campaignId} to ${subscriber.email}:`,
-        error,
-      );
-
-      // Log the failure
-      await db.insert(campaignEmailLogs).values({
-        campaignId,
-        subscriberEmail: subscriber.email,
-        status: "FAILED",
-        bounceReason: error instanceof Error ? error.message : "Unknown error",
-      });
-
-      failed++;
-    }
-  }
-
-  // Update campaign status to SENT
-  await db
-    .update(emailCampaigns)
-    .set({
-      status: "SENT",
-      sentAt: new Date(),
-    })
-    .where(eq(emailCampaigns.id, campaignId));
-
-  return { sent, failed };
-}
-
-/**
  * Generate unsubscribe URL with HMAC token
  */
-function getUnsubscribeUrl(email: string): string {
+export function getUnsubscribeUrl(email: string): string {
   const secret = process.env.UNSUBSCRIBE_SECRET;
   if (!secret) {
     throw new Error("UNSUBSCRIBE_SECRET is not set");
@@ -269,44 +173,6 @@ function getUnsubscribeUrl(email: string): string {
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   return `${baseUrl}/api/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`;
-}
-
-/**
- * Update email log status when webhook event is received (OPEN, CLICK, BOUNCE)
- */
-export async function updateEmailLogStatus(
-  resendMessageId: string,
-  status: EmailLogStatus,
-  extraData?: { clickCount?: number; bounceReason?: string },
-) {
-  const log = await db.query.campaignEmailLogs.findFirst({
-    where: eq(campaignEmailLogs.resendMessageId, resendMessageId),
-  });
-
-  if (!log) {
-    console.warn(`Email log not found for Resend message: ${resendMessageId}`);
-    return;
-  }
-
-  const updates: any = { status, updatedAt: new Date() };
-
-  if (status === "OPENED" && !log.openedAt) {
-    updates.openedAt = new Date();
-  }
-
-  if (status === "CLICKED") {
-    updates.clickedAt = new Date();
-    updates.clickCount = (log.clickCount || 0) + 1;
-  }
-
-  if (status === "BOUNCED") {
-    updates.bounceReason = extraData?.bounceReason || "Unknown";
-  }
-
-  await db
-    .update(campaignEmailLogs)
-    .set(updates)
-    .where(eq(campaignEmailLogs.resendMessageId, resendMessageId));
 }
 
 /**
@@ -337,29 +203,4 @@ export async function getCampaignAnalytics(campaignId: string) {
     bounceRate: sent > 0 ? ((bounced / sent) * 100).toFixed(2) : "0.00",
     failureRate: total > 0 ? ((failed / total) * 100).toFixed(2) : "0.00",
   };
-}
-
-/**
- * Auto-unsubscribe bounced emails
- */
-export async function unsubscribeBounced(campaignId: string) {
-  const bouncedLogs = await db
-    .select()
-    .from(campaignEmailLogs)
-    .where(
-      and(
-        eq(campaignEmailLogs.campaignId, campaignId),
-        eq(campaignEmailLogs.status, "BOUNCED"),
-      ),
-    );
-
-  for (const log of bouncedLogs) {
-    await db
-      .update(newsletterSubscribers)
-      .set({
-        status: "unsubscribed",
-        unsubscribedAt: new Date(),
-      })
-      .where(eq(newsletterSubscribers.email, log.subscriberEmail));
-  }
 }

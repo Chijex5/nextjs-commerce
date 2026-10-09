@@ -70,3 +70,52 @@ export const sendEmail = async ({
     };
   }
 };
+
+export type BatchEmail = {
+  to: string;
+  subject: string;
+  html: string;
+  preheader?: string;
+  headers?: Record<string, string>;
+};
+
+/**
+ * Send up to 100 emails in one Resend API call (Resend's batch limit). The
+ * batch is all-or-nothing; on success, ids come back in the same order.
+ */
+export const sendEmailBatch = async (
+  emails: BatchEmail[],
+  {
+    from = process.env.SMTP_FROM_EMAIL || "D'FOOTPRINT <noreply@dfootprint.me>",
+    replyTo = process.env.SUPPORT_EMAIL || "support@dfootprint.me",
+  }: { from?: string; replyTo?: string } = {},
+): Promise<
+  { success: true; ids: string[] } | { success: false; error: string }
+> => {
+  if (!resend) return { success: false, error: "Email service not configured" };
+  if (emails.length > 100)
+    return { success: false, error: "Batches are limited to 100 emails" };
+  try {
+    const { data, error } = await resend.batch.send(
+      emails.map((e) => ({
+        from,
+        replyTo,
+        to: e.to,
+        subject: e.subject,
+        headers: e.headers,
+        html: e.preheader
+          ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;mso-hide:all;">${e.preheader}</div>${e.html}`
+          : e.html,
+      })),
+    );
+    if (error || !data)
+      return { success: false, error: error?.message ?? "Batch send failed" };
+    return { success: true, ids: data.data.map((d) => d.id) };
+  } catch (err) {
+    console.error("Batch email error:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Batch send failed",
+    };
+  }
+};

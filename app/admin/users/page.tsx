@@ -1,273 +1,207 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "lib/auth";
-import { redirect } from "next/navigation";
-import AdminNav from "components/admin/AdminNav";
-import UsersTable from "components/admin/UsersTable";
-import { db } from "lib/db";
-import { orders, users } from "lib/db/schema";
 import {
-  and,
-  desc,
-  eq,
-  gte,
-  ilike,
-  inArray,
-  isNotNull,
-  or,
-  sql,
-} from "drizzle-orm";
+  EmptyState,
+  FilterBar,
+  Metric,
+  MetricGrid,
+  Page,
+  PageHeader,
+  Pagination,
+  Select,
+  ViewTabs,
+} from "components/admin/ui";
+import { CUSTOMER_SORTS, SEGMENTS, listCustomers } from "lib/admin/customers";
+import { count, money, percent, shortDate, timeAgo } from "lib/admin/format";
+import { authOptions } from "lib/auth";
+import { getServerSession } from "next-auth";
+import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default async function AdminUsersPage({
+export const dynamic = "force-dynamic";
+
+const PAGE_SIZE = 30;
+
+export default async function CustomersPage({
   searchParams,
 }: {
   searchParams: Promise<{
-    search?: string;
+    segment?: string;
+    q?: string;
+    sort?: string;
     page?: string;
-    perPage?: string;
-    status?: string;
+    search?: string;
   }>;
 }) {
   const session = await getServerSession(authOptions);
-
-  if (!session) {
-    redirect("/admin/login");
-  }
+  if (!session) redirect("/admin/login");
 
   const params = await searchParams;
-  const search = params.search || "";
-  const page = parseInt(params.page || "1");
-  const perPage = parseInt(params.perPage || "20");
-  const statusFilter = params.status || "all";
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const segment = SEGMENTS.find((s) => s.key === params.segment) ?? SEGMENTS[0];
+  const q = (params.q ?? params.search ?? "").trim();
+  const sort = (
+    params.sort && params.sort in CUSTOMER_SORTS ? params.sort : "recent"
+  ) as keyof typeof CUSTOMER_SORTS;
+  const page = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
 
-  const filters = [];
+  const { rows, counts, summary } = await listCustomers({
+    segment,
+    q,
+    sort,
+    limit: PAGE_SIZE,
+    offset: (page - 1) * PAGE_SIZE,
+  });
 
-  if (statusFilter === "active") {
-    filters.push(eq(users.isActive, true));
-  } else if (statusFilter === "inactive") {
-    filters.push(eq(users.isActive, false));
-  }
-
-  if (search) {
-    const searchValue = `%${search}%`;
-    filters.push(
-      or(
-        ilike(users.email, searchValue),
-        ilike(users.name, searchValue),
-        ilike(users.phone, searchValue),
-      ),
-    );
-  }
-
-  const whereClause = filters.length ? and(...filters) : undefined;
-
-  const [userRows, totalResult, stats] = await Promise.all([
-    db
-      .select({
-        id: users.id,
-        email: users.email,
-        name: users.name,
-        phone: users.phone,
-        isActive: users.isActive,
-        createdAt: users.createdAt,
-        lastLoginAt: users.lastLoginAt,
-      })
-      .from(users)
-      .where(whereClause)
-      .orderBy(desc(users.createdAt))
-      .limit(perPage)
-      .offset((page - 1) * perPage),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(users)
-      .where(whereClause),
-    Promise.all([
-      db.select({ count: sql<number>`count(*)` }).from(users),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(users)
-        .where(eq(users.isActive, true)),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(users)
-        .where(eq(users.isActive, false)),
-      db.select({ count: sql<number>`count(distinct ${orders.userId})` }).from(orders),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(users)
-        .where(gte(users.lastLoginAt, thirtyDaysAgo)),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(users)
-        .where(or(isNotNull(users.shippingAddress), isNotNull(users.billingAddress))),
-    ]),
-  ]);
-
-  const userIds = userRows.map((user) => user.id);
-  const orderMetrics = userIds.length
-    ? await db
-        .select({
-          userId: orders.userId,
-          orderCount: sql<number>`count(*)`,
-          totalSpent: sql<string>`coalesce(sum(${orders.totalAmount}), '0')`,
-          lastOrderAt: sql<Date | null>`max(${orders.createdAt})`,
-        })
-        .from(orders)
-        .where(inArray(orders.userId, userIds))
-        .groupBy(orders.userId)
-    : [];
-
-  const metricsByUser = new Map(
-    orderMetrics.map((row) => [
-      row.userId,
-      {
-        orders: Number(row.orderCount),
-        totalSpent: Number(row.totalSpent ?? 0),
-        lastOrderAt: row.lastOrderAt,
-      },
-    ]),
-  );
-
-  const [
-    totalUsersResult,
-    activeUsersResult,
-    inactiveUsersResult,
-    usersWithOrdersResult,
-    recentLoginUsersResult,
-    usersWithAddressesResult,
-  ] = stats;
-  const totalUsers = Number(totalUsersResult[0]?.count ?? 0);
-  const activeUsers = Number(activeUsersResult[0]?.count ?? 0);
-  const inactiveUsers = Number(inactiveUsersResult[0]?.count ?? 0);
-  const usersWithOrders = Number(usersWithOrdersResult[0]?.count ?? 0);
-  const recentLoginUsers = Number(recentLoginUsersResult[0]?.count ?? 0);
-  const usersWithAddresses = Number(usersWithAddressesResult[0]?.count ?? 0);
-
-  const total = Number(totalResult[0]?.count ?? 0);
-  const totalPages = Math.ceil(total / perPage);
+  const href = (
+    o: Partial<Record<"segment" | "q" | "sort" | "page", string>>,
+  ) => {
+    const m = { segment: segment.key, q, sort, ...o };
+    const s = new URLSearchParams();
+    if (m.segment !== "all") s.set("segment", m.segment);
+    if (m.q) s.set("q", m.q);
+    if (m.sort !== "recent") s.set("sort", m.sort);
+    if (o.page && o.page !== "1") s.set("page", o.page);
+    const str = s.toString();
+    return str ? `/admin/users?${str}` : "/admin/users";
+  };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-      <AdminNav currentPage="users" userEmail={session.user?.email} />
+    <Page>
+      <PageHeader
+        eyebrow="Customers"
+        title="Customers"
+        description="Everyone who has bought from you, guest checkout included, plus people who made an account. Matched by email."
+      />
 
-      <div className="py-6 sm:py-10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-3xl">
-              Users
-            </h1>
-            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-              Manage customer accounts and view user activity ({total} total)
-            </p>
-          </div>
+      <MetricGrid className="mb-8 grid-cols-2 lg:grid-cols-4">
+        <Metric label="Customers who bought" value={count(summary.buyers)} />
+        <Metric
+          label="Repeat rate"
+          value={percent(summary.repeatRate)}
+          hint="Bought more than once"
+        />
+        <Metric label="Avg. lifetime spend" value={money(summary.avgSpend)} />
+        <Metric
+          label="Orders per customer"
+          value={summary.avgOrders.toFixed(1)}
+        />
+      </MetricGrid>
 
-          {/* Stats Overview */}
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
-            <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-              <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                Total Users
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-                {totalUsers}
-              </div>
-            </div>
-            <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-              <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                Active Users
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-green-600 dark:text-green-400">
-                {activeUsers}
-              </div>
-            </div>
-            <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-              <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                Inactive Users
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-neutral-600 dark:text-neutral-400">
-                {inactiveUsers}
-              </div>
-            </div>
-            <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-              <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                Users With Orders
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-blue-600 dark:text-blue-400">
-                {usersWithOrders}
-              </div>
-            </div>
-            <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-              <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                Logged In (30d)
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-indigo-600 dark:text-indigo-400">
-                {recentLoginUsers}
-              </div>
-            </div>
-            <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-              <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                Saved Address Users
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-amber-600 dark:text-amber-400">
-                {usersWithAddresses}
-              </div>
-            </div>
-          </div>
+      <ViewTabs
+        label="Customer segments"
+        active={segment.key}
+        hrefFor={(key) => href({ segment: key, page: "1" })}
+        views={SEGMENTS.map((s) => ({
+          key: s.key,
+          label: s.label,
+          count: counts[s.key],
+        }))}
+      />
 
-          {/* Filters and Search */}
-          <div className="mb-6">
-            <form
-              action="/admin/users"
-              method="get"
-              className="flex flex-col gap-4 sm:flex-row"
-            >
-              <div className="flex-1">
-                <input
-                  type="search"
-                  name="search"
-                  placeholder="Search by name, email, or phone..."
-                  defaultValue={search}
-                  className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                />
-              </div>
-              <select
-                name="status"
-                defaultValue={statusFilter}
-                className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-              <button
-                type="submit"
-                className="rounded-md bg-neutral-900 px-6 py-2 text-sm font-medium text-white hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
-              >
-                Filter
-              </button>
-            </form>
-          </div>
+      <FilterBar
+        action="/admin/users"
+        search={q}
+        placeholder="Search name, email or phone"
+        hidden={{ segment: segment.key === "all" ? undefined : segment.key }}
+      >
+        <Select
+          name="sort"
+          label="Sort"
+          defaultValue={sort}
+          options={[
+            { value: "recent", label: "Last order" },
+            { value: "spent", label: "Most spent" },
+            { value: "orders", label: "Most orders" },
+            { value: "newest", label: "Newest customers" },
+            { value: "name", label: "Name A–Z" },
+          ]}
+        />
+      </FilterBar>
 
-          {/* Users Table */}
-          <UsersTable
-            users={userRows.map((user) => ({
-              ...user,
-              _count: {
-                orders: metricsByUser.get(user.id)?.orders || 0,
-              },
-              _metrics: {
-                totalSpent: metricsByUser.get(user.id)?.totalSpent || 0,
-                lastOrderAt: metricsByUser.get(user.id)?.lastOrderAt || null,
-              },
-            }))}
-            currentPage={page}
-            totalPages={totalPages}
-            total={total}
-            perPage={perPage}
-            searchParams={params}
-          />
+      {rows.length === 0 ? (
+        <div className="border border-line px-5">
+          <EmptyState title="No customers here">
+            Try another segment or search.
+          </EmptyState>
         </div>
-      </div>
-    </div>
+      ) : (
+        <div className="border border-line">
+          <table className="w-full text-sm">
+            <thead className="hidden md:table-header-group">
+              <tr className="border-b border-line text-left text-fg-3">
+                <th className="px-4 py-2.5 font-normal">Customer</th>
+                <th className="hidden px-3 py-2.5 font-normal lg:table-cell">
+                  Location
+                </th>
+                <th className="px-3 py-2.5 text-right font-normal">Orders</th>
+                <th className="px-3 py-2.5 text-right font-normal">Spent</th>
+                <th className="px-4 py-2.5 text-right font-normal">
+                  Last order
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {rows.map((c) => (
+                <tr
+                  key={c.key}
+                  className="group relative transition-colors hover:bg-plate/60"
+                >
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="grid size-9 shrink-0 place-items-center bg-plate font-mono text-[11px] uppercase text-fg-2">
+                        {(c.name || c.email).slice(0, 2)}
+                      </span>
+                      <div className="min-w-0">
+                        <Link
+                          href={`/admin/users/${c.key}`}
+                          className="block truncate font-medium text-fg after:absolute after:inset-0"
+                        >
+                          {c.name || c.email.split("@")[0]}
+                        </Link>
+                        <p className="truncate text-xs text-fg-3">
+                          {c.email}
+                          {c.userId ? " · Account" : ""}
+                          {c.subscribed ? " · Subscribed" : ""}
+                        </p>
+                        <p className="text-xs text-fg-3 md:hidden">
+                          {c.orders
+                            ? `${c.orders} orders · ${money(c.spent)}`
+                            : "No orders yet"}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="hidden px-3 py-3 text-fg-2 lg:table-cell">
+                    {c.state ?? "—"}
+                  </td>
+                  <td className="hidden px-3 py-3 text-right tabular-nums md:table-cell">
+                    {c.orders || "—"}
+                  </td>
+                  <td className="hidden px-3 py-3 text-right font-medium tabular-nums md:table-cell">
+                    {c.spent ? money(c.spent) : "—"}
+                  </td>
+                  <td className="hidden px-4 py-3 text-right text-xs text-fg-3 md:table-cell">
+                    {c.lastOrder ? (
+                      <span title={shortDate(c.lastOrder)}>
+                        {timeAgo(c.lastOrder)}
+                      </span>
+                    ) : c.signedUp ? (
+                      `Joined ${shortDate(c.signedUp)}`
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <Pagination
+        page={page}
+        pageSize={PAGE_SIZE}
+        total={counts[segment.key] ?? 0}
+        hrefFor={(p) => href({ page: String(p) })}
+      />
+    </Page>
   );
 }

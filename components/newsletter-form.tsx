@@ -17,7 +17,7 @@ export default function NewsletterForm() {
       const response = await fetch("/api/newsletter/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name }),
+        body: JSON.stringify({ email, name, source: "newsletter" }),
       });
 
       const data = await response.json();

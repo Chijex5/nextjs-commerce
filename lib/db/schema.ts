@@ -1,16 +1,16 @@
 import { relations } from "drizzle-orm";
 import {
-    boolean,
-    decimal,
-    index,
-    integer,
-    jsonb,
-    pgTable,
-    text,
-    timestamp,
-    uniqueIndex,
-    uuid,
-    varchar,
+  boolean,
+  decimal,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+  varchar,
 } from "drizzle-orm/pg-core";
 
 // Products table - stores the main product information
@@ -334,9 +334,13 @@ export const customOrderQuotes = pgTable(
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => ({
-    requestIdIdx: index("custom_order_quotes_request_id_idx").on(table.requestId),
+    requestIdIdx: index("custom_order_quotes_request_id_idx").on(
+      table.requestId,
+    ),
     statusIdx: index("custom_order_quotes_status_idx").on(table.status),
-    expiresAtIdx: index("custom_order_quotes_expires_at_idx").on(table.expiresAt),
+    expiresAtIdx: index("custom_order_quotes_expires_at_idx").on(
+      table.expiresAt,
+    ),
     reminderCountIdx: index("custom_order_quotes_reminder_count_idx").on(
       table.reminderCount,
     ),
@@ -361,7 +365,9 @@ export const customOrderQuoteTokens = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => ({
-    quoteIdIdx: index("custom_order_quote_tokens_quote_id_idx").on(table.quoteId),
+    quoteIdIdx: index("custom_order_quote_tokens_quote_id_idx").on(
+      table.quoteId,
+    ),
     emailIdx: index("custom_order_quote_tokens_email_idx").on(table.email),
     expiresAtIdx: index("custom_order_quote_tokens_expires_at_idx").on(
       table.expiresAt,
@@ -453,8 +459,10 @@ export const orders = pgTable(
       .default("production")
       .notNull(),
     estimatedArrival: timestamp("estimated_arrival"),
-    subtotalAmount: decimal("subtotal_amount", { precision: 10, scale: 2 })
-      .notNull(),
+    subtotalAmount: decimal("subtotal_amount", {
+      precision: 10,
+      scale: 2,
+    }).notNull(),
     taxAmount: decimal("tax_amount", { precision: 10, scale: 2 })
       .default("0.00")
       .notNull(),
@@ -465,8 +473,7 @@ export const orders = pgTable(
       .default("0.00")
       .notNull(),
     couponCode: varchar("coupon_code", { length: 50 }),
-    totalAmount: decimal("total_amount", { precision: 10, scale: 2 })
-      .notNull(),
+    totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
     currencyCode: varchar("currency_code", { length: 3 })
       .default("NGN")
       .notNull(),
@@ -598,9 +605,9 @@ export const paymentEvents = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => ({
-    paymentTransactionIdIdx: index("payment_events_payment_transaction_id_idx").on(
-      table.paymentTransactionId,
-    ),
+    paymentTransactionIdIdx: index(
+      "payment_events_payment_transaction_id_idx",
+    ).on(table.paymentTransactionId),
     referenceIdx: index("payment_events_reference_idx").on(table.reference),
     createdAtIdx: index("payment_events_created_at_idx").on(table.createdAt),
   }),
@@ -614,6 +621,8 @@ export const newsletterSubscribers = pgTable(
     email: varchar("email", { length: 255 }).notNull().unique(),
     name: varchar("name", { length: 255 }),
     status: varchar("status", { length: 50 }).default("active").notNull(),
+    // Where consent came from: newsletter, popup, checkout, account, import.
+    source: varchar("source", { length: 50 }).default("newsletter").notNull(),
     subscribedAt: timestamp("subscribed_at").defaultNow().notNull(),
     unsubscribedAt: timestamp("unsubscribed_at"),
   },
@@ -784,8 +793,10 @@ export const coupons = pgTable(
     code: varchar("code", { length: 50 }).notNull().unique(),
     description: text("description"),
     discountType: varchar("discount_type", { length: 20 }).notNull(),
-    discountValue: decimal("discount_value", { precision: 10, scale: 2 })
-      .notNull(),
+    discountValue: decimal("discount_value", {
+      precision: 10,
+      scale: 2,
+    }).notNull(),
     minOrderValue: decimal("min_order_value", { precision: 10, scale: 2 }),
     maxUses: integer("max_uses"),
     usedCount: integer("used_count").default(0).notNull(),
@@ -794,7 +805,9 @@ export const coupons = pgTable(
     isActive: boolean("is_active").default(true).notNull(),
     startDate: timestamp("start_date"),
     expiryDate: timestamp("expiry_date"),
-    grantsFreeShipping: boolean("grants_free_shipping").default(false).notNull(),
+    grantsFreeShipping: boolean("grants_free_shipping")
+      .default(false)
+      .notNull(),
     includeShippingInDiscount: boolean("include_shipping_in_discount")
       .default(false)
       .notNull(),
@@ -881,9 +894,16 @@ export const emailCampaigns = pgTable(
     couponCode: varchar("coupon_code", { length: 50 }),
     saleDeadline: timestamp("sale_deadline"),
     discountNote: text("discount_note"),
-    status: varchar("status", { length: 50 }).default("draft").notNull(), // DRAFT, SCHEDULED, SENT
+    // Block-based design (lib/email/blocks.ts). Null = legacy field-based template.
+    content: jsonb("content"),
+    status: varchar("status", { length: 50 }).default("draft").notNull(), // DRAFT, SCHEDULED, SENDING, SENT
+    // Who receives it: { segment, collectionId?, state? }. See lib/marketing/segments.ts.
+    audience: jsonb("audience").default({ segment: "all" }).notNull(),
+    // Skip anyone who received another campaign within this many hours (0 = off).
+    frequencyCapHours: integer("frequency_cap_hours").default(48).notNull(),
     scheduledAt: timestamp("scheduled_at"),
     sentAt: timestamp("sent_at"),
+    completedAt: timestamp("completed_at"),
     createdBy: uuid("created_by")
       .references(() => adminUsers.id, { onDelete: "set null" })
       .notNull(),
@@ -955,6 +975,48 @@ export const campaignEmailLogs = pgTable(
     statusIdx: index("campaign_email_logs_status_idx").on(table.status),
     resendMessageIdIdx: index("campaign_email_logs_resend_message_id_idx").on(
       table.resendMessageId,
+    ),
+    // One email per person per campaign, even if a send is retried.
+    campaignRecipientUnique: uniqueIndex(
+      "campaign_email_logs_campaign_recipient_unique",
+    ).on(table.campaignId, table.subscriberEmail),
+  }),
+);
+
+// Automated emails (flows): one row per flow with its on/off switch and settings.
+export const marketingFlows = pgTable("marketing_flows", {
+  key: varchar("key", { length: 50 }).primaryKey(), // welcome, abandoned_cart, review_request, win_back
+  enabled: boolean("enabled").default(false).notNull(),
+  settings: jsonb("settings").default({}).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Each automated email sent, for de-duplication, engagement and attribution.
+export const flowEmailLogs = pgTable(
+  "flow_email_logs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    flowKey: varchar("flow_key", { length: 50 }).notNull(),
+    email: varchar("email", { length: 255 }).notNull(),
+    // What triggered it (order id, cart id…), so the same trigger never emails twice.
+    reference: varchar("reference", { length: 255 }).notNull(),
+    status: varchar("status", { length: 50 }).default("SENT").notNull(),
+    resendMessageId: varchar("resend_message_id", { length: 255 }),
+    sentAt: timestamp("sent_at").defaultNow().notNull(),
+    openedAt: timestamp("opened_at"),
+    clickedAt: timestamp("clicked_at"),
+    clickCount: integer("click_count").default(0).notNull(),
+  },
+  (table) => ({
+    flowKeyIdx: index("flow_email_logs_flow_key_idx").on(table.flowKey),
+    emailIdx: index("flow_email_logs_email_idx").on(table.email),
+    resendMessageIdIdx: index("flow_email_logs_resend_message_id_idx").on(
+      table.resendMessageId,
+    ),
+    triggerUnique: uniqueIndex("flow_email_logs_trigger_unique").on(
+      table.flowKey,
+      table.email,
+      table.reference,
     ),
   }),
 );

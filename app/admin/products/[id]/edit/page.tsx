@@ -1,9 +1,9 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { redirect, notFound } from "next/navigation";
-import AdminNav from "@/components/admin/AdminNav";
-import ProductForm from "@/components/admin/ProductForm";
-import { db } from "@/lib/db";
+import { ProductEditor } from "components/admin/products/product-editor";
+import { Page } from "components/admin/ui";
+import { asc, eq, sql } from "drizzle-orm";
+import { deriveModel } from "lib/admin/product-pricing";
+import { authOptions } from "lib/auth";
+import { db } from "lib/db";
 import {
   collections,
   productCollections,
@@ -11,8 +11,12 @@ import {
   productOptions,
   productVariants,
   products,
-} from "@/lib/db/schema";
-import { asc, eq } from "drizzle-orm";
+} from "lib/db/schema";
+import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "lib/image-constants";
+import { getServerSession } from "next-auth";
+import { notFound, redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 
 export default async function EditProductPage({
   params,
@@ -20,24 +24,17 @@ export default async function EditProductPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await getServerSession(authOptions);
-
-  if (!session) {
-    redirect("/admin/login");
-  }
+  if (!session) redirect("/admin/login");
 
   const { id } = await params;
-
   const [product] = await db
     .select()
     .from(products)
     .where(eq(products.id, id))
     .limit(1);
+  if (!product) notFound();
 
-  if (!product) {
-    notFound();
-  }
-
-  const [images, variants, options, collectionLinks, collectionRows] =
+  const [images, variants, options, links, collectionRows, [stats]] =
     await Promise.all([
       db
         .select()
@@ -49,61 +46,76 @@ export default async function EditProductPage({
         .from(productVariants)
         .where(eq(productVariants.productId, id))
         .orderBy(asc(productVariants.createdAt)),
+      db.select().from(productOptions).where(eq(productOptions.productId, id)),
       db
-        .select()
-        .from(productOptions)
-        .where(eq(productOptions.productId, id)),
-      db
-        .select({
-          id: productCollections.id,
-          productId: productCollections.productId,
-          collectionId: productCollections.collectionId,
-          position: productCollections.position,
-          createdAt: productCollections.createdAt,
-          collection: collections,
-        })
+        .select({ collectionId: productCollections.collectionId })
         .from(productCollections)
-        .innerJoin(
-          collections,
-          eq(productCollections.collectionId, collections.id),
-        )
         .where(eq(productCollections.productId, id)),
-      db.select().from(collections).orderBy(asc(collections.title)),
+      db
+        .select({ id: collections.id, title: collections.title })
+        .from(collections)
+        .orderBy(asc(collections.title)),
+      db.execute(sql`
+      select
+        coalesce(sum(oi.quantity) filter (where o.created_at >= (now() at time zone 'UTC') - interval '30 days'), 0) as units,
+        coalesce(sum(oi.total_amount) filter (where o.created_at >= (now() at time zone 'UTC') - interval '30 days'), 0) as revenue,
+        count(distinct o.id) as orders,
+        max(o.created_at)::text as last_sold
+      from order_items oi join orders o on o.id = oi.order_id
+      where oi.product_id = ${id}::uuid and o.status <> 'cancelled'
+    `) as unknown as Promise<Array<Record<string, unknown>>>,
     ]);
 
-  const productWithRelations = {
-    ...product,
-    images,
-    variants,
-    options,
-    productCollections: collectionLinks.map((link) => ({
-      id: link.id,
-      productId: link.productId,
-      collectionId: link.collectionId,
-      position: link.position,
-      createdAt: link.createdAt,
-      collection: link.collection,
+  // Featured image first: the shop treats the first image as the main one.
+  const ordered = [...images].sort(
+    (a, b) =>
+      Number(b.isFeatured) - Number(a.isFeatured) || a.position - b.position,
+  );
+  const { model, exact } = deriveModel(
+    options.map((o) => ({ name: o.name, values: o.values })),
+    variants.map((v) => ({
+      price: Number(v.price),
+      selectedOptions:
+        (v.selectedOptions as Array<{ name: string; value: string }>) ?? [],
     })),
-  };
+  );
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-      <AdminNav currentPage="products" userEmail={session.user?.email} />
-
-      <div className="py-6 sm:py-10">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-3xl">
-              Edit Product
-            </h1>
-            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-              Update product details below.
-            </p>
-          </div>
-
-          <ProductForm collections={collectionRows} product={productWithRelations} />
-        </div>
-      </div>
-    </div>
+    <Page className="pt-0 lg:pt-0">
+      <ProductEditor
+        key={product.updatedAt.toISOString()}
+        collections={collectionRows}
+        stats={{
+          units30d: Number(stats?.units ?? 0),
+          revenue30d: Number(stats?.revenue ?? 0),
+          orders: Number(stats?.orders ?? 0),
+          lastSoldAt: stats?.last_sold
+            ? new Date(
+                String(stats.last_sold).replace(" ", "T") + "Z",
+              ).toISOString()
+            : null,
+        }}
+        initial={{
+          id: product.id,
+          title: product.title,
+          handle: product.handle,
+          descriptionHtml:
+            product.descriptionHtml ||
+            (product.description ? `<p>${product.description}</p>` : ""),
+          availableForSale: product.availableForSale,
+          seoTitle: product.seoTitle ?? "",
+          seoDescription: product.seoDescription ?? "",
+          tags: product.tags ?? [],
+          images: ordered.map((i) => ({
+            url: i.url,
+            width: i.width ?? PRODUCT_IMAGE_WIDTH,
+            height: i.height ?? PRODUCT_IMAGE_HEIGHT,
+          })),
+          collectionIds: links.map((l) => l.collectionId),
+          pricing: model,
+          pricingExact: exact,
+        }}
+      />
+    </Page>
   );
 }
