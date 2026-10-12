@@ -913,20 +913,36 @@ export async function getCartBySessionId(
   return reshapeDbCart(dbCart);
 }
 
+/** Most of one pair anyone sensibly puts in a bag. */
+const MAX_LINE_QUANTITY = 20;
+
+/**
+ * A variant that can go in the bag right now, with how many may: none when
+ * it or its product is off sale, the stock left when it tracks stock
+ * (made-to-order pairs don't), otherwise a sane cap.
+ */
+async function getPurchasableVariant(variantId: string) {
+  const [row] = await db
+    .select({ variant: productVariants, productOnSale: products.availableForSale })
+    .from(productVariants)
+    .innerJoin(products, eq(productVariants.productId, products.id))
+    .where(eq(productVariants.id, variantId))
+    .limit(1);
+  if (!row || !row.variant.availableForSale || !row.productOnSale) return null;
+  const { variant } = row;
+  const maxQuantity = variant.trackInventory
+    ? Math.min(variant.stockQuantity ?? 0, MAX_LINE_QUANTITY)
+    : MAX_LINE_QUANTITY;
+  return maxQuantity > 0 ? { ...variant, maxQuantity } : null;
+}
+
 export async function addToCart(
   cartId: string,
   lines: { merchandiseId: string; quantity: number }[],
 ): Promise<Cart> {
   for (const line of lines) {
-    const [variant] = await db
-      .select()
-      .from(productVariants)
-      .where(eq(productVariants.id, line.merchandiseId))
-      .limit(1);
-
-    if (!variant) continue;
-
-    const totalAmount = Number(variant.price) * line.quantity;
+    const variant = await getPurchasableVariant(line.merchandiseId);
+    if (!variant) continue; // gone or not for sale: leave it out of the bag
 
     const [existingLine] = await db
       .select()
@@ -939,21 +955,24 @@ export async function addToCart(
       )
       .limit(1);
 
+    const quantity = Math.min(
+      (existingLine?.quantity ?? 0) + line.quantity,
+      variant.maxQuantity,
+    );
+    if (quantity <= 0) continue;
+    const totalAmount = String(Number(variant.price) * quantity);
+
     if (existingLine) {
       await db
         .update(cartLines)
-        .set({
-          quantity: existingLine.quantity + line.quantity,
-          totalAmount: String(Number(existingLine.totalAmount) + totalAmount),
-          updatedAt: new Date(),
-        })
+        .set({ quantity, totalAmount, updatedAt: new Date() })
         .where(eq(cartLines.id, existingLine.id));
     } else {
       await db.insert(cartLines).values({
         cartId,
         productVariantId: line.merchandiseId,
-        quantity: line.quantity,
-        totalAmount: String(totalAmount),
+        quantity,
+        totalAmount,
         currencyCode: variant.currencyCode,
       });
     }
@@ -985,21 +1004,18 @@ export async function updateCart(
       continue;
     }
 
-    const [variant] = await db
-      .select()
-      .from(productVariants)
-      .where(eq(productVariants.id, line.merchandiseId))
-      .limit(1);
-
-    if (!variant) continue;
-
-    const totalAmount = Number(variant.price) * line.quantity;
+    const variant = await getPurchasableVariant(line.merchandiseId);
+    const quantity = variant ? Math.min(line.quantity, variant.maxQuantity) : 0;
+    if (!variant || quantity <= 0) {
+      await db.delete(cartLines).where(eq(cartLines.id, line.id));
+      continue;
+    }
 
     await db
       .update(cartLines)
       .set({
-        quantity: line.quantity,
-        totalAmount: String(totalAmount),
+        quantity,
+        totalAmount: String(Number(variant.price) * quantity),
         updatedAt: new Date(),
       })
       .where(eq(cartLines.id, line.id));

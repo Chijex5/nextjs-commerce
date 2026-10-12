@@ -101,7 +101,10 @@ export async function POST(request: NextRequest) {
   try {
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
     if (!paystackSecretKey) {
-      return NextResponse.json({ error: "Configuration error" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Configuration error" },
+        { status: 500 },
+      );
     }
 
     const signature = request.headers.get("x-paystack-signature");
@@ -126,7 +129,7 @@ export async function POST(request: NextRequest) {
     if (event.event === "charge.success") {
       const metadata = isRecord(event.data.metadata) ? event.data.metadata : {};
 
-      await reconcilePaystackPayment({
+      const result = await reconcilePaystackPayment({
         reference: toStringOrNull(event.data.reference) || "",
         amount: Number(event.data.amount),
         currencyCode: toStringOrNull(event.data.currency) || "NGN",
@@ -156,7 +159,16 @@ export async function POST(request: NextRequest) {
         eventType: "webhook",
       });
 
-      return NextResponse.json({ status: "success" });
+      // A conflict (wrong amount, unknown bag…) won't fix itself on retry and
+      // is waiting in Admin → Payments. A failure (database down, timeout)
+      // might: answer 500 so Paystack sends the event again.
+      if (result.status === "failed") {
+        return NextResponse.json(
+          { error: "Reconcile failed, please retry" },
+          { status: 500 },
+        );
+      }
+      return NextResponse.json({ status: result.status });
     }
 
     if (event.event === "charge.failed") {
@@ -167,7 +179,10 @@ export async function POST(request: NextRequest) {
     const reference = toStringOrNull(event.data.reference);
     if (reference) {
       const [existing] = await db
-        .select({ id: paymentTransactions.id, source: paymentTransactions.source })
+        .select({
+          id: paymentTransactions.id,
+          source: paymentTransactions.source,
+        })
         .from(paymentTransactions)
         .where(
           and(

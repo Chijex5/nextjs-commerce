@@ -252,7 +252,7 @@ export async function GET(request: NextRequest) {
           "abandoned_cart",
           cart.email,
           cart.id,
-          sendResult.data?.data?.id,
+          sendResult.data?.id,
         );
 
         await db

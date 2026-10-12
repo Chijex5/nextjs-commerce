@@ -7,6 +7,7 @@ import {
   index,
   integer,
   jsonb,
+  pgSequence,
   pgTable,
   text,
   timestamp,
@@ -691,6 +692,11 @@ export const users = pgTable(
 );
 
 // Orders for tracking purchases
+/** Order numbers: DFP-10001, DFP-10002, … (see nextOrderNumber). */
+export const orderNumberSeq = pgSequence("order_number_seq", {
+  startWith: 10001,
+});
+
 export const orders = pgTable(
   "orders",
   {

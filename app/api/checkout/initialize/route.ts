@@ -1,293 +1,184 @@
-import { subscribeEmail } from "lib/marketing/subscribe";
-import { createHash } from "crypto";
-import { validateCouponForCheckout } from "lib/coupon-validation";
+import { parseCheckoutDetails } from "lib/checkout/details";
+import { quoteCheckout } from "lib/checkout/quote";
+import { toSnapshot } from "lib/checkout/snapshot";
 import { getCart } from "lib/database";
 import { handleApiError } from "lib/errors";
+import { subscribeEmail } from "lib/marketing/subscribe";
 import {
   reconcilePaystackPayment,
   registerInitializedPaymentTransaction,
 } from "lib/payments/paystack-reconcile";
-import { calculateShippingAmount } from "lib/shipping";
+import { limitByIp } from "lib/rate-limit";
+import { baseUrl } from "lib/utils";
 import { getUserSession } from "lib/user-session";
+import { createHash } from "crypto";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-type LegacyCheckoutAddress = {
-  firstName?: string;
-  lastName?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  postalCode?: string;
-  postcode?: string;
-  phone1?: string;
-  phone2?: string;
-  country?: string;
-};
-
-type CheckoutAddress = {
-  firstName?: string;
-  lastName?: string;
-  streetAddress?: string;
-  nearestBusStop?: string;
-  landmark?: string;
-  ward?: string;
-  lga?: string;
-  state?: string;
-  phone1?: string;
-  phone2?: string;
-  country?: string;
-};
-
-interface CheckoutData {
-  email: string;
-  phone: string;
-  phone1?: string;
-  phone2?: string;
-  shippingAddress: CheckoutAddress | LegacyCheckoutAddress;
-  billingAddress?: CheckoutAddress | LegacyCheckoutAddress | null;
-  saveAddress: boolean;
-  couponCode?: string;
-  notes?: string;
-  /** Ticked "Email me new drops and offers" at checkout. */
-  acceptsMarketing?: boolean;
-}
-
-const normalizeCheckoutAddress = (
-  input: CheckoutAddress | LegacyCheckoutAddress | null | undefined,
-): CheckoutAddress => {
-  const safe = input || {};
-  if ("streetAddress" in safe || "lga" in safe || "ward" in safe) {
-    return {
-      firstName: safe.firstName,
-      lastName: safe.lastName,
-      streetAddress: (safe as CheckoutAddress).streetAddress,
-      nearestBusStop: (safe as CheckoutAddress).nearestBusStop,
-      landmark: (safe as CheckoutAddress).landmark,
-      ward: (safe as CheckoutAddress).ward,
-      lga: (safe as CheckoutAddress).lga,
-      state: safe.state,
-      phone1: (safe as CheckoutAddress).phone1,
-      phone2: (safe as CheckoutAddress).phone2,
-      country: safe.country,
-    };
-  }
-
-  const legacy = safe as LegacyCheckoutAddress;
-  return {
-    firstName: legacy.firstName,
-    lastName: legacy.lastName,
-    streetAddress: legacy.address,
-    lga: legacy.city,
-    state: legacy.state,
-    phone1: legacy.phone1,
-    phone2: legacy.phone2,
-    country: legacy.country,
-  };
-};
-
-const normalizePhone = (value?: string) => {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : undefined;
-};
-
+/**
+ * Starts payment for the bag. The total is priced here from the database
+ * (never from the browser) and stored with the transaction as a snapshot, so
+ * the order is created at exactly the price the customer saw and paid.
+ *
+ * Responses:
+ *  - 200 { accessCode, authorizationUrl, reference } → open Paystack
+ *  - 200 { freeCheckout, orderNumber }               → coupon covered it all
+ *  - 400 { error, fieldErrors }                       → fix the form
+ *  - 409 { error, quote }                             → price/stock changed;
+ *        show the new quote and let the customer press Pay again
+ */
 export async function POST(request: NextRequest) {
   try {
-    const body: CheckoutData = await request.json();
+    const limited = limitByIp(request, "checkout-initialize", 20, 60_000);
+    if (limited) return limited;
 
-    if (!body.shippingAddress) {
+    const body = await request.json().catch(() => null);
+    const parsed = parseCheckoutDetails(body);
+    if (!parsed.ok) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Check the highlighted fields", fieldErrors: parsed.errors },
+        { status: 400 },
+      );
+    }
+    const details = parsed.details;
+    const expectedAmountInKobo =
+      body && typeof body.expectedAmountInKobo === "number"
+        ? body.expectedAmountInKobo
+        : null;
+
+    const cart = await getCart();
+    if (!cart?.id || cart.lines.length === 0) {
+      return NextResponse.json(
+        { error: "Your bag is empty", code: "empty_cart" },
         { status: 400 },
       );
     }
 
-    const shippingAddress = normalizeCheckoutAddress(body.shippingAddress);
-    const billingAddress = body.billingAddress
-      ? normalizeCheckoutAddress(body.billingAddress)
-      : shippingAddress;
-    const primaryPhone =
-      normalizePhone(body.phone1) ??
-      normalizePhone(shippingAddress.phone1) ??
-      normalizePhone(body.phone);
-    const secondaryPhone =
-      normalizePhone(body.phone2) ?? normalizePhone(shippingAddress.phone2);
+    const session = await getUserSession();
+    const checkoutSessionId = session?.id ? null : cart.id;
 
-    // Validate required fields
-    if (!body.email?.trim() || !primaryPhone) {
+    const quote = await quoteCheckout({
+      cartId: cart.id,
+      address: details.address,
+      couponCode: details.couponCode,
+      userId: session?.id,
+      sessionId: checkoutSessionId,
+    });
+
+    if (quote.issues.length || quote.lines.length === 0) {
       return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
+        {
+          error: "Some items in your bag have changed",
+          code: "bag_changed",
+          quote,
+        },
+        { status: 409 },
+      );
+    }
+    if (details.couponCode && quote.couponError) {
+      return NextResponse.json(
+        { error: quote.couponError, code: "coupon_invalid", quote },
+        { status: 409 },
+      );
+    }
+    if (
+      expectedAmountInKobo !== null &&
+      expectedAmountInKobo !== quote.amountInKobo
+    ) {
+      return NextResponse.json(
+        { error: "Your total was updated", code: "price_changed", quote },
+        { status: 409 },
       );
     }
 
     // Record marketing consent as soon as it's given, whether or not payment
     // completes. Never block checkout on it.
-    if (body.acceptsMarketing === true) {
+    if (details.acceptsMarketing) {
       await subscribeEmail({
-        email: body.email,
-        name:
-          [shippingAddress.firstName, shippingAddress.lastName]
-            .filter(Boolean)
-            .join(" ") || null,
+        email: details.email,
+        name: `${details.address.firstName} ${details.address.lastName}`,
         source: "checkout",
       }).catch((err) =>
         console.error("Failed to record checkout marketing consent:", err),
       );
     }
 
-    // Get cart
-    const cart = await getCart();
-    if (!cart || cart.lines.length === 0) {
-      return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
-    }
+    const shippingAddress = {
+      ...details.address,
+      phone1: details.phone1,
+      phone2: details.phone2 ?? null,
+      country: "NG",
+    };
+    const snapshot = toSnapshot(cart.id, quote);
 
-    // Get user session if available
-    const session = await getUserSession();
-
-    // Calculate total amount (shipping calculated from address and item count)
-    const subtotal = parseFloat(cart.cost.subtotalAmount.amount);
-    const totalQuantity = cart.lines.reduce(
-      (sum, line) => sum + line.quantity,
-      0,
-    );
-    const checkoutSessionId = session?.id ? null : cart.id;
-    const shippingCost = calculateShippingAmount({
-      address: shippingAddress,
-      subtotalAmount: subtotal,
-      totalQuantity,
-    });
-    let discountAmount = 0;
-    let appliedCouponCode: string | null = null;
-    let shippingDiscountAmount = 0;
-    let productDiscountAmount = 0;
-
-    if (body.couponCode) {
-      const {
-        coupon,
-        discountAmount: computedDiscount,
-        shippingDiscountAmount: computedShippingDiscount,
-        productDiscountAmount: computedProductDiscount,
-      } = await validateCouponForCheckout({
-        code: body.couponCode,
-        cartTotal: subtotal,
-        shippingAmount: shippingCost,
-        userId: session?.id,
-        sessionId: session?.id ? undefined : cart.id,
-      });
-
-      discountAmount = computedDiscount;
-      shippingDiscountAmount = computedShippingDiscount;
-      productDiscountAmount = computedProductDiscount;
-      appliedCouponCode = coupon.code;
-    }
-
-    const totalAmount = subtotal - discountAmount + shippingCost;
-
-    // Convert amount to kobo (Paystack uses kobo for NGN)
-    const amountInKobo = Math.round(totalAmount * 100);
-
+    // Everything reconcile needs. Our stored copy wins over whatever Paystack
+    // echoes back, so it can't be tampered with on the way.
     const checkoutMetadata = {
-      customer_name:
-        `${shippingAddress.firstName || ""} ${shippingAddress.lastName || ""}`.trim(),
-      phone: primaryPhone,
-      phone1: primaryPhone,
-      phone2: secondaryPhone || null,
+      source: "catalog_checkout",
+      customer_name: `${details.address.firstName} ${details.address.lastName}`,
+      phone: details.phone1,
+      phone1: details.phone1,
+      phone2: details.phone2 ?? null,
       cart_id: cart.id,
       checkout_session_id: checkoutSessionId,
       checkout_user_id: session?.id || null,
-      checkout_email: body.email,
+      checkout_email: details.email,
       checkout_shipping_address: shippingAddress,
-      checkout_billing_address: billingAddress,
-      checkout_save_address: Boolean(body.saveAddress),
-      checkout_notes: body.notes?.trim() || null,
-      ...(appliedCouponCode
+      checkout_billing_address: shippingAddress,
+      checkout_save_address: Boolean(details.saveAddress && session?.id),
+      checkout_notes: details.notes ?? null,
+      ...(snapshot.couponCode
         ? {
-            coupon_code: appliedCouponCode,
-            discount_amount: discountAmount,
-            product_discount_amount: productDiscountAmount,
-            shipping_discount_amount: shippingDiscountAmount,
+            coupon_code: snapshot.couponCode,
+            discount_amount: snapshot.discount,
+            product_discount_amount: snapshot.productDiscount,
+            shipping_discount_amount: snapshot.shippingDiscount,
           }
         : {}),
     };
 
-    // Store checkout data in a cookie temporarily (will be retrieved after payment)
-    const checkoutSession = {
-      email: body.email,
-      phone: primaryPhone,
-      phone1: primaryPhone,
-      phone2: secondaryPhone || null,
-      shippingAddress,
-      billingAddress,
-      saveAddress: body.saveAddress,
-      userId: session?.id,
-      cartId: cart.id,
-      checkoutSessionId,
-      subtotalAmount: subtotal,
-      shippingAmount: shippingCost,
-      discountAmount,
-      couponCode: appliedCouponCode,
-      notes: body.notes?.trim() || null,
-      totalAmount,
-    };
-
-    (await cookies()).set("checkout-session", JSON.stringify(checkoutSession), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 30, // 30 minutes
-      path: "/",
-    });
-
-    if (amountInKobo <= 0) {
-      if (!appliedCouponCode) {
+    if (quote.amountInKobo <= 0) {
+      if (!snapshot.couponCode) {
         return NextResponse.json(
           { error: "Invalid payment amount" },
           { status: 400 },
         );
       }
 
-      const freeCheckoutReference = `FREE-${createHash("sha256")
-        .update(
-          JSON.stringify({
-            cartId: cart.id,
-            email: body.email.trim().toLowerCase(),
-            phone: primaryPhone,
-            phone1: primaryPhone,
-            phone2: secondaryPhone || null,
-            shippingAddress,
-            billingAddress,
-            subtotal,
-            shippingCost,
-            discountAmount,
-            couponCode: appliedCouponCode,
-            notes: body.notes?.trim() || null,
-            userId: session?.id || null,
-          }),
-        )
+      // Same bag + details → same reference, so a double click can't make
+      // two orders.
+      const reference = `FREE-${createHash("sha256")
+        .update(JSON.stringify({ snapshot, checkoutMetadata }))
         .digest("hex")
         .slice(0, 24)
         .toUpperCase()}`;
 
+      await registerInitializedPaymentTransaction({
+        reference,
+        source: "catalog_checkout",
+        amount: 0,
+        currencyCode: "NGN",
+        metadata: { ...checkoutMetadata, payment_provider: "coupon_free" },
+        snapshot,
+        payload: { source: "free_checkout" },
+      });
+
       const result = await reconcilePaystackPayment({
-        reference: freeCheckoutReference,
+        reference,
         amount: 0,
         currencyCode: "NGN",
         paystackStatus: "success",
-        metadata: {
-          ...checkoutMetadata,
-          payment_provider: "coupon_free",
-        },
+        metadata: { ...checkoutMetadata, payment_provider: "coupon_free" },
         customer: {
-          email: body.email,
-          first_name: shippingAddress.firstName || undefined,
-          last_name: shippingAddress.lastName || undefined,
-          phone: primaryPhone,
+          email: details.email,
+          first_name: details.address.firstName,
+          last_name: details.address.lastName,
+          phone: details.phone1,
         },
         payload: {
           source: "free_checkout",
           reason: "discount_covered_checkout",
-          couponCode: appliedCouponCode,
+          couponCode: snapshot.couponCode,
         },
         eventType: "admin_reconcile",
         checkoutCartId: cart.id,
@@ -301,7 +192,6 @@ export async function POST(request: NextRequest) {
       }
 
       const cookieStore = await cookies();
-      cookieStore.delete("checkout-session");
       cookieStore.delete("cartId");
       cookieStore.delete("cartSessionId");
 
@@ -312,17 +202,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Initialize Paystack payment
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
-
     if (!paystackSecretKey) {
       return NextResponse.json(
         { error: "Payment gateway not configured" },
         { status: 500 },
       );
     }
-
-    const callbackUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/checkout/verify`;
 
     const paystackController = new AbortController();
     const paystackTimeout = setTimeout(() => paystackController.abort(), 10000);
@@ -338,10 +224,12 @@ export async function POST(request: NextRequest) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            email: body.email,
-            amount: amountInKobo,
+            email: details.email,
+            amount: quote.amountInKobo,
             currency: "NGN",
-            callback_url: callbackUrl,
+            callback_url: `${baseUrl}/api/checkout/verify`,
+            // Transfer first: it's what most Nigerian shoppers reach for.
+            channels: ["bank_transfer", "card", "ussd", "bank"],
             metadata: checkoutMetadata,
           }),
           signal: paystackController.signal,
@@ -350,7 +238,7 @@ export async function POST(request: NextRequest) {
     } catch (fetchError: unknown) {
       if (fetchError instanceof Error && fetchError.name === "AbortError") {
         return NextResponse.json(
-          { error: "Payment gateway timed out. Please try again." },
+          { error: "Payment is taking too long to start. Please try again." },
           { status: 504 },
         );
       }
@@ -359,40 +247,35 @@ export async function POST(request: NextRequest) {
       clearTimeout(paystackTimeout);
     }
 
-    const paystackData = await paystackResponse.json();
-
-    if (!paystackData.status || !paystackData.data) {
-      console.error("Paystack initialization failed:", paystackData);
-      return NextResponse.json(
-        { error: paystackData.message || "Failed to initialize payment" },
-        { status: 500 },
-      );
-    }
-
+    const paystackData = await paystackResponse.json().catch(() => ({}));
     const reference =
-      typeof paystackData.data.reference === "string"
+      typeof paystackData?.data?.reference === "string"
         ? paystackData.data.reference
         : null;
 
-    if (!reference) {
+    if (!paystackData?.status || !reference) {
+      console.error("Paystack initialization failed:", paystackData);
       return NextResponse.json(
-        { error: "Invalid payment reference returned by gateway" },
-        { status: 500 },
+        { error: "We couldn't start the payment. Please try again." },
+        { status: 502 },
       );
     }
 
     await registerInitializedPaymentTransaction({
       reference,
       source: "catalog_checkout",
-      amount: amountInKobo,
+      amount: quote.amountInKobo,
       currencyCode: "NGN",
       metadata: checkoutMetadata,
+      snapshot,
       payload: paystackData.data,
     });
 
     return NextResponse.json({
+      accessCode: paystackData.data.access_code,
       authorizationUrl: paystackData.data.authorization_url,
       reference,
+      amountInKobo: quote.amountInKobo,
     });
   } catch (error) {
     return handleApiError(error, "Checkout initialization");
