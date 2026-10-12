@@ -1,6 +1,7 @@
-import { eq, ilike } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { coupons, couponUsages } from "./db/schema";
+import { formatCouponCode, isValidCouponCode } from "./coupon-utils";
 import { AppError, ErrorCode, ErrorType } from "./errors";
 
 /**
@@ -44,10 +45,21 @@ export async function validateCouponForCheckout({
     );
   }
 
+  // Exact match on the normalised code. (This used to be `ilike`, where a
+  // code of "%" matched — and applied — whichever coupon came first.)
+  const normalizedCode = formatCouponCode(code);
+  if (!isValidCouponCode(normalizedCode)) {
+    throw new CouponValidationError(
+      "Invalid coupon code",
+      404,
+      ErrorCode.COUPON_NOT_FOUND,
+    );
+  }
+
   const [coupon] = await db
     .select()
     .from(coupons)
-    .where(ilike(coupons.code, code.toUpperCase()))
+    .where(eq(coupons.code, normalizedCode))
     .limit(1);
 
   if (!coupon) {

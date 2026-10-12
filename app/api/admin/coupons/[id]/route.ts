@@ -3,7 +3,7 @@ import { db } from "lib/db";
 import { couponUsages, coupons, orders, users } from "lib/db/schema";
 import { verifyAuth } from "app/api/utils/auth";
 import { formatCouponCode, isValidCouponCode } from "lib/coupon-utils";
-import { and, desc, eq, ilike, isNotNull, ne, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, ne, sql } from "drizzle-orm";
 
 function toISOStringOrNull(value: unknown) {
   if (!value) return null;
@@ -210,7 +210,7 @@ export async function PATCH(
       const [codeConflict] = await db
         .select({ id: coupons.id })
         .from(coupons)
-        .where(and(ilike(coupons.code, formattedCode), ne(coupons.id, id)))
+        .where(and(eq(coupons.code, formattedCode), ne(coupons.id, id)))
         .limit(1);
 
       if (codeConflict) {
