@@ -56,6 +56,8 @@ type Order = {
 type CustomRequest = {
   id: string;
   requestNumber: string;
+  /** Link to the request page (only for signed-in customers' own requests). */
+  pageUrl?: string;
   title: string;
   description: string;
   status: string;
@@ -1118,6 +1120,21 @@ function OrderCard({ order }: { order: Order }) {
 
 /* ─────────────────────────── CUSTOM REQUEST CARD ─────────────────────────── */
 
+const CUSTOM_STATUS_LABEL: Record<string, string> = {
+  submitted: "Received",
+  under_review: "Reviewing",
+  needs_info: "We have a question",
+  quoted: "Price ready",
+  awaiting_payment: "Awaiting payment",
+  paid: "Paid",
+  in_production: "Being made",
+  balance_due: "Balance to pay",
+  ready: "Ready to send",
+  completed: "Done",
+  cancelled: "Cancelled",
+  rejected: "Declined",
+};
+
 function CustomRequestCard({ request }: { request: CustomRequest }) {
   const createdDate = new Date(request.createdAt).toLocaleDateString();
   const quoteAmount = request.latestQuote?.amount || request.quotedAmount;
@@ -1135,7 +1152,9 @@ function CustomRequestCard({ request }: { request: CustomRequest }) {
           </p>
         </div>
         <div className="op-cr-right">
-          <span className="op-cr-status">{request.status}</span>
+          <span className="op-cr-status">
+            {CUSTOM_STATUS_LABEL[request.status] ?? request.status}
+          </span>
           {quoteAmount && (
             <div className="op-cr-price">
               <Price
@@ -1154,6 +1173,15 @@ function CustomRequestCard({ request }: { request: CustomRequest }) {
       {request.quoteExpiresAt && (
         <p className="op-cr-expiry">
           Quote expires: {new Date(request.quoteExpiresAt).toLocaleString()}
+        </p>
+      )}
+      {request.pageUrl ? (
+        <Link href={request.pageUrl} className="op-view-link">
+          Open request →
+        </Link>
+      ) : (
+        <p className="op-cr-expiry">
+          Open the link in your confirmation email to see messages and pay.
         </p>
       )}
     </article>

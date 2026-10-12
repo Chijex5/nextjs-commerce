@@ -174,13 +174,14 @@ export default async function ProductPage(props: Props) {
               </div>
 
               <Link
-                href="/custom-orders"
+                href={`/custom-orders/request?product=${encodeURIComponent(product.handle)}`}
                 className="group mt-8 flex items-center justify-between gap-4 bg-fg p-5 text-canvas"
               >
                 <span>
                   <span className="label opacity-60">Want it different?</span>
                   <span className="mt-1 block font-medium">
-                    Change the strap, colour or size — order it custom.
+                    Customise this design — change the colour, strap or
+                    details and see the price.
                   </span>
                 </span>
                 <ArrowUpRight className="size-5 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />

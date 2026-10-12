@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { desc, eq } from "drizzle-orm";
 import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
-import { customOrderQuotes, customOrderRequests } from "lib/db/schema";
+import { customOrderQuotes, customOrderRequests, orders } from "lib/db/schema";
 import {
   CUSTOM_ORDER_REQUEST_STATUSES,
   isCustomOrderFeatureEnabled,
   toRequestStatus,
 } from "lib/custom-order-utils";
+import { postMessage } from "lib/custom-orders/messages";
+
+const naira = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
 
 export async function GET(
   request: NextRequest,
@@ -122,6 +125,46 @@ export async function PUT(
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
+    // Payment-linked steps: "ready" only comes from a paid balance, asking for
+    // the balance needs one, and a pair isn't done while money is owed.
+    let balance = 0;
+    if (nextStatus === "ready") {
+      return NextResponse.json(
+        { error: "A request becomes ready when the balance is paid" },
+        { status: 400 },
+      );
+    }
+    if (nextStatus === "balance_due" || nextStatus === "completed") {
+      const [current] = await db
+        .select({ convertedOrderId: customOrderRequests.convertedOrderId })
+        .from(customOrderRequests)
+        .where(eq(customOrderRequests.id, id))
+        .limit(1);
+      if (!current) {
+        return NextResponse.json({ error: "Request not found" }, { status: 404 });
+      }
+      if (current.convertedOrderId) {
+        const [order] = await db
+          .select({ balanceDue: orders.balanceDue })
+          .from(orders)
+          .where(eq(orders.id, current.convertedOrderId))
+          .limit(1);
+        balance = Number(order?.balanceDue ?? 0);
+      }
+      if (nextStatus === "balance_due" && balance <= 0) {
+        return NextResponse.json(
+          { error: "There's no balance left to pay on this order" },
+          { status: 400 },
+        );
+      }
+      if (nextStatus === "completed" && balance > 0) {
+        return NextResponse.json(
+          { error: `The customer still owes ${naira(balance)}. Request the balance first.` },
+          { status: 400 },
+        );
+      }
+    }
+
     const [updated] = await db
       .update(customOrderRequests)
       .set({
@@ -147,6 +190,17 @@ export async function PUT(
 
     if (!updated) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
+    }
+
+    if (nextStatus === "balance_due") {
+      // Tell the customer in the thread (and by email) that it's time to pay.
+      await postMessage({
+        request: updated,
+        author: "admin",
+        authorName: session.user?.name ?? null,
+        body: `Your pair is ready! ${naira(balance)} is left to pay — use the button at the top of this page and we'll send it straight out.`,
+        attachments: [],
+      });
     }
 
     return NextResponse.json({

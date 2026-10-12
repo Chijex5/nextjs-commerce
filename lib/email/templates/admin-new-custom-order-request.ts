@@ -1,3 +1,4 @@
+import { escapeHtml } from "./email-utils";
 import { baseTemplate } from "./base";
 
 export const adminNewCustomOrderRequestTemplate = (data: {
@@ -15,11 +16,12 @@ export const adminNewCustomOrderRequestTemplate = (data: {
 
     <div class="info-box">
       <p><strong>Request Number:</strong> ${data.requestNumber}</p>
-      <p><strong>Customer:</strong> ${data.customerName}</p>
-      <p><strong>Email:</strong> ${data.email}</p>
-      ${data.phone ? `<p><strong>Phone:</strong> ${data.phone}</p>` : ""}
-      <p><strong>Title:</strong> ${data.title}</p>
-      <p><strong>Description:</strong> ${data.description}</p>
+      <p><strong>Customer:</strong> ${escapeHtml(data.customerName)}</p>
+      <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
+      ${data.phone ? `<p><strong>Phone:</strong> ${escapeHtml(data.phone)}</p>` : ""}
+      <p><strong>Title:</strong> ${escapeHtml(data.title)}</p>
+      <p style="white-space:pre-line"><strong>Details:</strong>
+${escapeHtml(data.description)}</p>
     </div>
 
     <a href="${data.adminUrl}" class="button">Review Request</a>

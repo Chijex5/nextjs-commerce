@@ -1,19 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { and, eq, gt, isNull } from "drizzle-orm";
-import { cookies } from "next/headers";
 import { db } from "lib/db";
 import {
   customOrderQuoteTokens,
   customOrderQuotes,
   customOrderRequests,
 } from "lib/db/schema";
-import { registerInitializedPaymentTransaction } from "lib/payments/paystack-reconcile";
 import {
-  buildQuotePaymentCallbackUrl,
   hashCustomOrderPublicToken,
   isCustomOrderFeatureEnabled,
 } from "lib/custom-order-utils";
+import {
+  QuotePaymentError,
+  assertQuotePayable,
+  startCustomPayment,
+} from "lib/custom-orders/payment";
 
+/** Pay a quote from a legacy one-time quote link (emails sent before the request page existed). */
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ quoteId: string }> },
@@ -26,7 +29,6 @@ export async function POST(
     const { quoteId } = await context.params;
     const body = await request.json();
     const token = typeof body.token === "string" ? body.token.trim() : "";
-
     if (!token) {
       return NextResponse.json(
         { error: "Quote token is required" },
@@ -35,14 +37,11 @@ export async function POST(
     }
 
     const tokenHash = hashCustomOrderPublicToken(token);
-    const now = new Date();
-
     const [quote] = await db
       .select()
       .from(customOrderQuotes)
       .where(eq(customOrderQuotes.id, quoteId))
       .limit(1);
-
     if (!quote) {
       return NextResponse.json({ error: "Quote not found" }, { status: 404 });
     }
@@ -52,20 +51,8 @@ export async function POST(
       .from(customOrderRequests)
       .where(eq(customOrderRequests.id, quote.requestId))
       .limit(1);
-
     if (!requestRow) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
-    }
-
-    if (quote.status === "paid" || requestRow.status === "paid") {
-      return NextResponse.json(
-        { error: "This quote has already been paid" },
-        { status: 400 },
-      );
-    }
-
-    if (quote.expiresAt && quote.expiresAt < now) {
-      return NextResponse.json({ error: "This quote has expired" }, { status: 400 });
     }
 
     const [quoteToken] = await db
@@ -76,11 +63,10 @@ export async function POST(
           eq(customOrderQuoteTokens.quoteId, quote.id),
           eq(customOrderQuoteTokens.tokenHash, tokenHash),
           isNull(customOrderQuoteTokens.usedAt),
-          gt(customOrderQuoteTokens.expiresAt, now),
+          gt(customOrderQuoteTokens.expiresAt, new Date()),
         ),
       )
       .limit(1);
-
     if (!quoteToken) {
       return NextResponse.json(
         { error: "Invalid or expired quote token" },
@@ -88,134 +74,21 @@ export async function POST(
       );
     }
 
-    const amount = Number(quote.amount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      return NextResponse.json(
-        { error: "Invalid quote amount" },
-        { status: 400 },
-      );
-    }
-
-    const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
-    if (!paystackSecretKey) {
-      return NextResponse.json(
-        { error: "Payment gateway not configured" },
-        { status: 500 },
-      );
-    }
-
-    const callbackUrl = buildQuotePaymentCallbackUrl();
-
-    const paystackController = new AbortController();
-    const paystackTimeout = setTimeout(() => paystackController.abort(), 10000);
-
-    let paystackResponse: Response;
-    try {
-      paystackResponse = await fetch(
-        "https://api.paystack.co/transaction/initialize",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${paystackSecretKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: requestRow.email,
-            amount: Math.round(amount * 100),
-            currency: quote.currencyCode || "NGN",
-            callback_url: callbackUrl,
-            metadata: {
-              custom_quote_id: quote.id,
-              custom_request_id: requestRow.id,
-              custom_request_number: requestRow.requestNumber,
-            },
-          }),
-          signal: paystackController.signal,
-        },
-      );
-    } catch (fetchError: unknown) {
-      if (
-        fetchError instanceof Error &&
-        fetchError.name === "AbortError"
-      ) {
-        return NextResponse.json(
-          { error: "Payment gateway timed out. Please try again." },
-          { status: 504 },
-        );
-      }
-      throw fetchError;
-    } finally {
-      clearTimeout(paystackTimeout);
-    }
-
-    const paystackData = await paystackResponse.json();
-    if (!paystackData.status || !paystackData.data) {
-      return NextResponse.json(
-        { error: paystackData.message || "Failed to initialize payment" },
-        { status: 500 },
-      );
-    }
-
-    const reference =
-      typeof paystackData.data.reference === "string"
-        ? paystackData.data.reference
-        : null;
-    if (!reference) {
-      return NextResponse.json(
-        { error: "Invalid payment reference returned by gateway" },
-        { status: 500 },
-      );
-    }
-
-    await registerInitializedPaymentTransaction({
-      reference,
-      source: "custom_quote",
-      amount: Math.round(amount * 100),
-      currencyCode: quote.currencyCode || "NGN",
-      metadata: {
-        custom_quote_id: quote.id,
-        custom_request_id: requestRow.id,
-        custom_request_number: requestRow.requestNumber,
-      },
-      payload: paystackData.data,
-    });
-
-    (await cookies()).set(
-      "custom-quote-session",
-      JSON.stringify({
-        quoteId: quote.id,
-        requestId: requestRow.id,
+    // Old links pay the whole quote (they predate deposits and delivery).
+    await assertQuotePayable(quote, requestRow);
+    return NextResponse.json(
+      await startCustomPayment({
+        request: requestRow,
+        quote,
+        kind: "full",
+        amount: Number(quote.amount),
         tokenHash,
-        email: requestRow.email,
-        customerName: requestRow.customerName,
-        phone: requestRow.phone,
-        amount,
-        currencyCode: quote.currencyCode,
       }),
-      {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 60 * 30,
-        path: "/",
-      },
     );
-
-    await db
-      .update(customOrderQuotes)
-      .set({ status: "accepted", updatedAt: new Date() })
-      .where(eq(customOrderQuotes.id, quote.id));
-
-    await db
-      .update(customOrderRequests)
-      .set({ status: "awaiting_payment", updatedAt: new Date() })
-      .where(eq(customOrderRequests.id, requestRow.id));
-
-    return NextResponse.json({
-      authorizationUrl: paystackData.data.authorization_url,
-      reference,
-    });
   } catch (error) {
+    if (error instanceof QuotePaymentError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("Failed to initialize custom quote payment:", error);
     return NextResponse.json(
       { error: "Failed to initialize quote payment" },

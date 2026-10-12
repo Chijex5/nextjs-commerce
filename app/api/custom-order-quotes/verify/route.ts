@@ -1,4 +1,7 @@
-import { isCustomOrderFeatureEnabled } from "lib/custom-order-utils";
+import {
+  isCustomOrderFeatureEnabled,
+  requestPagePath,
+} from "lib/custom-order-utils";
 import { verifyPaystackReference } from "lib/payments/paystack";
 import { reconcilePaystackPayment } from "lib/payments/paystack-reconcile";
 import { cookies } from "next/headers";
@@ -107,9 +110,18 @@ export async function GET(request: NextRequest) {
     });
 
     if (result.status === "paid") {
+      // Back to the request page (deposit, full or balance), where the thread
+      // and the next step live. The request number comes from Paystack's
+      // verified metadata, set when we started the payment.
+      const requestNumber =
+        typeof metadata.custom_request_number === "string"
+          ? metadata.custom_request_number
+          : null;
       const response = NextResponse.redirect(
         new URL(
-          `/checkout/success?order=${encodeURIComponent(result.orderNumber)}`,
+          requestNumber
+            ? `${requestPagePath(requestNumber)}&paid=1`
+            : `/checkout/success?order=${encodeURIComponent(result.orderNumber)}`,
           request.url,
         ),
       );

@@ -72,6 +72,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         discountAmount: String(order.discountAmount),
         couponCode: order.couponCode,
         totalAmount: String(order.totalAmount),
+        balanceDue: String(order.balanceDue ?? 0),
         currencyCode: order.currencyCode,
         createdAt: order.createdAt.toISOString(),
         trackingNumber: order.trackingNumber,

@@ -11,6 +11,7 @@ import { customOrderQuoteSentTemplate } from "./templates/custom-order-quote-sen
 import { customOrderQuoteReminderTemplate } from "./templates/custom-order-quote-reminder";
 import { customOrderQuoteExpiredTemplate } from "./templates/custom-order-quote-expired";
 import { adminNewCustomOrderRequestTemplate } from "./templates/admin-new-custom-order-request";
+import { customRequestMessageTemplate } from "./templates/custom-request-message";
 
 const ORDER_FROM_EMAIL = "D'FOOTPRINT <order@dfootprint.me>";
 const STATUS_UPDATE_FROM_EMAIL = "D'FOOTPRINT <notification@dfootprint.me>";
@@ -238,16 +239,20 @@ export const sendCustomOrderRequestReceived = async (data: {
   customerName: string;
   requestNumber: string;
   trackUrl: string;
+  title?: string;
+  replyHours?: number;
 }) => {
   return sendEmail({
     to: data.to,
     from: CUSTOM_ORDER_FROM_EMAIL,
     replyTo: ORDER_REPLY_TO,
-    subject: `Custom Request Received: ${data.requestNumber} - D'FOOTPRINT`,
+    subject: `We've got your custom request (${data.requestNumber})`,
     html: customOrderRequestReceivedTemplate({
       customerName: data.customerName,
       requestNumber: data.requestNumber,
       trackUrl: data.trackUrl,
+      title: data.title,
+      replyHours: data.replyHours,
     }),
   });
 };
@@ -353,5 +358,28 @@ export const sendAdminNewCustomOrderRequest = async (data: {
       description: data.description,
       adminUrl: data.adminUrl,
     }),
+  });
+};
+
+export const sendCustomRequestMessage = async (data: {
+  to: string | string[];
+  recipient: "customer" | "admin";
+  greetingName: string;
+  fromName: string;
+  requestNumber: string;
+  title: string;
+  body: string;
+  photoCount: number;
+  url: string;
+}) => {
+  return sendEmail({
+    to: data.to,
+    from: CUSTOM_ORDER_FROM_EMAIL,
+    replyTo: ORDER_REPLY_TO,
+    subject:
+      data.recipient === "customer"
+        ? `New message about your custom request ${data.requestNumber}`
+        : `Message from ${data.fromName}: ${data.requestNumber}`,
+    html: customRequestMessageTemplate(data),
   });
 };

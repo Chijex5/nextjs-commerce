@@ -1,3 +1,4 @@
+import { escapeHtml } from "./email-utils";
 import { baseTemplate } from "./base";
 
 export const customOrderQuoteReminderTemplate = (data: {
@@ -18,7 +19,7 @@ export const customOrderQuoteReminderTemplate = (data: {
 
   return baseTemplate(`
     <h2>Reminder: Your Custom Quote Is Waiting</h2>
-    <p>Hi ${data.customerName},</p>
+    <p>Hi ${escapeHtml(data.customerName)},</p>
     <p>This is reminder ${data.reminderNumber} of ${data.totalReminders} for your custom order quote.</p>
 
     <div class="info-box">

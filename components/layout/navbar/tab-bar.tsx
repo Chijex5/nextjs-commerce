@@ -9,8 +9,8 @@ import { usePathname } from "next/navigation";
 import { useMounted } from "hooks/useMounted";
 import type { ReactNode } from "react";
 
-// Product pages show their own sticky "Add to bag" bar instead.
-const HIDDEN_ON = ["/checkout", "/order", "/product/"];
+// Hidden where a page has its own bottom action bar (checkout, product, custom request form).
+const HIDDEN_ON = ["/checkout", "/order", "/product/", "/custom-orders/request"];
 
 function tap() {
   try {

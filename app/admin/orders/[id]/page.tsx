@@ -103,6 +103,7 @@ export default async function AdminOrderDetailPage({
         shipping: Number(order.shippingAmount),
         tax: Number(order.taxAmount),
         total: Number(order.totalAmount),
+        balanceDue: Number(order.balanceDue ?? 0),
         notes: order.notes,
         trackingNumber: order.trackingNumber,
         acknowledgedAt: order.acknowledgedAt?.toISOString() ?? null,

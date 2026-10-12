@@ -48,6 +48,8 @@ type Detail = {
   shipping: number;
   tax: number;
   total: number;
+  /** Custom orders paid by deposit: still owed before it can be sent. */
+  balanceDue: number;
   notes: string | null;
   trackingNumber: string | null;
   acknowledgedAt: string | null;
@@ -482,6 +484,12 @@ export function OrderDetail({ order }: { order: Detail }) {
                     {money(order.total)}
                   </span>
                 </div>
+                {order.balanceDue > 0 ? (
+                  <StatRow
+                    label="Balance due (deposit paid)"
+                    value={money(order.balanceDue)}
+                  />
+                ) : null}
               </StatList>
               {order.payment ? (
                 <p className="text-xs text-fg-3">

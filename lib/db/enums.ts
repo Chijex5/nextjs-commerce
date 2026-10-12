@@ -29,14 +29,25 @@ export const PAYMENT_PROVIDERS = ["paystack", "coupon_free"] as const;
 export const CUSTOM_REQUEST_STATUSES = [
   "submitted",
   "under_review",
+  /** The owner asked a question in the thread and is waiting for a reply. */
+  "needs_info",
   "quoted",
   "awaiting_payment",
   "paid",
   "in_production",
+  /** Made; the customer owes the balance before it's sent. */
+  "balance_due",
+  /** Fully paid and ready to send. */
+  "ready",
   "completed",
   "cancelled",
   "rejected",
 ] as const;
+
+/** modify = change one of our designs, recreate = from a photo, new = an idea. */
+export const CUSTOM_REQUEST_KINDS = ["modify", "recreate", "new"] as const;
+
+export const CUSTOM_MESSAGE_AUTHORS = ["customer", "admin", "system"] as const;
 
 export const QUOTE_STATUSES = [
   "sent",

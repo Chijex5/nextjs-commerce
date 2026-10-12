@@ -1,234 +1,134 @@
+import {
+  RequestWizard,
+  type PickerProduct,
+} from "components/custom-orders/request-wizard";
+import { buttonClass } from "components/ui/button";
+import { and, eq, gt, isNull } from "drizzle-orm";
+import {
+  hashCustomOrderPublicToken,
+  isCustomOrderFeatureEnabled,
+  requestPagePath,
+} from "lib/custom-order-utils";
+import { listEditOptions } from "lib/custom-orders/edits";
+import { getCustomOrderSettings } from "lib/custom-orders/settings";
+import { getProducts } from "lib/database";
+import { db } from "lib/db";
+import {
+  customOrderQuoteTokens,
+  customOrderQuotes,
+  customOrderRequests,
+} from "lib/db/schema";
+import { canonicalUrl, siteName } from "lib/seo";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Suspense } from "react";
-import CustomOrderRequestSection from "components/custom-orders/custom-order-request-section";
-import { canonicalUrl, siteName } from "lib/seo";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Start a Custom Order",
   description:
-    "Submit your custom footwear request, upload references, and receive a quote before payment.",
-  alternates: {
-    canonical: canonicalUrl("/custom-orders/request"),
-  },
+    "Change one of our designs, send a photo, or describe your idea — we'll confirm the price before anything is made.",
+  alternates: { canonical: canonicalUrl("/custom-orders/request") },
   openGraph: {
     title: `Start a Custom Order | ${siteName}`,
     description:
-      "Submit your custom footwear request and receive a quote before payment.",
+      "Change one of our designs, send a photo, or describe your idea — we'll confirm the price before anything is made.",
     url: canonicalUrl("/custom-orders/request"),
     type: "website",
     images: ["/opengraph-image"],
   },
-  twitter: {
-    card: "summary_large_image",
-    title: `Start a Custom Order | ${siteName}`,
-    description:
-      "Submit your custom footwear request and receive a quote before payment.",
-    images: ["/opengraph-image"],
-  },
 };
 
-export default function CustomOrderRequestPage() {
-  const customOrderFeatureEnabled =
-    process.env.CUSTOM_ORDER_REQUESTS_ENABLED === "true";
+const WHATSAPP_URL =
+  process.env.NEXT_PUBLIC_WHATSAPP_URL || "https://wa.me/2348121993874";
+
+/** Quote links emailed before request pages existed: send them to the request page. */
+async function legacyQuoteRedirect(quoteId: string, token: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(quoteId)) return null;
+  const [row] = await db
+    .select({ requestNumber: customOrderRequests.requestNumber })
+    .from(customOrderQuoteTokens)
+    .innerJoin(customOrderQuotes, eq(customOrderQuotes.id, customOrderQuoteTokens.quoteId))
+    .innerJoin(customOrderRequests, eq(customOrderRequests.id, customOrderQuotes.requestId))
+    .where(
+      and(
+        eq(customOrderQuoteTokens.quoteId, quoteId),
+        eq(customOrderQuoteTokens.tokenHash, hashCustomOrderPublicToken(token)),
+        isNull(customOrderQuoteTokens.usedAt),
+        gt(customOrderQuoteTokens.expiresAt, new Date()),
+      ),
+    )
+    .limit(1);
+  return row ? requestPagePath(row.requestNumber) : null;
+}
+
+/** The whole catalogue for the design picker (the query returns 100 at a time). */
+async function allProducts() {
+  const all = [];
+  for (let page = 0; page < 10; page++) {
+    const batch = await getProducts({
+      sortKey: "CREATED_AT",
+      reverse: true,
+      limit: 100,
+      offset: page * 100,
+    });
+    all.push(...batch);
+    if (batch.length < 100) break;
+  }
+  return all;
+}
+
+export default async function CustomOrderRequestPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ product?: string; quoteId?: string; token?: string }>;
+}) {
+  if (!isCustomOrderFeatureEnabled()) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-20 sm:px-6">
+        <p className="label mb-4 text-fg-3">Custom orders</p>
+        <h1 className="display text-[clamp(2.6rem,8vw,4rem)]">
+          Paused for now
+        </h1>
+        <p className="mt-4 max-w-[46ch] text-fg-2">
+          We&apos;re not taking new custom requests on the site at the moment.
+          Message us on WhatsApp and we&apos;ll help you personally.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-2">
+          <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className={buttonClass("solid")}>
+            Message us on WhatsApp
+          </a>
+          <Link href="/search" className={buttonClass("outline")}>
+            Shop ready-made
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const params = await searchParams;
+  if (params.quoteId && params.token) {
+    const target = await legacyQuoteRedirect(params.quoteId, params.token);
+    if (target) redirect(target);
+  }
+
+  const [products, editOptions, settings] = await Promise.all([
+    allProducts(),
+    listEditOptions(),
+    getCustomOrderSettings(),
+  ]);
+  const picker: PickerProduct[] = products.map((p) => ({
+    handle: p.handle,
+    title: p.title,
+    image: p.featuredImage?.url || p.images[0]?.url || null,
+    price: Number(p.priceRange.minVariantPrice.amount),
+  }));
 
   return (
-    <>
-      <style>{`
-        .cor-nav-link {
-          display: inline-flex; align-items: center; gap: .4rem;
-          font-family: var(--ff-body);
-          font-size: .65rem; font-weight: 500;
-          letter-spacing: .14em; text-transform: uppercase;
-          color: var(--dp-muted);
-          border: 1px solid var(--dp-border);
-          padding: .55rem 1.1rem;
-          text-decoration: none;
-          transition: border-color .22s, color .22s;
-        }
-        .cor-nav-link:hover { border-color: rgba(var(--brand-terra-rgb),.4); color: var(--dp-sand); }
-      `}</style>
-
-      <div
-        style={{
-          margin: "0 auto",
-          padding: "3.5rem clamp(1.5rem,4vw,4rem) 5rem",
-        }}
-      >
-        {/* ── Page header card ── */}
-        <div
-          style={{
-            background: "var(--dp-card)",
-            border: "1px solid var(--dp-border)",
-            padding: "2rem",
-            marginBottom: "1.5rem",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          {/* Ghost watermark */}
-
-          <div style={{ position: "relative", zIndex: 1 }}>
-            <p className="dp-label" style={{ marginBottom: ".75rem" }}>
-              D&apos;FOOTPRINT
-            </p>
-
-            <h1
-              className="dp-wordmark"
-              style={{
-                fontSize: "clamp(2.4rem,7vw,5rem)",
-                lineHeight: 0.9,
-                letterSpacing: "-.01em",
-                marginBottom: "1rem",
-              }}
-            >
-              <span style={{ color: "var(--dp-cream)" }}>CREATE A</span>{" "}
-              <span
-                style={{
-                  WebkitTextStroke: "1.5px rgba(var(--brand-fg-rgb),0.22)",
-                  color: "transparent",
-                }}
-              >
-                CUSTOM PAIR
-              </span>
-            </h1>
-
-            <p
-              style={{
-                fontFamily: "var(--ff-body)",
-                fontSize: ".78rem",
-                color: "var(--dp-muted)",
-                lineHeight: 1.7,
-                maxWidth: 560,
-                marginBottom: "1.75rem",
-              }}
-            >
-              Share your design brief and references — we review and send a
-              quote before any payment is taken.
-            </p>
-
-            <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
-              <Link href="/custom-orders" className="cor-nav-link">
-                ← Custom gallery
-              </Link>
-              <Link href="/orders" className="cor-nav-link">
-                Track request or order →
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Form section or states ── */}
-        {customOrderFeatureEnabled ? (
-          <Suspense
-            fallback={
-              <div
-                style={{
-                  background: "var(--dp-card)",
-                  border: "1px solid var(--dp-border)",
-                  padding: "2rem",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "1rem",
-                }}
-              >
-                <span
-                  style={{
-                    width: "1rem",
-                    height: "1rem",
-                    borderRadius: "50%",
-                    border: "2px solid var(--dp-border)",
-                    borderTopColor: "var(--dp-ember)",
-                    animation: "dp-spin .8s linear infinite",
-                    flexShrink: 0,
-                    display: "inline-block",
-                  }}
-                />
-                <style>{`@keyframes dp-spin { to { transform: rotate(360deg); } }`}</style>
-                <p
-                  style={{
-                    fontFamily: "var(--ff-body)",
-                    fontSize: ".75rem",
-                    color: "var(--dp-muted)",
-                    letterSpacing: ".08em",
-                  }}
-                >
-                  Loading request form…
-                </p>
-              </div>
-            }
-          >
-            <CustomOrderRequestSection />
-          </Suspense>
-        ) : (
-          <div
-            style={{
-              background: "var(--dp-card)",
-              border: "1px solid rgba(var(--brand-terra-rgb),.2)",
-              padding: "2rem",
-              display: "flex",
-              flexDirection: "column",
-              gap: "1rem",
-            }}
-          >
-            <span style={{ color: "var(--dp-ember)", fontSize: "1.2rem" }}>
-              ⊛
-            </span>
-            <p
-              className="dp-serif"
-              style={{
-                fontSize: "1.2rem",
-                fontWeight: 600,
-                color: "var(--dp-cream)",
-              }}
-            >
-              Custom requests are currently unavailable
-            </p>
-            <p
-              style={{
-                fontFamily: "var(--ff-body)",
-                fontSize: ".75rem",
-                color: "var(--dp-muted)",
-                lineHeight: 1.65,
-                maxWidth: 480,
-              }}
-            >
-              We&apos;re temporarily pausing new requests. Please reach out
-              directly via WhatsApp or email and we&apos;ll help you personally.
-            </p>
-            <Link
-              href="/socials"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: ".5rem",
-                background: "var(--dp-ember)",
-                color: "var(--brand-on-accent)",
-                fontFamily: "var(--ff-body)",
-                fontWeight: 500,
-                fontSize: ".68rem",
-                letterSpacing: ".12em",
-                textTransform: "uppercase",
-                padding: ".75rem 1.5rem",
-                textDecoration: "none",
-                transition: "opacity .22s",
-                alignSelf: "flex-start",
-              }}
-            >
-              Contact us
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                <path
-                  d="M3 8h10M9 4l4 4-4 4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </Link>
-          </div>
-        )}
-      </div>
-    </>
+    <RequestWizard
+      products={picker}
+      editOptions={editOptions}
+      settings={settings}
+      initialProduct={params.product}
+    />
   );
 }

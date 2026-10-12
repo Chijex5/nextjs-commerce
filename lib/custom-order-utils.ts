@@ -1,25 +1,9 @@
 import crypto from "crypto";
+import { CUSTOM_REQUEST_STATUSES, QUOTE_STATUSES } from "lib/db/enums";
 import { baseUrl } from "lib/utils";
 
-export const CUSTOM_ORDER_REQUEST_STATUSES = [
-  "submitted",
-  "under_review",
-  "quoted",
-  "awaiting_payment",
-  "paid",
-  "in_production",
-  "completed",
-  "cancelled",
-  "rejected",
-] as const;
-
-export const CUSTOM_ORDER_QUOTE_STATUSES = [
-  "sent",
-  "accepted",
-  "rejected",
-  "expired",
-  "paid",
-] as const;
+export const CUSTOM_ORDER_REQUEST_STATUSES = CUSTOM_REQUEST_STATUSES;
+export const CUSTOM_ORDER_QUOTE_STATUSES = QUOTE_STATUSES;
 
 export type CustomOrderRequestStatus =
   (typeof CUSTOM_ORDER_REQUEST_STATUSES)[number];
@@ -41,15 +25,37 @@ export const hashCustomOrderPublicToken = (token: string) =>
 export const buildQuotePaymentCallbackUrl = () =>
   `${baseUrl}/api/custom-order-quotes/verify`;
 
-export const buildCustomRequestTrackUrl = (requestNumber: string, email: string) =>
-  `${baseUrl}/orders?customRequest=${encodeURIComponent(requestNumber)}&email=${encodeURIComponent(
-    email,
-  )}`;
+/**
+ * Access key for a request's page. Derived from the request number with an
+ * HMAC, so every email can carry a working link without storing tokens, and
+ * links already sent never stop working.
+ */
+export function requestAccessToken(requestNumber: string) {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) throw new Error("NEXTAUTH_SECRET is not set");
+  return crypto
+    .createHmac("sha256", secret)
+    .update(`custom-request:${requestNumber}`)
+    .digest("base64url")
+    .slice(0, 32);
+}
 
-export const buildQuoteAccessUrl = (quoteId: string, token: string) =>
-  `${baseUrl}/custom-orders/request?quoteId=${encodeURIComponent(quoteId)}&token=${encodeURIComponent(
-    token,
-  )}`;
+export function isValidRequestAccessToken(
+  requestNumber: string,
+  token: string | null | undefined,
+) {
+  if (!token) return false;
+  const expected = Buffer.from(requestAccessToken(requestNumber));
+  const given = Buffer.from(token);
+  return expected.length === given.length && crypto.timingSafeEqual(expected, given);
+}
+
+/** Relative link to the customer's request page (status, price, messages). */
+export const requestPagePath = (requestNumber: string) =>
+  `/custom-orders/r/${encodeURIComponent(requestNumber)}?t=${requestAccessToken(requestNumber)}`;
+
+export const buildRequestPageUrl = (requestNumber: string) =>
+  `${baseUrl}${requestPagePath(requestNumber)}`;
 
 export const toRequestStatus = (value: unknown): CustomOrderRequestStatus =>
   CUSTOM_ORDER_REQUEST_STATUSES.includes(

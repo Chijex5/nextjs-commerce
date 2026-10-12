@@ -14,6 +14,7 @@ import {
     customOrderQuoteTokens,
     customOrderQuotes,
     customOrderRequests,
+    customRequestMessages,
     orderItems,
     orders,
     paymentEvents,
@@ -630,7 +631,95 @@ export async function reconcilePaystackPayment(
           };
         }
 
-        const expectedAmountInKobo = Math.round(Number(quote.amount) * 100);
+        // deposit = start production, full = quote + delivery, balance = rest of the order.
+        const kind = toStringOrNull(metadata.custom_payment_kind);
+        const itemsAmount = Number(quote.amount);
+        const shippingAmount = Number(quote.shippingAmount ?? 0);
+        const depositAmount = quote.depositAmount ? Number(quote.depositAmount) : null;
+
+        if (kind === "balance") {
+          const [order] = requestRow.convertedOrderId
+            ? await tx
+                .select({
+                  id: orders.id,
+                  orderNumber: orders.orderNumber,
+                  balanceDue: orders.balanceDue,
+                })
+                .from(orders)
+                .where(eq(orders.id, requestRow.convertedOrderId))
+                .limit(1)
+            : [];
+          const expectedBalance = Math.round(Number(order?.balanceDue ?? 0) * 100);
+          if (!order || !expectedBalance || input.amount !== expectedBalance) {
+            const message = order
+              ? `Amount mismatch for custom balance. Expected ${expectedBalance}, got ${input.amount}`
+              : "No order to apply the balance to";
+            await setConflict(tx, {
+              paymentTransactionId: upserted.id,
+              reference,
+              source,
+              eventType: input.eventType,
+              conflictCode: "amount_mismatch",
+              message,
+              payload: input.payload,
+              paystackStatus: input.paystackStatus,
+            });
+            return {
+              status: "conflict" as const,
+              conflictCode: "amount_mismatch" as const,
+              message,
+            };
+          }
+
+          await tx
+            .update(orders)
+            .set({ balanceDue: "0", updatedAt: new Date() })
+            .where(eq(orders.id, order.id));
+          await tx
+            .update(customOrderRequests)
+            .set({ status: "ready", updatedAt: new Date() })
+            .where(eq(customOrderRequests.id, requestRow.id));
+          await tx
+            .update(paymentTransactions)
+            .set({
+              status: "paid",
+              orderId: order.id,
+              paystackStatus: input.paystackStatus || "success",
+              conflictCode: null,
+              conflictMessage: null,
+              resolvedAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(paymentTransactions.id, upserted.id));
+          await insertPaymentEvent(tx, {
+            paymentTransactionId: upserted.id,
+            reference,
+            provider: paymentProvider,
+            source,
+            eventType: input.eventType,
+            status: "paid",
+            message: "Custom order balance paid",
+            payload: input.payload,
+          });
+          await tx.insert(customRequestMessages).values({
+            requestId: requestRow.id,
+            author: "system",
+            body: `Balance paid: ₦${(expectedBalance / 100).toLocaleString("en-NG")}`,
+          });
+          return {
+            status: "paid" as const,
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            created: false,
+            emailPayload: null as null,
+          };
+        }
+
+        const expectedAmountInKobo = Math.round(
+          (kind === "deposit" && depositAmount
+            ? depositAmount
+            : itemsAmount + shippingAmount) * 100,
+        );
         if (!Number.isFinite(input.amount) || input.amount !== expectedAmountInKobo) {
           const message = `Amount mismatch for custom quote. Expected ${expectedAmountInKobo}, got ${input.amount}`;
           await setConflict(tx, {
@@ -690,13 +779,18 @@ export async function reconcilePaystackPayment(
             email: requestRow.email,
             phone: requestRow.phone,
             customerName: requestRow.customerName,
-            shippingAddress: {},
+            shippingAddress: requestRow.deliveryAddress ?? {},
             billingAddress: null,
             status: "processing",
-            subtotalAmount: String(quote.amount),
-            shippingAmount: "0",
+            subtotalAmount: String(itemsAmount),
+            shippingAmount: String(shippingAmount),
             discountAmount: "0",
-            totalAmount: String(quote.amount),
+            totalAmount: String(itemsAmount + shippingAmount),
+            balanceDue: String(
+              kind === "deposit" && depositAmount
+                ? itemsAmount + shippingAmount - depositAmount
+                : 0,
+            ),
             currencyCode: quote.currencyCode,
             notes: buildOrderNotes(`Custom order ${requestRow.requestNumber}`, reference),
             orderType: "custom",
@@ -713,8 +807,10 @@ export async function reconcilePaystackPayment(
 
         await tx.insert(orderItems).values({
           orderId: createdOrder.id,
-          productId: requestRow.id,
-          productVariantId: quote.id,
+          // The order links back through custom_order_request_id; the item only
+          // points at a real product (the design it was based on), if any.
+          productId: requestRow.baseProductId ?? null,
+          productVariantId: null,
           productTitle: `Custom Order - ${requestRow.requestNumber}`,
           variantTitle: "Quoted Request",
           quantity: 1,
@@ -787,6 +883,14 @@ export async function reconcilePaystackPayment(
           status: "paid",
           message: "Custom quote reconciled and order created",
           payload: input.payload,
+        });
+        await tx.insert(customRequestMessages).values({
+          requestId: requestRow.id,
+          author: "system",
+          body:
+            kind === "deposit" && depositAmount
+              ? `Deposit paid: ₦${depositAmount.toLocaleString("en-NG")}`
+              : `Paid in full: ₦${(itemsAmount + shippingAmount).toLocaleString("en-NG")}`,
         });
 
         return {

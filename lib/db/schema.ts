@@ -19,6 +19,8 @@ import {
   CAMPAIGN_LOG_STATUSES,
   CAMPAIGN_STATUSES,
   CAMPAIGN_TYPES,
+  CUSTOM_MESSAGE_AUTHORS,
+  CUSTOM_REQUEST_KINDS,
   CUSTOM_REQUEST_STATUSES,
   DELIVERY_STATUSES,
   DISCOUNT_TYPES,
@@ -364,6 +366,25 @@ export const customOrderRequests = pgTable(
     budgetMax: decimal("budget_max", { precision: 10, scale: 2 }),
     desiredDate: timestamp("desired_date", { withTimezone: true }),
     referenceImages: jsonb("reference_images").default([]).notNull(),
+    /** modify | recreate | new — see CUSTOM_REQUEST_KINDS. */
+    kind: varchar("kind", { length: 20 }).default("new").notNull(),
+    /** The design being changed, for kind = modify. */
+    baseProductId: uuid("base_product_id").references(() => products.id, {
+      onDelete: "set null",
+    }),
+    /** Snapshot of the chosen edit-menu items: [{ id, name, price, detail? }]. */
+    edits: jsonb("edits").default([]).notNull(),
+    /** Price worked out from the base design + edit menu, when it can be. */
+    estimateAmount: decimal("estimate_amount", { precision: 10, scale: 2 }),
+    sizeEu: integer("size_eu"),
+    pairs: integer("pairs").default(1).notNull(),
+    footLengthCm: decimal("foot_length_cm", { precision: 4, scale: 1 }),
+    budgetBand: varchar("budget_band", { length: 20 }),
+    deadlineKind: varchar("deadline_kind", { length: 20 }),
+    /** TikTok / Instagram / Pinterest links the customer pasted. */
+    referenceLinks: jsonb("reference_links").default([]).notNull(),
+    /** Where to deliver, given when the customer first pays. */
+    deliveryAddress: jsonb("delivery_address"),
     status: varchar("status", { length: 50 }).default("submitted").notNull(),
     adminNotes: text("admin_notes"),
     customerNotes: text("customer_notes"),
@@ -407,6 +428,14 @@ export const customOrderRequests = pgTable(
     convertedOrderUniqueIdx: uniqueIndex(
       "custom_order_requests_converted_order_unique",
     ).on(table.convertedOrderId),
+    kindCheck: check(
+      "custom_order_requests_kind_check",
+      oneOf(table.kind, CUSTOM_REQUEST_KINDS),
+    ),
+    sizeCheck: check(
+      "custom_order_requests_size_check",
+      sql`(${table.sizeEu} is null or ${table.sizeEu} between 20 and 60) and ${table.pairs} between 1 and 50`,
+    ),
   }),
 );
 
@@ -424,6 +453,10 @@ export const customOrderQuotes = pgTable(
       .default("NGN")
       .notNull(),
     breakdown: jsonb("breakdown").default({}).notNull(),
+    /** Paid up front to start production; null = pay in full only. */
+    depositAmount: decimal("deposit_amount", { precision: 10, scale: 2 }),
+    /** Delivery for the customer's address, set when they start paying. */
+    shippingAmount: decimal("shipping_amount", { precision: 10, scale: 2 }),
     note: text("note"),
     status: varchar("status", { length: 50 }).default("sent").notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
@@ -494,6 +527,75 @@ export const customOrderQuoteTokens = pgTable(
     ),
   }),
 );
+
+// Customer ↔ shop conversation on a custom request
+export const customRequestMessages = pgTable(
+  "custom_request_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    requestId: uuid("request_id")
+      .references(() => customOrderRequests.id, { onDelete: "cascade" })
+      .notNull(),
+    author: varchar("author", { length: 20 }).notNull(),
+    /** The admin's name on admin messages; null for the customer. */
+    authorName: varchar("author_name", { length: 255 }),
+    body: text("body").notNull(),
+    attachments: jsonb("attachments").default([]).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    requestIdx: index("custom_request_messages_request_idx").on(
+      table.requestId,
+      table.createdAt,
+    ),
+    authorCheck: check(
+      "custom_request_messages_author_check",
+      oneOf(table.author, CUSTOM_MESSAGE_AUTHORS),
+    ),
+  }),
+);
+
+// Price list of common edits customers pick from (remove buckle, add roses…)
+export const customEditOptions = pgTable(
+  "custom_edit_options",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: varchar("name", { length: 120 }).notNull(),
+    description: text("description"),
+    price: decimal("price", { precision: 10, scale: 2 }).default("0").notNull(),
+    image: text("image"),
+    /** Asks the customer for a detail, e.g. "Which colour?" or "What name?". */
+    detailPrompt: varchar("detail_prompt", { length: 120 }),
+    /** Price depends on the design: shown as "from" and always quoted by hand. */
+    needsReview: boolean("needs_review").default(false).notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    position: integer("position").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    positionIdx: index("custom_edit_options_position_idx").on(table.position),
+    priceCheck: check(
+      "custom_edit_options_price_check",
+      sql`${table.price} >= 0`,
+    ),
+  }),
+);
+
+// Small key → JSON settings store (key "custom_orders" holds deposit %, etc.)
+export const storeSettings = pgTable("store_settings", {
+  key: varchar("key", { length: 100 }).primaryKey(),
+  value: jsonb("value").default({}).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
 
 // Admin users for dashboard access
 export const adminUsers = pgTable(
@@ -626,6 +728,10 @@ export const orders = pgTable(
       onDelete: "set null",
     }),
     totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+    /** Still owed (custom orders paid by deposit). Can't be sent until 0. */
+    balanceDue: decimal("balance_due", { precision: 10, scale: 2 })
+      .default("0.00")
+      .notNull(),
     currencyCode: varchar("currency_code", { length: 3 })
       .default("NGN")
       .notNull(),
@@ -692,7 +798,7 @@ export const orders = pgTable(
     ),
     amountsCheck: check(
       "orders_amounts_check",
-      sql`${table.subtotalAmount} >= 0 and ${table.taxAmount} >= 0 and ${table.shippingAmount} >= 0 and ${table.discountAmount} >= 0 and ${table.totalAmount} >= 0`,
+      sql`${table.subtotalAmount} >= 0 and ${table.taxAmount} >= 0 and ${table.shippingAmount} >= 0 and ${table.discountAmount} >= 0 and ${table.totalAmount} >= 0 and ${table.balanceDue} >= 0 and ${table.balanceDue} <= ${table.totalAmount}`,
     ),
     customOrderRequestUniqueIdx: uniqueIndex(
       "orders_custom_order_request_unique",
@@ -1504,6 +1610,7 @@ export const customOrderRequestsRelations = relations(
       references: [users.id],
     }),
     quotes: many(customOrderQuotes),
+    messages: many(customRequestMessages),
     orders: many(orders),
   }),
 );
@@ -1615,6 +1722,16 @@ export const campaignEmailLogsRelations = relations(
     campaign: one(emailCampaigns, {
       fields: [campaignEmailLogs.campaignId],
       references: [emailCampaigns.id],
+    }),
+  }),
+);
+
+export const customRequestMessagesRelations = relations(
+  customRequestMessages,
+  ({ one }) => ({
+    request: one(customOrderRequests, {
+      fields: [customRequestMessages.requestId],
+      references: [customOrderRequests.id],
     }),
   }),
 );

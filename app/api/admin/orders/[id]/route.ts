@@ -90,6 +90,7 @@ export async function GET(
         taxAmount: String(order.taxAmount),
         shippingAmount: String(order.shippingAmount),
         totalAmount: String(order.totalAmount),
+        balanceDue: String(order.balanceDue ?? 0),
         currencyCode: order.currencyCode,
         paymentTransactionId: order.paymentTransactionId,
         paymentProvider: order.paymentProvider,
@@ -162,6 +163,7 @@ export async function PUT(
         email: orders.email,
         orderNumber: orders.orderNumber,
         acknowledgedAt: orders.acknowledgedAt,
+        balanceDue: orders.balanceDue,
       })
       .from(orders)
       .where(eq(orders.id, id))
@@ -183,6 +185,22 @@ export async function PUT(
     ) {
       return NextResponse.json(
         { error: "Invalid delivery status" },
+        { status: 400 },
+      );
+    }
+
+    // A custom order paid by deposit can't go out (or be closed) until the
+    // customer pays the rest.
+    const balance = Number(existingOrder.balanceDue ?? 0);
+    if (
+      balance > 0 &&
+      ((deliveryStatus && ["dispatch", "completed"].includes(deliveryStatus)) ||
+        status === "completed")
+    ) {
+      return NextResponse.json(
+        {
+          error: `₦${Math.round(balance).toLocaleString("en-NG")} is still owed on this order. Ask for the balance from the custom request first.`,
+        },
         { status: 400 },
       );
     }

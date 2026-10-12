@@ -2,15 +2,36 @@ import { limitByIp } from "lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "lib/db";
-import { customOrderQuotes, customOrderRequests } from "lib/db/schema";
+import {
+  customEditOptions,
+  customOrderQuotes,
+  customOrderRequests,
+} from "lib/db/schema";
+import { getProduct } from "lib/db/queries";
 import { getUserSession } from "lib/user-session";
 import {
   buildCustomOrderRequestNumber,
-  buildCustomRequestTrackUrl,
+  buildRequestPageUrl,
   isCustomOrderFeatureEnabled,
   normalizeEmail,
+  requestPagePath,
   toRequestStatus,
 } from "lib/custom-order-utils";
+import { getCustomOrderSettings } from "lib/custom-orders/settings";
+import {
+  BUDGETS,
+  DEADLINES,
+  KIND_LABEL,
+  MAX_LINKS,
+  MAX_PHOTOS,
+  SIZES,
+  buildTitle,
+  estimate,
+  labelFor,
+  type ChosenEdit,
+  type CustomKind,
+} from "lib/custom-orders/shared";
+import { toLinkList, toUploadList } from "lib/custom-orders/uploads";
 import {
   sendAdminNewCustomOrderRequest,
   sendCustomOrderRequestReceived,
@@ -19,46 +40,42 @@ import { getAdminNotificationEmails } from "lib/email/admin-notification-emails"
 import { baseUrl } from "lib/utils";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const KINDS: CustomKind[] = ["modify", "recreate", "new"];
 
-type CreateCustomOrderRequestBody = {
+type CreateBody = {
+  kind?: string;
+  productHandle?: string;
+  style?: string;
+  edits?: Array<{ id?: unknown; detail?: unknown }>;
+  note?: string;
+  referenceImages?: unknown;
+  referenceLinks?: unknown;
+  sizeEu?: unknown;
+  pairs?: unknown;
+  footLengthCm?: unknown;
+  budgetBand?: string;
+  deadlineKind?: string;
+  desiredDate?: string;
   customerName?: string;
   email?: string;
   phone?: string;
-  title?: string;
-  description?: string;
-  sizeNotes?: string;
-  colorPreferences?: string;
-  budgetMin?: number;
-  budgetMax?: number;
-  desiredDate?: string;
-  referenceImages?: string[];
-  customerNotes?: string;
 };
 
-/** Only images uploaded through our own upload endpoint are accepted. */
-const isOwnUpload = (url: string) => {
-  try {
-    const parsed = new URL(url);
-    const cloud = process.env.CLOUDINARY_CLOUD_NAME;
-    return (
-      parsed.protocol === "https:" &&
-      parsed.hostname === "res.cloudinary.com" &&
-      (!cloud || parsed.pathname.startsWith(`/${cloud}/`)) &&
-      parsed.pathname.includes("/dfootprint/custom-orders/requests/")
-    );
-  } catch {
-    return false;
-  }
-};
+const text = (value: unknown, max: number) =>
+  typeof value === "string" ? value.trim().slice(0, max) : "";
 
-const toImageArray = (value: unknown): string[] => {
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((item): item is string => typeof item === "string")
-    .map((item) => item.trim())
-    .filter(isOwnUpload)
-    .slice(0, 8);
-};
+/** Nigerian numbers in any common format → +234XXXXXXXXXX; null if invalid. */
+function normalisePhone(raw: string) {
+  const digits = raw.replace(/\D/g, "");
+  const local = digits.startsWith("234")
+    ? digits.slice(3)
+    : digits.replace(/^0/, "");
+  if (/^[789]\d{9}$/.test(local)) return `+234${local}`;
+  // Allow international numbers for customers abroad.
+  if (raw.trim().startsWith("+") && digits.length >= 8 && digits.length <= 15)
+    return `+${digits}`;
+  return null;
+}
 
 export async function GET() {
   try {
@@ -99,6 +116,7 @@ export async function GET() {
         return {
           id: request.id,
           requestNumber: request.requestNumber,
+          pageUrl: requestPagePath(request.requestNumber),
           customerName: request.customerName,
           email: request.email,
           phone: request.phone,
@@ -114,23 +132,25 @@ export async function GET() {
             : [],
           status: toRequestStatus(request.status),
           customerNotes: request.customerNotes,
-          quotedAmount: request.quotedAmount ? String(request.quotedAmount) : null,
+          quotedAmount: request.quotedAmount
+            ? String(request.quotedAmount)
+            : null,
           currencyCode: request.currencyCode,
           quoteExpiresAt: request.quoteExpiresAt?.toISOString() || null,
           paidAt: request.paidAt?.toISOString() || null,
           convertedOrderId: request.convertedOrderId,
           createdAt: request.createdAt.toISOString(),
           updatedAt: request.updatedAt.toISOString(),
-              latestQuote: latestQuote
-                ? {
-                    id: latestQuote.id,
-                    version: latestQuote.version,
-                    amount: String(latestQuote.amount),
-                    currencyCode: latestQuote.currencyCode,
-                    status: latestQuote.status,
-                    expiresAt: latestQuote.expiresAt?.toISOString() || null,
-                  }
-                : null,
+          latestQuote: latestQuote
+            ? {
+                id: latestQuote.id,
+                version: latestQuote.version,
+                amount: String(latestQuote.amount),
+                currencyCode: latestQuote.currencyCode,
+                status: latestQuote.status,
+                expiresAt: latestQuote.expiresAt?.toISOString() || null,
+              }
+            : null,
         };
       }),
     });
@@ -152,47 +172,134 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const body: CreateCustomOrderRequestBody = await request.json();
+    const body: CreateBody = await request.json();
     const session = await getUserSession();
+    const bad = (error: string) =>
+      NextResponse.json({ error }, { status: 400 });
 
-    const customerName = body.customerName?.trim() || "";
-    const email = normalizeEmail(body.email || "");
-    const phone = body.phone?.trim() || null;
-    const title = body.title?.trim() || "";
-    const description = body.description?.trim() || "";
+    const kind = KINDS.includes(body.kind as CustomKind)
+      ? (body.kind as CustomKind)
+      : null;
+    if (!kind) return bad("Choose what kind of custom pair you want");
 
-    if (!customerName || !title || !description) {
-      return NextResponse.json(
-        { error: "Name, title, and description are required" },
-        { status: 400 },
-      );
+    const customerName = text(body.customerName, 120);
+    const email = normalizeEmail(text(body.email, 255));
+    const phone = normalisePhone(text(body.phone, 30));
+    if (!customerName) return bad("Please tell us your name");
+    if (!email || !EMAIL_REGEX.test(email))
+      return bad("Please enter a valid email address");
+    if (!phone) return bad("Please enter a valid phone number");
+
+    const note = text(body.note, 1500);
+    const style = text(body.style, 40) || null;
+    const referenceImages = toUploadList(body.referenceImages, MAX_PHOTOS);
+    const referenceLinks = toLinkList(body.referenceLinks, MAX_LINKS);
+
+    const product =
+      kind === "modify" && body.productHandle
+        ? await getProduct(text(body.productHandle, 255))
+        : undefined;
+    if (kind === "modify" && !product)
+      return bad("Choose the design you'd like us to change");
+    if (kind === "recreate" && !referenceImages.length && !referenceLinks.length)
+      return bad("Add a photo or a link to the pair you want");
+    if (kind === "new" && !note && !referenceImages.length)
+      return bad("Tell us about your idea or add a photo");
+
+    // Edits: only active menu items, priced from the database (never the client).
+    const requested = Array.isArray(body.edits) ? body.edits.slice(0, 12) : [];
+    const ids = requested
+      .map((e) => (typeof e?.id === "string" ? e.id : ""))
+      .filter((id) => /^[0-9a-f-]{36}$/i.test(id));
+    const options = ids.length
+      ? await db
+          .select()
+          .from(customEditOptions)
+          .where(inArray(customEditOptions.id, ids))
+      : [];
+    const edits: ChosenEdit[] = options
+      .filter((o) => o.isActive)
+      .map((o) => {
+        const detail = text(
+          requested.find((e) => e?.id === o.id)?.detail,
+          120,
+        );
+        return {
+          id: o.id,
+          name: o.name,
+          price: Number(o.price),
+          needsReview: o.needsReview,
+          ...(detail ? { detail } : {}),
+        };
+      });
+    if (kind === "modify" && !edits.length && !note)
+      return bad("Tell us what you'd like to change");
+
+    const sizeEu = Number(body.sizeEu);
+    const size = SIZES.some((s) => s.eu === sizeEu) ? sizeEu : null;
+    const pairs = Math.min(20, Math.max(1, Math.round(Number(body.pairs) || 1)));
+    const foot = Number(body.footLengthCm);
+    const footLengthCm =
+      Number.isFinite(foot) && foot >= 15 && foot <= 35
+        ? Math.round(foot * 10) / 10
+        : null;
+    const budgetBand = labelFor(BUDGETS, body.budgetBand)
+      ? body.budgetBand!
+      : null;
+    const deadlineKind = labelFor(DEADLINES, body.deadlineKind)
+      ? body.deadlineKind!
+      : null;
+    let desiredDate: Date | null = null;
+    if (deadlineKind === "date") {
+      desiredDate = body.desiredDate ? new Date(body.desiredDate) : null;
+      if (!desiredDate || Number.isNaN(desiredDate.getTime()))
+        return bad("Pick the date you need it by");
+    } else if (deadlineKind === "two_weeks") {
+      desiredDate = new Date(Date.now() + 14 * 86_400_000);
     }
 
-    if (!email || !EMAIL_REGEX.test(email)) {
-      return NextResponse.json(
-        { error: "A valid email is required" },
-        { status: 400 },
-      );
-    }
+    const settings = await getCustomOrderSettings();
+    const est = product
+      ? estimate({
+          basePrice: Number(product.priceRange.minVariantPrice.amount),
+          edits,
+          sizeEu: size,
+          pairs,
+          hasExtraNote: Boolean(note),
+          settings,
+        })
+      : null;
+
+    const title = buildTitle({
+      kind,
+      productTitle: product?.title,
+      style,
+      edits,
+    });
+    // Plain-text summary for emails and anything still reading `description`.
+    const description =
+      [
+        `${KIND_LABEL[kind]}${product ? `: ${product.title}` : style ? `: ${style}` : ""}`,
+        ...edits.map(
+          (e) => `• ${e.name}${e.detail ? ` — ${e.detail}` : ""}`,
+        ),
+        note ? `\n${note}` : "",
+        referenceLinks.length ? `\nLinks: ${referenceLinks.join(" ")}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n") || title;
+    const sizeNotes = size
+      ? `EU ${size}${footLengthCm ? ` · foot ${footLengthCm} cm` : ""}${pairs > 1 ? ` · ${pairs} pairs` : ""}`
+      : `Size to confirm${pairs > 1 ? ` · ${pairs} pairs` : ""}`;
+    const colourEdit = edits.find((e) => /colou?r/i.test(e.name));
 
     const requestNumber = buildCustomOrderRequestNumber();
-    const referenceImages = toImageArray(body.referenceImages);
-    const desiredDate =
-      typeof body.desiredDate === "string" && body.desiredDate
-        ? new Date(body.desiredDate)
-        : null;
-    const budgetMin =
-      typeof body.budgetMin === "number" && Number.isFinite(body.budgetMin)
-        ? Math.max(0, body.budgetMin)
-        : null;
-    const budgetMax =
-      typeof body.budgetMax === "number" && Number.isFinite(body.budgetMax)
-        ? Math.max(0, body.budgetMax)
-        : null;
     const userId =
-      session?.id && normalizeEmail(session.email) === email ? session.id : null;
+      session?.id && normalizeEmail(session.email) === email
+        ? session.id
+        : null;
 
-    const [createdRequest] = await db
+    const [created] = await db
       .insert(customOrderRequests)
       .values({
         requestNumber,
@@ -202,33 +309,39 @@ export async function POST(request: NextRequest) {
         customerName,
         title,
         description,
-        sizeNotes: body.sizeNotes?.trim() || null,
-        colorPreferences: body.colorPreferences?.trim() || null,
-        budgetMin: budgetMin !== null ? String(budgetMin) : null,
-        budgetMax: budgetMax !== null ? String(budgetMax) : null,
-        desiredDate:
-          desiredDate && !Number.isNaN(desiredDate.getTime()) ? desiredDate : null,
+        kind,
+        baseProductId: product?.id ?? null,
+        edits,
+        estimateAmount: est ? String(est.total) : null,
+        sizeEu: size,
+        pairs,
+        footLengthCm: footLengthCm !== null ? String(footLengthCm) : null,
+        sizeNotes,
+        colorPreferences: colourEdit?.detail ?? null,
+        budgetBand,
+        deadlineKind,
+        desiredDate,
         referenceImages,
+        referenceLinks,
+        customerNotes: note || null,
         status: "submitted",
-        customerNotes: body.customerNotes?.trim() || null,
       })
       .returning();
 
-    if (!createdRequest) {
+    if (!created) {
       return NextResponse.json(
         { error: "Failed to create request" },
         { status: 500 },
       );
     }
 
-    const trackUrl = buildCustomRequestTrackUrl(requestNumber, email);
-    const adminUrl = `${baseUrl}/admin/custom-order-requests`;
-
     void sendCustomOrderRequestReceived({
       to: email,
-      customerName,
+      customerName: customerName.split(" ")[0] || customerName,
       requestNumber,
-      trackUrl,
+      trackUrl: buildRequestPageUrl(requestNumber),
+      title,
+      replyHours: settings.replyHours,
     });
 
     try {
@@ -241,8 +354,8 @@ export async function POST(request: NextRequest) {
           phone,
           requestNumber,
           title,
-          description,
-          adminUrl,
+          description: `${description}\n\n${sizeNotes}${est ? `\nEstimate: ₦${est.total.toLocaleString("en-NG")}${est.partial ? " (from)" : ""}` : ""}`,
+          adminUrl: `${baseUrl}/admin/custom-order-requests/${created.id}`,
         });
       }
     } catch (emailError) {
@@ -253,11 +366,12 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         request: {
-          id: createdRequest.id,
-          requestNumber: createdRequest.requestNumber,
-          status: createdRequest.status,
-          email: createdRequest.email,
-          createdAt: createdRequest.createdAt.toISOString(),
+          id: created.id,
+          requestNumber,
+          status: created.status,
+          email,
+          pageUrl: requestPagePath(requestNumber),
+          createdAt: created.createdAt.toISOString(),
         },
       },
       { status: 201 },

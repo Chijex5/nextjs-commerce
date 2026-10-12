@@ -40,6 +40,8 @@ type Order = {
   discountAmount?: string;
   couponCode?: string | null;
   totalAmount: string;
+  /** Custom orders paid by deposit: what's left to pay. */
+  balanceDue?: string;
   currencyCode: string;
   createdAt: string;
   trackingNumber?: string | null;
@@ -270,6 +272,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
     0,
   );
   const finalTotal = parsedTotal > 0 ? parsedTotal : computedTotal;
+  const balanceDue = parseMoney(order.balanceDue);
   const currentStep = order.deliveryStatus
     ? stepByDeliveryStatus[order.deliveryStatus]
     : 1;
@@ -702,15 +705,29 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
               </div>
             </div>
             <div className="od-meta-cell">
-              <div className="od-meta-label">Total paid</div>
+              <div className="od-meta-label">
+                {balanceDue > 0 ? "Paid so far" : "Total paid"}
+              </div>
               <div className="od-meta-value-gold">
                 <Price
-                  amount={finalTotal.toFixed(2)}
+                  amount={(finalTotal - balanceDue).toFixed(2)}
                   currencyCode={order.currencyCode}
                   currencyCodeClassName="hidden"
                   className="inline"
                 />
               </div>
+              {balanceDue > 0 ? (
+                <div className="od-meta-label mt-1">
+                  Balance{" "}
+                  <Price
+                    amount={balanceDue.toFixed(2)}
+                    currencyCode={order.currencyCode}
+                    currencyCodeClassName="hidden"
+                    className="inline"
+                  />{" "}
+                  due when ready
+                </div>
+              ) : null}
             </div>
           </div>
         </header>

@@ -2,17 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { and, desc, eq } from "drizzle-orm";
 import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
+import { customOrderQuotes, customOrderRequests } from "lib/db/schema";
 import {
-  customOrderQuoteTokens,
-  customOrderQuotes,
-  customOrderRequests,
-} from "lib/db/schema";
-import {
-  buildCustomOrderPublicToken,
-  buildQuoteAccessUrl,
-  hashCustomOrderPublicToken,
+  buildRequestPageUrl,
   isCustomOrderFeatureEnabled,
 } from "lib/custom-order-utils";
+import { addSystemMessage } from "lib/custom-orders/messages";
+import { getCustomOrderSettings } from "lib/custom-orders/settings";
+import { depositFor, quoteLines } from "lib/custom-orders/shared";
 import { sendCustomOrderQuoteSent } from "lib/email/order-emails";
 
 export async function POST(
@@ -31,8 +28,14 @@ export async function POST(
 
     const { id } = await context.params;
     const body = await request.json();
-    const amount =
-      typeof body.amount === "number" && Number.isFinite(body.amount)
+    // Itemised quote: the total is the sum of the lines. Otherwise a single amount.
+    const lines = quoteLines({ lines: body.lines })
+      .map((l) => ({ label: l.label.trim().slice(0, 120), amount: Math.round(l.amount) }))
+      .filter((l) => l.label && l.amount !== 0)
+      .slice(0, 20);
+    const amount = lines.length
+      ? lines.reduce((sum, l) => sum + l.amount, 0)
+      : typeof body.amount === "number" && Number.isFinite(body.amount)
         ? body.amount
         : 0;
     const currencyCode =
@@ -40,10 +43,7 @@ export async function POST(
         ? body.currencyCode.trim().toUpperCase()
         : "NGN";
     const note = typeof body.note === "string" ? body.note.trim() : null;
-    const breakdown =
-      typeof body.breakdown === "object" && body.breakdown !== null
-        ? body.breakdown
-        : {};
+    const breakdown = lines.length ? { lines } : {};
     const expiresAt =
       typeof body.expiresAt === "string" && body.expiresAt
         ? new Date(body.expiresAt)
@@ -72,6 +72,17 @@ export async function POST(
     if (!requestRow) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
+    if (requestRow.convertedOrderId) {
+      return NextResponse.json(
+        { error: "This request has already been paid" },
+        { status: 400 },
+      );
+    }
+
+    const depositAmount =
+      body.deposit === true
+        ? depositFor(amount, (await getCustomOrderSettings()).depositPercent)
+        : null;
 
     const [latestQuote] = await db
       .select({ version: customOrderQuotes.version })
@@ -91,6 +102,7 @@ export async function POST(
           amount: String(amount),
           currencyCode,
           breakdown,
+          depositAmount: depositAmount === null ? null : String(depositAmount),
           note,
           status: "sent",
           expiresAt,
@@ -116,17 +128,13 @@ export async function POST(
       return quote;
     });
 
-    const publicToken = buildCustomOrderPublicToken();
-    const tokenHash = hashCustomOrderPublicToken(publicToken);
-
-    await db.insert(customOrderQuoteTokens).values({
-      quoteId: createdQuote.id,
-      email: requestRow.email,
-      tokenHash,
-      expiresAt,
-    });
-
-    const quoteUrl = buildQuoteAccessUrl(createdQuote.id, publicToken);
+    await addSystemMessage(
+      id,
+      `Price sent: ₦${amount.toLocaleString("en-NG")}${
+        depositAmount ? ` (deposit ₦${depositAmount.toLocaleString("en-NG")})` : ""
+      }${note ? ` — ${note}` : ""}`,
+    );
+    const quoteUrl = buildRequestPageUrl(requestRow.requestNumber);
 
     void sendCustomOrderQuoteSent({
       to: requestRow.email,
@@ -148,6 +156,7 @@ export async function POST(
           version: createdQuote.version,
           amount: String(createdQuote.amount),
           currencyCode: createdQuote.currencyCode,
+          depositAmount: createdQuote.depositAmount,
           status: createdQuote.status,
           expiresAt: createdQuote.expiresAt?.toISOString() || null,
           createdAt: createdQuote.createdAt.toISOString(),

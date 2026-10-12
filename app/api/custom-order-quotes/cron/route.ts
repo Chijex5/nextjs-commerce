@@ -12,16 +12,9 @@ import {
   or,
 } from "drizzle-orm";
 import { db } from "lib/db";
+import { customOrderQuotes, customOrderRequests } from "lib/db/schema";
 import {
-  customOrderQuoteTokens,
-  customOrderQuotes,
-  customOrderRequests,
-} from "lib/db/schema";
-import {
-  buildCustomOrderPublicToken,
-  buildCustomRequestTrackUrl,
-  buildQuoteAccessUrl,
-  hashCustomOrderPublicToken,
+  buildRequestPageUrl,
   isCustomOrderFeatureEnabled,
 } from "lib/custom-order-utils";
 import {
@@ -176,16 +169,7 @@ export async function GET(request: NextRequest) {
         }
 
         try {
-          const publicToken = buildCustomOrderPublicToken();
-          const tokenHash = hashCustomOrderPublicToken(publicToken);
-          await db.insert(customOrderQuoteTokens).values({
-            quoteId: row.quoteId,
-            email: row.requestEmail,
-            tokenHash,
-            expiresAt,
-          });
-
-          const quoteUrl = buildQuoteAccessUrl(row.quoteId, publicToken);
+          const quoteUrl = buildRequestPageUrl(row.requestNumber);
           await sendCustomOrderQuoteReminder({
             to: row.requestEmail,
             customerName: row.customerName,
@@ -246,10 +230,7 @@ export async function GET(request: NextRequest) {
         });
 
         if (!row.expiredNotificationSentAt) {
-          const trackUrl = buildCustomRequestTrackUrl(
-            row.requestNumber,
-            row.requestEmail,
-          );
+          const trackUrl = buildRequestPageUrl(row.requestNumber);
           await sendCustomOrderQuoteExpiredNotice({
             to: row.requestEmail,
             customerName: row.customerName,

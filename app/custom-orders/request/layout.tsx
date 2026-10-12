@@ -1,5 +1,4 @@
 import Footer from "components/layout/footer";
-import "../../editorial-bridge.css";
 
 export default function CustomOrderRequestLayout({
   children,
@@ -8,7 +7,7 @@ export default function CustomOrderRequestLayout({
 }) {
   return (
     <>
-      <div className="ed-bridge">{children}</div>
+      <div className="min-h-[70svh] bg-canvas text-fg">{children}</div>
       <Footer />
     </>
   );
