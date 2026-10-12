@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
-import type { Cart } from "lib/shopify/types";
+import type { Cart } from "lib/types/commerce";
 import { useCart } from "./cart-context";
 
 export default function AbandonedCartRecovery() {

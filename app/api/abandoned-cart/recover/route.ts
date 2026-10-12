@@ -8,7 +8,7 @@ import {
 import { db } from "lib/db";
 import { getCart as getCartById } from "lib/db/queries";
 import { abandonedCarts } from "lib/db/schema";
-import type { Cart } from "lib/shopify/types";
+import type { Cart } from "lib/types/commerce";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 

@@ -1,3 +1,4 @@
+import { parseDbTimestamp } from "lib/db/time";
 import { OrderDetail } from "components/admin/orders/order-detail";
 import { and, eq, ne, or, sql } from "drizzle-orm";
 import { authOptions } from "lib/auth";
@@ -130,7 +131,7 @@ export default async function AdminOrderDetailPage({
           orders: Number(history?.orders ?? 0),
           spent: Number(history?.spent ?? 0),
           firstOrderAt: history?.first
-            ? new Date(history.first.replace(" ", "T") + "Z").toISOString()
+            ? (parseDbTimestamp(history.first)?.toISOString() ?? null)
             : null,
         },
       }}

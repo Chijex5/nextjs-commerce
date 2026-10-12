@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { useCart } from "components/cart/cart-context";
 import { formatNaira } from "components/product/product-card";
 import { trackAddToCart, trackProductView } from "lib/analytics";
-import type { Product, ProductVariant } from "lib/shopify/types";
+import type { Product, ProductVariant } from "lib/types/commerce";
 import { Check } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";

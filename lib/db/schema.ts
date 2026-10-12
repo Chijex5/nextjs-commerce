@@ -1,6 +1,8 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   boolean,
+  check,
   decimal,
   index,
   integer,
@@ -12,6 +14,32 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import {
+  ADMIN_ROLE_VALUES,
+  CAMPAIGN_LOG_STATUSES,
+  CAMPAIGN_STATUSES,
+  CAMPAIGN_TYPES,
+  CUSTOM_REQUEST_STATUSES,
+  DELIVERY_STATUSES,
+  DISCOUNT_TYPES,
+  FLOW_KEYS,
+  FLOW_LOG_STATUSES,
+  MERCHANT_SYNC_STATUSES,
+  NEWSLETTER_SOURCES,
+  NEWSLETTER_STATUSES,
+  ORDER_STATUSES,
+  ORDER_TYPES,
+  OTP_PURPOSES,
+  PAYMENT_PROVIDERS,
+  PAYMENT_SOURCES,
+  PAYMENT_STATUSES,
+  QUOTE_STATUSES,
+  REVIEW_STATUSES,
+} from "./enums";
+
+/** CHECK expression: column holds one of `values` (lists in ./enums.ts). */
+const oneOf = (column: AnyPgColumn, values: readonly string[]) =>
+  sql`${column} in (${sql.raw(values.map((v) => `'${v}'`).join(", "))})`;
 
 // Products table - stores the main product information
 export const products = pgTable(
@@ -26,12 +54,26 @@ export const products = pgTable(
     seoTitle: varchar("seo_title", { length: 255 }),
     seoDescription: text("seo_description"),
     tags: text("tags").array().default([]),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    /**
+     * Typical days to make a made-to-order pair (null = the shop default).
+     * Most products are made to order; see product_variants.track_inventory
+     * for the ones kept in stock.
+     */
+    productionDays: integer("production_days"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
-    handleIdx: index("products_handle_idx").on(table.handle),
-    tagsIdx: index("products_tags_idx").on(table.tags),
+    tagsIdx: index("products_tags_idx").using("gin", table.tags),
+    createdAtIdx: index("products_created_at_idx").on(table.createdAt),
+    productionDaysCheck: check(
+      "products_production_days_check",
+      sql`${table.productionDays} is null or ${table.productionDays} >= 0`,
+    ),
   }),
 );
 
@@ -50,11 +92,27 @@ export const productVariants = pgTable(
       .notNull(),
     availableForSale: boolean("available_for_sale").default(true).notNull(),
     selectedOptions: jsonb("selected_options").default([]).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    /**
+     * Off (default) = made to order, never sells out. On = sold from stock:
+     * stock_quantity is decremented on purchase and the variant can't be
+     * bought past zero.
+     */
+    trackInventory: boolean("track_inventory").default(false).notNull(),
+    stockQuantity: integer("stock_quantity"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     productIdIdx: index("product_variants_product_id_idx").on(table.productId),
+    priceCheck: check("product_variants_price_check", sql`${table.price} >= 0`),
+    stockCheck: check(
+      "product_variants_stock_check",
+      sql`(not ${table.trackInventory} or ${table.stockQuantity} is not null) and (${table.stockQuantity} is null or ${table.stockQuantity} >= 0)`,
+    ),
   }),
 );
 
@@ -66,7 +124,9 @@ export const productOptions = pgTable("product_options", {
     .notNull(),
   name: varchar("name", { length: 100 }).notNull(),
   values: text("values").array().notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 // Product images
@@ -83,7 +143,9 @@ export const productImages = pgTable(
     height: integer("height"),
     position: integer("position").default(0).notNull(),
     isFeatured: boolean("is_featured").default(false).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     productIdIdx: index("product_images_product_id_idx").on(table.productId),
@@ -92,22 +154,20 @@ export const productImages = pgTable(
 );
 
 // Collections (categories)
-export const collections = pgTable(
-  "collections",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    handle: varchar("handle", { length: 255 }).notNull().unique(),
-    title: varchar("title", { length: 255 }).notNull(),
-    description: text("description"),
-    seoTitle: varchar("seo_title", { length: 255 }),
-    seoDescription: text("seo_description"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  },
-  (table) => ({
-    handleIdx: index("collections_handle_idx").on(table.handle),
-  }),
-);
+export const collections = pgTable("collections", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  handle: varchar("handle", { length: 255 }).notNull().unique(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  seoTitle: varchar("seo_title", { length: 255 }),
+  seoDescription: text("seo_description"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
 
 // Many-to-many relationship between products and collections
 export const productCollections = pgTable(
@@ -121,7 +181,9 @@ export const productCollections = pgTable(
       .references(() => collections.id, { onDelete: "cascade" })
       .notNull(),
     position: integer("position").default(0).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     productIdIdx: index("product_collections_product_id_idx").on(
@@ -153,9 +215,13 @@ export const carts = pgTable(
     currencyCode: varchar("currency_code", { length: 3 })
       .default("NGN")
       .notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
-    expiresAt: timestamp("expires_at"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
   },
   (table) => ({
     sessionIdIdx: uniqueIndex("carts_session_id_unique").on(table.sessionId),
@@ -170,7 +236,7 @@ export const cartLines = pgTable(
       .references(() => carts.id, { onDelete: "cascade" })
       .notNull(),
     productVariantId: uuid("product_variant_id")
-      .references(() => productVariants.id)
+      .references(() => productVariants.id, { onDelete: "cascade" })
       .notNull(),
     quantity: integer("quantity").default(1).notNull(),
     totalAmount: decimal("total_amount", { precision: 10, scale: 2 })
@@ -179,41 +245,51 @@ export const cartLines = pgTable(
     currencyCode: varchar("currency_code", { length: 3 })
       .default("NGN")
       .notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     cartIdIdx: index("cart_lines_cart_id_idx").on(table.cartId),
     variantIdIdx: index("cart_lines_variant_id_idx").on(table.productVariantId),
+    quantityCheck: check(
+      "cart_lines_quantity_check",
+      sql`${table.quantity} > 0`,
+    ),
   }),
 );
 
 // Pages table for static content
-export const pages = pgTable(
-  "pages",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    handle: varchar("handle", { length: 255 }).notNull().unique(),
-    title: varchar("title", { length: 255 }).notNull(),
-    body: text("body"),
-    bodySummary: text("body_summary"),
-    seoTitle: varchar("seo_title", { length: 255 }),
-    seoDescription: text("seo_description"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  },
-  (table) => ({
-    handleIdx: index("pages_handle_idx").on(table.handle),
-  }),
-);
+export const pages = pgTable("pages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  handle: varchar("handle", { length: 255 }).notNull().unique(),
+  title: varchar("title", { length: 255 }).notNull(),
+  body: text("body"),
+  bodySummary: text("body_summary"),
+  seoTitle: varchar("seo_title", { length: 255 }),
+  seoDescription: text("seo_description"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
 
 // Menus for navigation
 export const menus = pgTable("menus", {
   id: uuid("id").primaryKey().defaultRandom(),
   handle: varchar("handle", { length: 255 }).notNull().unique(),
   title: varchar("title", { length: 255 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 // Menu items
@@ -227,7 +303,9 @@ export const menuItems = pgTable(
     title: varchar("title", { length: 255 }).notNull(),
     url: text("url").notNull(),
     position: integer("position").default(0).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     menuIdIdx: index("menu_items_menu_id_idx").on(table.menuId),
@@ -248,8 +326,12 @@ export const customOrderShowcases = pgTable(
     completionTime: varchar("completion_time", { length: 100 }),
     position: integer("position").default(0).notNull(),
     isPublished: boolean("is_published").default(true).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     isPublishedIdx: index("custom_orders_is_published_idx").on(
@@ -268,7 +350,9 @@ export const customOrderRequests = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     requestNumber: varchar("request_number", { length: 50 }).notNull().unique(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
     email: varchar("email", { length: 255 }).notNull(),
     phone: varchar("phone", { length: 50 }),
     customerName: varchar("customer_name", { length: 255 }).notNull(),
@@ -278,7 +362,7 @@ export const customOrderRequests = pgTable(
     colorPreferences: text("color_preferences"),
     budgetMin: decimal("budget_min", { precision: 10, scale: 2 }),
     budgetMax: decimal("budget_max", { precision: 10, scale: 2 }),
-    desiredDate: timestamp("desired_date"),
+    desiredDate: timestamp("desired_date", { withTimezone: true }),
     referenceImages: jsonb("reference_images").default([]).notNull(),
     status: varchar("status", { length: 50 }).default("submitted").notNull(),
     adminNotes: text("admin_notes"),
@@ -287,19 +371,36 @@ export const customOrderRequests = pgTable(
     currencyCode: varchar("currency_code", { length: 3 })
       .default("NGN")
       .notNull(),
-    quoteExpiresAt: timestamp("quote_expires_at"),
-    paidAt: timestamp("paid_at"),
-    convertedOrderId: uuid("converted_order_id"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    quoteExpiresAt: timestamp("quote_expires_at", { withTimezone: true }),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    convertedOrderId: uuid("converted_order_id").references(
+      (): AnyPgColumn => orders.id,
+      { onDelete: "set null" },
+    ),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
-    requestNumberIdx: index("custom_order_requests_request_number_idx").on(
-      table.requestNumber,
-    ),
     userIdIdx: index("custom_order_requests_user_id_idx").on(table.userId),
-    emailIdx: index("custom_order_requests_email_idx").on(table.email),
+    emailIdx: index("custom_order_requests_email_lower_idx").on(
+      sql`lower(${table.email})`,
+    ),
+    createdAtIdx: index("custom_order_requests_created_at_idx").on(
+      table.createdAt,
+    ),
+    budgetCheck: check(
+      "custom_order_requests_budget_check",
+      sql`(${table.budgetMin} is null or ${table.budgetMin} >= 0) and (${table.budgetMax} is null or ${table.budgetMax} >= 0)`,
+    ),
     statusIdx: index("custom_order_requests_status_idx").on(table.status),
+    statusCheck: check(
+      "custom_order_requests_status_check",
+      oneOf(table.status, CUSTOM_REQUEST_STATUSES),
+    ),
     updatedAtIdx: index("custom_order_requests_updated_at_idx").on(
       table.updatedAt,
     ),
@@ -325,19 +426,29 @@ export const customOrderQuotes = pgTable(
     breakdown: jsonb("breakdown").default({}).notNull(),
     note: text("note"),
     status: varchar("status", { length: 50 }).default("sent").notNull(),
-    expiresAt: timestamp("expires_at"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
     reminderCount: integer("reminder_count").default(0).notNull(),
-    lastReminderAt: timestamp("last_reminder_at"),
-    expiredNotificationSentAt: timestamp("expired_notification_sent_at"),
+    lastReminderAt: timestamp("last_reminder_at", { withTimezone: true }),
+    expiredNotificationSentAt: timestamp("expired_notification_sent_at", {
+      withTimezone: true,
+    }),
     createdBy: varchar("created_by", { length: 255 }),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     requestIdIdx: index("custom_order_quotes_request_id_idx").on(
       table.requestId,
     ),
     statusIdx: index("custom_order_quotes_status_idx").on(table.status),
+    statusCheck: check(
+      "custom_order_quotes_status_check",
+      oneOf(table.status, QUOTE_STATUSES),
+    ),
     expiresAtIdx: index("custom_order_quotes_expires_at_idx").on(
       table.expiresAt,
     ),
@@ -347,6 +458,10 @@ export const customOrderQuotes = pgTable(
     requestVersionUniqueIdx: uniqueIndex(
       "custom_order_quotes_request_version_unique",
     ).on(table.requestId, table.version),
+    amountCheck: check(
+      "custom_order_quotes_amount_check",
+      sql`${table.amount} >= 0 and ${table.version} >= 1`,
+    ),
   }),
 );
 
@@ -360,15 +475,20 @@ export const customOrderQuoteTokens = pgTable(
       .notNull(),
     email: varchar("email", { length: 255 }).notNull(),
     tokenHash: text("token_hash").notNull(),
-    expiresAt: timestamp("expires_at").notNull(),
-    usedAt: timestamp("used_at"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     quoteIdIdx: index("custom_order_quote_tokens_quote_id_idx").on(
       table.quoteId,
     ),
     emailIdx: index("custom_order_quote_tokens_email_idx").on(table.email),
+    tokenHashUnique: uniqueIndex(
+      "custom_order_quote_tokens_token_hash_unique",
+    ).on(table.tokenHash),
     expiresAtIdx: index("custom_order_quote_tokens_expires_at_idx").on(
       table.expiresAt,
     ),
@@ -385,12 +505,23 @@ export const adminUsers = pgTable(
     passwordHash: text("password_hash").notNull(),
     role: varchar("role", { length: 50 }).default("admin").notNull(),
     isActive: boolean("is_active").default(true).notNull(),
-    lastLoginAt: timestamp("last_login_at"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
-    emailIdx: index("admin_users_email_idx").on(table.email),
+    emailLowercase: check(
+      "admin_users_email_lowercase_check",
+      sql`${table.email} = lower(${table.email})`,
+    ),
+    roleCheck: check(
+      "admin_users_role_check",
+      oneOf(table.role, ADMIN_ROLE_VALUES),
+    ),
   }),
 );
 
@@ -404,14 +535,16 @@ export const adminPasswordResets = pgTable(
       .notNull(),
     email: varchar("email", { length: 255 }).notNull(),
     tokenHash: text("token_hash").notNull(),
-    expiresAt: timestamp("expires_at").notNull(),
-    usedAt: timestamp("used_at"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     adminIdIdx: index("admin_password_resets_admin_id_idx").on(table.adminId),
     emailIdx: index("admin_password_resets_email_idx").on(table.email),
-    tokenHashIdx: index("admin_password_resets_token_hash_idx").on(
+    tokenHashUnique: uniqueIndex("admin_password_resets_token_hash_unique").on(
       table.tokenHash,
     ),
     expiresAtIdx: index("admin_password_resets_expires_at_idx").on(
@@ -433,12 +566,25 @@ export const users = pgTable(
     shippingAddress: jsonb("shipping_address"),
     billingAddress: jsonb("billing_address"),
     isActive: boolean("is_active").default(true).notNull(),
-    lastLoginAt: timestamp("last_login_at"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    /**
+     * Set when the user proves they own `email` (magic-link sign-in). Guest
+     * orders and custom requests are only linked to verified accounts.
+     */
+    emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+    lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
-    emailIdx: index("users_email_idx").on(table.email),
+    createdAtIdx: index("users_created_at_idx").on(table.createdAt),
+    emailLowercase: check(
+      "users_email_lowercase_check",
+      sql`${table.email} = lower(${table.email})`,
+    ),
   }),
 );
 
@@ -447,7 +593,9 @@ export const orders = pgTable(
   "orders",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id").references(() => users.id),
+    userId: uuid("user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
     orderNumber: varchar("order_number", { length: 50 }).notNull().unique(),
     email: varchar("email", { length: 255 }).notNull(),
     phone: varchar("phone", { length: 50 }),
@@ -458,7 +606,7 @@ export const orders = pgTable(
     deliveryStatus: varchar("delivery_status", { length: 50 })
       .default("production")
       .notNull(),
-    estimatedArrival: timestamp("estimated_arrival"),
+    estimatedArrival: timestamp("estimated_arrival", { withTimezone: true }),
     subtotalAmount: decimal("subtotal_amount", {
       precision: 10,
       scale: 2,
@@ -472,34 +620,63 @@ export const orders = pgTable(
     discountAmount: decimal("discount_amount", { precision: 10, scale: 2 })
       .default("0.00")
       .notNull(),
+    // Code as entered (kept for history); coupon_id links the coupon itself.
     couponCode: varchar("coupon_code", { length: 50 }),
+    couponId: uuid("coupon_id").references(() => coupons.id, {
+      onDelete: "set null",
+    }),
     totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
     currencyCode: varchar("currency_code", { length: 3 })
       .default("NGN")
       .notNull(),
     notes: text("notes"),
     trackingNumber: varchar("tracking_number", { length: 100 }),
-    acknowledgedAt: timestamp("acknowledged_at"),
+    acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
     acknowledgedBy: varchar("acknowledged_by", { length: 255 }),
     orderType: varchar("order_type", { length: 20 })
       .default("catalog")
       .notNull(),
     customOrderRequestId: uuid("custom_order_request_id").references(
-      () => customOrderRequests.id,
+      (): AnyPgColumn => customOrderRequests.id,
+      { onDelete: "set null" },
     ),
-    paymentTransactionId: uuid("payment_transaction_id"),
+    paymentTransactionId: uuid("payment_transaction_id").references(
+      (): AnyPgColumn => paymentTransactions.id,
+      { onDelete: "set null" },
+    ),
     paymentProvider: varchar("payment_provider", { length: 50 }).default(
       "paystack",
     ),
     paymentReference: varchar("payment_reference", { length: 255 }),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
-    orderNumberIdx: index("orders_order_number_idx").on(table.orderNumber),
     userIdIdx: index("orders_user_id_idx").on(table.userId),
-    emailIdx: index("orders_email_idx").on(table.email),
+    emailIdx: index("orders_email_lower_idx").on(sql`lower(${table.email})`),
+    createdAtIdx: index("orders_created_at_idx").on(table.createdAt),
+    couponIdIdx: index("orders_coupon_id_idx").on(table.couponId),
     statusIdx: index("orders_status_idx").on(table.status),
+    statusCheck: check(
+      "orders_status_check",
+      oneOf(table.status, ORDER_STATUSES),
+    ),
+    deliveryStatusCheck: check(
+      "orders_delivery_status_check",
+      oneOf(table.deliveryStatus, DELIVERY_STATUSES),
+    ),
+    orderTypeCheck: check(
+      "orders_order_type_check",
+      oneOf(table.orderType, ORDER_TYPES),
+    ),
+    paymentProviderCheck: check(
+      "orders_payment_provider_check",
+      sql`${table.paymentProvider} is null or ${oneOf(table.paymentProvider, PAYMENT_PROVIDERS)}`,
+    ),
     deliveryStatusIdx: index("orders_delivery_status_idx").on(
       table.deliveryStatus,
     ),
@@ -510,8 +687,12 @@ export const orders = pgTable(
     paymentTransactionIdIdx: index("orders_payment_transaction_id_idx").on(
       table.paymentTransactionId,
     ),
-    paymentReferenceIdx: index("orders_payment_reference_idx").on(
+    paymentReferenceUnique: uniqueIndex("orders_payment_reference_unique").on(
       table.paymentReference,
+    ),
+    amountsCheck: check(
+      "orders_amounts_check",
+      sql`${table.subtotalAmount} >= 0 and ${table.taxAmount} >= 0 and ${table.shippingAmount} >= 0 and ${table.discountAmount} >= 0 and ${table.totalAmount} >= 0`,
     ),
     customOrderRequestUniqueIdx: uniqueIndex(
       "orders_custom_order_request_unique",
@@ -530,8 +711,14 @@ export const orderItems = pgTable(
     orderId: uuid("order_id")
       .references(() => orders.id, { onDelete: "cascade" })
       .notNull(),
-    productId: uuid("product_id").notNull(),
-    productVariantId: uuid("product_variant_id").notNull(),
+    // Null once the product/variant is deleted; the title/price snapshot stays.
+    productId: uuid("product_id").references(() => products.id, {
+      onDelete: "set null",
+    }),
+    productVariantId: uuid("product_variant_id").references(
+      () => productVariants.id,
+      { onDelete: "set null" },
+    ),
     productTitle: varchar("product_title", { length: 255 }).notNull(),
     variantTitle: varchar("variant_title", { length: 255 }).notNull(),
     quantity: integer("quantity").notNull(),
@@ -541,10 +728,20 @@ export const orderItems = pgTable(
       .default("NGN")
       .notNull(),
     productImage: text("product_image"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     orderIdIdx: index("order_items_order_id_idx").on(table.orderId),
+    productIdIdx: index("order_items_product_id_idx").on(table.productId),
+    variantIdIdx: index("order_items_variant_id_idx").on(
+      table.productVariantId,
+    ),
+    quantityCheck: check(
+      "order_items_quantity_check",
+      sql`${table.quantity} > 0 and ${table.price} >= 0 and ${table.totalAmount} >= 0`,
+    ),
   }),
 );
 
@@ -564,19 +761,37 @@ export const paymentTransactions = pgTable(
     paystackStatus: varchar("paystack_status", { length: 50 }),
     customer: jsonb("customer"),
     payload: jsonb("payload"),
-    orderId: uuid("order_id").references(() => orders.id),
+    orderId: uuid("order_id").references(() => orders.id, {
+      onDelete: "set null",
+    }),
     conflictCode: varchar("conflict_code", { length: 100 }),
     conflictMessage: text("conflict_message"),
-    lastVerifiedAt: timestamp("last_verified_at"),
-    resolvedAt: timestamp("resolved_at"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     providerReferenceUniqueIdx: uniqueIndex(
       "payment_transactions_provider_reference_unique",
     ).on(table.provider, table.reference),
     statusIdx: index("payment_transactions_status_idx").on(table.status),
+    statusCheck: check(
+      "payment_transactions_status_check",
+      oneOf(table.status, PAYMENT_STATUSES),
+    ),
+    sourceCheck: check(
+      "payment_transactions_source_check",
+      oneOf(table.source, PAYMENT_SOURCES),
+    ),
+    providerCheck: check(
+      "payment_transactions_provider_check",
+      oneOf(table.provider, PAYMENT_PROVIDERS),
+    ),
     sourceIdx: index("payment_transactions_source_idx").on(table.source),
     createdAtIdx: index("payment_transactions_created_at_idx").on(
       table.createdAt,
@@ -584,6 +799,10 @@ export const paymentTransactions = pgTable(
     orderIdIdx: index("payment_transactions_order_id_idx").on(table.orderId),
     orderIdUniqueIdx: uniqueIndex("payment_transactions_order_id_unique").on(
       table.orderId,
+    ),
+    amountCheck: check(
+      "payment_transactions_amount_check",
+      sql`${table.amount} >= 0`,
     ),
   }),
 );
@@ -602,7 +821,9 @@ export const paymentEvents = pgTable(
     status: varchar("status", { length: 50 }).notNull(),
     message: text("message"),
     payload: jsonb("payload"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     paymentTransactionIdIdx: index(
@@ -623,12 +844,25 @@ export const newsletterSubscribers = pgTable(
     status: varchar("status", { length: 50 }).default("active").notNull(),
     // Where consent came from: newsletter, popup, checkout, account, import.
     source: varchar("source", { length: 50 }).default("newsletter").notNull(),
-    subscribedAt: timestamp("subscribed_at").defaultNow().notNull(),
-    unsubscribedAt: timestamp("unsubscribed_at"),
+    subscribedAt: timestamp("subscribed_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    unsubscribedAt: timestamp("unsubscribed_at", { withTimezone: true }),
   },
   (table) => ({
-    emailIdx: index("newsletter_subscribers_email_idx").on(table.email),
     statusIdx: index("newsletter_subscribers_status_idx").on(table.status),
+    statusCheck: check(
+      "newsletter_subscribers_status_check",
+      oneOf(table.status, NEWSLETTER_STATUSES),
+    ),
+    sourceCheck: check(
+      "newsletter_subscribers_source_check",
+      oneOf(table.source, NEWSLETTER_SOURCES),
+    ),
+    emailLowercase: check(
+      "newsletter_subscribers_email_lowercase_check",
+      sql`${table.email} = lower(${table.email})`,
+    ),
   }),
 );
 
@@ -639,13 +873,18 @@ export const magicLinkTokens = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     email: varchar("email", { length: 255 }).notNull(),
     tokenHash: text("token_hash").notNull(),
-    expiresAt: timestamp("expires_at").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    usedAt: timestamp("used_at"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
   },
   (table) => ({
     emailIdx: index("magic_link_tokens_email_idx").on(table.email),
     expiresAtIdx: index("magic_link_tokens_expires_at_idx").on(table.expiresAt),
+    tokenHashUnique: uniqueIndex("magic_link_tokens_token_hash_unique").on(
+      table.tokenHash,
+    ),
   }),
 );
 
@@ -657,13 +896,21 @@ export const emailOtps = pgTable(
     email: varchar("email", { length: 255 }).notNull(),
     otpHash: text("otp_hash").notNull(),
     purpose: varchar("purpose", { length: 50 }).notNull(),
-    expiresAt: timestamp("expires_at").notNull(),
-    usedAt: timestamp("used_at"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
-    emailIdx: index("email_otps_email_idx").on(table.email),
-    purposeIdx: index("email_otps_purpose_idx").on(table.purpose),
+    emailPurposeIdx: index("email_otps_email_purpose_idx").on(
+      table.email,
+      table.purpose,
+    ),
+    purposeCheck: check(
+      "email_otps_purpose_check",
+      oneOf(table.purpose, OTP_PURPOSES),
+    ),
     expiresAtIdx: index("email_otps_expires_at_idx").on(table.expiresAt),
   }),
 );
@@ -676,17 +923,21 @@ export const abandonedCarts = pgTable(
     userId: uuid("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    cartId: uuid("cart_id").notNull(),
+    cartId: uuid("cart_id")
+      .references(() => carts.id, { onDelete: "cascade" })
+      .notNull(),
     email: varchar("email", { length: 255 }).notNull(),
     customerName: varchar("customer_name", { length: 255 }).notNull(),
     cartTotal: decimal("cart_total", { precision: 10, scale: 2 }).notNull(),
     items: jsonb("items").notNull(),
     emailSent: boolean("email_sent").default(false).notNull(),
-    emailSentAt: timestamp("email_sent_at"),
+    emailSentAt: timestamp("email_sent_at", { withTimezone: true }),
     recovered: boolean("recovered").default(false).notNull(),
-    recoveredAt: timestamp("recovered_at"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    expiresAt: timestamp("expires_at").notNull(),
+    recoveredAt: timestamp("recovered_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },
   (table) => ({
     userIdIdx: index("abandoned_carts_user_id_idx").on(table.userId),
@@ -703,8 +954,12 @@ export const reviews = pgTable(
     productId: uuid("product_id")
       .references(() => products.id, { onDelete: "cascade" })
       .notNull(),
-    userId: uuid("user_id").references(() => users.id),
-    orderId: uuid("order_id"),
+    userId: uuid("user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    orderId: uuid("order_id").references(() => orders.id, {
+      onDelete: "set null",
+    }),
     rating: integer("rating").notNull(),
     title: varchar("title", { length: 255 }),
     comment: text("comment"),
@@ -712,14 +967,27 @@ export const reviews = pgTable(
     isVerified: boolean("is_verified").default(false).notNull(),
     helpfulCount: integer("helpful_count").default(0).notNull(),
     status: varchar("status", { length: 50 }).default("pending").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     productIdIdx: index("reviews_product_id_idx").on(table.productId),
     userIdIdx: index("reviews_user_id_idx").on(table.userId),
     statusIdx: index("reviews_status_idx").on(table.status),
+    statusCheck: check(
+      "reviews_status_check",
+      oneOf(table.status, REVIEW_STATUSES),
+    ),
     ratingIdx: index("reviews_rating_idx").on(table.rating),
+    createdAtIdx: index("reviews_created_at_idx").on(table.createdAt),
+    ratingCheck: check(
+      "reviews_rating_check",
+      sql`${table.rating} between 1 and 5`,
+    ),
   }),
 );
 
@@ -732,10 +1000,12 @@ export const reviewVotes = pgTable(
       .references(() => reviews.id, { onDelete: "cascade" })
       .notNull(),
     userId: uuid("user_id")
-      .references(() => users.id)
+      .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     isHelpful: boolean("is_helpful").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     reviewIdIdx: index("review_votes_review_id_idx").on(table.reviewId),
@@ -758,12 +1028,20 @@ export const testimonials = pgTable(
     image: text("image"),
     isActive: boolean("is_active").default(true).notNull(),
     position: integer("position").default(0).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     isActiveIdx: index("testimonials_is_active_idx").on(table.isActive),
     positionIdx: index("testimonials_position_idx").on(table.position),
+    ratingCheck: check(
+      "testimonials_rating_check",
+      sql`${table.rating} between 1 and 5`,
+    ),
   }),
 );
 
@@ -777,8 +1055,12 @@ export const sizeGuides = pgTable(
     sizesChart: jsonb("sizes_chart").notNull(),
     measurements: jsonb("measurements").notNull(),
     isActive: boolean("is_active").default(true).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     productTypeIdx: index("size_guides_product_type_idx").on(table.productType),
@@ -803,20 +1085,35 @@ export const coupons = pgTable(
     maxUsesPerUser: integer("max_uses_per_user"),
     requiresLogin: boolean("requires_login").default(false).notNull(),
     isActive: boolean("is_active").default(true).notNull(),
-    startDate: timestamp("start_date"),
-    expiryDate: timestamp("expiry_date"),
+    startDate: timestamp("start_date", { withTimezone: true }),
+    expiryDate: timestamp("expiry_date", { withTimezone: true }),
     grantsFreeShipping: boolean("grants_free_shipping")
       .default(false)
       .notNull(),
     includeShippingInDiscount: boolean("include_shipping_in_discount")
       .default(false)
       .notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
-    codeIdx: index("coupons_code_idx").on(table.code),
     isActiveIdx: index("coupons_is_active_idx").on(table.isActive),
+    codeUppercase: check(
+      "coupons_code_uppercase_check",
+      sql`${table.code} = upper(${table.code})`,
+    ),
+    discountTypeCheck: check(
+      "coupons_discount_type_check",
+      sql`${oneOf(table.discountType, DISCOUNT_TYPES)} and (${table.discountType} <> 'percentage' or ${table.discountValue} <= 100)`,
+    ),
+    valuesCheck: check(
+      "coupons_values_check",
+      sql`${table.discountValue} >= 0 and (${table.minOrderValue} is null or ${table.minOrderValue} >= 0) and ${table.usedCount} >= 0 and (${table.maxUses} is null or ${table.maxUses} >= 0) and (${table.maxUsesPerUser} is null or ${table.maxUsesPerUser} >= 0)`,
+    ),
   }),
 );
 
@@ -828,14 +1125,24 @@ export const couponUsages = pgTable(
     couponId: uuid("coupon_id")
       .references(() => coupons.id, { onDelete: "cascade" })
       .notNull(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").references(() => users.id, {
+      onDelete: "cascade",
+    }),
+    orderId: uuid("order_id").references(() => orders.id, {
+      onDelete: "cascade",
+    }),
     sessionId: varchar("session_id", { length: 255 }),
-    usedAt: timestamp("used_at").defaultNow().notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
     couponIdIdx: index("coupon_usage_coupon_id_idx").on(table.couponId),
     userIdIdx: index("coupon_usage_user_id_idx").on(table.userId),
     sessionIdIdx: index("coupon_usage_session_id_idx").on(table.sessionId),
+    // One redemption per order, even if payment confirmation runs twice.
+    couponOrderUnique: uniqueIndex("coupon_usage_coupon_order_unique").on(
+      table.couponId,
+      table.orderId,
+    ),
   }),
 );
 
@@ -855,9 +1162,13 @@ export const googleMerchantProductSyncs = pgTable(
       .notNull(),
     lastError: text("last_error"),
     payload: jsonb("payload"),
-    lastSyncedAt: timestamp("last_synced_at"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     productMerchantUniqueIdx: uniqueIndex(
@@ -868,6 +1179,10 @@ export const googleMerchantProductSyncs = pgTable(
     ),
     syncStatusIdx: index("google_merchant_product_sync_sync_status_idx").on(
       table.syncStatus,
+    ),
+    syncStatusCheck: check(
+      "google_merchant_product_sync_status_check",
+      oneOf(table.syncStatus, MERCHANT_SYNC_STATUSES),
     ),
     lastSyncedAtIdx: index(
       "google_merchant_product_sync_last_synced_at_idx",
@@ -892,23 +1207,28 @@ export const emailCampaigns = pgTable(
     heroImageUrl: text("hero_image_url"),
     discountPercentage: integer("discount_percentage"),
     couponCode: varchar("coupon_code", { length: 50 }),
-    saleDeadline: timestamp("sale_deadline"),
+    saleDeadline: timestamp("sale_deadline", { withTimezone: true }),
     discountNote: text("discount_note"),
     // Block-based design (lib/email/blocks.ts). Null = legacy field-based template.
     content: jsonb("content"),
-    status: varchar("status", { length: 50 }).default("draft").notNull(), // DRAFT, SCHEDULED, SENDING, SENT
+    status: varchar("status", { length: 50 }).default("DRAFT").notNull(), // see CAMPAIGN_STATUSES
     // Who receives it: { segment, collectionId?, state? }. See lib/marketing/segments.ts.
     audience: jsonb("audience").default({ segment: "all" }).notNull(),
     // Skip anyone who received another campaign within this many hours (0 = off).
     frequencyCapHours: integer("frequency_cap_hours").default(48).notNull(),
-    scheduledAt: timestamp("scheduled_at"),
-    sentAt: timestamp("sent_at"),
-    completedAt: timestamp("completed_at"),
-    createdBy: uuid("created_by")
-      .references(() => adminUsers.id, { onDelete: "set null" })
+    scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    // Null once the admin who created it is removed.
+    createdBy: uuid("created_by").references(() => adminUsers.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
       .notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     createdByIdx: index("email_campaigns_created_by_idx").on(table.createdBy),
@@ -917,6 +1237,14 @@ export const emailCampaigns = pgTable(
       table.scheduledAt,
     ),
     typeIdx: index("email_campaigns_type_idx").on(table.type),
+    statusCheck: check(
+      "email_campaigns_status_check",
+      oneOf(table.status, CAMPAIGN_STATUSES),
+    ),
+    typeCheck: check(
+      "email_campaigns_type_check",
+      oneOf(table.type, CAMPAIGN_TYPES),
+    ),
   }),
 );
 
@@ -932,7 +1260,9 @@ export const campaignProducts = pgTable(
       .references(() => products.id, { onDelete: "cascade" })
       .notNull(),
     position: integer("position").default(0).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     campaignIdIdx: index("campaign_products_campaign_id_idx").on(
@@ -955,15 +1285,19 @@ export const campaignEmailLogs = pgTable(
       .references(() => emailCampaigns.id, { onDelete: "cascade" })
       .notNull(),
     subscriberEmail: varchar("subscriber_email", { length: 255 }).notNull(),
-    status: varchar("status", { length: 50 }).default("sent").notNull(), // SENT, OPENED, CLICKED, BOUNCED, FAILED
-    sentAt: timestamp("sent_at").defaultNow().notNull(),
-    openedAt: timestamp("opened_at"),
-    clickedAt: timestamp("clicked_at"),
+    status: varchar("status", { length: 50 }).default("SENT").notNull(), // see CAMPAIGN_LOG_STATUSES
+    sentAt: timestamp("sent_at", { withTimezone: true }).defaultNow().notNull(),
+    openedAt: timestamp("opened_at", { withTimezone: true }),
+    clickedAt: timestamp("clicked_at", { withTimezone: true }),
     bounceReason: varchar("bounce_reason", { length: 255 }),
     clickCount: integer("click_count").default(0).notNull(),
     resendMessageId: varchar("resend_message_id", { length: 255 }),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     campaignIdIdx: index("campaign_email_logs_campaign_id_idx").on(
@@ -973,6 +1307,10 @@ export const campaignEmailLogs = pgTable(
       table.subscriberEmail,
     ),
     statusIdx: index("campaign_email_logs_status_idx").on(table.status),
+    statusCheck: check(
+      "campaign_email_logs_status_check",
+      oneOf(table.status, CAMPAIGN_LOG_STATUSES),
+    ),
     resendMessageIdIdx: index("campaign_email_logs_resend_message_id_idx").on(
       table.resendMessageId,
     ),
@@ -984,12 +1322,20 @@ export const campaignEmailLogs = pgTable(
 );
 
 // Automated emails (flows): one row per flow with its on/off switch and settings.
-export const marketingFlows = pgTable("marketing_flows", {
-  key: varchar("key", { length: 50 }).primaryKey(), // welcome, abandoned_cart, review_request, win_back
-  enabled: boolean("enabled").default(false).notNull(),
-  settings: jsonb("settings").default({}).notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const marketingFlows = pgTable(
+  "marketing_flows",
+  {
+    key: varchar("key", { length: 50 }).primaryKey(), // see FLOW_KEYS
+    enabled: boolean("enabled").default(false).notNull(),
+    settings: jsonb("settings").default({}).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    keyCheck: check("marketing_flows_key_check", oneOf(table.key, FLOW_KEYS)),
+  }),
+);
 
 // Each automated email sent, for de-duplication, engagement and attribution.
 export const flowEmailLogs = pgTable(
@@ -1002,9 +1348,9 @@ export const flowEmailLogs = pgTable(
     reference: varchar("reference", { length: 255 }).notNull(),
     status: varchar("status", { length: 50 }).default("SENT").notNull(),
     resendMessageId: varchar("resend_message_id", { length: 255 }),
-    sentAt: timestamp("sent_at").defaultNow().notNull(),
-    openedAt: timestamp("opened_at"),
-    clickedAt: timestamp("clicked_at"),
+    sentAt: timestamp("sent_at", { withTimezone: true }).defaultNow().notNull(),
+    openedAt: timestamp("opened_at", { withTimezone: true }),
+    clickedAt: timestamp("clicked_at", { withTimezone: true }),
     clickCount: integer("click_count").default(0).notNull(),
   },
   (table) => ({
@@ -1017,6 +1363,14 @@ export const flowEmailLogs = pgTable(
       table.flowKey,
       table.email,
       table.reference,
+    ),
+    statusCheck: check(
+      "flow_email_logs_status_check",
+      oneOf(table.status, FLOW_LOG_STATUSES),
+    ),
+    flowKeyCheck: check(
+      "flow_email_logs_flow_key_check",
+      oneOf(table.flowKey, FLOW_KEYS),
     ),
   }),
 );

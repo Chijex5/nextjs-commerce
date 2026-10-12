@@ -3,7 +3,7 @@ import {
   getProductRecommendations,
   getProductReviewAggregate,
 } from "lib/database";
-import type { Product } from "lib/shopify/types";
+import type { Product } from "lib/types/commerce";
 import { LOOKS } from "./editorial";
 import { MOCK_PRODUCTS } from "./mock/catalogue";
 import { isMockData } from "./source";

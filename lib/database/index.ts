@@ -7,12 +7,11 @@ import {
     revalidateTag,
 } from "next/cache";
 import { cookies } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
 import { isMockData } from "../data/source";
 import { db } from "../db/client";
 import * as dbQueries from "../db/queries";
 import { customOrders, sizeGuides } from "../db/schema";
-import type { Cart, Collection, Menu, Page, Product } from "../shopify/types";
+import type { Cart, Collection, Menu, Page, Product } from "lib/types/commerce";
 
 const CART_SESSION_COOKIE = "cartSessionId";
 const CART_COOKIE_OPTIONS = {
@@ -63,14 +62,14 @@ async function resolveCartForSession(
   return sessionCart;
 }
 
-// Re-export types from shopify for compatibility
+// Re-export the shared commerce types for existing imports
 export type {
     Cart, CartItem,
     CartProduct, Collection, Image, Menu, Money, Page,
     Product,
     ProductOption,
     ProductVariant, SEO
-} from "../shopify/types";
+} from "lib/types/commerce";
 
 // Cart operations
 export async function createCart(): Promise<Cart> {
@@ -376,47 +375,4 @@ export function revalidateCustomOrders(): void {
 
 export function revalidateSizeGuides(): void {
   revalidateTag(TAGS.sizeGuides, "seconds");
-}
-
-// Revalidation webhook handler (for potential future use with admin dashboard)
-export async function revalidate(req: NextRequest): Promise<NextResponse> {
-  const collectionWebhooks = [
-    "collections/create",
-    "collections/delete",
-    "collections/update",
-  ];
-  const productWebhooks = [
-    "products/create",
-    "products/delete",
-    "products/update",
-  ];
-  const pageWebhooks = ["pages/create", "pages/delete", "pages/update"];
-  const topic = req.headers.get("x-webhook-topic") || "unknown";
-  const secret = req.nextUrl.searchParams.get("secret");
-  const isCollectionUpdate = collectionWebhooks.includes(topic);
-  const isProductUpdate = productWebhooks.includes(topic);
-  const isPageUpdate = pageWebhooks.includes(topic);
-
-  if (!secret || secret !== process.env.REVALIDATION_SECRET) {
-    console.error("Invalid revalidation secret.");
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  if (!isCollectionUpdate && !isProductUpdate && !isPageUpdate) {
-    return NextResponse.json({ status: 200 });
-  }
-
-  if (isCollectionUpdate) {
-    revalidateTag(TAGS.collections, "seconds");
-  }
-
-  if (isProductUpdate) {
-    revalidateTag(TAGS.products, "seconds");
-  }
-
-  if (isPageUpdate) {
-    revalidateTag(TAGS.pages, "seconds");
-  }
-
-  return NextResponse.json({ status: 200, revalidated: true, now: Date.now() });
 }

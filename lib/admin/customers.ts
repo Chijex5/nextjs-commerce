@@ -3,6 +3,7 @@
  * us (matched by email, guest checkout or not) plus anyone who made an account
  * without buying yet. The `users` table alone misses every guest buyer.
  */
+import { parseDbTimestamp } from "lib/db/time";
 import { sql, type SQL } from "drizzle-orm";
 import { db } from "lib/db";
 
@@ -10,8 +11,7 @@ const num = (v: unknown) => {
   const n = typeof v === "number" ? v : Number(v ?? 0);
   return Number.isFinite(n) ? n : 0;
 };
-const utcDate = (v: unknown) =>
-  v ? new Date(String(v).replace(" ", "T") + "Z") : null;
+const utcDate = parseDbTimestamp;
 
 /** One row per email across orders and accounts. */
 const CUSTOMERS = sql`
@@ -59,7 +59,7 @@ export const SEGMENTS = [
   {
     key: "lapsed",
     label: "Haven't bought in 90 days",
-    where: sql`c.orders > 0 and c.last_order::timestamp < (now() at time zone 'UTC') - interval '90 days'`,
+    where: sql`c.orders > 0 and c.last_order::timestamptz < now() - interval '90 days'`,
   },
   {
     key: "no-orders",

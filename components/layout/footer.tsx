@@ -1,6 +1,6 @@
 import NewsletterForm from "components/newsletter-form";
 import { getMenu } from "lib/database";
-import type { Menu } from "lib/shopify/types";
+import type { Menu } from "lib/types/commerce";
 import Link from "next/link";
 import { FaInstagram, FaSnapchat, FaTiktok, FaWhatsapp } from "react-icons/fa";
 

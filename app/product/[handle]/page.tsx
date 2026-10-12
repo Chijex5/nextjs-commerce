@@ -11,7 +11,7 @@ import {
   getRelatedProducts,
 } from "lib/data/product";
 import { isMockData } from "lib/data/source";
-import type { Product } from "lib/shopify/types";
+import type { Product } from "lib/types/commerce";
 import { canonicalUrl, siteName } from "lib/seo";
 import { ArrowUpRight, Plus } from "lucide-react";
 import type { Metadata } from "next";

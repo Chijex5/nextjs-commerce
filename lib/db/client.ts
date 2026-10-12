@@ -26,7 +26,8 @@ const sql =
   globalForDb.drizzleSql ??
   // Pooled Neon endpoint (PgBouncer in transaction mode) — hence prepare: false.
   postgres(NEON_DATABASE_URL ?? "", {
-    ssl: "require",
+    // Neon requires TLS. DATABASE_SSL=disable is for local/CI Postgres only.
+    ssl: process.env.DATABASE_SSL === "disable" ? false : "require",
     max: Number.isFinite(poolMax) && poolMax > 0 ? poolMax : 5,
     idle_timeout: 20,
     prepare: false,

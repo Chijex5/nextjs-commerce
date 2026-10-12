@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: dfp_test
+          # Disposable container reachable only from this job: no password.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Throwaway values for a disposable database; nothing here is secret.
+      DATABASE_SSL: disable
+      NEON_DATABASE_URL: postgresql://postgres@localhost:5432/dfp_test
+      NEON_DATABASE_URL_UNPOOLED: postgresql://postgres@localhost:5432/dfp_test
+      TEST_DATABASE_URL: postgresql://postgres@localhost:5432/dfp_test
+      TEST_BASE_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ci-only-secret
+      NEXTAUTH_URL: http://localhost:3000
+      CRON_SECRET: ci-only-cron
+      UNSUBSCRIBE_SECRET: ci-only-unsubscribe
+      CUSTOM_ORDER_REQUESTS_ENABLED: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Migrations apply from an empty database
+        run: pnpm db:migrate
+
+      - name: Build
+        run: pnpm build
+
+      - name: Integration tests
+        run: |
+          pnpm start > next.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -sf -H "x-forwarded-proto: https" "$TEST_BASE_URL/api/health" >/dev/null && break
+            sleep 1
+          done
+          pnpm test:integration || { echo "--- app log ---"; tail -100 next.log; exit 1; }

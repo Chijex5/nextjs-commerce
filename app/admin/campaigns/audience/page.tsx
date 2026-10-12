@@ -1,3 +1,4 @@
+import { parseDbTimestamp } from "lib/db/time";
 import { MarketingNav } from "components/admin/campaigns/marketing-nav";
 import {
   BarList,
@@ -36,8 +37,8 @@ export default async function AudiencePage() {
   const [[totals], sources, recent, segmentCounts] = await Promise.all([
     db.execute(sql`
       select count(*) filter (where status = 'active') as active,
-        count(*) filter (where status = 'active' and subscribed_at >= (now() at time zone 'UTC') - interval '30 days') as new_30d,
-        count(*) filter (where status <> 'active' and unsubscribed_at >= (now() at time zone 'UTC') - interval '30 days') as lost_30d,
+        count(*) filter (where status = 'active' and subscribed_at >= now() - interval '30 days') as new_30d,
+        count(*) filter (where status <> 'active' and unsubscribed_at >= now() - interval '30 days') as lost_30d,
         count(*) filter (where status in ('bounced', 'complained')) as suppressed,
         (select count(distinct lower(email)) from orders where status <> 'cancelled') as buyers,
         (select count(distinct lower(o.email)) from orders o join newsletter_subscribers s
@@ -161,9 +162,7 @@ export default async function AudiencePage() {
                     </Link>
                     <p className="truncate text-xs text-fg-3">
                       {SOURCE_LABEL[r.source] ?? r.source} ·{" "}
-                      {timeAgo(
-                        new Date(r.subscribed_at.replace(" ", "T") + "Z"),
-                      )}
+                      {timeAgo(parseDbTimestamp(r.subscribed_at) ?? new Date())}
                     </p>
                   </div>
                   {r.status !== "active" ? (
