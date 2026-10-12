@@ -1,7 +1,7 @@
 import { compare } from "bcryptjs";
-import { and, eq, ilike, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "lib/db";
-import { customOrderRequests, users } from "lib/db/schema";
+import { users } from "lib/db/schema";
 import { handleApiError } from "lib/errors";
 import { getClientIp, rateLimit, tooManyRequests } from "lib/rate-limit";
 import { createUserSession, setUserSessionCookie } from "lib/user-session";
@@ -55,15 +55,8 @@ export async function POST(request: NextRequest) {
       .set({ lastLoginAt: new Date() })
       .where(eq(users.id, user.id));
 
-    await db
-      .update(customOrderRequests)
-      .set({ userId: user.id, updatedAt: new Date() })
-      .where(
-        and(
-          ilike(customOrderRequests.email, user.email),
-          isNull(customOrderRequests.userId),
-        ),
-      );
+    // Guest orders and custom requests are linked only on magic-link sign-in,
+    // which proves the user owns this email address.
 
     const token = await createUserSession({
       id: user.id,

@@ -43,7 +43,7 @@ export const orderConfirmationWithMarkupTemplate = (
   const currencyCode = order.currencyCode || "NGN";
   const orderUrl =
     order.orderUrl ||
-    `${siteUrl}/orders?orderNumber=${encodeURIComponent(order.orderNumber)}`;
+    `${siteUrl}/orders?orderNumber=${encodeURIComponent(order.orderNumber)}${order.email ? `&email=${encodeURIComponent(order.email)}` : ""}`;
   const subtotalAmount = Number.isFinite(order.subtotalAmount)
     ? Number(order.subtotalAmount)
     : order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);

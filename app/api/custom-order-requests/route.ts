@@ -1,3 +1,4 @@
+import { limitByIp } from "lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "lib/db";
@@ -34,12 +35,28 @@ type CreateCustomOrderRequestBody = {
   customerNotes?: string;
 };
 
+/** Only images uploaded through our own upload endpoint are accepted. */
+const isOwnUpload = (url: string) => {
+  try {
+    const parsed = new URL(url);
+    const cloud = process.env.CLOUDINARY_CLOUD_NAME;
+    return (
+      parsed.protocol === "https:" &&
+      parsed.hostname === "res.cloudinary.com" &&
+      (!cloud || parsed.pathname.startsWith(`/${cloud}/`)) &&
+      parsed.pathname.includes("/dfootprint/custom-orders/requests/")
+    );
+  } catch {
+    return false;
+  }
+};
+
 const toImageArray = (value: unknown): string[] => {
   if (!Array.isArray(value)) return [];
   return value
     .filter((item): item is string => typeof item === "string")
     .map((item) => item.trim())
-    .filter(Boolean)
+    .filter(isOwnUpload)
     .slice(0, 8);
 };
 
@@ -128,6 +145,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = limitByIp(request, "custom-request", 5, 60 * 60_000);
+    if (limited) return limited;
+
     if (!isCustomOrderFeatureEnabled()) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }

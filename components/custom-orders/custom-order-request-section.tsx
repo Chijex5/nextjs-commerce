@@ -43,6 +43,7 @@ type UploadedImage = {
   status: "uploading" | "uploaded" | "error";
   url?: string;
   publicId?: string;
+  deleteToken?: string;
   error?: string;
 };
 
@@ -193,6 +194,7 @@ export default function CustomOrderRequestSection() {
             previewUrl: data.url,
             url: data.url,
             publicId: data.publicId,
+            deleteToken: data.deleteToken,
             error: undefined,
           };
         }),
@@ -245,12 +247,15 @@ export default function CustomOrderRequestSection() {
   };
 
   const handleRemoveImage = async (item: UploadedImage) => {
-    if (item.publicId) {
+    if (item.publicId && item.deleteToken) {
       try {
         const response = await fetch("/api/custom-order-requests/upload", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ publicId: item.publicId }),
+          body: JSON.stringify({
+            publicId: item.publicId,
+            deleteToken: item.deleteToken,
+          }),
         });
         const data = await response.json();
         if (!response.ok) {

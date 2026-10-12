@@ -16,6 +16,13 @@ export interface UserSession {
   name: string | null;
   phone?: string | null;
   hasPassword?: boolean;
+  /**
+   * True when this sign-in proved the user owns `email` (magic link). Only
+   * verified sessions may claim guest orders and custom requests placed
+   * under that address; a password account can be registered with anyone's
+   * email.
+   */
+  emailVerified?: boolean;
 }
 
 interface TokenPayload {

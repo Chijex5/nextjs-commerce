@@ -1,3 +1,4 @@
+import { limitByIp } from "lib/rate-limit";
 import { hash } from "bcryptjs";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { hashAdminResetToken } from "lib/admin-password-reset";
@@ -7,6 +8,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = limitByIp(request, "admin-reset", 10, 15 * 60_000);
+    if (limited) return limited;
+
     const body = await request.json();
     const token = typeof body?.token === "string" ? body.token.trim() : "";
     const newPassword =

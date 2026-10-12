@@ -1,3 +1,4 @@
+import { limitByIp } from "lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "lib/email/resend";
 import { contactConfirmationTemplate } from "lib/email/templates/contact-confirmation";
@@ -11,6 +12,9 @@ const maxMessageLength = 2000;
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = limitByIp(request, "contact", 5, 60 * 60_000);
+    if (limited) return limited;
+
     const payload = await request.json();
     const name =
       typeof payload.name === "string" ? payload.name.trim() : undefined;

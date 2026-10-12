@@ -82,6 +82,7 @@ export async function PUT(request: NextRequest) {
       email: updatedUser.email,
       name: updatedUser.name,
       phone: updatedUser.phone,
+      emailVerified: session.emailVerified,
     });
     await setUserSessionCookie(token);
 

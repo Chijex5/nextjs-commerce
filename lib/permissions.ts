@@ -1,6 +1,6 @@
 const adminPermissions: Record<string, Record<string, string[]>> = {
     "admin": {
-        "admin_dashboard": ["read", "delete"]
+        "admin_dashboard": ["read"]
     },
     "super_admin": {
         "admin_dashboard": ["read", "create", "delete", "update"]

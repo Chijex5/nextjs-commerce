@@ -4,7 +4,7 @@ import { db } from "lib/db";
 import { magicLinkTokens, users } from "lib/db/schema";
 import { sendMagicLinkEmail } from "lib/email/auth-emails";
 import { getClientIp, rateLimit, tooManyRequests } from "lib/rate-limit";
-import { normalizeEmail } from "lib/user-utils";
+import { isValidEmail, normalizeEmail, safeRedirectPath } from "lib/user-utils";
 import { baseUrl, ensureStartsWith } from "lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -12,11 +12,17 @@ export async function POST(request: NextRequest) {
   try {
     const { email: rawEmail, callbackUrl, purpose } = await request.json();
 
-    if (!rawEmail) {
+    if (typeof rawEmail !== "string" || !rawEmail.trim()) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
     const email = normalizeEmail(rawEmail);
+    if (!isValidEmail(email)) {
+      return NextResponse.json(
+        { error: "Enter a valid email address" },
+        { status: 400 },
+      );
+    }
     const ip = getClientIp(request);
     // Each call sends a real email, so cap per-IP and per-recipient to prevent
     // magic-link email-bombing (mailbox spam + Resend cost).
@@ -35,10 +41,10 @@ export async function POST(request: NextRequest) {
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-    const safeCallback =
-      typeof callbackUrl === "string" && callbackUrl.startsWith("/")
-        ? callbackUrl
-        : "/account?welcome=1";
+    const safeCallback = safeRedirectPath(
+      typeof callbackUrl === "string" ? callbackUrl : null,
+      "/account?welcome=1",
+    );
 
     await db.insert(magicLinkTokens).values({
       email,

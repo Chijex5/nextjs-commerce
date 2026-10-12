@@ -1,4 +1,6 @@
-import { and, eq, gt, ilike, isNull } from "drizzle-orm";
+import { limitByIp } from "lib/rate-limit";
+import { emailEquals } from "lib/db/email-match";
+import { and, eq, gt, isNull } from "drizzle-orm";
 import {
     ADMIN_RESET_REQUEST_COOLDOWN_SECONDS,
     ADMIN_RESET_TOKEN_TTL_MINUTES,
@@ -14,6 +16,9 @@ const GENERIC_SUCCESS_MESSAGE =
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = limitByIp(request, "admin-reset-request", 5, 60 * 60_000);
+    if (limited) return limited;
+
     const body = await request.json();
     const emailRaw = typeof body?.email === "string" ? body.email.trim() : "";
 
@@ -30,7 +35,7 @@ export async function POST(request: NextRequest) {
         isActive: adminUsers.isActive,
       })
       .from(adminUsers)
-      .where(ilike(adminUsers.email, normalizedEmail))
+      .where(emailEquals(adminUsers.email, normalizedEmail))
       .limit(1);
 
     if (!admin || !admin.isActive) {

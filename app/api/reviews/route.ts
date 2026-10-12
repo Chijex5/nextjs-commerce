@@ -1,3 +1,4 @@
+import { limitByIp } from "lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { orderItems, orders, products, reviews, users } from "@/lib/db/schema";
@@ -7,6 +8,9 @@ import { handleApiError } from "lib/errors";
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = limitByIp(request, "review", 10, 60 * 60_000);
+    if (limited) return limited;
+
     const session = await getUserSession();
 
     if (!session?.id) {

@@ -1,3 +1,4 @@
+import { limitByIp } from "lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { getUserSession } from "lib/user-session";
 import { handleApiError } from "lib/errors";
@@ -5,6 +6,9 @@ import { validateCouponForCheckout } from "lib/coupon-validation";
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = limitByIp(request, "coupon-validate", 20, 15 * 60_000);
+    if (limited) return limited;
+
     const body = await request.json();
     const { code, cartTotal, shippingAmount, sessionId } = body;
 

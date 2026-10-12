@@ -145,16 +145,22 @@ export default function OrdersPageClient() {
   };
 
   const trackOrderByNumber = useCallback(
-    async (orderNumber: string) => {
+    async (orderNumber: string, email: string) => {
       const trimmed = orderNumber.trim();
+      const trimmedEmail = email.trim();
       if (!trimmed) {
         toast.error("Please enter an order number");
         return;
       }
+      if (!trimmedEmail && !session?.email) {
+        toast.error("Enter the email you used at checkout");
+        return;
+      }
       setIsTrackingLoading(true);
       try {
+        const lookupEmail = trimmedEmail || session?.email || "";
         const response = await fetch(
-          `/api/orders/track?orderNumber=${encodeURIComponent(trimmed)}`,
+          `/api/orders/track?orderNumber=${encodeURIComponent(trimmed)}&email=${encodeURIComponent(lookupEmail)}`,
         );
         if (!response.ok) {
           toast.error("Order not found");
@@ -162,8 +168,12 @@ export default function OrdersPageClient() {
         }
         const data = await response.json();
         const order = data.order as Order;
+        if (!order.id) {
+          toast.error("That email doesn't match this order");
+          return;
+        }
         router.push(
-          `/order/${order.id}?orderNumber=${encodeURIComponent(order.orderNumber)}`,
+          `/order/${order.id}?orderNumber=${encodeURIComponent(order.orderNumber)}&email=${encodeURIComponent(lookupEmail)}`,
         );
         setIsTrackingModalOpen(false);
       } catch {
@@ -172,7 +182,7 @@ export default function OrdersPageClient() {
         setIsTrackingLoading(false);
       }
     },
-    [router],
+    [router, session?.email],
   );
 
   const trackCustomRequest = useCallback(
@@ -212,8 +222,11 @@ export default function OrdersPageClient() {
     setTrackingInput(orderNumberParam);
     setTrackingMode("order");
     setIsTrackingModalOpen(true);
-    void trackOrderByNumber(orderNumberParam);
-  }, [orderNumberParam, trackOrderByNumber]);
+    // Order emails link here with both values; otherwise wait for the email.
+    if (emailParam || session?.email) {
+      void trackOrderByNumber(orderNumberParam, emailParam);
+    }
+  }, [orderNumberParam, emailParam, session?.email, trackOrderByNumber]);
 
   useEffect(() => {
     if (!customRequestParam) return;
@@ -948,7 +961,7 @@ type TrackingModalProps = {
   trackingInput: string;
   setTrackingInput: (value: string) => void;
   isTrackingLoading: boolean;
-  onTrackOrder: (orderNumber: string) => Promise<void>;
+  onTrackOrder: (orderNumber: string, email: string) => Promise<void>;
   customTrackRequestNumber: string;
   setCustomTrackRequestNumber: (value: string) => void;
   customTrackEmail: string;
@@ -1015,13 +1028,21 @@ function TrackingModal({
             className="op-form"
             onSubmit={(e) => {
               e.preventDefault();
-              void onTrackOrder(trackingInput);
+              void onTrackOrder(trackingInput, customTrackEmail);
             }}
           >
             <input
               value={trackingInput}
               onChange={(e) => setTrackingInput(e.target.value)}
               placeholder="Order number (e.g. ORD-123456)"
+              className="op-input"
+            />
+            <input
+              type="email"
+              value={customTrackEmail}
+              onChange={(e) => setCustomTrackEmail(e.target.value)}
+              placeholder="Email used at checkout"
+              autoComplete="email"
               className="op-input"
             />
             <button

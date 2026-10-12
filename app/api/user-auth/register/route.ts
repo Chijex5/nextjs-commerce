@@ -5,7 +5,11 @@ import { users } from "lib/db/schema";
 import { sendWelcomeEmail } from "lib/email/auth-emails";
 import { handleApiError } from "lib/errors";
 import { getClientIp, rateLimit, tooManyRequests } from "lib/rate-limit";
-import { deriveNameFromEmail, normalizeEmail } from "lib/user-utils";
+import {
+  deriveNameFromEmail,
+  isValidEmail,
+  normalizeEmail,
+} from "lib/user-utils";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -15,7 +19,12 @@ export async function POST(request: NextRequest) {
 
     const { name, email: rawEmail, password } = await request.json();
 
-    if (!rawEmail || !password) {
+    if (
+      typeof rawEmail !== "string" ||
+      typeof password !== "string" ||
+      !rawEmail ||
+      !password
+    ) {
       return NextResponse.json(
         { error: "Email and password are required" },
         { status: 400 },
@@ -30,6 +39,12 @@ export async function POST(request: NextRequest) {
     }
 
     const email = normalizeEmail(rawEmail);
+    if (!isValidEmail(email)) {
+      return NextResponse.json(
+        { error: "Enter a valid email address" },
+        { status: 400 },
+      );
+    }
 
     const [existingUser] = await db
       .select()

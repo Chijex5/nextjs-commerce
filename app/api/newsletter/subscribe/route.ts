@@ -1,3 +1,4 @@
+import { limitByIp } from "lib/rate-limit";
 import {
   CONSENT_SOURCES,
   subscribeEmail,
@@ -7,6 +8,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = limitByIp(request, "newsletter", 5, 60 * 60_000);
+    if (limited) return limited;
+
     const { email, name, source } = await request.json();
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

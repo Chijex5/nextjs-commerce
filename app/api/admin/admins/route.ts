@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdminSession } from "lib/admin-auth";
+import { isAdminRole, requireAdminSession } from "lib/admin-auth";
+import { isValidEmail, normalizeEmail } from "lib/user-utils";
 import { db } from "lib/db";
 import { adminUsers } from "lib/db/schema";
 import { sendAdminCredentialsEmail } from "lib/email/auth-emails";
@@ -102,19 +103,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { email, name, password, role } = body;
+    if (session.user.role !== "super_admin") {
+      return NextResponse.json(
+        { error: "Only super admins can add team members" },
+        { status: 403 },
+      );
+    }
 
-    if (!email || !password) {
+    const body = await request.json();
+    const { name, password } = body;
+    const role = body.role ?? "admin";
+    const email =
+      typeof body.email === "string" ? normalizeEmail(body.email) : "";
+
+    if (!isAdminRole(role)) {
+      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+    }
+
+    if (!email || typeof password !== "string" || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
         { status: 400 },
       );
     }
 
-    if (password.length < 6) {
+    if (!isValidEmail(email)) {
       return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
+        { error: "Enter a valid email address" },
+        { status: 400 },
+      );
+    }
+
+    if (password.length < 8) {
+      return NextResponse.json(
+        { error: "Password must be at least 8 characters" },
         { status: 400 },
       );
     }
@@ -140,7 +162,7 @@ export async function POST(request: NextRequest) {
         email,
         name: name || null,
         passwordHash,
-        role: role || "admin",
+        role,
         isActive: true,
       })
       .returning({

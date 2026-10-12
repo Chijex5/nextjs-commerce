@@ -1,6 +1,8 @@
 import { baseTemplate } from "./base";
 
 interface OrderStatusUpdateData {
+  /** Lets the "view order" link open the order without re-entering it. */
+  email?: string;
   orderNumber: string;
   customerName: string;
   oldStatus: string;
@@ -19,7 +21,7 @@ export const orderStatusUpdateTemplate = (data: OrderStatusUpdateData) => {
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXTAUTH_URL ||
     "https://www.dfootprint.me";
-  const orderUrl = `${siteUrl}/orders?orderNumber=${encodeURIComponent(data.orderNumber)}`;
+  const orderUrl = `${siteUrl}/orders?orderNumber=${encodeURIComponent(data.orderNumber)}${data.email ? `&email=${encodeURIComponent(data.email)}` : ""}`;
   const supportUrl = `${siteUrl}/contact?order=${encodeURIComponent(data.orderNumber)}`;
 
   const normalize = (value?: string) => (value || "").toLowerCase().trim();
