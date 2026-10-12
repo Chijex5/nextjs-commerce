@@ -27,7 +27,7 @@ export default async function CollectionsPage() {
         coalesce((select sum(oi.total_amount) from order_items oi join orders o on o.id = oi.order_id
           join product_collections pc3 on pc3.product_id = oi.product_id
           where pc3.collection_id = pc.collection_id and o.status <> 'cancelled'
-            and o.created_at >= (now() at time zone 'UTC') - interval '30 days'), 0) as sales
+            and o.created_at >= now() - interval '30 days'), 0) as sales
       from product_collections pc join products p on p.id = pc.product_id
       group by pc.collection_id
     `) as unknown as Promise<

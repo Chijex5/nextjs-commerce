@@ -96,9 +96,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Clicking the link proves the user owns this address.
     await db
       .update(users)
-      .set({ lastLoginAt: new Date() })
+      .set({
+        lastLoginAt: new Date(),
+        emailVerifiedAt: user.emailVerifiedAt ?? new Date(),
+      })
       .where(eq(users.id, user.id));
 
     await db

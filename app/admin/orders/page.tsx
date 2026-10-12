@@ -42,7 +42,7 @@ const open = and(
   notInArray(orders.deliveryStatus, ["completed", "cancelled"]),
 )!;
 
-const nowUtc = sql`(now() at time zone 'UTC')`;
+const nowUtc = sql`now()`;
 
 const VIEWS: Array<{ key: string; label: string; where?: SQL; tone?: Tone }> = [
   { key: "all", label: "All" },

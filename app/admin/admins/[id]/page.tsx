@@ -1,3 +1,4 @@
+import { parseDbTimestamp } from "lib/db/time";
 import {
   EmptyState,
   Metric,
@@ -37,9 +38,9 @@ export default async function TeamMemberPage({
   const [[stats], recent] = await Promise.all([
     db.execute(sql`
       select count(*) as total,
-        count(*) filter (where acknowledged_at >= (now() at time zone 'UTC') - interval '30 days') as recent,
+        count(*) filter (where acknowledged_at >= now() - interval '30 days') as recent,
         avg(extract(epoch from (acknowledged_at - created_at)) / 3600)
-          filter (where acknowledged_at >= (now() at time zone 'UTC') - interval '30 days') as hours_to_confirm
+          filter (where acknowledged_at >= now() - interval '30 days') as hours_to_confirm
       from orders where lower(acknowledged_by) = lower(${member.email})
     `) as unknown as Promise<Array<Record<string, unknown>>>,
     db.execute(sql`
@@ -124,9 +125,7 @@ export default async function TeamMemberPage({
                       </span>{" "}
                       · confirmed{" "}
                       {timeAgo(
-                        new Date(
-                          String(o.acknowledged_at).replace(" ", "T") + "Z",
-                        ),
+                        parseDbTimestamp(o.acknowledged_at) ?? new Date(),
                       )}
                     </p>
                   </div>

@@ -211,7 +211,7 @@ async function sendFlow(key: FlowKey, candidates: Candidate[]) {
     );
     await db.execute(sql`
       update flow_email_logs as l set status = ${result.success ? "SENT" : "FAILED"},
-        resend_message_id = v.mid, sent_at = now() at time zone 'UTC'
+        resend_message_id = v.mid, sent_at = now()
       from (values ${sql.join(
         claimed.map(
           (c, idx) =>
@@ -235,8 +235,8 @@ async function runReviewRequests(days: number) {
     join order_items oi on oi.order_id = o.id
     join products p on p.id = oi.product_id
     where o.delivery_status = 'completed' and o.status <> 'cancelled'
-      and o.updated_at <= (now() at time zone 'UTC') - make_interval(days => ${days})
-      and o.updated_at > (now() at time zone 'UTC') - make_interval(days => ${days + 30})
+      and o.updated_at <= now() - make_interval(days => ${days})
+      and o.updated_at > now() - make_interval(days => ${days + 30})
       and not exists (select 1 from reviews r join users u on u.id = r.user_id
                       where lower(u.email) = lower(o.email) and r.product_id = oi.product_id)
       and not exists (select 1 from newsletter_subscribers s
@@ -282,10 +282,10 @@ async function runWinBack(days: number, couponCode?: string) {
     )
     select l.email, l.name, l.last_at::date::text as last_order
     from last_orders l
-    where l.last_at <= (now() at time zone 'UTC') - make_interval(days => ${days})
+    where l.last_at <= now() - make_interval(days => ${days})
       and not exists (select 1 from flow_email_logs f
         where f.flow_key = 'win_back' and f.email = l.email
-          and f.sent_at > (now() at time zone 'UTC') - interval '180 days')
+          and f.sent_at > now() - interval '180 days')
     limit 300
   `)) as unknown as Array<{ email: string; name: string; last_order: string }>;
 
@@ -326,7 +326,7 @@ export async function getFlowStats() {
     with sends as (
       select flow_key,
         count(*) filter (where status = 'SENT') as sent,
-        count(*) filter (where status = 'SENT' and sent_at > (now() at time zone 'UTC') - interval '30 days') as sent_30d,
+        count(*) filter (where status = 'SENT' and sent_at > now() - interval '30 days') as sent_30d,
         count(*) filter (where click_count > 0) as clicked
       from flow_email_logs group by flow_key
     ),

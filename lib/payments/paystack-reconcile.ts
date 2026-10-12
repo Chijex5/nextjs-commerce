@@ -2,7 +2,7 @@ import {
     sendAdminNewOrderNotification,
     sendOrderConfirmationWithMarkup,
 } from "@/lib/email/order-emails";
-import { and, eq, ilike, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { validateCouponForCheckout } from "lib/coupon-validation";
 import { db } from "lib/db";
 import {
@@ -1071,6 +1071,14 @@ export async function reconcilePaystackPayment(
         })();
       const userNote = toStringOrNull(metadata.checkout_notes);
 
+      const [coupon] = couponCode
+        ? await tx
+            .select({ id: coupons.id })
+            .from(coupons)
+            .where(eq(coupons.code, couponCode.trim().toUpperCase()))
+            .limit(1)
+        : [];
+
       const orderNumber = buildOrderNumber();
       const [createdOrder] = await tx
         .insert(orders)
@@ -1087,6 +1095,7 @@ export async function reconcilePaystackPayment(
           shippingAmount: String(shippingAmount),
           discountAmount: String(discountAmount),
           couponCode,
+          couponId: coupon?.id ?? null,
           totalAmount: String(totalAmount),
           currencyCode: "NGN",
           notes: buildOrderNotes(userNote, reference),
@@ -1115,24 +1124,17 @@ export async function reconcilePaystackPayment(
         })),
       );
 
-      if (couponCode) {
-        const [coupon] = await tx
-          .select()
-          .from(coupons)
-          .where(ilike(coupons.code, couponCode))
-          .limit(1);
-
-        if (coupon) {
-          await tx.insert(couponUsages).values({
-            couponId: coupon.id,
-            userId: userId || null,
-            sessionId: null,
-          });
-          await tx
-            .update(coupons)
-            .set({ usedCount: sql`${coupons.usedCount} + 1` })
-            .where(eq(coupons.id, coupon.id));
-        }
+      if (coupon) {
+        await tx.insert(couponUsages).values({
+          couponId: coupon.id,
+          orderId: createdOrder.id,
+          userId: userId || null,
+          sessionId: null,
+        });
+        await tx
+          .update(coupons)
+          .set({ usedCount: sql`${coupons.usedCount} + 1` })
+          .where(eq(coupons.id, coupon.id));
       }
 
       if (shouldSaveAddress && userId) {
