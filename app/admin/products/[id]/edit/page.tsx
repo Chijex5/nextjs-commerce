@@ -1,3 +1,4 @@
+import { parseDbTimestamp } from "lib/db/time";
 import { ProductEditor } from "components/admin/products/product-editor";
 import { Page } from "components/admin/ui";
 import { asc, eq, sql } from "drizzle-orm";
@@ -57,8 +58,8 @@ export default async function EditProductPage({
         .orderBy(asc(collections.title)),
       db.execute(sql`
       select
-        coalesce(sum(oi.quantity) filter (where o.created_at >= (now() at time zone 'UTC') - interval '30 days'), 0) as units,
-        coalesce(sum(oi.total_amount) filter (where o.created_at >= (now() at time zone 'UTC') - interval '30 days'), 0) as revenue,
+        coalesce(sum(oi.quantity) filter (where o.created_at >= now() - interval '30 days'), 0) as units,
+        coalesce(sum(oi.total_amount) filter (where o.created_at >= now() - interval '30 days'), 0) as revenue,
         count(distinct o.id) as orders,
         max(o.created_at)::text as last_sold
       from order_items oi join orders o on o.id = oi.order_id
@@ -90,9 +91,7 @@ export default async function EditProductPage({
           revenue30d: Number(stats?.revenue ?? 0),
           orders: Number(stats?.orders ?? 0),
           lastSoldAt: stats?.last_sold
-            ? new Date(
-                String(stats.last_sold).replace(" ", "T") + "Z",
-              ).toISOString()
+            ? (parseDbTimestamp(stats.last_sold)?.toISOString() ?? null)
             : null,
         }}
         initial={{

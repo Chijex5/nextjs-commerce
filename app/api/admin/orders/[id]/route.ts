@@ -1,3 +1,4 @@
+import { DELIVERY_STATUSES, isOneOf, ORDER_STATUSES } from "lib/db/enums";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
@@ -168,6 +169,22 @@ export async function PUT(
 
     if (!existingOrder) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    if (status !== undefined && !isOneOf(ORDER_STATUSES, status)) {
+      return NextResponse.json(
+        { error: "Invalid order status" },
+        { status: 400 },
+      );
+    }
+    if (
+      deliveryStatus !== undefined &&
+      !isOneOf(DELIVERY_STATUSES, deliveryStatus)
+    ) {
+      return NextResponse.json(
+        { error: "Invalid delivery status" },
+        { status: 400 },
+      );
     }
 
     let estimatedArrival: Date | null | undefined = undefined;

@@ -56,7 +56,8 @@ type Detail = {
   updatedAt: string;
   items: Array<{
     id: string;
-    productId: string;
+    /** Null when the product has since been deleted. */
+    productId: string | null;
     title: string;
     variant: string;
     quantity: number;
@@ -437,12 +438,18 @@ export function OrderDetail({ order }: { order: Detail }) {
                     ) : null}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <Link
-                      href={`/admin/products/${item.productId}/edit`}
-                      className="block truncate text-sm font-medium text-fg hover:underline"
-                    >
-                      {item.title}
-                    </Link>
+                    {item.productId ? (
+                      <Link
+                        href={`/admin/products/${item.productId}/edit`}
+                        className="block truncate text-sm font-medium text-fg hover:underline"
+                      >
+                        {item.title}
+                      </Link>
+                    ) : (
+                      <p className="truncate text-sm font-medium text-fg">
+                        {item.title}
+                      </p>
+                    )}
                     {item.variant && item.variant !== "Default" ? (
                       <p className="text-xs text-fg-3">{item.variant}</p>
                     ) : null}

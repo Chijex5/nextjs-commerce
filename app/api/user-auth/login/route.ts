@@ -1,7 +1,8 @@
 import { compare } from "bcryptjs";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
+import { emailEquals } from "lib/db/email-match";
 import { db } from "lib/db";
-import { users } from "lib/db/schema";
+import { customOrderRequests, users } from "lib/db/schema";
 import { handleApiError } from "lib/errors";
 import { getClientIp, rateLimit, tooManyRequests } from "lib/rate-limit";
 import { createUserSession, setUserSessionCookie } from "lib/user-session";
@@ -55,14 +56,29 @@ export async function POST(request: NextRequest) {
       .set({ lastLoginAt: new Date() })
       .where(eq(users.id, user.id));
 
-    // Guest orders and custom requests are linked only on magic-link sign-in,
-    // which proves the user owns this email address.
+    // Guest orders and custom requests are linked only once the user has
+    // proved they own this address (a magic-link sign-in sets
+    // email_verified_at). A password alone proves nothing: anyone can
+    // register with someone else's email.
+    const emailVerified = Boolean(user.emailVerifiedAt);
+    if (emailVerified) {
+      await db
+        .update(customOrderRequests)
+        .set({ userId: user.id, updatedAt: new Date() })
+        .where(
+          and(
+            emailEquals(customOrderRequests.email, user.email),
+            isNull(customOrderRequests.userId),
+          ),
+        );
+    }
 
     const token = await createUserSession({
       id: user.id,
       email: user.email,
       name: user.name,
       phone: user.phone,
+      emailVerified,
     });
 
     await setUserSessionCookie(token);

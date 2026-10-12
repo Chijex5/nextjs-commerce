@@ -67,12 +67,12 @@ export async function queueCampaign(campaignId: string) {
 
 async function claimBatch(campaignId: string) {
   return (await db.execute(sql`
-    update campaign_email_logs set status = 'SENDING', updated_at = now() at time zone 'UTC'
+    update campaign_email_logs set status = 'SENDING', updated_at = now()
     where id in (
       select id from campaign_email_logs
       where campaign_id = ${campaignId}::uuid
         and (status = 'QUEUED'
-          or (status = 'SENDING' and updated_at < (now() at time zone 'UTC') - make_interval(mins => ${STALE_MINUTES})))
+          or (status = 'SENDING' and updated_at < now() - make_interval(mins => ${STALE_MINUTES})))
       order by subscriber_email
       limit ${BATCH}
       for update skip locked
@@ -133,7 +133,7 @@ export async function processCampaign(campaignId: string, budgetMs = 45_000) {
         update campaign_email_logs as l
         set status = case when v.mid is null then 'FAILED' else 'SENT' end,
           resend_message_id = v.mid, bounce_reason = v.err,
-          sent_at = now() at time zone 'UTC', updated_at = now() at time zone 'UTC'
+          sent_at = now(), updated_at = now()
         from (values ${sql.join(
           batch.map(
             (row, i) =>
@@ -152,7 +152,7 @@ export async function processCampaign(campaignId: string, budgetMs = 45_000) {
       // One statement per batch: map each row to its Resend id.
       await db.execute(sql`
         update campaign_email_logs as l set status = 'SENT', resend_message_id = v.mid,
-          sent_at = now() at time zone 'UTC', updated_at = now() at time zone 'UTC'
+          sent_at = now(), updated_at = now()
         from (values ${sql.join(
           batch.map(
             (row, i) => sql`(${row.id}::uuid, ${result.ids[i] ?? null})`,
@@ -165,7 +165,7 @@ export async function processCampaign(campaignId: string, budgetMs = 45_000) {
     } else {
       await db.execute(sql`
         update campaign_email_logs set status = 'FAILED', bounce_reason = ${result.error.slice(0, 250)},
-          updated_at = now() at time zone 'UTC'
+          updated_at = now()
         where id in (${sql.join(
           batch.map((r) => sql`${r.id}::uuid`),
           sql`, `,
@@ -201,7 +201,7 @@ export async function runDueCampaigns(budgetMs = 50_000) {
   const started = Date.now();
   const due = (await db.execute(sql`
     select id from email_campaigns
-    where (status = 'SCHEDULED' and scheduled_at <= now() at time zone 'UTC') or status = 'SENDING'
+    where (status = 'SCHEDULED' and scheduled_at <= now()) or status = 'SENDING'
     order by scheduled_at nulls first
   `)) as unknown as Array<{ id: string }>;
 

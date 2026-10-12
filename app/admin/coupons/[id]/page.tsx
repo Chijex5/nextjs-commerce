@@ -1,3 +1,4 @@
+import { parseDbTimestamp } from "lib/db/time";
 import { CouponForm } from "components/admin/coupons/coupon-form";
 import { DeleteCouponButton } from "components/admin/coupons/delete-coupon-button";
 import {
@@ -166,10 +167,7 @@ export default async function CouponPage({
                       <span className="font-mono">
                         {String(o.order_number)}
                       </span>{" "}
-                      ·{" "}
-                      {timeAgo(
-                        new Date(String(o.created_at).replace(" ", "T") + "Z"),
-                      )}
+                      · {timeAgo(parseDbTimestamp(o.created_at) ?? new Date())}
                     </p>
                   </div>
                   <div className="text-right">

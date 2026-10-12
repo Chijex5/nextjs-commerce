@@ -4,8 +4,8 @@
  *
  * All reporting happens in shop time (Africa/Lagos, a fixed UTC+1 with no DST)
  * so "today" means today in Lagos, not on the database server. Timestamps in
- * Postgres are stored as UTC wall-clock values; callers compare them against
- * the UTC instants produced here.
+ * Postgres are timestamptz (absolute instants); callers compare them against
+ * the instants produced here.
  */
 
 export const SHOP_TIME_ZONE = "Africa/Lagos";
