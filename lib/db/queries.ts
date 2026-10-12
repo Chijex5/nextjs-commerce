@@ -21,7 +21,7 @@ import type {
     Product,
     ProductOption,
     ProductVariant,
-} from "../shopify/types";
+} from "lib/types/commerce";
 import { db } from "./client";
 import {
     cartLines,

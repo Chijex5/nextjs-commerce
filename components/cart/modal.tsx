@@ -19,7 +19,7 @@ import {
   getStoredCoupon,
 } from "lib/coupon-storage";
 import { calculateShippingAmount } from "lib/shipping";
-import type { CartItem, Product } from "lib/shopify/types";
+import type { CartItem, Product } from "lib/types/commerce";
 import { createUrl } from "lib/utils";
 import {
   ChevronDown,

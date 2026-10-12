@@ -1,4 +1,4 @@
-import type { Product } from "lib/shopify/types";
+import type { Product } from "lib/types/commerce";
 
 /** Lean product shape every product tile renders (home, shop, search). */
 export type CardProduct = {

@@ -1,5 +1,5 @@
 import { getCollectionsWithProducts, getProducts } from "lib/database";
-import type { Collection, Product } from "lib/shopify/types";
+import type { Collection, Product } from "lib/types/commerce";
 import { mockHomeData } from "./mock/home";
 import { toCardProduct, type CardProduct } from "./types";
 import { isMockData } from "./source";

@@ -4,7 +4,7 @@ import clsx from "clsx";
 import CartModal from "components/cart/modal";
 import LogoIcon from "components/icons/logo";
 import ThemeToggleButton from "components/theme-toggle-button";
-import type { Menu } from "lib/shopify/types";
+import type { Menu } from "lib/types/commerce";
 import { Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";

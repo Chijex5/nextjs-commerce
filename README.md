@@ -61,8 +61,9 @@ PAYSTACK_SECRET_KEY="sk_test_xxxxxxxxxxxxx"
 ### 3. Initialize Database
 
 ```bash
-pnpm db:push    # Create tables
+pnpm db:migrate # Create tables from ./drizzle migrations
 pnpm db:seed    # Add sample data
+ADMIN_EMAIL=you@example.com ADMIN_PASSWORD=... pnpm db:create-admin
 ```
 
 ### 4. Start Development
@@ -92,16 +93,18 @@ Open [http://localhost:3000](http://localhost:3000) 🎉
 
 ## 🛠️ NPM Scripts
 
-| Command            | Description              |
-| ------------------ | ------------------------ |
-| `pnpm dev`         | Start development server |
-| `pnpm build`       | Build for production     |
-| `pnpm start`       | Start production server  |
-| `pnpm db:generate` | Generate migration files |
-| `pnpm db:migrate`  | Run migrations           |
-| `pnpm db:push`     | Push schema to database  |
-| `pnpm db:studio`   | Open database GUI        |
-| `pnpm db:seed`     | Load sample data         |
+| Command                 | Description                                                  |
+| ----------------------- | ------------------------------------------------------------ |
+| `pnpm dev`              | Start development server                                     |
+| `pnpm build`            | Build for production                                         |
+| `pnpm start`            | Start production server                                      |
+| `pnpm db:generate`      | Generate a migration from schema changes                     |
+| `pnpm db:migrate`       | Apply pending migrations (the only way to change the schema) |
+| `pnpm db:create-admin`  | Create an admin from `ADMIN_EMAIL` / `ADMIN_PASSWORD`        |
+| `pnpm test`             | Unit tests                                                   |
+| `pnpm test:integration` | API tests against Postgres (see `tests/README.md`)           |
+| `pnpm db:studio`        | Open database GUI                                            |
+| `pnpm db:seed`          | Load sample data                                             |
 
 ## 🗄️ Database Management
 
@@ -187,8 +190,6 @@ Required:
 
 Optional:
 
-- `REVALIDATION_SECRET` - For webhook revalidation
-
 See `.env.example` for details.
 
 ## 🚢 Deployment
@@ -197,11 +198,11 @@ See `.env.example` for details.
 
 1. Push code to GitHub
 2. Import to Vercel
-3. Add `DATABASE_URL` environment variable
+3. Add `NEON_DATABASE_URL` and `NEON_DATABASE_URL_UNPOOLED` environment variables
 4. Deploy
 5. Run migrations:
    ```bash
-   pnpm db:push
+   pnpm db:migrate
    pnpm db:seed
    ```
 

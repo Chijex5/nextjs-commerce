@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import type { Menu } from "lib/shopify/types";
+import type { Menu } from "lib/types/commerce";
 import { ArrowRight, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
