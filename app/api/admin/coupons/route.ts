@@ -7,7 +7,7 @@ import {
   formatCouponCode,
   isValidCouponCode,
 } from "lib/coupon-utils";
-import { desc, eq, ilike } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
         const [existing] = await db
           .select({ id: coupons.id })
           .from(coupons)
-          .where(ilike(coupons.code, code))
+          .where(eq(coupons.code, code))
           .limit(1);
         unique = !existing;
         attempts++;
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
     const [existing] = await db
       .select({ id: coupons.id })
       .from(coupons)
-      .where(ilike(coupons.code, code))
+      .where(eq(coupons.code, code))
       .limit(1);
 
     if (existing) {
