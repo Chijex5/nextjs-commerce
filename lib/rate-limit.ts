@@ -60,3 +60,21 @@ export function tooManyRequests(retryAfter: number) {
     },
   );
 }
+
+/**
+ * Per-IP guard for public endpoints. Returns a 429 response when over the
+ * limit, otherwise null: `const limited = limitByIp(req, "contact", 5, HOUR); if (limited) return limited;`
+ */
+export function limitByIp(
+  request: Request,
+  name: string,
+  limit: number,
+  windowMs: number,
+) {
+  const result = rateLimit(
+    `${name}:ip:${getClientIp(request)}`,
+    limit,
+    windowMs,
+  );
+  return result.ok ? null : tooManyRequests(result.retryAfter);
+}

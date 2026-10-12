@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { hash } from "bcryptjs";
 import { db } from "lib/db";
 import { emailOtps, users } from "lib/db/schema";
+import { rateLimit, tooManyRequests } from "lib/rate-limit";
 import { getUserSession } from "lib/user-session";
 import { and, eq, gt, isNull } from "drizzle-orm";
 
@@ -13,6 +14,10 @@ export async function POST(request: NextRequest) {
     if (!session?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // A 6-digit code is guessable without a cap on attempts.
+    const limit = rateLimit(`add-password:${session.id}`, 5, 15 * 60_000);
+    if (!limit.ok) return tooManyRequests(limit.retryAfter);
 
     const body = await request.json();
     const { otp, newPassword, confirmPassword } = body;

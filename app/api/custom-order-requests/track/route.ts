@@ -1,5 +1,7 @@
+import { limitByIp } from "lib/rate-limit";
+import { emailEquals } from "lib/db/email-match";
 import { NextRequest, NextResponse } from "next/server";
-import { and, desc, eq, ilike } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "lib/db";
 import { customOrderQuotes, customOrderRequests } from "lib/db/schema";
 import {
@@ -11,6 +13,9 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
+    const limited = limitByIp(request, "request-track", 20, 15 * 60_000);
+    if (limited) return limited;
+
     if (!isCustomOrderFeatureEnabled()) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
@@ -31,8 +36,8 @@ export async function GET(request: NextRequest) {
       .from(customOrderRequests)
       .where(
         and(
-          ilike(customOrderRequests.requestNumber, requestNumber),
-          ilike(customOrderRequests.email, email),
+          sql`upper(${customOrderRequests.requestNumber}) = ${requestNumber.toUpperCase()}`,
+          emailEquals(customOrderRequests.email, email),
         ),
       )
       .limit(1);

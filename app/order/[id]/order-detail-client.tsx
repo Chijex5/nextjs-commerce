@@ -169,6 +169,7 @@ function getHeroTitle(status?: string, deliveryStatus?: DeliveryStatus) {
 export default function OrderDetailClient({ orderId }: { orderId: string }) {
   const searchParams = useSearchParams();
   const orderNumber = searchParams.get("orderNumber")?.trim() || "";
+  const guestEmail = searchParams.get("email")?.trim() || "";
 
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -180,7 +181,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
     const fetchOrder = async () => {
       setIsLoading(true);
       const query = orderNumber
-        ? `?orderNumber=${encodeURIComponent(orderNumber)}`
+        ? `?orderNumber=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(guestEmail)}`
         : "";
       const response = await fetch(`/api/orders/${orderId}${query}`);
       if (!response.ok) {
@@ -193,7 +194,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
       setIsLoading(false);
     };
     void fetchOrder();
-  }, [orderId, orderNumber]);
+  }, [orderId, orderNumber, guestEmail]);
 
   useEffect(() => {
     if (trackingCopiedState === "idle") return;

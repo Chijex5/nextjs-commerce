@@ -1,6 +1,8 @@
 import { baseTemplate } from "./base";
 
 interface ShippingNotificationData {
+  /** Lets the "view order" link open the order without re-entering it. */
+  email?: string;
   orderNumber: string;
   customerName: string;
   trackingNumber?: string;
@@ -18,7 +20,7 @@ export const shippingNotificationTemplate = (
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXTAUTH_URL ||
     "https://www.dfootprint.me";
-  const orderUrl = `${siteUrl}/orders?orderNumber=${encodeURIComponent(order.orderNumber)}`;
+  const orderUrl = `${siteUrl}/orders?orderNumber=${encodeURIComponent(order.orderNumber)}${order.email ? `&email=${encodeURIComponent(order.email)}` : ""}`;
   const supportUrl = `${siteUrl}/contact?order=${encodeURIComponent(order.orderNumber)}`;
 
   const firstName = order.customerName?.trim().split(/\s+/)[0] || "there";

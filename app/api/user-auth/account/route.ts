@@ -1,8 +1,8 @@
+import { emailEquals } from "lib/db/email-match";
 import {
     and,
     desc,
     eq,
-    ilike,
     inArray,
     isNull,
     or,
@@ -120,7 +120,7 @@ export async function GET() {
           unsubscribedAt: newsletterSubscribers.unsubscribedAt,
         })
         .from(newsletterSubscribers)
-        .where(ilike(newsletterSubscribers.email, user.email))
+        .where(emailEquals(newsletterSubscribers.email, user.email))
         .limit(1),
     ]);
 
@@ -321,7 +321,7 @@ export async function DELETE(request: NextRequest) {
             eq(customOrderRequests.userId, user.id),
             and(
               isNull(customOrderRequests.userId),
-              ilike(customOrderRequests.email, user.email),
+              emailEquals(customOrderRequests.email, user.email),
             ),
           ),
         );
@@ -339,14 +339,14 @@ export async function DELETE(request: NextRequest) {
       await tx.delete(couponUsages).where(eq(couponUsages.userId, user.id));
       await tx.delete(abandonedCarts).where(eq(abandonedCarts.userId, user.id));
 
-      await tx.delete(magicLinkTokens).where(ilike(magicLinkTokens.email, user.email));
-      await tx.delete(emailOtps).where(ilike(emailOtps.email, user.email));
+      await tx.delete(magicLinkTokens).where(emailEquals(magicLinkTokens.email, user.email));
+      await tx.delete(emailOtps).where(emailEquals(emailOtps.email, user.email));
       await tx
         .delete(customOrderQuoteTokens)
-        .where(ilike(customOrderQuoteTokens.email, user.email));
+        .where(emailEquals(customOrderQuoteTokens.email, user.email));
       await tx
         .delete(newsletterSubscribers)
-        .where(ilike(newsletterSubscribers.email, user.email));
+        .where(emailEquals(newsletterSubscribers.email, user.email));
 
       await tx.delete(users).where(eq(users.id, user.id));
     });

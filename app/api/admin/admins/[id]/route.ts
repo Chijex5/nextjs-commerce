@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdminSession } from "lib/admin-auth";
+import { isAdminRole, requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
 import { adminUsers } from "lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -11,10 +11,6 @@ export async function PUT(
 ) {
   try {
     const session = await requireAdminSession();
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -34,8 +30,26 @@ export async function PUT(
     const body = await request.json();
     const { name, role, isActive } = body;
 
+    if (role !== undefined && !isAdminRole(role)) {
+      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+    }
+    if (isActive !== undefined && typeof isActive !== "boolean") {
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+    }
+    // Stops the last super admin from locking everyone out.
+    if (
+      id === session.user.id &&
+      ((role !== undefined && role !== session.user.role) ||
+        isActive === false)
+    ) {
+      return NextResponse.json(
+        { error: "You can't change your own role or deactivate yourself" },
+        { status: 400 },
+      );
+    }
+
     const updateData: Partial<typeof adminUsers.$inferInsert> = {};
-    if (name !== undefined) updateData.name = name;
+    if (typeof name === "string") updateData.name = name.trim() || null;
     if (role !== undefined) updateData.role = role;
     if (isActive !== undefined) updateData.isActive = isActive;
 
@@ -51,6 +65,10 @@ export async function PUT(
         isActive: adminUsers.isActive,
         updatedAt: adminUsers.updatedAt,
       });
+
+    if (!admin) {
+      return NextResponse.json({ error: "Admin not found" }, { status: 404 });
+    }
 
     return NextResponse.json({
       success: true,

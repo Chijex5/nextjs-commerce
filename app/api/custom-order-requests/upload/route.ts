@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { v2 as cloudinary } from "cloudinary";
+import crypto from "crypto";
 import { isCustomOrderFeatureEnabled } from "lib/custom-order-utils";
 
 const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024;
@@ -14,6 +15,28 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+/**
+ * Uploads are anonymous, so deleting one needs proof you made it: the upload
+ * response carries an HMAC of the image id, and DELETE must send it back.
+ * Image ids are visible in public URLs, so the id alone isn't enough.
+ */
+function deleteTokenFor(publicId: string) {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) throw new Error("NEXTAUTH_SECRET is not set");
+  return crypto
+    .createHmac("sha256", secret)
+    .update(`custom-upload-delete:${publicId}`)
+    .digest("base64url");
+}
+
+function isValidDeleteToken(publicId: string, token: string) {
+  const expected = Buffer.from(deleteTokenFor(publicId));
+  const given = Buffer.from(token);
+  return (
+    expected.length === given.length && crypto.timingSafeEqual(expected, given)
+  );
+}
 
 function getClientKey(request: NextRequest) {
   const xForwardedFor = request.headers.get("x-forwarded-for");
@@ -106,6 +129,7 @@ export async function POST(request: NextRequest) {
       success: true,
       url: uploaded.secure_url,
       publicId: uploaded.public_id,
+      deleteToken: deleteTokenFor(uploaded.public_id),
       width: uploaded.width,
       height: uploaded.height,
     });
@@ -127,12 +151,18 @@ export async function DELETE(request: NextRequest) {
     const body = await request.json();
     const publicId =
       typeof body.publicId === "string" ? body.publicId.trim() : "";
+    const deleteToken =
+      typeof body.deleteToken === "string" ? body.deleteToken : "";
 
-    if (!publicId) {
+    if (!publicId || !deleteToken) {
       return NextResponse.json(
-        { error: "publicId is required" },
+        { error: "publicId and deleteToken are required" },
         { status: 400 },
       );
+    }
+
+    if (!isValidDeleteToken(publicId, deleteToken)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     if (!publicId.startsWith("dfootprint/custom-orders/requests/")) {

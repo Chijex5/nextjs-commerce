@@ -1,6 +1,8 @@
 import { baseTemplate } from "./base";
 
 interface OrderConfirmationData {
+  /** Lets the "view order" link open the order without re-entering it. */
+  email?: string;
   orderNumber: string;
   customerName: string;
   totalAmount: number;
@@ -47,7 +49,7 @@ export const orderConfirmationTemplate = (order: OrderConfirmationData) => {
     ? Math.max(Number(order.totalAmount), 0)
     : computedTotal;
   const isPromoCovered = totalAmount === 0 && discountAmount > 0;
-  const orderUrl = `${siteUrl}/orders?orderNumber=${encodeURIComponent(order.orderNumber)}`;
+  const orderUrl = `${siteUrl}/orders?orderNumber=${encodeURIComponent(order.orderNumber)}${order.email ? `&email=${encodeURIComponent(order.email)}` : ""}`;
   const supportUrl = `${siteUrl}/contact?order=${encodeURIComponent(order.orderNumber)}`;
 
   const formatMoney = (amount: number) => `₦${amount.toLocaleString("en-NG")}`;

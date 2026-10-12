@@ -1,4 +1,5 @@
-import { and, desc, ilike, inArray, isNull } from "drizzle-orm";
+import { emailEquals } from "lib/db/email-match";
+import { and, desc, inArray, isNull } from "drizzle-orm";
 import { db } from "lib/db";
 import { orders } from "lib/db/schema";
 import { handleApiError, validationError } from "lib/errors";
@@ -13,6 +14,13 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Anyone can register a password account with someone else's email, so
+    // guest orders are only offered to sessions that proved ownership of the
+    // address (magic-link sign-in).
+    if (!session.emailVerified) {
+      return NextResponse.json({ orders: [], verificationRequired: true });
+    }
+
     const rows = await db
       .select({
         id: orders.id,
@@ -25,7 +33,7 @@ export async function GET() {
       .from(orders)
       .where(
         and(
-          ilike(orders.email, session.email),
+          emailEquals(orders.email, session.email),
           isNull(orders.userId),
         ),
       )
@@ -50,6 +58,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if (!session.emailVerified) {
+      return NextResponse.json(
+        {
+          error:
+            "Sign in with an email link to confirm this address before linking orders.",
+        },
+        { status: 403 },
+      );
+    }
+
     const body = (await request.json().catch(() => ({}))) as {
       orderIds?: unknown;
     };
@@ -71,7 +89,7 @@ export async function POST(request: NextRequest) {
       .where(
         and(
           inArray(orders.id, orderIds),
-          ilike(orders.email, session.email),
+          emailEquals(orders.email, session.email),
           isNull(orders.userId),
         ),
       )

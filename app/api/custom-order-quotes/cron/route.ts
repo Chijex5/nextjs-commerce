@@ -1,3 +1,4 @@
+import { isCronAuthorized } from "lib/cron-auth";
 import { NextRequest, NextResponse } from "next/server";
 import {
   and,
@@ -50,10 +51,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const cronSecret = process.env.CRON_SECRET;
-    const requestSecret = request.headers.get("x-cron-secret");
-    if (!cronSecret || requestSecret !== cronSecret) {
-      console.log("Unauthorized cron access attempt");
+    if (!isCronAuthorized(request)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

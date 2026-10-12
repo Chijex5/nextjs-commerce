@@ -1,3 +1,4 @@
+import { emailEquals } from "lib/db/email-match";
 import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -13,6 +14,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
     const orderNumber = request.nextUrl.searchParams.get("orderNumber");
+    const email = request.nextUrl.searchParams.get("email")?.trim();
     const session = await getUserSession();
 
     const [order] = session?.id
@@ -21,11 +23,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           .from(orders)
           .where(and(eq(orders.id, id), eq(orders.userId, session.id)))
           .limit(1)
-      : orderNumber
-        ? await db
+      : orderNumber && email
+        ? // Guests need the order number *and* the email it was placed with.
+          await db
             .select()
             .from(orders)
-            .where(and(eq(orders.id, id), eq(orders.orderNumber, orderNumber)))
+            .where(
+              and(
+                eq(orders.id, id),
+                eq(orders.orderNumber, orderNumber),
+                emailEquals(orders.email, email),
+              ),
+            )
             .limit(1)
         : [];
 
