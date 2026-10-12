@@ -6,6 +6,7 @@
  * row is paid money — except cancelled ones, which are excluded from sales and
  * reported separately. All bucketing is in shop time (Africa/Lagos).
  */
+import { parseDbTimestamp, shopLocalTime } from "lib/db/time";
 import { sql, type SQL } from "drizzle-orm";
 import { db } from "lib/db";
 import {
@@ -15,11 +16,7 @@ import {
   type ReportRange,
 } from "./range";
 
-const SHOP_TZ = "Africa/Lagos";
-
-/** Shop-local wall-clock time for a stored UTC timestamp column. */
-const local = (column: SQL) =>
-  sql`((${column}) at time zone 'UTC') at time zone ${sql.raw(`'${SHOP_TZ}'`)}`;
+const local = shopLocalTime;
 
 const SALE = sql`o.status <> 'cancelled'`;
 
@@ -28,12 +25,11 @@ const num = (value: unknown) => {
   return Number.isFinite(n) ? n : 0;
 };
 
-/** Parse a `timestamp::text` value (stored as UTC wall-clock) to a Date. */
-const utcDate = (value: unknown) =>
-  new Date(String(value).replace(" ", "T") + "Z");
+/** Parse a `col::text` timestamp to a Date. */
+const utcDate = (value: unknown) => parseDbTimestamp(value) ?? new Date(NaN);
 
-/** Bind a Date as UTC wall-clock time, matching how timestamps are stored. */
-const utc = (date: Date) => date.toISOString().replace("Z", "");
+/** Bind a Date as an absolute instant (columns are timestamptz). */
+const utc = (date: Date) => date.toISOString();
 
 async function rows<T>(query: SQL): Promise<T[]> {
   return (await db.execute(query)) as unknown as T[];
@@ -480,7 +476,7 @@ export async function getOperations(): Promise<Operations> {
     rows<Record<string, unknown>>(sql`
       select ${OPEN_ORDER_COLUMNS} from orders o
       where ${OPEN} and o.delivery_status <> 'paused'
-        and o.estimated_arrival is not null and o.estimated_arrival < now() at time zone 'UTC'
+        and o.estimated_arrival is not null and o.estimated_arrival < now()
       order by o.estimated_arrival asc limit 6
     `),
     rows<Record<string, unknown>>(sql`
@@ -488,7 +484,7 @@ export async function getOperations(): Promise<Operations> {
         (select count(*) from orders o where ${OPEN}) as open_orders,
         (select count(*) from orders o where ${OPEN} and o.acknowledged_at is null) as unacknowledged,
         (select count(*) from orders o where ${OPEN} and o.delivery_status <> 'paused'
-           and o.estimated_arrival is not null and o.estimated_arrival < now() at time zone 'UTC') as late,
+           and o.estimated_arrival is not null and o.estimated_arrival < now()) as late,
         (select count(*) from custom_order_requests where status in ('submitted', 'under_review')) as requests_to_quote,
         (select count(*) from custom_order_requests where status in ('quoted', 'awaiting_payment')) as quotes_awaiting,
         (select count(*) from reviews where status = 'pending') as reviews_pending,
@@ -561,7 +557,7 @@ export async function getNavBadges(): Promise<NavBadges> {
     select
       (select count(*) from orders o where ${OPEN} and o.acknowledged_at is null) as to_confirm,
       (select count(*) from orders o where ${OPEN} and o.delivery_status <> 'paused'
-         and o.estimated_arrival is not null and o.estimated_arrival < now() at time zone 'UTC') as late,
+         and o.estimated_arrival is not null and o.estimated_arrival < now()) as late,
       (select count(*) from custom_order_requests where status in ('submitted', 'under_review')) as requests,
       (select count(*) from reviews where status = 'pending') as reviews,
       (select count(*) from payment_transactions where status = 'conflict') as conflicts

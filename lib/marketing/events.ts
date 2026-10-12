@@ -48,7 +48,7 @@ type ResendEvent = {
 
 async function unsubscribe(email: string, reason: string) {
   await db.execute(sql`
-    update newsletter_subscribers set status = ${reason}, unsubscribed_at = now() at time zone 'UTC'
+    update newsletter_subscribers set status = ${reason}, unsubscribed_at = now()
     where lower(email) = lower(${email}) and status = 'active'
   `);
 }
@@ -60,25 +60,25 @@ export async function handleResendEvent(event: ResendEvent) {
 
   switch (event.type) {
     case "email.opened":
-      await db.execute(sql`update campaign_email_logs set opened_at = coalesce(opened_at, now() at time zone 'UTC'),
-        status = case when status in ('SENT', 'DELIVERED') then 'OPENED' else status end, updated_at = now() at time zone 'UTC'
+      await db.execute(sql`update campaign_email_logs set opened_at = coalesce(opened_at, now()),
+        status = case when status in ('SENT', 'DELIVERED') then 'OPENED' else status end, updated_at = now()
         where resend_message_id = ${id}`);
       await db.execute(
-        sql`update flow_email_logs set opened_at = coalesce(opened_at, now() at time zone 'UTC') where resend_message_id = ${id}`,
+        sql`update flow_email_logs set opened_at = coalesce(opened_at, now()) where resend_message_id = ${id}`,
       );
       break;
     case "email.clicked":
-      await db.execute(sql`update campaign_email_logs set clicked_at = coalesce(clicked_at, now() at time zone 'UTC'),
-        opened_at = coalesce(opened_at, now() at time zone 'UTC'), click_count = click_count + 1, status = 'CLICKED',
-        updated_at = now() at time zone 'UTC' where resend_message_id = ${id}`);
-      await db.execute(sql`update flow_email_logs set clicked_at = coalesce(clicked_at, now() at time zone 'UTC'),
-        opened_at = coalesce(opened_at, now() at time zone 'UTC'), click_count = click_count + 1 where resend_message_id = ${id}`);
+      await db.execute(sql`update campaign_email_logs set clicked_at = coalesce(clicked_at, now()),
+        opened_at = coalesce(opened_at, now()), click_count = click_count + 1, status = 'CLICKED',
+        updated_at = now() where resend_message_id = ${id}`);
+      await db.execute(sql`update flow_email_logs set clicked_at = coalesce(clicked_at, now()),
+        opened_at = coalesce(opened_at, now()), click_count = click_count + 1 where resend_message_id = ${id}`);
       break;
     case "email.bounced": {
       const kind =
         event.data.bounce?.type ?? event.data.bounce_type ?? "Unknown";
       await db.execute(sql`update campaign_email_logs set status = 'BOUNCED', bounce_reason = ${String(kind).slice(0, 250)},
-        updated_at = now() at time zone 'UTC' where resend_message_id = ${id}`);
+        updated_at = now() where resend_message_id = ${id}`);
       await db.execute(
         sql`update flow_email_logs set status = 'BOUNCED' where resend_message_id = ${id}`,
       );
@@ -88,7 +88,7 @@ export async function handleResendEvent(event: ResendEvent) {
       break;
     }
     case "email.complained":
-      await db.execute(sql`update campaign_email_logs set status = 'COMPLAINED', updated_at = now() at time zone 'UTC'
+      await db.execute(sql`update campaign_email_logs set status = 'COMPLAINED', updated_at = now()
         where resend_message_id = ${id}`);
       if (recipient) await unsubscribe(recipient, "complained");
       break;

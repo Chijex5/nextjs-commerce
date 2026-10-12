@@ -41,9 +41,9 @@ function segmentWhere(a: Audience): SQL {
     case "prospects":
       return sql`c.orders = 0`;
     case "lapsed":
-      return sql`c.orders >= 1 and c.last_order < (now() at time zone 'UTC') - interval '90 days'`;
+      return sql`c.orders >= 1 and c.last_order < now() - interval '90 days'`;
     case "recent":
-      return sql`c.last_order >= (now() at time zone 'UTC') - interval '30 days'`;
+      return sql`c.last_order >= now() - interval '30 days'`;
     case "vip":
       return sql`c.spent >= ${a.minSpend ?? DEFAULT_VIP_SPEND}`;
     case "lagos":
@@ -70,7 +70,7 @@ function capWhere(hours: number, campaignId?: string): SQL {
     select 1 from campaign_email_logs l
     where lower(l.subscriber_email) = c.email
       and l.status not in ('QUEUED', 'FAILED')
-      and l.sent_at > (now() at time zone 'UTC') - make_interval(hours => ${hours})
+      and l.sent_at > now() - make_interval(hours => ${hours})
       ${campaignId ? sql`and l.campaign_id <> ${campaignId}::uuid` : sql``}
   )`;
 }

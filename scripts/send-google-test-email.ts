@@ -402,7 +402,13 @@ const loadOrderSelection = async (): Promise<OrderSelection> => {
     throw new Error(`No items found for order ${selectedOrder.orderNumber}`);
   }
 
-  const productIds = Array.from(new Set(items.map((item) => item.productId)));
+  const productIds = Array.from(
+    new Set(
+      items
+        .map((item) => item.productId)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
   const productRows = productIds.length
     ? await db
         .select({ id: products.id, handle: products.handle })
@@ -418,8 +424,8 @@ const loadOrderSelection = async (): Promise<OrderSelection> => {
     quantity: item.quantity,
     price: Number(item.price),
     productImage: item.productImage,
-    productHandle: handleById.get(item.productId),
-    sku: item.productVariantId,
+    productHandle: item.productId ? handleById.get(item.productId) : undefined,
+    sku: item.productVariantId ?? undefined,
   }));
 
   return {

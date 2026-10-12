@@ -1,3 +1,4 @@
+import { CAMPAIGN_TYPES, isOneOf } from "lib/db/enums";
 import { authOptions } from "@/lib/auth";
 import { parseBlocks } from "lib/email/blocks";
 import { normaliseAudience } from "lib/marketing/segments";
@@ -109,6 +110,13 @@ export async function POST(req: NextRequest) {
       audience,
       frequencyCapHours,
     } = body;
+
+    if (type !== undefined && !isOneOf(CAMPAIGN_TYPES, type)) {
+      return NextResponse.json(
+        { error: "Invalid campaign type" },
+        { status: 400 },
+      );
+    }
 
     if (!name || !type || !subject) {
       return NextResponse.json(

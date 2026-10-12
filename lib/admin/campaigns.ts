@@ -4,6 +4,7 @@
  * (Klaviyo's default window). Clicks, not opens: Apple Mail Privacy Protection
  * pre-loads images, so opens are inflated and unreliable.
  */
+import { parseDbTimestamp } from "lib/db/time";
 import { sql, type SQL } from "drizzle-orm";
 import { db } from "lib/db";
 
@@ -13,8 +14,7 @@ const num = (v: unknown) => {
   const n = typeof v === "number" ? v : Number(v ?? 0);
   return Number.isFinite(n) ? n : 0;
 };
-const utcDate = (v: unknown) =>
-  v ? new Date(String(v).replace(" ", "T") + "Z") : null;
+const utcDate = parseDbTimestamp;
 
 export type CampaignStats = {
   recipients: number;

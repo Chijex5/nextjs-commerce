@@ -1,3 +1,4 @@
+import { CAMPAIGN_TYPES, isOneOf } from "lib/db/enums";
 import { authOptions } from "@/lib/auth";
 import { parseBlocks } from "lib/email/blocks";
 import { normaliseAudience } from "lib/marketing/segments";
@@ -158,7 +159,15 @@ export async function PATCH(
     // Update campaign fields
     const updates: any = {};
     if (name !== undefined) updates.name = name;
-    if (type !== undefined) updates.type = type;
+    if (type !== undefined) {
+      if (!isOneOf(CAMPAIGN_TYPES, type)) {
+        return NextResponse.json(
+          { error: "Invalid campaign type" },
+          { status: 400 },
+        );
+      }
+      updates.type = type;
+    }
     if (subject !== undefined) updates.subject = subject;
     if (preheader !== undefined) updates.preheader = preheader;
     if (headerTitle !== undefined) updates.headerTitle = headerTitle;

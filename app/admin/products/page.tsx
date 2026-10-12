@@ -89,7 +89,7 @@ const SORTS = {
   title: asc(products.title),
   "best-selling": sql`(select coalesce(sum(oi.quantity), 0) from order_items oi join orders o on o.id = oi.order_id
      where oi.product_id = ${products.id} and o.status <> 'cancelled'
-       and o.created_at >= (now() at time zone 'UTC') - interval '30 days') desc`,
+       and o.created_at >= now() - interval '30 days') desc`,
 } as const;
 
 type Params = {
@@ -230,7 +230,7 @@ export default async function ProductsPage({
         db.execute(sql`
           select oi.product_id, coalesce(sum(oi.quantity), 0) as units, coalesce(sum(oi.total_amount), 0) as revenue
           from order_items oi join orders o on o.id = oi.order_id
-          where o.status <> 'cancelled' and o.created_at >= (now() at time zone 'UTC') - interval '30 days'
+          where o.status <> 'cancelled' and o.created_at >= now() - interval '30 days'
             and oi.product_id in (${sql.join(
               ids.map((id) => sql`${id}::uuid`),
               sql`, `,

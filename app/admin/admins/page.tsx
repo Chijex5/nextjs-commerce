@@ -24,7 +24,7 @@ export default async function TeamPage() {
     db.execute(sql`
       select lower(acknowledged_by) as email, count(*) as confirmed, max(acknowledged_at)::text as last
       from orders where acknowledged_by is not null
-        and acknowledged_at >= (now() at time zone 'UTC') - interval '30 days'
+        and acknowledged_at >= now() - interval '30 days'
       group by 1
     `) as unknown as Promise<
       Array<{ email: string; confirmed: unknown; last: string | null }>
