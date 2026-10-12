@@ -28,6 +28,8 @@ type SearchableSelectProps = {
   emptyMessage?: string;
   emptyQueryMessage?: string;
   maxResults?: number;
+  error?: string;
+  onBlur?: () => void;
 };
 
 function SearchableSelect({
@@ -46,11 +48,14 @@ function SearchableSelect({
   emptyMessage = "No matches found.",
   emptyQueryMessage = "Start typing to search.",
   maxResults = 12,
+  error,
+  onBlur,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const rootRef = useRef<HTMLDivElement>(null);
   const listId = useId();
+  const inputId = useId();
   const query = normalizeLocationName(value);
   const hasQuery = query.length > 0;
 
@@ -97,12 +102,21 @@ function SearchableSelect({
 
   return (
     <div className={clsx("relative", containerClassName)} ref={rootRef}>
-      <label className={clsx("mb-1 block text-sm font-medium", labelClassName)}>
+      <label
+        htmlFor={inputId}
+        className={clsx("mb-1 block text-sm font-medium", labelClassName)}
+      >
         {label}
+        {required ? <span aria-hidden> *</span> : null}
       </label>
       <div className="relative">
         <input
+          id={inputId}
           value={value}
+          onBlur={onBlur}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${inputId}-error` : undefined}
+          autoComplete="off"
           onChange={(event) => {
             onChange(event.target.value, "input");
             setOpen(true);
@@ -202,6 +216,11 @@ function SearchableSelect({
           )}
         </div>
       )}
+      {error ? (
+        <p id={`${inputId}-error`} className="mt-1.5 text-xs text-red-600">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -224,6 +243,13 @@ export type LocationSelectGroupProps = {
   lgaPlaceholder?: string;
   wardPlaceholder?: string;
   wardLabel?: string;
+  /** Hide the ward picker (it only matters where pricing depends on it). */
+  showWard?: boolean;
+  /** Errors shown under the state / LGA pickers. */
+  stateError?: string;
+  lgaError?: string;
+  onStateBlur?: () => void;
+  onLgaBlur?: () => void;
 };
 
 export function LocationSelectGroup({
@@ -244,11 +270,13 @@ export function LocationSelectGroup({
   lgaPlaceholder = "Search for your LGA",
   wardPlaceholder = "Search for your ward",
   wardLabel = "Ward (optional)",
+  showWard = true,
+  stateError,
+  lgaError,
+  onStateBlur,
+  onLgaBlur,
 }: LocationSelectGroupProps) {
-  const lgaOptions = useMemo(
-    () => getLgaOptions(stateValue),
-    [stateValue],
-  );
+  const lgaOptions = useMemo(() => getLgaOptions(stateValue), [stateValue]);
   const wardOptions = useMemo(
     () => getWardOptions(stateValue, lgaValue),
     [stateValue, lgaValue],
@@ -274,6 +302,8 @@ export function LocationSelectGroup({
           emptyMessage="No matching state found."
           emptyQueryMessage="Select or type your state."
           maxResults={50}
+          error={stateError}
+          onBlur={onStateBlur}
         />
         <SearchableSelect
           label="LGA (Local Government Area)"
@@ -290,24 +320,28 @@ export function LocationSelectGroup({
           emptyQueryMessage={
             hasState ? "Start typing to search LGAs." : "Select a state first."
           }
+          error={lgaError}
+          onBlur={onLgaBlur}
         />
       </div>
-      <SearchableSelect
-        label={wardLabel}
-        value={wardValue}
-        options={wardOptions}
-        onChange={onWardChange}
-        placeholder={wardPlaceholder}
-        inputClassName={inputClassName}
-        menuClassName={menuClassName}
-        labelClassName={labelClassName}
-        required={wardRequired}
-        disabled={!hasLga}
-        emptyMessage="No matching ward found."
-        emptyQueryMessage={
-          hasLga ? "Start typing to search wards." : "Select an LGA first."
-        }
-      />
+      {showWard ? (
+        <SearchableSelect
+          label={wardLabel}
+          value={wardValue}
+          options={wardOptions}
+          onChange={onWardChange}
+          placeholder={wardPlaceholder}
+          inputClassName={inputClassName}
+          menuClassName={menuClassName}
+          labelClassName={labelClassName}
+          required={wardRequired}
+          disabled={!hasLga}
+          emptyMessage="No matching ward found."
+          emptyQueryMessage={
+            hasLga ? "Start typing to search wards." : "Select an LGA first."
+          }
+        />
+      ) : null}
     </div>
   );
 }
