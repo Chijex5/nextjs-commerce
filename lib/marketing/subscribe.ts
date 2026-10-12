@@ -62,8 +62,7 @@ export async function subscribeEmail({
       name: name || "Friend",
     });
     if (result.success) {
-      const id = (result as { data?: { data?: { id?: string } } }).data?.data
-        ?.id;
+      const id = (result as { data?: { id?: string } }).data?.id;
       await logFlowSend(
         "welcome",
         normalized,

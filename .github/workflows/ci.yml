@@ -40,6 +40,8 @@ jobs:
       NEXTAUTH_URL: http://localhost:3000
       CRON_SECRET: ci-only-cron
       UNSUBSCRIBE_SECRET: ci-only-unsubscribe
+      # Fake key: the suite signs Paystack webhooks with it; nothing calls Paystack.
+      PAYSTACK_SECRET_KEY: sk_test_ci_only
       CUSTOM_ORDER_REQUESTS_ENABLED: "true"
       NEXT_TELEMETRY_DISABLED: "1"
 

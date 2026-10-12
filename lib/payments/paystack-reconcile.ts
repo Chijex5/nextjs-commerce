@@ -2,8 +2,13 @@ import {
     sendAdminNewOrderNotification,
     sendOrderConfirmationWithMarkup,
 } from "@/lib/email/order-emails";
-import { and, eq, isNull, sql } from "drizzle-orm";
-import { validateCouponForCheckout } from "lib/coupon-validation";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { quoteCheckout } from "lib/checkout/quote";
+import {
+  type CheckoutSnapshot,
+  readSnapshot,
+  toSnapshot,
+} from "lib/checkout/snapshot";
 import { db } from "lib/db";
 import {
     abandonedCarts,
@@ -102,8 +107,14 @@ const toBoolean = (value: unknown) => {
   return false;
 };
 
-const buildOrderNumber = () =>
-  `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 9).toUpperCase()}`;
+/** Short, sequential and never repeated: DFP-10001, DFP-10002, … */
+async function nextOrderNumber(tx: TxClient) {
+  const [row] = await tx.execute<{ n: string }>(
+    sql`select nextval('order_number_seq')::text as n`,
+  );
+  if (!row?.n) throw new Error("Could not allocate an order number");
+  return `DFP-${row.n}`;
+}
 
 const buildOrderNotes = (userNote: string | null, reference: string) => {
   const paymentRefLine = `Paystack Ref: ${reference}`;
@@ -119,6 +130,9 @@ const getSourceFromMetadata = (metadata: RecordValue): PaymentSource => {
 };
 
 async function sendOrderEmails(input: {
+  paymentTransactionId?: string;
+  reference?: string;
+  source?: PaymentSource;
   orderId: string;
   orderNumber: string;
   customerName: string;
@@ -135,8 +149,29 @@ async function sendOrderEmails(input: {
   shippingAddress: unknown;
   items: EmailItem[];
 }) {
+  // sendEmail reports failure in its result rather than throwing; note it on
+  // the payment so the team can see the confirmation never went out.
+  const noteFailure = async (who: string, error: unknown) => {
+    console.error(`Payment reconcile: failed to send ${who} order email`, error);
+    if (!input.paymentTransactionId) return;
+    await db
+      .insert(paymentEvents)
+      .values({
+        paymentTransactionId: input.paymentTransactionId,
+        provider: "paystack",
+        reference: input.reference ?? input.orderNumber,
+        source: input.source ?? "catalog_checkout",
+        eventType: "admin_reconcile",
+        status: "email_failed",
+        message: `The ${who} order email for ${input.orderNumber} was not sent: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      })
+      .catch(() => {});
+  };
+
   try {
-    await sendOrderConfirmationWithMarkup({
+    const sent = await sendOrderConfirmationWithMarkup({
       orderNumber: input.orderNumber,
       customerName: input.customerName,
       email: input.email,
@@ -150,15 +185,16 @@ async function sendOrderEmails(input: {
       shippingAddress: input.shippingAddress,
       orderDate: input.orderDate,
     });
+    if (!sent.success) await noteFailure("customer", sent.error);
   } catch (emailError) {
-    console.error("Payment reconcile: failed to send customer order email", emailError);
+    await noteFailure("customer", emailError);
   }
 
   try {
     const adminEmails = await getAdminNotificationEmails();
     if (adminEmails.length === 0) return;
 
-    await sendAdminNewOrderNotification({
+    const sent = await sendAdminNewOrderNotification({
       to: adminEmails,
       orderNumber: input.orderNumber,
       orderId: input.orderId,
@@ -179,8 +215,9 @@ async function sendOrderEmails(input: {
         quantity: item.quantity,
       })),
     });
+    if (!sent.success) await noteFailure("admin", sent.error);
   } catch (emailError) {
-    console.error("Payment reconcile: failed to send admin order email", emailError);
+    await noteFailure("admin", emailError);
   }
 }
 
@@ -334,15 +371,24 @@ export async function registerInitializedPaymentTransaction(input: {
   amount: number;
   currencyCode: string;
   metadata?: Record<string, unknown>;
+  /** The priced bag the customer is paying for (catalog checkout). */
+  snapshot?: CheckoutSnapshot;
   payload?: unknown;
 }) {
-  const metadata = isRecord(input.metadata) ? input.metadata : {};
+  const metadata: RecordValue = {
+    ...(isRecord(input.metadata) ? input.metadata : {}),
+    ...(input.snapshot ? { checkout_snapshot: input.snapshot } : {}),
+  };
   const source = input.source;
+  const provider =
+    toStringOrNull(metadata.payment_provider) === "coupon_free"
+      ? "coupon_free"
+      : "paystack";
 
   const [paymentTransaction] = await db
     .insert(paymentTransactions)
     .values({
-      provider: "paystack",
+      provider,
       reference: input.reference,
       source,
       status: "initialized",
@@ -378,7 +424,7 @@ export async function registerInitializedPaymentTransaction(input: {
 
   await db.insert(paymentEvents).values({
     paymentTransactionId: paymentTransaction.id,
-    provider: "paystack",
+    provider,
     reference: paymentTransaction.reference,
     source: paymentTransaction.source as PaymentSource,
     eventType: "initialize",
@@ -401,14 +447,27 @@ export async function reconcilePaystackPayment(
     };
   }
 
-  const metadata = isRecord(input.metadata) ? input.metadata : {};
-  const source = getSourceFromMetadata(metadata);
-  const paymentProvider = toStringOrNull(metadata.payment_provider) || "paystack";
+  let metadata: RecordValue = isRecord(input.metadata) ? input.metadata : {};
+  let source = getSourceFromMetadata(metadata);
+  let paymentProvider = toStringOrNull(metadata.payment_provider) || "paystack";
   let paymentTransactionId: string | undefined;
 
   try {
     const output = await db.transaction(async (tx) => {
       await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${reference}))`);
+
+      // What we stored at initialize beats what Paystack echoes back: the
+      // echo comes from the browser for popup payments, our copy doesn't.
+      const [stored] = await tx
+        .select({ metadata: paymentTransactions.metadata })
+        .from(paymentTransactions)
+        .where(eq(paymentTransactions.reference, reference))
+        .limit(1);
+      if (stored && isRecord(stored.metadata)) {
+        metadata = { ...metadata, ...stored.metadata };
+        source = getSourceFromMetadata(metadata);
+        paymentProvider = toStringOrNull(metadata.payment_provider) || "paystack";
+      }
 
       const [upserted] = await tx
         .insert(paymentTransactions)
@@ -770,7 +829,7 @@ export async function reconcilePaystackPayment(
           }
         }
 
-        const orderNumber = buildOrderNumber();
+        const orderNumber = await nextOrderNumber(tx);
         const [createdOrder] = await tx
           .insert(orders)
           .values({
@@ -929,261 +988,127 @@ export async function reconcilePaystackPayment(
         };
       }
 
+      const conflict = async (
+        conflictCode: PaymentConflictCode,
+        message: string,
+      ) => {
+        await setConflict(tx, {
+          paymentTransactionId: upserted.id,
+          reference,
+          source,
+          eventType: input.eventType,
+          conflictCode,
+          message,
+          payload: input.payload,
+          paystackStatus: input.paystackStatus,
+        });
+        return { status: "conflict" as const, conflictCode, message };
+      };
+
+      // The snapshot stored when the customer pressed Pay is the order: the
+      // lines and prices they saw are the ones they get, even if a price,
+      // coupon or the bag changed while Paystack was open.
+      const storedSnapshot = readSnapshot(metadata.checkout_snapshot);
       const cartId =
-        toStringOrNull(metadata.cart_id) || toStringOrNull(input.checkoutCartId);
+        storedSnapshot?.cartId ||
+        toStringOrNull(metadata.cart_id) ||
+        toStringOrNull(input.checkoutCartId);
 
       if (!cartId) {
-        const message = "Missing catalog cart metadata";
-        await setConflict(tx, {
-          paymentTransactionId: upserted.id,
-          reference,
-          source,
-          eventType: input.eventType,
-          conflictCode: "missing_metadata",
-          message,
-          payload: input.payload,
-          paystackStatus: input.paystackStatus,
-        });
-        return {
-          status: "conflict" as const,
-          conflictCode: "missing_metadata" as const,
-          message,
-        };
+        return conflict("missing_metadata", "Missing catalog cart metadata");
+      }
+      if (
+        !storedSnapshot &&
+        input.checkoutCartId &&
+        input.checkoutCartId !== cartId
+      ) {
+        return conflict(
+          "metadata_mismatch",
+          "Checkout cart mismatch between session and metadata",
+        );
       }
 
-      if (input.checkoutCartId && input.checkoutCartId !== cartId) {
-        const message = "Checkout cart mismatch between session and metadata";
-        await setConflict(tx, {
-          paymentTransactionId: upserted.id,
-          reference,
-          source,
-          eventType: input.eventType,
-          conflictCode: "metadata_mismatch",
-          message,
-          payload: input.payload,
-          paystackStatus: input.paystackStatus,
-        });
-        return {
-          status: "conflict" as const,
-          conflictCode: "metadata_mismatch" as const,
-          message,
-        };
+      const currencyCode = toStringOrNull(input.currencyCode) || "NGN";
+      if (currencyCode !== "NGN") {
+        return conflict(
+          "currency_mismatch",
+          `Currency mismatch. Expected NGN, got ${currencyCode}`,
+        );
       }
 
-      const [cart] = await tx.select().from(carts).where(eq(carts.id, cartId)).limit(1);
-      if (!cart) {
-        const message = "Cart not found";
-        await setConflict(tx, {
-          paymentTransactionId: upserted.id,
-          reference,
-          source,
-          eventType: input.eventType,
-          conflictCode: "cart_not_found",
-          message,
-          payload: input.payload,
-          paystackStatus: input.paystackStatus,
-        });
-        return {
-          status: "conflict" as const,
-          conflictCode: "cart_not_found" as const,
-          message,
-        };
-      }
-
-      const cartLineRows = await tx
-        .select({
-          line: cartLines,
-          variant: productVariants,
-          product: products,
-          image: productImages,
-        })
-        .from(cartLines)
-        .innerJoin(
-          productVariants,
-          eq(cartLines.productVariantId, productVariants.id),
-        )
-        .innerJoin(products, eq(productVariants.productId, products.id))
-        .leftJoin(
-          productImages,
-          and(
-            eq(productImages.productId, products.id),
-            eq(productImages.isFeatured, true),
-          ),
-        )
-        .where(eq(cartLines.cartId, cart.id));
-
-      const uniqueLines = Array.from(
-        cartLineRows.reduce((acc, row) => {
-          if (!acc.has(row.line.id)) {
-            acc.set(row.line.id, row);
-          }
-          return acc;
-        }, new Map<string, (typeof cartLineRows)[number]>()),
-      ).map(([, value]) => value);
-
-      if (!uniqueLines.length) {
-        const message = "Cart has no line items";
-        await setConflict(tx, {
-          paymentTransactionId: upserted.id,
-          reference,
-          source,
-          eventType: input.eventType,
-          conflictCode: "cart_not_found",
-          message,
-          payload: input.payload,
-          paystackStatus: input.paystackStatus,
-        });
-        return {
-          status: "conflict" as const,
-          conflictCode: "cart_not_found" as const,
-          message,
-        };
-      }
-
-      const subtotalAmount = Number(cart.subtotalAmount);
-      const couponCode = toStringOrNull(metadata.coupon_code);
       const shippingAddress = isRecord(metadata.checkout_shipping_address)
         ? metadata.checkout_shipping_address
         : {};
       const billingAddress = isRecord(metadata.checkout_billing_address)
         ? metadata.checkout_billing_address
         : null;
-      const totalQuantity = uniqueLines.reduce(
-        (sum, { line }) => sum + line.quantity,
-        0,
-      );
-      const shippingAmount = calculateShippingAmount({
-        address: shippingAddress,
-        subtotalAmount,
-        totalQuantity,
-      });
-      let discountAmount = 0;
-      if (couponCode) {
-        try {
-          const validated = await validateCouponForCheckout({
-            code: couponCode,
-            cartTotal: subtotalAmount,
-            shippingAmount,
-            userId: toStringOrNull(metadata.checkout_user_id),
-            sessionId: toStringOrNull(metadata.checkout_session_id),
-          });
-          discountAmount = validated.discountAmount;
-        } catch {
-          const message = "Coupon is no longer valid for this checkout";
-          await setConflict(tx, {
-            paymentTransactionId: upserted.id,
-            reference,
-            source,
-            eventType: input.eventType,
-            conflictCode: "invalid_status",
-            message,
-            payload: input.payload,
-            paystackStatus: input.paystackStatus,
-          });
-          return {
-            status: "conflict" as const,
-            conflictCode: "invalid_status" as const,
-            message,
-          };
+      const couponCode = toStringOrNull(metadata.coupon_code);
+      const userId = toStringOrNull(metadata.checkout_user_id);
+      const checkoutSessionId = toStringOrNull(metadata.checkout_session_id);
+
+      let snapshot = storedSnapshot;
+      if (!snapshot) {
+        // Payments started before snapshots existed: price the live bag.
+        const quote = await quoteCheckout({
+          cartId,
+          address: shippingAddress as { state?: string; lga?: string; ward?: string },
+          couponCode,
+          userId,
+          sessionId: checkoutSessionId,
+        });
+        if (!quote.lines.length) {
+          return conflict("cart_not_found", "Cart has no line items");
         }
+        if (couponCode && quote.couponError) {
+          return conflict(
+            "invalid_status",
+            "Coupon is no longer valid for this checkout",
+          );
+        }
+        snapshot = toSnapshot(cartId, quote);
       }
 
-      const totalAmount = subtotalAmount - discountAmount + shippingAmount;
-      const expectedAmountInKobo = Math.round(totalAmount * 100);
-      const currencyCode = toStringOrNull(input.currencyCode) || "NGN";
-
-      if (currencyCode !== "NGN") {
-        const message = `Currency mismatch. Expected NGN, got ${currencyCode}`;
-        await setConflict(tx, {
-          paymentTransactionId: upserted.id,
-          reference,
-          source,
-          eventType: input.eventType,
-          conflictCode: "currency_mismatch",
-          message,
-          payload: input.payload,
-          paystackStatus: input.paystackStatus,
-        });
-        return {
-          status: "conflict" as const,
-          conflictCode: "currency_mismatch" as const,
-          message,
-        };
-      }
-
-      if (!Number.isFinite(input.amount) || input.amount !== expectedAmountInKobo) {
-        const message = `Amount mismatch. Expected ${expectedAmountInKobo}, got ${input.amount}`;
-        await setConflict(tx, {
-          paymentTransactionId: upserted.id,
-          reference,
-          source,
-          eventType: input.eventType,
-          conflictCode: "amount_mismatch",
-          message,
-          payload: input.payload,
-          paystackStatus: input.paystackStatus,
-        });
-        return {
-          status: "conflict" as const,
-          conflictCode: "amount_mismatch" as const,
-          message,
-        };
+      if (!Number.isFinite(input.amount) || input.amount !== snapshot.amountInKobo) {
+        return conflict(
+          "amount_mismatch",
+          `Amount mismatch. Expected ${snapshot.amountInKobo}, got ${input.amount}`,
+        );
       }
 
       const email =
         toStringOrNull(metadata.checkout_email) ||
         toStringOrNull(input.customer?.email);
-
       if (!email) {
-        const message = "Missing customer email";
-        await setConflict(tx, {
-          paymentTransactionId: upserted.id,
-          reference,
-          source,
-          eventType: input.eventType,
-          conflictCode: "missing_metadata",
-          message,
-          payload: input.payload,
-          paystackStatus: input.paystackStatus,
-        });
-        return {
-          status: "conflict" as const,
-          conflictCode: "missing_metadata" as const,
-          message,
-        };
+        return conflict("missing_metadata", "Missing customer email");
       }
 
       const phone = toStringOrNull(metadata.phone) || toStringOrNull(input.customer?.phone);
-      const userId = toStringOrNull(metadata.checkout_user_id);
       const shouldSaveAddress = toBoolean(metadata.checkout_save_address);
       const customerName =
         toStringOrNull(metadata.customer_name) ||
-        (() => {
-          const maybeAddress = isRecord(shippingAddress) ? shippingAddress : null;
-          const first = maybeAddress ? toStringOrNull(maybeAddress.firstName) : null;
-          const last = maybeAddress ? toStringOrNull(maybeAddress.lastName) : null;
-          const fullName = [first, last].filter(Boolean).join(" ").trim();
-          if (fullName) return fullName;
-          const fromCustomer = [
-            toStringOrNull(input.customer?.first_name),
-            toStringOrNull(input.customer?.last_name),
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .trim();
-          return fromCustomer || "Customer";
-        })();
+        [toStringOrNull(shippingAddress.firstName), toStringOrNull(shippingAddress.lastName)]
+          .filter(Boolean)
+          .join(" ")
+          .trim() ||
+        [toStringOrNull(input.customer?.first_name), toStringOrNull(input.customer?.last_name)]
+          .filter(Boolean)
+          .join(" ")
+          .trim() ||
+        "Customer";
       const userNote = toStringOrNull(metadata.checkout_notes);
 
-      const [coupon] = couponCode
-        ? await tx
-            .select({ id: coupons.id })
-            .from(coupons)
-            .where(eq(coupons.code, couponCode.trim().toUpperCase()))
-            .limit(1)
-        : [];
+      const snapshotCouponCode = snapshot.couponCode ?? couponCode;
+      const [coupon] = snapshot.couponId
+        ? [{ id: snapshot.couponId }]
+        : snapshotCouponCode
+          ? await tx
+              .select({ id: coupons.id })
+              .from(coupons)
+              .where(eq(coupons.code, snapshotCouponCode.trim().toUpperCase()))
+              .limit(1)
+          : [];
 
-      const orderNumber = buildOrderNumber();
+      const orderNumber = await nextOrderNumber(tx);
       const [createdOrder] = await tx
         .insert(orders)
         .values({
@@ -1195,12 +1120,12 @@ export async function reconcilePaystackPayment(
           shippingAddress,
           billingAddress,
           status: "processing",
-          subtotalAmount: String(subtotalAmount),
-          shippingAmount: String(shippingAmount),
-          discountAmount: String(discountAmount),
-          couponCode,
+          subtotalAmount: String(snapshot.subtotal),
+          shippingAmount: String(snapshot.shipping),
+          discountAmount: String(snapshot.discount),
+          couponCode: snapshotCouponCode,
           couponId: coupon?.id ?? null,
-          totalAmount: String(totalAmount),
+          totalAmount: String(snapshot.total),
           currencyCode: "NGN",
           notes: buildOrderNotes(userNote, reference),
           paymentTransactionId: upserted.id,
@@ -1214,31 +1139,73 @@ export async function reconcilePaystackPayment(
       }
 
       await tx.insert(orderItems).values(
-        uniqueLines.map(({ line, variant, product, image }) => ({
+        snapshot.lines.map((line) => ({
           orderId: createdOrder.id,
-          productId: variant.productId,
-          productVariantId: line.productVariantId,
-          productTitle: product.title,
-          variantTitle: variant.title,
+          productId: line.productId,
+          productVariantId: line.variantId,
+          productTitle: line.productTitle,
+          variantTitle: line.variantTitle,
           quantity: line.quantity,
-          price: String(variant.price),
-          totalAmount: String(line.totalAmount),
+          price: String(line.unitPrice),
+          totalAmount: String(line.lineTotal),
           currencyCode: line.currencyCode,
-          productImage: image?.url || null,
+          productImage: line.image,
         })),
       );
+
+      const notices: string[] = [];
 
       if (coupon) {
         await tx.insert(couponUsages).values({
           couponId: coupon.id,
           orderId: createdOrder.id,
           userId: userId || null,
-          sessionId: null,
+          sessionId: userId ? null : checkoutSessionId,
         });
-        await tx
+        // Claim a use only while uses are left. If the last one went while
+        // this customer was paying, they still get the price they paid — we
+        // just flag it for the team.
+        const claimed = await tx
           .update(coupons)
-          .set({ usedCount: sql`${coupons.usedCount} + 1` })
-          .where(eq(coupons.id, coupon.id));
+          .set({ usedCount: sql`${coupons.usedCount} + 1`, updatedAt: new Date() })
+          .where(
+            and(
+              eq(coupons.id, coupon.id),
+              sql`(${coupons.maxUses} is null or ${coupons.usedCount} < ${coupons.maxUses})`,
+            ),
+          )
+          .returning({ id: coupons.id });
+        if (!claimed.length) {
+          await tx
+            .update(coupons)
+            .set({ usedCount: sql`${coupons.usedCount} + 1`, updatedAt: new Date() })
+            .where(eq(coupons.id, coupon.id));
+          notices.push(
+            `Coupon ${snapshotCouponCode} went over its usage limit while this customer paid; the order was honoured.`,
+          );
+        }
+      }
+
+      // Stock only moves for variants that track it (most pairs are made to
+      // order). Never fail a paid order over it: clamp at zero and flag.
+      for (const line of snapshot.lines) {
+        const [variant] = await tx
+          .update(productVariants)
+          .set({
+            stockQuantity: sql`greatest(${productVariants.stockQuantity} - ${line.quantity}, 0)`,
+            availableForSale: sql`${productVariants.stockQuantity} - ${line.quantity} > 0`,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(productVariants.id, line.variantId),
+              eq(productVariants.trackInventory, true),
+            ),
+          )
+          .returning({ stockQuantity: productVariants.stockQuantity });
+        if (variant && variant.stockQuantity === 0) {
+          notices.push(`${line.productTitle} (${line.variantTitle}) is now sold out.`);
+        }
       }
 
       if (shouldSaveAddress && userId) {
@@ -1248,23 +1215,48 @@ export async function reconcilePaystackPayment(
           .where(eq(users.id, userId));
       }
 
-      await tx.delete(cartLines).where(eq(cartLines.cartId, cart.id));
-      await tx
-        .update(carts)
-        .set({
-          totalQuantity: 0,
-          subtotalAmount: "0",
-          totalAmount: "0",
-          totalTaxAmount: "0",
-        })
-        .where(eq(carts.id, cart.id));
+      const [cart] = await tx
+        .select({ id: carts.id })
+        .from(carts)
+        .where(eq(carts.id, cartId))
+        .limit(1);
+      if (cart) {
+        // Only the lines that were paid for; anything added since stays.
+        await tx
+          .delete(cartLines)
+          .where(
+            and(
+              eq(cartLines.cartId, cart.id),
+              inArray(
+                cartLines.id,
+                snapshot.lines.map((l) => l.lineId),
+              ),
+            ),
+          );
+        const [totals] = await tx
+          .select({
+            quantity: sql<number>`coalesce(sum(${cartLines.quantity}), 0)::int`,
+            amount: sql<string>`coalesce(sum(${cartLines.totalAmount}), 0)::text`,
+          })
+          .from(cartLines)
+          .where(eq(cartLines.cartId, cart.id));
+        await tx
+          .update(carts)
+          .set({
+            totalQuantity: totals?.quantity ?? 0,
+            subtotalAmount: totals?.amount ?? "0",
+            totalAmount: totals?.amount ?? "0",
+            totalTaxAmount: "0",
+          })
+          .where(eq(carts.id, cart.id));
 
-      await tx
-        .update(abandonedCarts)
-        .set({ recovered: true, recoveredAt: new Date() })
-        .where(
-          and(eq(abandonedCarts.cartId, cart.id), eq(abandonedCarts.recovered, false)),
-        );
+        await tx
+          .update(abandonedCarts)
+          .set({ recovered: true, recoveredAt: new Date() })
+          .where(
+            and(eq(abandonedCarts.cartId, cart.id), eq(abandonedCarts.recovered, false)),
+          );
+      }
 
       await tx
         .update(paymentTransactions)
@@ -1285,7 +1277,7 @@ export async function reconcilePaystackPayment(
         source,
         eventType: input.eventType,
         status: "paid",
-        message: "Catalog checkout reconciled and order created",
+        message: ["Catalog checkout reconciled and order created", ...notices].join(" "),
         payload: input.payload,
       });
 
@@ -1309,20 +1301,25 @@ export async function reconcilePaystackPayment(
           currencyCode: createdOrder.currencyCode,
           orderDate: createdOrder.createdAt.toISOString(),
           shippingAddress: createdOrder.shippingAddress,
-          items: uniqueLines.map(({ line, variant, product, image }) => ({
-            productTitle: product.title,
-            variantTitle: variant.title,
+          items: snapshot.lines.map((line) => ({
+            productTitle: line.productTitle,
+            variantTitle: line.variantTitle,
             quantity: line.quantity,
-            price: Number(variant.price),
-            productImage: image?.url || null,
-            sku: line.productVariantId,
+            price: line.unitPrice,
+            productImage: line.image,
+            sku: line.variantId,
           })),
         },
       };
     });
 
     if (output.status === "paid" && output.created && output.emailPayload) {
-      await sendOrderEmails(output.emailPayload);
+      await sendOrderEmails({
+        ...output.emailPayload,
+        paymentTransactionId,
+        reference,
+        source,
+      });
     }
 
     if (output.status === "paid") {

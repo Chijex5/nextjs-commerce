@@ -55,6 +55,8 @@ export const QUOTE_STATUSES = [
   "rejected",
   "expired",
   "paid",
+  /** A newer version was sent; this one can no longer be paid. */
+  "superseded",
 ] as const;
 
 export const ADMIN_ROLE_VALUES = ["admin", "super_admin"] as const;

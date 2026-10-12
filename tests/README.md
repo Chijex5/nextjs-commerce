@@ -25,11 +25,12 @@ export TEST_DATABASE_URL=$NEON_DATABASE_URL
 export TEST_BASE_URL=http://localhost:3000
 export NEXTAUTH_SECRET=local-test NEXTAUTH_URL=$TEST_BASE_URL
 export CRON_SECRET=local-cron UNSUBSCRIBE_SECRET=local-unsub
+export PAYSTACK_SECRET_KEY=sk_test_local   # signs test webhooks; never called
 export CUSTOM_ORDER_REQUESTS_ENABLED=true
 
 pnpm db:migrate && pnpm build && pnpm start &   # or `pnpm dev`
 pnpm test:integration
 ```
 
-`NEXTAUTH_SECRET` and `CRON_SECRET` must match between the app and the test
+`NEXTAUTH_SECRET`, `CRON_SECRET` and `PAYSTACK_SECRET_KEY` must match between the app and the test
 run: the suite signs admin session cookies and calls cron routes with them.

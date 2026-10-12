@@ -1,0 +1,3 @@
+CREATE SEQUENCE "public"."order_number_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START WITH 10001 CACHE 1;--> statement-breakpoint
+ALTER TABLE "custom_order_quotes" DROP CONSTRAINT "custom_order_quotes_status_check";--> statement-breakpoint
+ALTER TABLE "custom_order_quotes" ADD CONSTRAINT "custom_order_quotes_status_check" CHECK ("custom_order_quotes"."status" in ('sent', 'accepted', 'rejected', 'expired', 'paid', 'superseded'));

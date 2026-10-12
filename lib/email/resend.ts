@@ -52,7 +52,9 @@ export const sendEmail = async ({
       ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;mso-hide:all;">${preheader}</div>${html}`
       : html;
 
-    const data = await resend.emails.send({
+    // Resend reports API failures (bad sender, rate limit, invalid address)
+    // in `error` rather than throwing, so check it.
+    const { data, error } = await resend.emails.send({
       from,
       to,
       replyTo,
@@ -60,6 +62,13 @@ export const sendEmail = async ({
       html: emailHtml,
       headers,
     });
+    if (error) {
+      console.error("Email sending error:", error);
+      return {
+        success: false,
+        error: error.message || "Failed to send email. Please try again.",
+      };
+    }
     return { success: true, data };
   } catch (error) {
     // Log full error for debugging but don't expose to client

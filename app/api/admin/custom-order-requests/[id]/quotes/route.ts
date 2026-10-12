@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { requireAdminSession } from "lib/admin-auth";
 import { db } from "lib/db";
 import { customOrderQuotes, customOrderRequests } from "lib/db/schema";
@@ -94,6 +94,18 @@ export async function POST(
     const nextVersion = (latestQuote?.version || 0) + 1;
 
     const createdQuote = await db.transaction(async (tx) => {
+      // The new quote replaces any still-open one, so the customer can't
+      // pay an old price from an old link.
+      await tx
+        .update(customOrderQuotes)
+        .set({ status: "superseded", updatedAt: new Date() })
+        .where(
+          and(
+            eq(customOrderQuotes.requestId, id),
+            inArray(customOrderQuotes.status, ["sent", "accepted"]),
+          ),
+        );
+
       const [quote] = await tx
         .insert(customOrderQuotes)
         .values({
