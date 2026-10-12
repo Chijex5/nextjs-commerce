@@ -77,21 +77,16 @@ function formatDate(iso: string): string {
 }
 
 // ── Palette ──────────────────────────────────────────────────────────────────
+// Black & white street editorial: white page, black type, grey only for
+// secondary text and hairlines. Courier stands in for the site's mono labels
+// and Helvetica-Bold (uppercase, tight) for the condensed display face, so
+// the PDF never has to fetch fonts.
 
 const C = {
-  espresso: "#0A0704",
-  charcoal: "#100C06",
-  dark: "#140E08",
-  darkMid: "#1A140C",
-  darkRow: "#1E1510",
-  altRow: "#1A140C",
-  cream: "#F2E8D5",
-  sand: "#C9B99A",
-  muted: "#6A5A48",
-  terra: "#BF5A28",
-  gold: "#C0892A",
-  green: "#5DCAA5",
-  border: "#2A201A",
+  ink: "#000000",
+  paper: "#FFFFFF",
+  grey: "#6B6B6B",
+  hairline: "#D9D9D9",
 };
 
 const normalisePhone = (phone: string): string => {
@@ -104,204 +99,173 @@ const normalisePhone = (phone: string): string => {
 
 // ── Styles ───────────────────────────────────────────────────────────────────
 
+const mono = {
+  fontFamily: "Courier",
+  fontSize: 7.5,
+  letterSpacing: 1.2,
+  textTransform: "uppercase" as const,
+};
+
 const s = StyleSheet.create({
   page: {
-    backgroundColor: C.espresso,
+    backgroundColor: C.paper,
     fontFamily: "Helvetica",
     fontSize: 10,
-    color: C.cream,
+    color: C.ink,
+    paddingHorizontal: 40,
+    paddingTop: 36,
+    paddingBottom: 40,
   },
 
-  // Header
-  header: {
-    backgroundColor: C.charcoal,
-    borderBottomWidth: 2,
-    borderBottomColor: C.terra,
+  // Masthead
+  topline: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 36,
-    paddingVertical: 22,
+    marginBottom: 18,
   },
-  logo: { width: 80, height: 40, objectFit: "contain" },
-  headerRight: { alignItems: "flex-end" },
-  headerLabel: {
-    fontSize: 7,
-    letterSpacing: 2,
-    textTransform: "uppercase",
-    color: C.muted,
-    marginBottom: 3,
-  },
-  orderNum: {
-    fontSize: 18,
-    fontFamily: "Helvetica-Bold",
-    color: C.gold,
-    letterSpacing: 1,
-  },
-  orderDate: { fontSize: 9, color: C.sand, marginTop: 2 },
-
-  // Status bar
-  statusBar: {
-    backgroundColor: C.terra,
-    paddingHorizontal: 36,
-    paddingVertical: 8,
+  label: { ...mono, color: C.grey },
+  labelInk: { ...mono, color: C.ink },
+  masthead: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-  },
-  statusText: { fontSize: 8, letterSpacing: 1.5, color: C.cream },
-  statusBold: { fontFamily: "Helvetica-Bold", color: "#ffffff" },
-  trackingText: { fontSize: 8, color: C.cream },
-  trackingBold: {
-    fontFamily: "Helvetica-Bold",
-    color: "#ffffff",
-    letterSpacing: 0.5,
-  },
-
-  // 2-col info row
-  infoRow: {
-    flexDirection: "row",
-    marginTop: 2,
-    gap: 2,
-  },
-  infoCell: {
-    flex: 1,
-    backgroundColor: C.dark,
-    paddingHorizontal: 22,
-    paddingVertical: 18,
-  },
-  infoCellLeft: { borderBottomWidth: 2, borderBottomColor: C.terra },
-  infoCellRight: { borderBottomWidth: 2, borderBottomColor: C.gold },
-  infoCellLabel: {
-    fontSize: 7,
-    fontFamily: "Helvetica-Bold",
-    letterSpacing: 2,
-    textTransform: "uppercase",
-    marginBottom: 8,
-  },
-  infoCellLabelTerra: { color: C.terra },
-  infoCellLabelGold: { color: C.gold },
-  customerName: {
-    fontSize: 14,
-    fontFamily: "Helvetica-Bold",
-    color: C.cream,
-    marginBottom: 6,
-  },
-  infoValue: { fontSize: 10, color: C.sand, lineHeight: 1.7 },
-
-  // Items table
-  tableWrap: { backgroundColor: C.charcoal, marginTop: 2 },
-  tableHeader: {
-    backgroundColor: C.darkRow,
-    flexDirection: "row",
-    paddingHorizontal: 24,
-    paddingVertical: 9,
-  },
-  tableHeadCell: {
-    fontSize: 7,
-    fontFamily: "Helvetica-Bold",
-    letterSpacing: 1.5,
-    textTransform: "uppercase",
-    color: C.muted,
-  },
-  tableRow: {
-    flexDirection: "row",
-    paddingHorizontal: 24,
-    paddingVertical: 11,
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
-  },
-  tableRowEven: { backgroundColor: C.charcoal },
-  tableRowOdd: { backgroundColor: C.altRow },
-  cellItem: { flex: 3.2 },
-  cellVariant: { flex: 2 },
-  cellQty: { flex: 0.8, textAlign: "center" },
-  cellUnit: { flex: 1.8, textAlign: "right" },
-  cellTotal: { flex: 1.8, textAlign: "right" },
-  cellTextPrimary: {
-    fontSize: 10,
-    fontFamily: "Helvetica-Bold",
-    color: C.cream,
-  },
-  cellTextSecondary: { fontSize: 9, color: C.sand },
-  cellTextGold: { fontSize: 10, fontFamily: "Helvetica-Bold", color: C.gold },
-
-  // Totals
-  totalsWrap: {
-    backgroundColor: C.dark,
-    borderTopWidth: 1,
-    borderTopColor: C.border,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
     alignItems: "flex-end",
+    paddingBottom: 14,
+    borderBottomWidth: 3,
+    borderBottomColor: C.ink,
   },
-  totalsTable: { width: 240 },
-  totalsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 5,
+  brand: { flexDirection: "row", alignItems: "center", gap: 10 },
+  logo: { width: 38, height: 38, objectFit: "contain" },
+  wordmark: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 13,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
   },
-  totalsLabel: { fontSize: 10, color: C.muted },
-  totalsValue: { fontSize: 10, fontFamily: "Helvetica-Bold", color: C.sand },
-  totalsDivider: {
-    height: 1,
-    backgroundColor: C.gold,
-    marginVertical: 8,
-  },
-  grandLabel: { fontSize: 12, fontFamily: "Helvetica-Bold", color: C.cream },
-  grandValue: { fontSize: 14, fontFamily: "Helvetica-Bold", color: C.gold },
-  discountLabel: { fontSize: 10, color: C.green },
-  discountValue: { fontSize: 10, fontFamily: "Helvetica-Bold", color: C.green },
-  currencyNote: {
-    fontSize: 8,
-    color: C.muted,
-    marginTop: 4,
+  title: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 44,
+    lineHeight: 0.9,
+    letterSpacing: -1.5,
+    textTransform: "uppercase",
     textAlign: "right",
   },
 
-  // Notes strip
-  notesStrip: {
-    backgroundColor: C.darkMid,
-    borderTopWidth: 1,
-    borderTopColor: C.border,
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
-    paddingHorizontal: 24,
-    paddingVertical: 11,
+  // Order meta strip
+  metaRow: {
     flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: C.ink,
   },
-  notesText: { fontSize: 8, color: C.muted, letterSpacing: 0.5 },
-  notesDot: { fontSize: 12, color: C.terra },
+  metaCell: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingRight: 10,
+  },
+  metaValue: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 11,
+    marginTop: 4,
+    textTransform: "uppercase",
+  },
+
+  // Customer + address
+  infoRow: {
+    flexDirection: "row",
+    gap: 24,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: C.ink,
+  },
+  infoCell: { flex: 1 },
+  customerName: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 14,
+    textTransform: "uppercase",
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  infoValue: { fontSize: 10, lineHeight: 1.6, marginTop: 6 },
+  infoValueTight: { fontSize: 10, lineHeight: 1.6 },
+
+  // Items table
+  sectionLabel: { ...mono, color: C.ink, marginTop: 22, marginBottom: 8 },
+  tableHeader: {
+    flexDirection: "row",
+    paddingVertical: 7,
+    borderTopWidth: 1,
+    borderTopColor: C.ink,
+    borderBottomWidth: 1,
+    borderBottomColor: C.ink,
+  },
+  tableRow: {
+    flexDirection: "row",
+    paddingVertical: 10,
+    borderBottomWidth: 0.5,
+    borderBottomColor: C.hairline,
+  },
+  cellItem: { flex: 3.2, paddingRight: 8 },
+  cellVariant: { flex: 2, paddingRight: 8 },
+  cellQty: { flex: 0.7, textAlign: "center" },
+  cellUnit: { flex: 1.8, textAlign: "right" },
+  cellTotal: { flex: 1.8, textAlign: "right" },
+  cellTextPrimary: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 10,
+    textTransform: "uppercase",
+  },
+  cellTextSecondary: { fontSize: 9.5, color: C.grey },
+  cellNumber: { fontSize: 9.5 },
+  cellNumberBold: { fontFamily: "Helvetica-Bold", fontSize: 10 },
+
+  // Totals
+  totalsWrap: { alignItems: "flex-end", marginTop: 16 },
+  totalsTable: { width: 250 },
+  totalsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
+  totalsLabel: { fontSize: 10, color: C.grey },
+  totalsValue: { fontSize: 10 },
+  grandBox: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: C.ink,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginTop: 6,
+  },
+  grandLabel: { ...mono, color: C.paper },
+  grandValue: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 16,
+    color: C.paper,
+  },
+  currencyNote: { ...mono, color: C.grey, marginTop: 6, textAlign: "right" },
 
   // Footer
   footer: {
-    backgroundColor: C.charcoal,
-    paddingHorizontal: 36,
-    paddingVertical: 18,
+    position: "absolute",
+    left: 40,
+    right: 40,
+    bottom: 32,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: C.ink,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",
   },
-  footerLeft: {},
-  footerOrderNum: {
-    fontSize: 9,
+  footerText: { fontSize: 8, color: C.grey, lineHeight: 1.6 },
+  thanks: {
     fontFamily: "Helvetica-Bold",
-    color: C.sand,
-    marginBottom: 3,
-  },
-  footerMeta: { fontSize: 8, color: C.muted, lineHeight: 1.7 },
-  footerRight: { alignItems: "flex-end" },
-  footerPoweredBy: {
-    fontSize: 7,
-    letterSpacing: 1.5,
+    fontSize: 18,
+    lineHeight: 0.95,
+    letterSpacing: -0.5,
     textTransform: "uppercase",
-    color: C.muted,
-    marginBottom: 5,
+    textAlign: "right",
   },
-  footerLogo: { width: 52, height: 22, objectFit: "contain", opacity: 0.45 },
 });
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -324,100 +288,96 @@ export function ReceiptDocument({ data }: { data: ReceiptData }) {
   return (
     <Document
       title={`Receipt — ${data.orderNum}`}
-      author="Your Brand"
+      author="D'FOOTPRINT"
       subject="Order Receipt"
     >
       <Page size="A4" style={s.page}>
-        {/* ── HEADER ── */}
-        <View style={s.header}>
-          <Image src="/d.png" style={s.logo} />
-          <View style={s.headerRight}>
-            <Text style={s.headerLabel}>Receipt</Text>
-            <Text style={s.orderNum}>{data.orderNum}</Text>
-            <Text style={s.orderDate}>{dateStr}</Text>
-          </View>
+        {/* ── TOP LINE ── */}
+        <View style={s.topline}>
+          <Text style={s.label}>Handmade footwear / Lagos</Text>
+          <Text style={s.label}>dfootprint.me</Text>
         </View>
 
-        {/* ── STATUS BAR ── */}
-        <View style={s.statusBar}>
-          <Text style={s.statusText}>
-            Status:{" "}
-            <Text style={s.statusBold}>{STATUS_LABELS[data.status]}</Text>
-          </Text>
+        {/* ── MASTHEAD ── */}
+        <View style={s.masthead}>
+          <View style={s.brand}>
+            <Image src="/brand/logo-mark-black.png" style={s.logo} />
+            <Text style={s.wordmark}>D&apos;Footprint</Text>
+          </View>
+          <Text style={s.title}>Receipt</Text>
+        </View>
+
+        {/* ── ORDER META ── */}
+        <View style={s.metaRow}>
+          <View style={s.metaCell}>
+            <Text style={s.label}>Order no.</Text>
+            <Text style={s.metaValue}>{data.orderNum}</Text>
+          </View>
+          <View style={s.metaCell}>
+            <Text style={s.label}>Date</Text>
+            <Text style={s.metaValue}>{dateStr}</Text>
+          </View>
+          <View style={s.metaCell}>
+            <Text style={s.label}>Status</Text>
+            <Text style={s.metaValue}>{STATUS_LABELS[data.status]}</Text>
+          </View>
           {data.tracking ? (
-            <Text style={s.trackingText}>
-              Tracking: <Text style={s.trackingBold}>{data.tracking}</Text>
-            </Text>
+            <View style={s.metaCell}>
+              <Text style={s.label}>Tracking</Text>
+              <Text style={s.metaValue}>{data.tracking}</Text>
+            </View>
           ) : null}
         </View>
 
         {/* ── CUSTOMER + ADDRESS ── */}
         <View style={s.infoRow}>
-          <View style={[s.infoCell, s.infoCellLeft]}>
-            <Text style={[s.infoCellLabel, s.infoCellLabelTerra]}>
-              Customer
-            </Text>
+          <View style={s.infoCell}>
+            <Text style={s.label}>Customer</Text>
             <Text style={s.customerName}>
               {data.fname} {data.lname}
             </Text>
-            <Text style={s.infoValue}>{normalisePhone(data.phone1)}</Text>
+            <Text style={s.infoValueTight}>{normalisePhone(data.phone1)}</Text>
             {data.phone2 ? (
-              <Text style={s.infoValue}>{normalisePhone(data.phone2)}</Text>
+              <Text style={s.infoValueTight}>
+                {normalisePhone(data.phone2)}
+              </Text>
             ) : null}
           </View>
-          <View style={[s.infoCell, s.infoCellRight]}>
-            <Text style={[s.infoCellLabel, s.infoCellLabelGold]}>
-              Delivery address
-            </Text>
+          <View style={s.infoCell}>
+            <Text style={s.label}>Delivery address</Text>
             <Text style={s.infoValue}>{fullAddr || "Not provided"}</Text>
           </View>
         </View>
 
         {/* ── ITEMS TABLE ── */}
-        <View style={s.tableWrap}>
-          {/* Table section label */}
-          <View
-            style={{ paddingHorizontal: 24, paddingTop: 14, paddingBottom: 10 }}
-          >
-            <Text style={[s.infoCellLabel, s.infoCellLabelTerra]}>
-              Order items
+        <Text style={s.sectionLabel}>
+          Order items ({data.items.reduce((n, it) => n + it.qty, 0)})
+        </Text>
+        <View style={s.tableHeader}>
+          <Text style={[s.label, s.cellItem]}>Item</Text>
+          <Text style={[s.label, s.cellVariant]}>Variant</Text>
+          <Text style={[s.label, s.cellQty]}>Qty</Text>
+          <Text style={[s.label, s.cellUnit]}>Unit price</Text>
+          <Text style={[s.label, s.cellTotal]}>Total</Text>
+        </View>
+        {data.items.map((item, i) => (
+          <View key={i} style={s.tableRow} wrap={false}>
+            <Text style={[s.cellTextPrimary, s.cellItem]}>
+              {item.title || "—"}
+            </Text>
+            <Text style={[s.cellTextSecondary, s.cellVariant]}>
+              {item.variant || "—"}
+            </Text>
+            <Text style={[s.cellNumber, s.cellQty]}>{item.qty}</Text>
+            <Text style={[s.cellNumber, s.cellUnit]}>{fmtNGN(item.price)}</Text>
+            <Text style={[s.cellNumberBold, s.cellTotal]}>
+              {fmtNGN(item.qty * item.price)}
             </Text>
           </View>
-
-          {/* Column headers */}
-          <View style={s.tableHeader}>
-            <Text style={[s.tableHeadCell, s.cellItem]}>Item</Text>
-            <Text style={[s.tableHeadCell, s.cellVariant]}>Variant</Text>
-            <Text style={[s.tableHeadCell, s.cellQty]}>Qty</Text>
-            <Text style={[s.tableHeadCell, s.cellUnit]}>Unit price</Text>
-            <Text style={[s.tableHeadCell, s.cellTotal]}>Total</Text>
-          </View>
-
-          {/* Rows */}
-          {data.items.map((item, i) => (
-            <View
-              key={i}
-              style={[s.tableRow, i % 2 === 0 ? s.tableRowEven : s.tableRowOdd]}
-            >
-              <Text style={[s.cellTextPrimary, s.cellItem]}>
-                {item.title || "—"}
-              </Text>
-              <Text style={[s.cellTextSecondary, s.cellVariant]}>
-                {item.variant || "—"}
-              </Text>
-              <Text style={[s.cellTextSecondary, s.cellQty]}>{item.qty}</Text>
-              <Text style={[s.cellTextSecondary, s.cellUnit]}>
-                {fmtNGN(item.price)}
-              </Text>
-              <Text style={[s.cellTextGold, s.cellTotal]}>
-                {fmtNGN(item.qty * item.price)}
-              </Text>
-            </View>
-          ))}
-        </View>
+        ))}
 
         {/* ── TOTALS ── */}
-        <View style={s.totalsWrap}>
+        <View style={s.totalsWrap} wrap={false}>
           <View style={s.totalsTable}>
             <View style={s.totalsRow}>
               <Text style={s.totalsLabel}>Subtotal</Text>
@@ -425,47 +385,38 @@ export function ReceiptDocument({ data }: { data: ReceiptData }) {
             </View>
             <View style={s.totalsRow}>
               <Text style={s.totalsLabel}>Shipping</Text>
-              <Text style={s.totalsValue}>{fmtNGN(data.shipping)}</Text>
+              <Text style={s.totalsValue}>
+                {data.shipping > 0 ? fmtNGN(data.shipping) : "Free"}
+              </Text>
             </View>
             {data.discount > 0 && (
               <View style={s.totalsRow}>
-                <Text style={s.discountLabel}>
+                <Text style={s.totalsLabel}>
                   Discount{data.coupon ? ` (${data.coupon})` : ""}
                 </Text>
-                <Text style={s.discountValue}>- {fmtNGN(data.discount)}</Text>
+                <Text style={s.totalsValue}>- {fmtNGN(data.discount)}</Text>
               </View>
             )}
-            <View style={s.totalsDivider} />
-            <View style={s.totalsRow}>
+            <View style={s.grandBox}>
               <Text style={s.grandLabel}>Total paid</Text>
               <Text style={s.grandValue}>{fmtNGN(total)}</Text>
             </View>
-            <Text style={s.currencyNote}>Currency: Nigerian Naira (NGN)</Text>
+            <Text style={s.currencyNote}>Nigerian Naira (NGN)</Text>
           </View>
-        </View>
-
-        {/* ── NOTES STRIP ── */}
-        <View style={s.notesStrip}>
-          <Text style={s.notesText}>Thank you for your order.</Text>
-          <Text style={s.notesDot}>·</Text>
-          <Text style={s.notesText}>
-            Contact us with your order number for any support.
-          </Text>
         </View>
 
         {/* ── FOOTER ── */}
-        <View style={s.footer}>
-          <View style={s.footerLeft}>
-            <Text style={s.footerOrderNum}>Order #{data.orderNum}</Text>
-            <Text style={s.footerMeta}>Issued: {dateStr}</Text>
-            <Text style={s.footerMeta}>
-              This receipt is auto-generated and valid without a signature.
+        <View style={s.footer} fixed>
+          <View>
+            <Text style={s.footerText}>
+              Questions? Reply to your order email or quote order{" "}
+              {data.orderNum}.
+            </Text>
+            <Text style={s.footerText}>
+              Auto-generated receipt, valid without a signature.
             </Text>
           </View>
-          <View style={s.footerRight}>
-            <Text style={s.footerPoweredBy}>Powered by</Text>
-            <Image src="/d.png" style={s.footerLogo} />
-          </View>
+          <Text style={s.thanks}>Made by hand.{"\n"}Thank you.</Text>
         </View>
       </Page>
     </Document>
