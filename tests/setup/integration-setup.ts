@@ -43,6 +43,10 @@ export default async function setup() {
     insert into custom_order_requests (request_number, email, customer_name, title, description)
     values (${VICTIM_REQUEST_NUMBER}, ${VICTIM_EMAIL}, 'Victim', 'Boots', 'private description')
   `;
+  await db`
+    insert into coupons (code, discount_type, discount_value, is_active)
+    values ('SAVE20', 'percentage', 20, true)
+  `;
   await db.end();
 
   // Fail fast with a clear message if the app isn't running.

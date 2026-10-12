@@ -51,3 +51,25 @@ describe("rate limits", () => {
     expect(statuses.at(-1)).toBe(429);
   });
 });
+
+describe("coupon codes", () => {
+  const validate = (code: string) =>
+    api("/api/coupons/validate", {
+      method: "POST",
+      json: { code, cartTotal: 10_000, shippingAmount: 0 },
+    });
+
+  it.each(["%", "S%", "_AVE20"])(
+    "rejects the wildcard code %j",
+    async (code) => {
+      const res = await validate(code);
+      expect(res.status).toBe(404);
+    },
+  );
+
+  it("accepts a real code in any case", async () => {
+    const res = await validate("save20");
+    expect(res.status).toBe(200);
+    expect((await res.json()).coupon.code).toBe("SAVE20");
+  });
+});
