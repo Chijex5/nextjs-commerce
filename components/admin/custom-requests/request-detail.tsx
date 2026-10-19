@@ -20,6 +20,7 @@ import {
 import {
   ArrowLeft,
   Check,
+  Download,
   Hammer,
   Loader2,
   Mail,
@@ -42,6 +43,7 @@ import {
   statusOf,
   type RequestItem,
 } from "./meta";
+import { PhotoViewer, downloadPhoto } from "./photo-viewer";
 
 /** What the shop should do next, shown under the status. */
 const NEXT_STEP: Record<string, string> = {
@@ -312,6 +314,15 @@ export function RequestDetail({
 // ─── What they want ───────────────────────────────────────────────────────────
 
 function Spec({ request: r }: { request: RequestItem }) {
+  const [viewing, setViewing] = useState<number | null>(null);
+  const [savingAll, setSavingAll] = useState(false);
+  const saveAll = async () => {
+    setSavingAll(true);
+    for (const [i, src] of r.referenceImages.entries()) {
+      await downloadPhoto(src, `${r.requestNumber}-${i + 1}`);
+    }
+    setSavingAll(false);
+  };
   const budget =
     r.budgetMin || r.budgetMax
       ? r.budgetMin && r.budgetMax
@@ -369,13 +380,35 @@ function Spec({ request: r }: { request: RequestItem }) {
             </p>
           ) : null}
           {r.referenceImages.length ? (
-            <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <p className="label text-fg-3">
+                Photos ({r.referenceImages.length}) · tap to view or share
+              </p>
+              {r.referenceImages.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={saveAll}
+                  disabled={savingAll}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide underline-offset-4 hover:underline disabled:opacity-50"
+                >
+                  {savingAll ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Download className="size-3.5" />
+                  )}
+                  Download all
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          {r.referenceImages.length ? (
+            <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
               {r.referenceImages.map((src, i) => (
-                <a
+                <button
                   key={src + i}
-                  href={src}
-                  target="_blank"
-                  rel="noreferrer"
+                  type="button"
+                  onClick={() => setViewing(i)}
+                  aria-label={`View photo ${i + 1}`}
                   className="group relative aspect-square overflow-hidden bg-plate"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- customer uploads */}
@@ -384,10 +417,17 @@ function Spec({ request: r }: { request: RequestItem }) {
                     alt={`Reference ${i + 1}`}
                     className="size-full object-cover transition-transform group-hover:scale-105"
                   />
-                </a>
+                </button>
               ))}
             </div>
           ) : null}
+          <PhotoViewer
+            images={r.referenceImages}
+            index={viewing}
+            onIndex={setViewing}
+            onClose={() => setViewing(null)}
+            fileName={r.requestNumber}
+          />
           {r.referenceLinks.length ? (
             <ul className="mt-3 space-y-1 text-sm">
               {r.referenceLinks.map((l) => (
@@ -862,6 +902,9 @@ function AdminThread({
   const [text, setText] = useState("");
   const [ask, setAsk] = useState(false);
   const [sending, setSending] = useState(false);
+  const [viewing, setViewing] = useState<{ images: string[]; index: number } | null>(
+    null,
+  );
   const closed = CLOSED.includes(r.status);
 
   const send = async () => {
@@ -888,6 +931,13 @@ function AdminThread({
 
   return (
     <Panel title="Conversation" description="Messages are emailed to the customer and shown on their request page.">
+      <PhotoViewer
+        images={viewing?.images ?? []}
+        index={viewing ? viewing.index : null}
+        onIndex={(index) => setViewing((v) => (v ? { ...v, index } : v))}
+        onClose={() => setViewing(null)}
+        fileName={`${r.requestNumber}-chat`}
+      />
       {r.messages.length ? (
         <ol className="space-y-3">
           {r.messages.map((m) =>
@@ -912,17 +962,17 @@ function AdminThread({
                   <p className="whitespace-pre-line break-words">{m.body}</p>
                   {m.attachments.length ? (
                     <div className="mt-2 grid grid-cols-3 gap-1">
-                      {m.attachments.map((src) => (
-                        <a
+                      {m.attachments.map((src, i) => (
+                        <button
                           key={src}
-                          href={src}
-                          target="_blank"
-                          rel="noreferrer"
+                          type="button"
+                          onClick={() => setViewing({ images: m.attachments, index: i })}
+                          aria-label={`View photo ${i + 1}`}
                           className="block aspect-square overflow-hidden"
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element -- customer upload */}
                           <img src={src} alt="" className="size-full object-cover" />
-                        </a>
+                        </button>
                       ))}
                     </div>
                   ) : null}
