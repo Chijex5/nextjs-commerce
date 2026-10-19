@@ -613,6 +613,7 @@ export async function reconcilePaystackPayment(
           .limit(1);
 
         if (linkedOrder) {
+          // The upsert above set it to processing; put back what it was.
           await tx
             .update(paymentTransactions)
             .set({ status: stored.status })
