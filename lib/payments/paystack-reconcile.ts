@@ -208,8 +208,9 @@ async function linkUnpaidAttempts(
       and(
         ne(paymentTransactions.id, input.paymentTransactionId),
         isNull(paymentTransactions.orderId),
-        inArray(paymentTransactions.status, ["initialized", "processing", "failed", "conflict"]),
-        sql`coalesce(${paymentTransactions.paystackStatus}, '') <> 'success'`,
+        // Only attempts Paystack has finished without taking money; one still
+        // pending may yet go through.
+        inArray(paymentTransactions.paystackStatus, UNPAID_PAYSTACK_STATUSES),
         same,
       ),
     );
