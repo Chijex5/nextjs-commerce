@@ -2,7 +2,7 @@ import {
     sendAdminNewOrderNotification,
     sendOrderConfirmationWithMarkup,
 } from "@/lib/email/order-emails";
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, ne, sql, type SQL } from "drizzle-orm";
 import { quoteCheckout } from "lib/checkout/quote";
 import {
   type CheckoutSnapshot,
@@ -128,6 +128,97 @@ const getSourceFromMetadata = (metadata: RecordValue): PaymentSource => {
   }
   return "catalog_checkout";
 };
+
+/** Paystack statuses where the attempt is over and no money was taken. */
+const UNPAID_PAYSTACK_STATUSES = ["abandoned", "failed", "reversed"];
+
+/**
+ * Payments for the same thing as this one: every press of Pay gets its own
+ * Paystack reference, so a customer who closes the popup and tries again
+ * leaves one attempt per press. Same quote (and part), or the same bag lines.
+ */
+function sameCheckoutWhere(metadata: RecordValue): SQL | null {
+  const quoteId = toStringOrNull(metadata.custom_quote_id);
+  if (quoteId) {
+    const kind = toStringOrNull(metadata.custom_payment_kind) ?? "";
+    return sql`(${paymentTransactions.metadata}->>'custom_quote_id' = ${quoteId} and coalesce(${paymentTransactions.metadata}->>'custom_payment_kind', '') = ${kind})`;
+  }
+  const snapshot = readSnapshot(metadata.checkout_snapshot);
+  if (!snapshot) return null;
+  // The same lines in the same quantities: a bag that changed between
+  // attempts is a different checkout.
+  const bagKey = snapshot.lines
+    .map((l) => `${l.lineId}:${l.quantity}`)
+    .sort()
+    .join(",");
+  return sql`(${paymentTransactions.metadata}->'checkout_snapshot'->>'cartId' = ${snapshot.cartId} and (select string_agg((l->>'lineId') || ':' || (l->>'quantity'), ',' order by (l->>'lineId') || ':' || (l->>'quantity') collate "C") from jsonb_array_elements(${paymentTransactions.metadata}->'checkout_snapshot'->'lines') l) = ${bagKey})`;
+}
+
+const paidOnRetry = (order: { orderId: string; orderNumber: string }) => ({
+  paid_on_retry_order_id: order.orderId,
+  paid_on_retry_order_number: order.orderNumber,
+});
+
+/** The order another, paid attempt at the same checkout created, if any. */
+async function findPaidAttemptOrder(
+  tx: TxClient,
+  paymentTransactionId: string,
+  metadata: RecordValue,
+) {
+  const same = sameCheckoutWhere(metadata);
+  if (!same) return null;
+  const [row] = await tx
+    .select({ orderId: orders.id, orderNumber: orders.orderNumber })
+    .from(paymentTransactions)
+    .innerJoin(orders, eq(orders.id, paymentTransactions.orderId))
+    .where(
+      and(
+        ne(paymentTransactions.id, paymentTransactionId),
+        eq(paymentTransactions.status, "paid"),
+        same,
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
+/**
+ * Once an attempt is paid, note its order on the earlier attempts at the same
+ * checkout that never took money, and clear any review flag on them. Only the
+ * paid attempt holds `order_id` (it's unique per order), so the link lives in
+ * metadata.
+ */
+async function linkUnpaidAttempts(
+  tx: TxClient,
+  input: {
+    paymentTransactionId: string;
+    orderId: string;
+    orderNumber: string;
+    metadata: RecordValue;
+  },
+) {
+  const same = sameCheckoutWhere(input.metadata);
+  if (!same) return;
+  await tx
+    .update(paymentTransactions)
+    .set({
+      metadata: sql`${paymentTransactions.metadata} || ${JSON.stringify(paidOnRetry(input))}::jsonb`,
+      status: sql`case when ${paymentTransactions.status} = 'conflict' then 'failed' else ${paymentTransactions.status} end`,
+      conflictCode: null,
+      conflictMessage: null,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        ne(paymentTransactions.id, input.paymentTransactionId),
+        isNull(paymentTransactions.orderId),
+        // Only attempts Paystack has finished without taking money; one still
+        // pending may yet go through.
+        inArray(paymentTransactions.paystackStatus, UNPAID_PAYSTACK_STATUSES),
+        same,
+      ),
+    );
+}
 
 async function sendOrderEmails(input: {
   paymentTransactionId?: string;
@@ -510,7 +601,12 @@ export async function reconcilePaystackPayment(
       }
       paymentTransactionId = upserted.id;
 
-      if (upserted.orderId) {
+      // An unpaid attempt can carry the order a later attempt created; only
+      // an attempt that was itself paid already has its order.
+      if (
+        upserted.orderId &&
+        (stored?.status === "paid" || stored?.status === "duplicate")
+      ) {
         const [linkedOrder] = await tx
           .select({
             id: orders.id,
@@ -524,7 +620,7 @@ export async function reconcilePaystackPayment(
           // The upsert above set it to processing; put back what it was.
           await tx
             .update(paymentTransactions)
-            .set({ status: stored?.status ?? "paid" })
+            .set({ status: stored.status })
             .where(eq(paymentTransactions.id, upserted.id));
           await insertPaymentEvent(tx, {
             paymentTransactionId: upserted.id,
@@ -580,15 +676,38 @@ export async function reconcilePaystackPayment(
       }
 
       if (input.paystackStatus && input.paystackStatus !== "success") {
-        await setConflict(tx, {
+        // No money moved (closed popup, declined card, refunded), so there's
+        // nothing to review. If they paid on another attempt, link that order.
+        const done = UNPAID_PAYSTACK_STATUSES.includes(input.paystackStatus);
+        const paidAttempt = done
+          ? await findPaidAttemptOrder(tx, upserted.id, metadata)
+          : null;
+        await tx
+          .update(paymentTransactions)
+          .set({
+            status: done ? "failed" : "processing",
+            ...(paidAttempt
+              ? { metadata: { ...metadata, ...paidOnRetry(paidAttempt) } }
+              : {}),
+            conflictCode: null,
+            conflictMessage: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(paymentTransactions.id, upserted.id));
+        await insertPaymentEvent(tx, {
           paymentTransactionId: upserted.id,
           reference,
           source,
           eventType: input.eventType,
-          conflictCode: "invalid_status",
-          message: `Paystack status is ${input.paystackStatus}`,
+          status: done ? "failed" : "processing",
+          message: done
+            ? `Paystack status is ${input.paystackStatus}. No money was taken.${
+                paidAttempt
+                  ? ` The customer paid on another attempt (order ${paidAttempt.orderNumber}).`
+                  : ""
+              }`
+            : `Paystack status is ${input.paystackStatus}. Waiting for Paystack to finish.`,
           payload: input.payload,
-          paystackStatus: input.paystackStatus,
         });
 
         return {
@@ -758,6 +877,12 @@ export async function reconcilePaystackPayment(
               updatedAt: new Date(),
             })
             .where(eq(paymentTransactions.id, upserted.id));
+          await linkUnpaidAttempts(tx, {
+            paymentTransactionId: upserted.id,
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            metadata,
+          });
           await insertPaymentEvent(tx, {
             paymentTransactionId: upserted.id,
             reference,
@@ -940,6 +1065,12 @@ export async function reconcilePaystackPayment(
             updatedAt: new Date(),
           })
           .where(eq(paymentTransactions.id, upserted.id));
+        await linkUnpaidAttempts(tx, {
+          paymentTransactionId: upserted.id,
+          orderId: createdOrder.id,
+          orderNumber: createdOrder.orderNumber,
+          metadata,
+        });
 
         await insertPaymentEvent(tx, {
           paymentTransactionId: upserted.id,
@@ -1278,6 +1409,12 @@ export async function reconcilePaystackPayment(
           updatedAt: new Date(),
         })
         .where(eq(paymentTransactions.id, upserted.id));
+      await linkUnpaidAttempts(tx, {
+        paymentTransactionId: upserted.id,
+        orderId: createdOrder.id,
+        orderNumber: createdOrder.orderNumber,
+        metadata,
+      });
 
       await insertPaymentEvent(tx, {
         paymentTransactionId: upserted.id,

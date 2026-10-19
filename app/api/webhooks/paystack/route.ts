@@ -50,8 +50,9 @@ async function recordFailedCharge(data: PaystackChargeData, payload: unknown) {
         ? (data.customer as Record<string, unknown>)
         : null,
       payload: isRecord(payload) ? payload : { raw: payload as unknown },
-      conflictCode: "invalid_status",
-      conflictMessage: "Paystack reported charge.failed",
+      // A failed charge took no money, so there's nothing to review.
+      conflictCode: null,
+      conflictMessage: null,
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
@@ -59,8 +60,8 @@ async function recordFailedCharge(data: PaystackChargeData, payload: unknown) {
       set: {
         status: "failed",
         paystackStatus: toStringOrNull(data.status) || "failed",
-        conflictCode: "invalid_status",
-        conflictMessage: "Paystack reported charge.failed",
+        conflictCode: null,
+        conflictMessage: null,
         payload: isRecord(payload) ? payload : { raw: payload as unknown },
         updatedAt: new Date(),
       },

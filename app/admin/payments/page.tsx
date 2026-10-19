@@ -305,7 +305,9 @@ export default async function PaymentsPage({
                     </td>
                     <td className="px-3 py-3">
                       <StatusPill tone={s.tone}>{s.label}</StatusPill>
-                      {r.conflictCode ? (
+                      {r.conflictCode &&
+                      (r.status === "conflict" ||
+                        r.paystackStatus === "success") ? (
                         <p
                           className="mt-1 max-w-[26ch] truncate text-xs text-red-700 dark:text-red-400"
                           title={r.conflictMessage ?? undefined}
