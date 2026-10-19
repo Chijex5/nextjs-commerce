@@ -108,6 +108,16 @@ export default async function PaymentDetailPage({
     ([customer.first_name, customer.last_name].filter(Boolean).join(" ") ||
       null);
   const amount = payment.amount / 100;
+  // Set when a later attempt at the same checkout was paid.
+  const meta = (payment.metadata ?? {}) as Record<string, unknown>;
+  const paidOnRetry =
+    typeof meta.paid_on_retry_order_id === "string" &&
+    typeof meta.paid_on_retry_order_number === "string"
+      ? {
+          orderId: meta.paid_on_retry_order_id,
+          orderNumber: meta.paid_on_retry_order_number,
+        }
+      : null;
   // Only money that came in without a matching order needs a person. A
   // failed or abandoned attempt took nothing.
   const needsReview =
@@ -262,6 +272,16 @@ export default async function PaymentDetailPage({
                   />
                 </StatList>
               </>
+            ) : paidOnRetry ? (
+              <p className="text-sm text-fg-2">
+                No money was taken here. The customer paid on another attempt:{" "}
+                <Link
+                  href={`/admin/orders/${paidOnRetry.orderId}`}
+                  className="font-mono font-medium text-fg underline-offset-2 hover:underline"
+                >
+                  {paidOnRetry.orderNumber}
+                </Link>
+              </p>
             ) : (
               <p className="text-sm text-fg-3">
                 {payment.status === "paid"

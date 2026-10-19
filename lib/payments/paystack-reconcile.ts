@@ -150,6 +150,11 @@ function sameCheckoutWhere(metadata: RecordValue): SQL | null {
   return sql`(${paymentTransactions.metadata}->'checkout_snapshot'->>'cartId' = ${snapshot.cartId} and jsonb_path_query_array(${paymentTransactions.metadata}->'checkout_snapshot'->'lines', '$[*].lineId') ?| string_to_array(${lineIds}, ','))`;
 }
 
+const paidOnRetry = (order: { orderId: string; orderNumber: string }) => ({
+  paid_on_retry_order_id: order.orderId,
+  paid_on_retry_order_number: order.orderNumber,
+});
+
 /** The order another, paid attempt at the same checkout created, if any. */
 async function findPaidAttemptOrder(
   tx: TxClient,
@@ -174,19 +179,26 @@ async function findPaidAttemptOrder(
 }
 
 /**
- * Once an attempt is paid, attach the earlier attempts at the same checkout
- * that never took money to its order, and clear any review flag on them.
+ * Once an attempt is paid, note its order on the earlier attempts at the same
+ * checkout that never took money, and clear any review flag on them. Only the
+ * paid attempt holds `order_id` (it's unique per order), so the link lives in
+ * metadata.
  */
 async function linkUnpaidAttempts(
   tx: TxClient,
-  input: { paymentTransactionId: string; orderId: string; metadata: RecordValue },
+  input: {
+    paymentTransactionId: string;
+    orderId: string;
+    orderNumber: string;
+    metadata: RecordValue;
+  },
 ) {
   const same = sameCheckoutWhere(input.metadata);
   if (!same) return;
   await tx
     .update(paymentTransactions)
     .set({
-      orderId: input.orderId,
+      metadata: sql`${paymentTransactions.metadata} || ${JSON.stringify(paidOnRetry(input))}::jsonb`,
       status: sql`case when ${paymentTransactions.status} = 'conflict' then 'failed' else ${paymentTransactions.status} end`,
       conflictCode: null,
       conflictMessage: null,
@@ -668,7 +680,9 @@ export async function reconcilePaystackPayment(
           .update(paymentTransactions)
           .set({
             status: done ? "failed" : "processing",
-            orderId: paidAttempt?.orderId ?? upserted.orderId,
+            ...(paidAttempt
+              ? { metadata: { ...metadata, ...paidOnRetry(paidAttempt) } }
+              : {}),
             conflictCode: null,
             conflictMessage: null,
             updatedAt: new Date(),
@@ -860,6 +874,7 @@ export async function reconcilePaystackPayment(
           await linkUnpaidAttempts(tx, {
             paymentTransactionId: upserted.id,
             orderId: order.id,
+            orderNumber: order.orderNumber,
             metadata,
           });
           await insertPaymentEvent(tx, {
@@ -1047,6 +1062,7 @@ export async function reconcilePaystackPayment(
         await linkUnpaidAttempts(tx, {
           paymentTransactionId: upserted.id,
           orderId: createdOrder.id,
+          orderNumber: createdOrder.orderNumber,
           metadata,
         });
 
@@ -1390,6 +1406,7 @@ export async function reconcilePaystackPayment(
       await linkUnpaidAttempts(tx, {
         paymentTransactionId: upserted.id,
         orderId: createdOrder.id,
+        orderNumber: createdOrder.orderNumber,
         metadata,
       });
 
