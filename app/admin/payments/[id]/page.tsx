@@ -108,6 +108,13 @@ export default async function PaymentDetailPage({
     ([customer.first_name, customer.last_name].filter(Boolean).join(" ") ||
       null);
   const amount = payment.amount / 100;
+  // Only money that came in without a matching order needs a person. A
+  // failed or abandoned attempt took nothing.
+  const needsReview =
+    !!payment.conflictCode &&
+    !payment.resolvedAt &&
+    (payment.status === "conflict" ||
+      (payment.status === "failed" && payment.paystackStatus === "success"));
   const orderTotal =
     payment.orderTotal !== null ? Number(payment.orderTotal) : null;
 
@@ -138,18 +145,18 @@ export default async function PaymentDetailPage({
         </div>
       </header>
 
-      {payment.conflictCode && !payment.resolvedAt ? (
+      {needsReview ? (
         <div className="mb-6 border border-red-600/40 bg-red-600/5 px-5 py-4">
           <p className="flex items-center gap-2 text-sm font-medium text-fg">
             <span className="size-2 rounded-full bg-red-600" aria-hidden />
-            Needs review: {payment.conflictCode.replace(/_/g, " ")}
+            Needs review: {payment.conflictCode!.replace(/_/g, " ")}
           </p>
           <p className="mt-1 text-sm text-fg-2">
-            {CONFLICT_HELP[payment.conflictCode] ??
+            {CONFLICT_HELP[payment.conflictCode!] ??
               payment.conflictMessage ??
               "This payment couldn't be matched to an order automatically."}
           </p>
-          {payment.conflictMessage && CONFLICT_HELP[payment.conflictCode] ? (
+          {payment.conflictMessage && CONFLICT_HELP[payment.conflictCode!] ? (
             <p className="mt-1 font-mono text-xs text-fg-3">
               {payment.conflictMessage}
             </p>

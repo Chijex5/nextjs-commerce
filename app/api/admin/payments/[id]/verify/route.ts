@@ -41,6 +41,10 @@ export async function POST(
     const data = verifyResult.data;
 
     const metadata = isRecord(data?.metadata) ? data.metadata : payment.metadata;
+    const paystackStatus = typeof data?.status === "string" ? data.status : null;
+    const unpaid =
+      paystackStatus !== null &&
+      ["abandoned", "failed", "reversed"].includes(paystackStatus);
     const customer = isRecord(data?.customer) ? data.customer : payment.customer;
 
     await db
@@ -51,8 +55,11 @@ export async function POST(
           : payment.amount,
         currencyCode:
           typeof data?.currency === "string" ? data.currency : payment.currencyCode,
-        status: verifyResult.status ? "processing" : "failed",
-        paystackStatus: typeof data?.status === "string" ? data.status : null,
+        // Abandoned, failed or reversed: no money was taken, nothing to review.
+        ...(unpaid
+          ? { status: "failed", conflictCode: null, conflictMessage: null }
+          : { status: verifyResult.status ? "processing" : "failed" }),
+        paystackStatus,
         metadata,
         customer,
         payload: verifyResult as unknown as Record<string, unknown>,
