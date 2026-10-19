@@ -145,9 +145,13 @@ function sameCheckoutWhere(metadata: RecordValue): SQL | null {
   }
   const snapshot = readSnapshot(metadata.checkout_snapshot);
   if (!snapshot) return null;
-  // Paid lines leave the bag, so a line id belongs to one purchase only.
-  const lineIds = snapshot.lines.map((l) => l.lineId).join(",");
-  return sql`(${paymentTransactions.metadata}->'checkout_snapshot'->>'cartId' = ${snapshot.cartId} and jsonb_path_query_array(${paymentTransactions.metadata}->'checkout_snapshot'->'lines', '$[*].lineId') ?| string_to_array(${lineIds}, ','))`;
+  // The same lines in the same quantities: a bag that changed between
+  // attempts is a different checkout.
+  const bagKey = snapshot.lines
+    .map((l) => `${l.lineId}:${l.quantity}`)
+    .sort()
+    .join(",");
+  return sql`(${paymentTransactions.metadata}->'checkout_snapshot'->>'cartId' = ${snapshot.cartId} and (select string_agg((l->>'lineId') || ':' || (l->>'quantity'), ',' order by (l->>'lineId') || ':' || (l->>'quantity') collate "C") from jsonb_array_elements(${paymentTransactions.metadata}->'checkout_snapshot'->'lines') l) = ${bagKey})`;
 }
 
 const paidOnRetry = (order: { orderId: string; orderNumber: string }) => ({
