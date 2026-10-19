@@ -119,12 +119,12 @@ export default async function PaymentDetailPage({
         }
       : null;
   // Only money that came in without a matching order needs a person. A
-  // failed or abandoned attempt took nothing.
+  // failed or abandoned attempt took nothing. Paystack's status, not ours:
+  // "Check with Paystack" moves a conflict to processing until re-matched.
   const needsReview =
     !!payment.conflictCode &&
     !payment.resolvedAt &&
-    (payment.status === "conflict" ||
-      (payment.status === "failed" && payment.paystackStatus === "success"));
+    (payment.status === "conflict" || payment.paystackStatus === "success");
   const orderTotal =
     payment.orderTotal !== null ? Number(payment.orderTotal) : null;
 
