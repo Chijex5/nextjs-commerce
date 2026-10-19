@@ -909,9 +909,6 @@ export const paymentTransactions = pgTable(
       table.createdAt,
     ),
     orderIdIdx: index("payment_transactions_order_id_idx").on(table.orderId),
-    orderIdUniqueIdx: uniqueIndex("payment_transactions_order_id_unique").on(
-      table.orderId,
-    ),
     amountCheck: check(
       "payment_transactions_amount_check",
       sql`${table.amount} >= 0`,
