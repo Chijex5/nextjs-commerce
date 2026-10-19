@@ -40,7 +40,15 @@ export async function POST(
     const verifyResult = await verifyPaystackReference(payment.reference);
     const data = verifyResult.data;
 
-    const metadata = isRecord(data?.metadata) ? data.metadata : payment.metadata;
+    // Keep what we added ourselves (the retry link); Paystack only echoes
+    // what we sent when the payment started.
+    const stored = isRecord(payment.metadata) ? payment.metadata : {};
+    const retryLink = Object.fromEntries(
+      Object.entries(stored).filter(([key]) => key.startsWith("paid_on_retry_")),
+    );
+    const metadata = isRecord(data?.metadata)
+      ? { ...data.metadata, ...retryLink }
+      : payment.metadata;
     const paystackStatus = typeof data?.status === "string" ? data.status : null;
     const unpaid =
       paystackStatus !== null &&
