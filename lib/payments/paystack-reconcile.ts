@@ -459,7 +459,10 @@ export async function reconcilePaystackPayment(
       // What we stored at initialize beats what Paystack echoes back: the
       // echo comes from the browser for popup payments, our copy doesn't.
       const [stored] = await tx
-        .select({ metadata: paymentTransactions.metadata })
+        .select({
+          metadata: paymentTransactions.metadata,
+          status: paymentTransactions.status,
+        })
         .from(paymentTransactions)
         .where(eq(paymentTransactions.reference, reference))
         .limit(1);
@@ -518,6 +521,11 @@ export async function reconcilePaystackPayment(
           .limit(1);
 
         if (linkedOrder) {
+          // The upsert above set it to processing; put back what it was.
+          await tx
+            .update(paymentTransactions)
+            .set({ status: stored?.status ?? "paid" })
+            .where(eq(paymentTransactions.id, upserted.id));
           await insertPaymentEvent(tx, {
             paymentTransactionId: upserted.id,
             reference,

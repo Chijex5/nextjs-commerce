@@ -62,6 +62,12 @@ export default async function AdminOrderDetailPage({
             )
           : eq(paymentTransactions.orderId, order.id),
       )
+      // A custom order can also have a balance payment; show the one that
+      // created the order.
+      .orderBy(
+        sql`${paymentTransactions.id} = ${order.paymentTransactionId ?? null} desc nulls last`,
+        paymentTransactions.createdAt,
+      )
       .limit(1)
       .then((r) => r[0] ?? null),
     // The customer's other paid orders, matched by email like Shopify does.
