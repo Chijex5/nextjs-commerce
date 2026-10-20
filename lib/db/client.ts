@@ -1,3 +1,4 @@
+import "./network";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { isMockData } from "../data/source";
