@@ -26,6 +26,7 @@ import {
   sql,
   type SQL,
 } from "drizzle-orm";
+import { PRODUCT_ISSUES, productIssueWhere } from "lib/admin/product-issues";
 import { authOptions } from "lib/auth";
 import { db } from "lib/db";
 import {
@@ -83,6 +84,14 @@ const VIEWS: Array<{ key: string; label: string; where?: SQL; tone?: Tone }> = [
   },
 ];
 
+// Store health fix links (?view=no-photos, …). Only shown as a tab when open.
+const ISSUE_VIEWS: typeof VIEWS = PRODUCT_ISSUES.map((i) => ({
+  key: i.key,
+  label: i.label,
+  where: productIssueWhere(i.key),
+  tone: "warning",
+}));
+
 const SORTS = {
   newest: desc(products.createdAt),
   updated: desc(products.updatedAt),
@@ -118,7 +127,10 @@ export default async function ProductsPage({
         ? "hidden"
         : undefined;
   const view =
-    VIEWS.find((v) => v.key === (params.view ?? legacyView)) ?? VIEWS[0]!;
+    [...VIEWS, ...ISSUE_VIEWS].find(
+      (v) => v.key === (params.view ?? legacyView),
+    ) ?? VIEWS[0]!;
+  const tabs = VIEWS.includes(view) ? VIEWS : [...VIEWS, view];
   const q = (params.q ?? params.search ?? "").trim();
   const collection = params.collection ?? "all";
   const sort = (
@@ -177,7 +189,7 @@ export default async function ProductsPage({
     db
       .select(
         Object.fromEntries(
-          VIEWS.map((v) => [
+          tabs.map((v) => [
             v.key,
             sql<number>`count(*) filter (where ${v.where ?? sql`true`})`,
           ]),
@@ -319,7 +331,7 @@ export default async function ProductsPage({
         label="Product views"
         active={view.key}
         hrefFor={(key) => href({ view: key, page: "1" })}
-        views={VIEWS.map((v) => ({
+        views={tabs.map((v) => ({
           key: v.key,
           label: v.label,
           count: Number(counts[v.key] ?? 0),

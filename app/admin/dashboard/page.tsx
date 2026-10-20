@@ -29,6 +29,8 @@ import {
   type OpenOrder,
   type Operations,
 } from "lib/admin/metrics";
+import { getStoreHealth, type StoreHealth } from "lib/admin/health";
+import { scoreVerdict } from "lib/admin/health-checks";
 import { percentChange, resolveRange } from "lib/admin/range";
 import { authOptions } from "lib/auth";
 import { ArrowUpRight, Check, Plus } from "lucide-react";
@@ -46,11 +48,13 @@ export default async function DashboardPage() {
   const today = resolveRange("today", now);
   const week = resolveRange("7d", now);
 
-  const [todayReport, weekReport, ops, recent] = await Promise.all([
+  const [todayReport, weekReport, ops, recent, health] = await Promise.all([
     getSalesReport(today),
     getSalesReport(week),
     getOperations(),
     getRecentOrders(8),
+    // A nicety on Home; the health page itself shows any error.
+    getStoreHealth(now).catch(() => null),
   ]);
 
   // getGreeting reads local hours; hand it a date set to the shop's hour.
@@ -129,6 +133,8 @@ export default async function DashboardPage() {
           </ul>
         )}
       </section>
+
+      {health ? <HealthStrip health={health} /> : null}
 
       {/* ── Today vs yesterday + fulfilment pipeline ──────────────────── */}
       <div className="mb-10 grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -570,5 +576,48 @@ function OrderQueue({
         </li>
       ))}
     </ul>
+  );
+}
+
+function HealthStrip({ health }: { health: StoreHealth }) {
+  const worst = health.checks
+    .filter((c) => c.status === "fail" || c.status === "warn")
+    .slice(0, 3);
+  return (
+    <Link
+      href="/admin/health"
+      className="group mb-10 flex flex-col gap-3 border border-line px-5 py-4 transition-colors hover:bg-plate/60 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div className="flex items-baseline gap-4">
+        <span className="font-head text-3xl font-extrabold leading-none tabular-nums [font-stretch:75%]">
+          {health.score}
+        </span>
+        <div>
+          <p className="text-sm font-medium text-fg">
+            Store health · {scoreVerdict(health.score)}
+          </p>
+          <p className="mt-0.5 text-xs text-fg-3">
+            {worst.length
+              ? worst.map((c) => c.label).join(" · ")
+              : "Nothing in the catalog, payments or background jobs needs fixing."}
+          </p>
+        </div>
+      </div>
+      <span className="label flex shrink-0 items-center gap-3 text-fg-3 group-hover:text-fg">
+        {health.failing ? (
+          <span className="flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-red-600" aria-hidden />
+            {health.failing} broken
+          </span>
+        ) : null}
+        {health.warnings ? (
+          <span className="flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-amber-500" aria-hidden />
+            {health.warnings} to check
+          </span>
+        ) : null}
+        <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+      </span>
+    </Link>
   );
 }

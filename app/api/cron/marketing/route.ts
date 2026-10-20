@@ -1,4 +1,5 @@
 import { isCronAuthorized } from "lib/cron-auth";
+import { recordCronRun } from "lib/cron-heartbeat";
 import { runFlows } from "lib/marketing/flows";
 import { runDueCampaigns } from "lib/marketing/send";
 import { NextRequest, NextResponse } from "next/server";
@@ -11,7 +12,13 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   if (!isCronAuthorized(request))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const campaigns = await runDueCampaigns(40_000);
-  const flows = await runFlows();
-  return NextResponse.json({ ok: true, campaigns, flows });
+  try {
+    const campaigns = await runDueCampaigns(40_000);
+    const flows = await runFlows();
+    await recordCronRun("marketing", true);
+    return NextResponse.json({ ok: true, campaigns, flows });
+  } catch (error) {
+    await recordCronRun("marketing", false, (error as Error).message);
+    throw error;
+  }
 }

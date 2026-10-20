@@ -443,7 +443,7 @@ export type Operations = {
   productsWithoutImages: number;
 };
 
-const OPEN = sql`o.status not in ('cancelled', 'completed') and o.delivery_status not in ('completed', 'cancelled')`;
+export const OPEN = sql`o.status not in ('cancelled', 'completed') and o.delivery_status not in ('completed', 'cancelled')`;
 
 function toOpenOrder(r: Record<string, unknown>): OpenOrder {
   return {

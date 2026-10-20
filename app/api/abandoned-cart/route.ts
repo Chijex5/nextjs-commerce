@@ -1,5 +1,6 @@
 import { sendAbandonedCartEmail } from "@/lib/email/order-emails";
 import { isCronAuthorized } from "lib/cron-auth";
+import { recordCronRun } from "lib/cron-heartbeat";
 import { getFlowConfig, logFlowSend } from "lib/marketing/flows";
 import { and, desc, eq, isNotNull, lt, lte } from "drizzle-orm";
 import { db } from "lib/db";
@@ -146,7 +147,19 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Daily (see vercel.json). Each run is recorded for the admin store health page.
 export async function GET(request: NextRequest) {
+  const response = await processAbandonedCarts(request);
+  if (response.status !== 401)
+    await recordCronRun(
+      "abandoned-cart",
+      response.ok,
+      response.ok ? undefined : "Failed to process abandoned carts",
+    );
+  return response;
+}
+
+async function processAbandonedCarts(request: NextRequest) {
   try {
     // Vercel Cron authenticates with `Authorization: Bearer`, which the old
     // x-cron-secret-only check rejected, so scheduled runs never sent anything.
