@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
+import {
+  carryStock,
+  splitByWearer,
+  WEARER_OPTION,
+} from "lib/admin/product-variants";
 import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "lib/image-constants";
 import { db } from "lib/db";
 import {
@@ -253,6 +258,9 @@ export async function PUT(
           seoTitle: bodyWithSanitized.seoTitle,
           seoDescription: bodyWithSanitized.seoDescription,
           tags: bodyWithSanitized.tags || [],
+          ...(bodyWithSanitized.pairing !== undefined
+            ? { pairing: bodyWithSanitized.pairing }
+            : {}),
           updatedAt: new Date(),
         })
         .where(eq(products.id, id))
@@ -278,7 +286,7 @@ export async function PUT(
 
       if (bodyWithSanitized.sizes || bodyWithSanitized.colors) {
         const variantRows = await tx
-          .select({ id: productVariants.id })
+          .select()
           .from(productVariants)
           .where(eq(productVariants.productId, id));
 
@@ -296,6 +304,13 @@ export async function PUT(
 
         const sizes = bodyWithSanitized.sizes || [];
         const colors = bodyWithSanitized.colors || [];
+        const couples = Boolean(updatedProduct?.pairing);
+
+        if (couples) {
+          await tx
+            .insert(productOptions)
+            .values({ productId: id, ...WEARER_OPTION });
+        }
 
         if (sizes.length > 0) {
           await tx.insert(productOptions).values({
@@ -402,7 +417,14 @@ export async function PUT(
         }
 
         if (variants.length > 0) {
-          await tx.insert(productVariants).values(variants);
+          await tx
+            .insert(productVariants)
+            .values(
+              carryStock(
+                couples ? splitByWearer(variants) : variants,
+                variantRows,
+              ),
+            );
         }
       }
 

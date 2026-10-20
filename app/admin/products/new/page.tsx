@@ -38,6 +38,7 @@ export default async function NewProductPage() {
             colorPrices: {},
           },
           pricingExact: true,
+          pairing: null,
         }}
       />
     </Page>

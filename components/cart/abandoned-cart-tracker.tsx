@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { setTitle } from "lib/pairing";
 import { useCart } from "./cart-context";
 
 export default function AbandonedCartTracker() {
@@ -15,7 +16,9 @@ export default function AbandonedCartTracker() {
 
     const items = cart.lines.map((line) => ({
       productTitle: line.merchandise.product.title,
-      variantTitle: line.merchandise.title,
+      variantTitle: line.pair
+        ? setTitle(line.merchandise.selectedOptions, line.pair.selectedOptions)
+        : line.merchandise.title,
       quantity: line.quantity,
       price: parseFloat(line.cost.totalAmount.amount),
       imageUrl: line.merchandise.product.featuredImage?.url,

@@ -63,6 +63,12 @@ export const products = pgTable(
      * for the ones kept in stock.
      */
     productionDays: integer("production_days"),
+    /**
+     * Set when this is a couples pair (his + hers sold as a set or singly):
+     * `{ discountType: "fixed" | "percentage", discountValue }`. See
+     * lib/pairing.ts.
+     */
+    pairing: jsonb("pairing"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -241,6 +247,11 @@ export const cartLines = pgTable(
     productVariantId: uuid("product_variant_id")
       .references(() => productVariants.id, { onDelete: "cascade" })
       .notNull(),
+    /** A couples set: the Hers pair bought with product_variant_id (His). */
+    pairVariantId: uuid("pair_variant_id").references(
+      () => productVariants.id,
+      { onDelete: "cascade" },
+    ),
     quantity: integer("quantity").default(1).notNull(),
     totalAmount: decimal("total_amount", { precision: 10, scale: 2 })
       .default("0.00")
@@ -258,6 +269,9 @@ export const cartLines = pgTable(
   (table) => ({
     cartIdIdx: index("cart_lines_cart_id_idx").on(table.cartId),
     variantIdIdx: index("cart_lines_variant_id_idx").on(table.productVariantId),
+    pairVariantIdIdx: index("cart_lines_pair_variant_id_idx").on(
+      table.pairVariantId,
+    ),
     quantityCheck: check(
       "cart_lines_quantity_check",
       sql`${table.quantity} > 0`,
@@ -828,6 +842,14 @@ export const orderItems = pgTable(
       onDelete: "set null",
     }),
     productVariantId: uuid("product_variant_id").references(
+      () => productVariants.id,
+      { onDelete: "set null" },
+    ),
+    /**
+     * A couples set: the Hers pair (product_variant_id is His). One row,
+     * quantity in sets; variant_title spells out both pairs.
+     */
+    pairVariantId: uuid("pair_variant_id").references(
       () => productVariants.id,
       { onDelete: "set null" },
     ),

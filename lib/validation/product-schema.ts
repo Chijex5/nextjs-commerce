@@ -66,6 +66,19 @@ export const ColorPriceSchema = z.record(
     ),
 );
 
+export const PairingSchema = z
+  .object({
+    discountType: z.enum(["fixed", "percentage"]),
+    discountValue: z.coerce
+      .number()
+      .nonnegative("Set discount cannot be negative")
+      .max(999999999),
+  })
+  .refine((p) => p.discountType !== "percentage" || p.discountValue <= 90, {
+    message: "A percentage set discount can be at most 90%",
+    path: ["discountValue"],
+  });
+
 /* ─── Product Creation/Update Schema ──────────────────────────────────── */
 
 export const CreateProductSchema = z.object({
@@ -118,6 +131,8 @@ export const CreateProductSchema = z.object({
     .array(z.string().uuid("Invalid collection ID"))
     .optional()
     .default([]),
+  /** Couples pair set discount; null turns it off, absent leaves it alone. */
+  pairing: PairingSchema.nullable().optional(),
 });
 
 /* ─── CSV Import Schema ──────────────────────────────────────────────── */

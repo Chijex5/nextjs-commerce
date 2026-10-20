@@ -1,10 +1,12 @@
 import { parseDbTimestamp } from "lib/db/time";
 import { ProductEditor } from "components/admin/products/product-editor";
+import { StockEditor } from "components/admin/products/stock-editor";
 import { Page } from "components/admin/ui";
 import { asc, eq, sql } from "drizzle-orm";
 import { deriveModel } from "lib/admin/product-pricing";
 import { authOptions } from "lib/auth";
 import { db } from "lib/db";
+import { HERS, parsePairing, wearerOf } from "lib/pairing";
 import {
   collections,
   productCollections,
@@ -58,7 +60,7 @@ export default async function EditProductPage({
         .orderBy(asc(collections.title)),
       db.execute(sql`
       select
-        coalesce(sum(oi.quantity) filter (where o.created_at >= now() - interval '30 days'), 0) as units,
+        coalesce(sum(oi.quantity * (case when oi.pair_variant_id is null then 1 else 2 end)) filter (where o.created_at >= now() - interval '30 days'), 0) as units,
         coalesce(sum(oi.total_amount) filter (where o.created_at >= now() - interval '30 days'), 0) as revenue,
         count(distinct o.id) as orders,
         max(o.created_at)::text as last_sold
@@ -72,13 +74,15 @@ export default async function EditProductPage({
     (a, b) =>
       Number(b.isFeatured) - Number(a.isFeatured) || a.position - b.position,
   );
+  const optionsOf = (v: (typeof variants)[number]) =>
+    (v.selectedOptions as Array<{ name: string; value: string }>) ?? [];
+  const pairing = parsePairing(product.pairing);
+  // A couples pair's prices are set once for both wearers: read them off His.
   const { model, exact } = deriveModel(
     options.map((o) => ({ name: o.name, values: o.values })),
-    variants.map((v) => ({
-      price: Number(v.price),
-      selectedOptions:
-        (v.selectedOptions as Array<{ name: string; value: string }>) ?? [],
-    })),
+    variants
+      .filter((v) => !pairing || wearerOf(optionsOf(v)) !== HERS)
+      .map((v) => ({ price: Number(v.price), selectedOptions: optionsOf(v) })),
   );
 
   return (
@@ -113,7 +117,20 @@ export default async function EditProductPage({
           collectionIds: links.map((l) => l.collectionId),
           pricing: model,
           pricingExact: exact,
+          pairing,
         }}
+        stockPanel={
+          <StockEditor
+            key={variants.map((v) => `${v.id}:${v.stockQuantity}`).join(",")}
+            productId={product.id}
+            variants={variants.map((v) => ({
+              id: v.id,
+              selectedOptions: optionsOf(v),
+              trackInventory: v.trackInventory,
+              stockQuantity: v.stockQuantity,
+            }))}
+          />
+        }
       />
     </Page>
   );

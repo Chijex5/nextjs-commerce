@@ -57,6 +57,13 @@
       "when": 1792434770319,
       "tag": "0007_payments_per_order",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792513360224,
+      "tag": "0008_couples_pairs",
+      "breakpoints": true
     }
   ]
 }

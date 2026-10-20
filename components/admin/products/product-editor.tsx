@@ -4,6 +4,7 @@ import ImageCropModal from "components/admin/ImageCropModal";
 import { Panel, StatList, StatRow, StatusPill } from "components/admin/ui";
 import { uploadImage } from "components/admin/ui/image-upload";
 import { RichTextEditor } from "components/admin/ui/rich-text-editor";
+import { CouplesPair } from "./couples-pair";
 import { buttonClass } from "components/ui/button";
 import clsx from "clsx";
 import { money, pairs, timeAgo } from "lib/admin/format";
@@ -38,7 +39,8 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import type { PairingConfig } from "lib/pairing";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 const MAX_IMAGES = 8;
@@ -59,6 +61,8 @@ export type ProductEditorValues = {
   pricing: PricingModel;
   /** False when saved prices can't be shown as simple rules. */
   pricingExact: boolean;
+  /** Set when sold as a his + hers couples pair. */
+  pairing: PairingConfig | null;
 };
 
 export type ProductStats = {
@@ -145,10 +149,13 @@ export function ProductEditor({
   initial,
   collections,
   stats,
+  stockPanel,
 }: {
   initial: ProductEditorValues;
   collections: Array<{ id: string; title: string }>;
   stats?: ProductStats;
+  /** Saved separately (stock changes without rebuilding variants). */
+  stockPanel?: ReactNode;
 }) {
   const router = useRouter();
   const isNew = !initial.id;
@@ -207,6 +214,11 @@ export function ProductEditor({
       if (p.sizeRules.some((r) => !(r.from > 0) || !(r.price > 0)))
         return toast.error("Each size price rule needs a size and a price");
     }
+    if (
+      v.pairing?.discountType === "percentage" &&
+      v.pairing.discountValue > 90
+    )
+      return toast.error("A set discount can be at most 90%");
     setSaving(true);
     const description = htmlToText(v.descriptionHtml);
     const payload = {
@@ -224,6 +236,7 @@ export function ProductEditor({
         isFeatured: i === 0,
       })),
       collectionIds: v.collectionIds,
+      pairing: v.pairing,
       basePrice: p.basePrice,
       // Variants are only rebuilt when sizes/colours are sent, so untouched
       // pricing (including prices set in the bulk editor) is left alone.
@@ -377,7 +390,24 @@ export function ProductEditor({
             ) : null}
             <Pricing model={v.pricing} onChange={setPricing} />
             <VariantTable variants={variants} />
+            {v.pairing && variants.length ? (
+              <p className="mt-2 text-xs text-fg-3">
+                Each of these is made for His and for Hers:{" "}
+                {variants.length * 2} pairs to stock.
+              </p>
+            ) : null}
+            <CouplesPair
+              value={v.pairing}
+              basePrice={v.pricing.basePrice}
+              isNew={isNew}
+              onChange={(pairing, rebuild) => {
+                if (rebuild) setPricingTouched(true);
+                set({ pairing });
+              }}
+            />
           </Panel>
+
+          {stockPanel}
         </div>
 
         <aside className="space-y-6">

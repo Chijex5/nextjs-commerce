@@ -3,6 +3,7 @@ import { CreateProductSchema } from "@/lib/validation/product-schema";
 import { validateAndSanitizeDescription } from "@/lib/validation/sanitize";
 import { asc, eq, inArray } from "drizzle-orm";
 import { requireAdminSession } from "lib/admin-auth";
+import { splitByWearer, WEARER_OPTION } from "lib/admin/product-variants";
 import { db } from "lib/db";
 import {
     collections,
@@ -236,6 +237,7 @@ export async function POST(request: Request) {
           seoTitle: bodyWithSanitized.seoTitle || `${bodyWithSanitized.title} - D'FOOTPRINT`,
           seoDescription: bodyWithSanitized.seoDescription,
           tags: bodyWithSanitized.tags,
+          pairing: bodyWithSanitized.pairing ?? null,
         })
         .returning();
 
@@ -268,6 +270,13 @@ export async function POST(request: Request) {
 
       const sizes = bodyWithSanitized.sizes || [];
       const colors = bodyWithSanitized.colors || [];
+      const couples = Boolean(bodyWithSanitized.pairing);
+
+      if (couples) {
+        await tx
+          .insert(productOptions)
+          .values({ productId: createdProduct.id, ...WEARER_OPTION });
+      }
 
       if (sizes.length > 0) {
         await tx.insert(productOptions).values({
@@ -372,7 +381,9 @@ export async function POST(request: Request) {
       }
 
       if (variants.length > 0) {
-        await tx.insert(productVariants).values(variants);
+        await tx
+          .insert(productVariants)
+          .values(couples ? splitByWearer(variants) : variants);
       }
 
       if (bodyWithSanitized.collectionIds.length > 0) {

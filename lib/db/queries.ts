@@ -6,14 +6,19 @@ import {
     eq,
     ilike,
     inArray,
+    isNull,
     notInArray,
     or,
     sql,
     type SQL,
 } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
+import { HERS, HIS, parsePairing, setUnitPrice, wearerOf } from "lib/pairing";
 import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "../image-constants";
 import type {
     Cart,
+    CartItem,
+    CartLineVariant,
     Collection,
     Image,
     Menu,
@@ -37,6 +42,9 @@ import {
     products,
     reviews,
 } from "./schema";
+
+// The Hers pair of a couples set line.
+const pairVariants = alias(productVariants, "pair_variants");
 
 const CART_EXPIRY_MS = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 function getCartExpiryDate(): Date {
@@ -162,6 +170,7 @@ export async function reshapeDbProducts(
       },
       tags: dbProduct.tags || [],
       updatedAt: dbProduct.updatedAt.toISOString(),
+      pairing: parsePairing(dbProduct.pairing),
     };
   });
 }
@@ -175,6 +184,7 @@ async function reshapeDbCart(
     .select({
       line: cartLines,
       variant: productVariants,
+      pair: pairVariants,
       product: products,
       image: productImages,
     })
@@ -183,6 +193,7 @@ async function reshapeDbCart(
       productVariants,
       eq(cartLines.productVariantId, productVariants.id),
     )
+    .leftJoin(pairVariants, eq(cartLines.pairVariantId, pairVariants.id))
     .innerJoin(products, eq(productVariants.productId, products.id))
     .leftJoin(
       productImages,
@@ -191,9 +202,19 @@ async function reshapeDbCart(
         eq(productImages.isFeatured, true),
       ),
     )
-    .where(eq(cartLines.cartId, dbCart.id));
+    .where(eq(cartLines.cartId, dbCart.id))
+    .orderBy(asc(cartLines.createdAt));
 
-  const lines = dbLines.map(({ line, variant, product, image }) => ({
+  const lines: CartItem[] = dbLines.map(({ line, variant, pair, product, image }) => ({
+    ...(pair
+      ? {
+          pair: {
+            id: pair.id,
+            title: pair.title,
+            selectedOptions: pair.selectedOptions as CartLineVariant["selectedOptions"],
+          },
+        }
+      : {}),
     id: line.id,
     quantity: line.quantity,
     cost: {
@@ -916,14 +937,21 @@ export async function getCartBySessionId(
 /** Most of one pair anyone sensibly puts in a bag. */
 const MAX_LINE_QUANTITY = 20;
 
-/**
- * A variant that can go in the bag right now, with how many may: none when
- * it or its product is off sale, the stock left when it tracks stock
- * (made-to-order pairs don't), otherwise a sane cap.
- */
-async function getPurchasableVariant(variantId: string) {
+/** A bag line as the client sends it: a pair, or a His + Hers set. */
+export type CartLineInput = {
+  merchandiseId: string;
+  /** The Hers variant when the line is a couples set. */
+  pairMerchandiseId?: string | null;
+  quantity: number;
+};
+
+async function loadVariant(variantId: string) {
   const [row] = await db
-    .select({ variant: productVariants, productOnSale: products.availableForSale })
+    .select({
+      variant: productVariants,
+      productOnSale: products.availableForSale,
+      pairing: products.pairing,
+    })
     .from(productVariants)
     .innerJoin(products, eq(productVariants.productId, products.id))
     .where(eq(productVariants.id, variantId))
@@ -933,16 +961,53 @@ async function getPurchasableVariant(variantId: string) {
   const maxQuantity = variant.trackInventory
     ? Math.min(variant.stockQuantity ?? 0, MAX_LINE_QUANTITY)
     : MAX_LINE_QUANTITY;
-  return maxQuantity > 0 ? { ...variant, maxQuantity } : null;
+  return maxQuantity > 0 ? { variant, maxQuantity, pairing: row.pairing } : null;
 }
+
+/**
+ * What a bag line can be right now: its unit price and how many may go in.
+ * Null when it (or, for a set, either pair) is off sale or sold out, or the
+ * set isn't a valid His + Hers of one couples product.
+ */
+async function getPurchasableLine(variantId: string, pairVariantId?: string | null) {
+  const his = await loadVariant(variantId);
+  if (!his) return null;
+  if (!pairVariantId) {
+    return {
+      unitPrice: Number(his.variant.price),
+      maxQuantity: his.maxQuantity,
+      currencyCode: his.variant.currencyCode,
+    };
+  }
+
+  const hers = await loadVariant(pairVariantId);
+  const pairing = parsePairing(his.pairing);
+  if (
+    !hers ||
+    !pairing ||
+    hers.variant.productId !== his.variant.productId ||
+    wearerOf(his.variant.selectedOptions as SelectedOptions) !== HIS ||
+    wearerOf(hers.variant.selectedOptions as SelectedOptions) !== HERS
+  ) {
+    return null;
+  }
+  return {
+    unitPrice: setUnitPrice(Number(his.variant.price), Number(hers.variant.price), pairing),
+    maxQuantity: Math.min(his.maxQuantity, hers.maxQuantity),
+    currencyCode: his.variant.currencyCode,
+  };
+}
+
+type SelectedOptions = Array<{ name: string; value: string }>;
 
 export async function addToCart(
   cartId: string,
-  lines: { merchandiseId: string; quantity: number }[],
+  lines: CartLineInput[],
 ): Promise<Cart> {
   for (const line of lines) {
-    const variant = await getPurchasableVariant(line.merchandiseId);
-    if (!variant) continue; // gone or not for sale: leave it out of the bag
+    const pairId = line.pairMerchandiseId || null;
+    const purchasable = await getPurchasableLine(line.merchandiseId, pairId);
+    if (!purchasable) continue; // gone or not for sale: leave it out of the bag
 
     const [existingLine] = await db
       .select()
@@ -951,16 +1016,17 @@ export async function addToCart(
         and(
           eq(cartLines.cartId, cartId),
           eq(cartLines.productVariantId, line.merchandiseId),
+          pairId ? eq(cartLines.pairVariantId, pairId) : isNull(cartLines.pairVariantId),
         ),
       )
       .limit(1);
 
     const quantity = Math.min(
       (existingLine?.quantity ?? 0) + line.quantity,
-      variant.maxQuantity,
+      purchasable.maxQuantity,
     );
     if (quantity <= 0) continue;
-    const totalAmount = String(Number(variant.price) * quantity);
+    const totalAmount = String(purchasable.unitPrice * quantity);
 
     if (existingLine) {
       await db
@@ -971,9 +1037,10 @@ export async function addToCart(
       await db.insert(cartLines).values({
         cartId,
         productVariantId: line.merchandiseId,
+        pairVariantId: pairId,
         quantity,
         totalAmount,
-        currencyCode: variant.currencyCode,
+        currencyCode: purchasable.currencyCode,
       });
     }
   }
@@ -996,7 +1063,7 @@ export async function removeFromCart(
 
 export async function updateCart(
   cartId: string,
-  lines: { id: string; merchandiseId: string; quantity: number }[],
+  lines: Array<CartLineInput & { id: string }>,
 ): Promise<Cart> {
   for (const line of lines) {
     if (line.quantity === 0) {
@@ -1004,9 +1071,14 @@ export async function updateCart(
       continue;
     }
 
-    const variant = await getPurchasableVariant(line.merchandiseId);
-    const quantity = variant ? Math.min(line.quantity, variant.maxQuantity) : 0;
-    if (!variant || quantity <= 0) {
+    const purchasable = await getPurchasableLine(
+      line.merchandiseId,
+      line.pairMerchandiseId,
+    );
+    const quantity = purchasable
+      ? Math.min(line.quantity, purchasable.maxQuantity)
+      : 0;
+    if (!purchasable || quantity <= 0) {
       await db.delete(cartLines).where(eq(cartLines.id, line.id));
       continue;
     }
@@ -1015,7 +1087,7 @@ export async function updateCart(
       .update(cartLines)
       .set({
         quantity,
-        totalAmount: String(Number(variant.price) * quantity),
+        totalAmount: String(purchasable.unitPrice * quantity),
         updatedAt: new Date(),
       })
       .where(eq(cartLines.id, line.id));

@@ -10,6 +10,7 @@ import { cookies } from "next/headers";
 import { isMockData } from "../data/source";
 import { db } from "../db/client";
 import * as dbQueries from "../db/queries";
+import type { CartLineInput } from "../db/queries";
 import { customOrders, sizeGuides } from "../db/schema";
 import type { Cart, Collection, Menu, Page, Product } from "lib/types/commerce";
 
@@ -78,7 +79,7 @@ export async function createCart(): Promise<Cart> {
 }
 
 export async function addToCart(
-  lines: { merchandiseId: string; quantity: number }[],
+  lines: CartLineInput[],
 ): Promise<Cart> {
   const cookieStore = await cookies();
   const cart = await resolveCartForSession(cookieStore);
@@ -100,7 +101,7 @@ export async function removeFromCart(lineIds: string[]): Promise<Cart> {
 }
 
 export async function updateCart(
-  lines: { id: string; merchandiseId: string; quantity: number }[],
+  lines: Array<CartLineInput & { id: string }>,
 ): Promise<Cart> {
   const cookieStore = await cookies();
   const cart = await resolveCartForSession(cookieStore);

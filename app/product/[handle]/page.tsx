@@ -1,5 +1,6 @@
 import Footer from "components/layout/footer";
 import { ProductCard } from "components/product/product-card";
+import { CouplePurchase } from "components/product/couple-purchase";
 import { ProductGallery } from "components/product/product-gallery";
 import { ProductPurchase } from "components/product/product-purchase";
 import { ProductReviewsSection } from "components/product/product-reviews-section";
@@ -126,7 +127,11 @@ export default async function ProductPage(props: Props) {
                 </a>
               ) : null}
 
-              <ProductPurchase product={product} />
+              {product.pairing ? (
+                <CouplePurchase product={product} />
+              ) : (
+                <ProductPurchase product={product} />
+              )}
 
               <p className="mt-5 text-sm text-fg-2">
                 Delivered anywhere in Nigeria — the fee for your state is shown

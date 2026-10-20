@@ -1,4 +1,5 @@
 import { and, eq } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import {
   CouponValidationError,
   validateCouponForCheckout,
@@ -11,15 +12,26 @@ import {
   productVariants,
 } from "lib/db/schema";
 import {
+  HERS,
+  HIS,
+  parsePairing,
+  setTitle,
+  setUnitPrice,
+  wearerOf,
+} from "lib/pairing";
+import {
   calculateShippingAmount,
   type ShippingAddressInfo,
 } from "lib/shipping";
 import { estimateDelivery, type DeliveryEstimate } from "./delivery-estimate";
+import { stockShortfalls } from "./stock";
 
 /** One line of the bag, priced at the moment the quote was made. */
 export type QuoteLine = {
   lineId: string;
   variantId: string;
+  /** A couples set: the Hers pair (variantId is His). Counts against stock too. */
+  pairVariantId?: string | null;
   productId: string;
   productTitle: string;
   productHandle: string;
@@ -33,6 +45,7 @@ export type QuoteLine = {
 
 /** A line that can't be bought as it stands. */
 export type QuoteIssue = {
+  lineId: string;
   variantId: string;
   productTitle: string;
   kind: "unavailable" | "insufficient_stock";
@@ -61,6 +74,15 @@ export type CheckoutQuote = {
 
 const money = (n: number) => Math.round(n * 100) / 100;
 
+const pairVariants = alias(productVariants, "pair_variants");
+
+type Options = Array<{ name: string; value: string }>;
+type VariantRow = typeof productVariants.$inferSelect;
+
+/** Left to sell: Infinity for made-to-order pairs. */
+const stockOf = (v: VariantRow) =>
+  v.trackInventory ? (v.stockQuantity ?? 0) : Infinity;
+
 /**
  * Prices a bag from the database: live variant prices, availability and
  * stock, shipping for the address, and the coupon. The checkout page shows
@@ -77,6 +99,7 @@ export async function quoteCheckout(input: {
     .select({
       line: cartLines,
       variant: productVariants,
+      pair: pairVariants,
       product: products,
       image: productImages.url,
     })
@@ -85,6 +108,7 @@ export async function quoteCheckout(input: {
       productVariants,
       eq(cartLines.productVariantId, productVariants.id),
     )
+    .leftJoin(pairVariants, eq(cartLines.pairVariantId, pairVariants.id))
     .innerJoin(products, eq(productVariants.productId, products.id))
     .leftJoin(
       productImages,
@@ -101,12 +125,42 @@ export async function quoteCheckout(input: {
   const issues: QuoteIssue[] = [];
   const productionDays: (number | null)[] = [];
 
-  for (const { line, variant, product, image } of rows) {
-    if (seen.has(line.id)) continue; // more than one featured image
+  const unique = rows.filter(({ line }) => {
+    if (seen.has(line.id)) return false; // more than one featured image
     seen.add(line.id);
+    return true;
+  });
 
-    if (!variant.availableForSale || !product.availableForSale) {
+  const shortfalls = stockShortfalls(
+    unique.map(({ line, variant, pair }) => ({
+      lineId: line.id,
+      quantity: line.quantity,
+      parts: (pair ? [variant, pair] : [variant]).map((v) => ({
+        id: v.id,
+        left: stockOf(v),
+      })),
+    })),
+  );
+
+  for (const { line, variant, pair, product, image } of unique) {
+    const pairing = parsePairing(product.pairing);
+    const isSet = Boolean(line.pairVariantId);
+    const validSet =
+      !isSet ||
+      (pair &&
+        pairing &&
+        pair.productId === product.id &&
+        wearerOf(variant.selectedOptions as Options) === HIS &&
+        wearerOf(pair.selectedOptions as Options) === HERS);
+    const parts = pair ? [variant, pair] : [variant];
+
+    if (
+      !validSet ||
+      !product.availableForSale ||
+      parts.some((v) => !v.availableForSale)
+    ) {
       issues.push({
+        lineId: line.id,
         variantId: variant.id,
         productTitle: product.title,
         kind: "unavailable",
@@ -114,26 +168,34 @@ export async function quoteCheckout(input: {
       continue;
     }
 
-    const stocked = variant.trackInventory;
-    const left = stocked ? (variant.stockQuantity ?? 0) : Infinity;
-    if (left < line.quantity) {
+    const left = shortfalls.get(line.id);
+    if (left !== undefined) {
       issues.push({
+        lineId: line.id,
         variantId: variant.id,
         productTitle: product.title,
         kind: left > 0 ? "insufficient_stock" : "unavailable",
-        available: Math.max(0, left),
+        available: left,
       });
       continue;
     }
 
-    const unitPrice = Number(variant.price);
+    const unitPrice = pair
+      ? setUnitPrice(Number(variant.price), Number(pair.price), pairing!)
+      : Number(variant.price);
     lines.push({
       lineId: line.id,
       variantId: variant.id,
+      pairVariantId: pair?.id ?? null,
       productId: product.id,
       productTitle: product.title,
       productHandle: product.handle,
-      variantTitle: variant.title,
+      variantTitle: pair
+        ? setTitle(
+            variant.selectedOptions as Options,
+            pair.selectedOptions as Options,
+          )
+        : variant.title,
       quantity: line.quantity,
       unitPrice,
       lineTotal: money(unitPrice * line.quantity),
@@ -141,10 +203,15 @@ export async function quoteCheckout(input: {
       image: image ?? null,
     });
     // A stocked pair ships straight away; made-to-order waits on the bench.
+    const stocked = parts.every((v) => v.trackInventory);
     productionDays.push(stocked ? 0 : product.productionDays);
   }
 
-  const itemCount = lines.reduce((n, l) => n + l.quantity, 0);
+  // Pairs, not lines: a set is two (shipping is charged per pair).
+  const itemCount = lines.reduce(
+    (n, l) => n + l.quantity * (l.pairVariantId ? 2 : 1),
+    0,
+  );
   const subtotal = money(lines.reduce((n, l) => n + l.lineTotal, 0));
   const hasState = Boolean(input.address?.state?.trim());
   const shipping =

@@ -194,7 +194,7 @@ export async function getCustomer(key: string) {
       order by o.created_at desc limit 50
     `) as unknown as Promise<Record<string, unknown>[]>,
     db.execute(sql`
-      select oi.product_id, max(oi.product_title) as title, sum(oi.quantity) as units, sum(oi.total_amount) as spent
+      select oi.product_id, max(oi.product_title) as title, sum(oi.quantity * (case when oi.pair_variant_id is null then 1 else 2 end)) as units, sum(oi.total_amount) as spent
       from order_items oi join orders o on o.id = oi.order_id
       where lower(o.email) = ${customer.email} and o.status <> 'cancelled'
       group by oi.product_id order by units desc limit 5
