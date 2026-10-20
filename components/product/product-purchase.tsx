@@ -225,7 +225,7 @@ export function ProductPurchase({ product }: { product: Product }) {
   );
 }
 
-function RestockAlert() {
+export function RestockAlert() {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
 

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { requireAdminSession } from "lib/admin-auth";
 import { TAGS } from "lib/constants";
 import { db } from "lib/db";
@@ -179,6 +179,8 @@ export async function POST(request: Request) {
         availableForSale: products.availableForSale,
       })
       .from(products)
+      // Couple listings have no price of their own; their two products sync.
+      .where(isNull(products.pairing))
       .orderBy(desc(products.createdAt));
 
     if (productRows.length === 0) {

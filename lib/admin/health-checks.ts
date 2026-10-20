@@ -110,7 +110,7 @@ function catalogChecks(c: HealthInput["catalog"]): HealthCheck[] {
       status: anyIs(c.unbuyable, "fail"),
       count: c.unbuyable,
       detail: c.unbuyable
-        ? `${plural(c.unbuyable, "product")} on the shop with every size unavailable.`
+        ? `${plural(c.unbuyable, "product")} on the shop with every size unavailable (or a couple set whose product can't be bought).`
         : "Every live product has at least one size to buy.",
       href: `${products}?view=unbuyable`,
       weight: 3,

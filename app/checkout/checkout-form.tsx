@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useCart } from "components/cart/cart-context";
+import { cartLineKey, useCart } from "components/cart/cart-context";
 import { LocationSelectGroup } from "components/locations/location-select-group";
 import { buttonClass } from "components/ui/button";
 import { Field } from "components/ui/field";
@@ -192,7 +192,7 @@ export function CheckoutForm({
   const bagSignature = useMemo(
     () =>
       (cart?.lines ?? [])
-        .map((l) => `${l.merchandise.id}:${l.quantity}`)
+        .map((l) => `${cartLineKey(l)}:${l.quantity}`)
         .join(","),
     [cart?.lines],
   );
@@ -927,7 +927,7 @@ function OrderSummary({
           className="mb-4 space-y-1 border-l-4 border-red-600 pl-3 text-sm"
         >
           {quote.issues.map((issue) => (
-            <li key={issue.variantId}>
+            <li key={issue.lineId}>
               <strong>{issue.productTitle}</strong>{" "}
               {issue.kind === "insufficient_stock"
                 ? `— only ${issue.available} left. Lower the quantity in your bag.`

@@ -1282,6 +1282,7 @@ export async function reconcilePaystackPayment(
           orderId: createdOrder.id,
           productId: line.productId,
           productVariantId: line.variantId,
+          pairVariantId: line.pairVariantId ?? null,
           productTitle: line.productTitle,
           variantTitle: line.variantTitle,
           quantity: line.quantity,
@@ -1326,8 +1327,14 @@ export async function reconcilePaystackPayment(
       }
 
       // Stock only moves for variants that track it (most pairs are made to
-      // order). Never fail a paid order over it: clamp at zero and flag.
-      for (const line of snapshot.lines) {
+      // order). Never fail a paid order over it: clamp at zero and flag. A
+      // couples set takes one of each pair.
+      const stockMoves = snapshot.lines.flatMap((line) =>
+        [line.variantId, line.pairVariantId]
+          .filter((id): id is string => Boolean(id))
+          .map((variantId) => ({ ...line, variantId })),
+      );
+      for (const line of stockMoves) {
         const [variant] = await tx
           .update(productVariants)
           .set({
@@ -1341,9 +1348,12 @@ export async function reconcilePaystackPayment(
               eq(productVariants.trackInventory, true),
             ),
           )
-          .returning({ stockQuantity: productVariants.stockQuantity });
+          .returning({
+            stockQuantity: productVariants.stockQuantity,
+            title: productVariants.title,
+          });
         if (variant && variant.stockQuantity === 0) {
-          notices.push(`${line.productTitle} (${line.variantTitle}) is now sold out.`);
+          notices.push(`${line.productTitle} (${variant.title}) is now sold out.`);
         }
       }
 

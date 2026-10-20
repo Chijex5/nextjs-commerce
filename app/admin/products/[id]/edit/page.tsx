@@ -1,10 +1,13 @@
 import { parseDbTimestamp } from "lib/db/time";
 import { ProductEditor } from "components/admin/products/product-editor";
+import { StockEditor } from "components/admin/products/stock-editor";
 import { Page } from "components/admin/ui";
 import { asc, eq, sql } from "drizzle-orm";
 import { deriveModel } from "lib/admin/product-pricing";
 import { authOptions } from "lib/auth";
 import { db } from "lib/db";
+import { getPairableProducts } from "lib/admin/couples";
+import { parsePairing } from "lib/pairing";
 import {
   collections,
   productCollections,
@@ -35,7 +38,7 @@ export default async function EditProductPage({
     .limit(1);
   if (!product) notFound();
 
-  const [images, variants, options, links, collectionRows, [stats]] =
+  const [images, variants, options, links, collectionRows, [stats], pairable] =
     await Promise.all([
       db
         .select()
@@ -58,13 +61,14 @@ export default async function EditProductPage({
         .orderBy(asc(collections.title)),
       db.execute(sql`
       select
-        coalesce(sum(oi.quantity) filter (where o.created_at >= now() - interval '30 days'), 0) as units,
+        coalesce(sum(oi.quantity * (case when oi.pair_variant_id is null then 1 else 2 end)) filter (where o.created_at >= now() - interval '30 days'), 0) as units,
         coalesce(sum(oi.total_amount) filter (where o.created_at >= now() - interval '30 days'), 0) as revenue,
         count(distinct o.id) as orders,
         max(o.created_at)::text as last_sold
       from order_items oi join orders o on o.id = oi.order_id
       where oi.product_id = ${id}::uuid and o.status <> 'cancelled'
     `) as unknown as Promise<Array<Record<string, unknown>>>,
+      getPairableProducts(),
     ]);
 
   // Featured image first: the shop treats the first image as the main one.
@@ -72,12 +76,14 @@ export default async function EditProductPage({
     (a, b) =>
       Number(b.isFeatured) - Number(a.isFeatured) || a.position - b.position,
   );
+  const optionsOf = (v: (typeof variants)[number]) =>
+    (v.selectedOptions as Array<{ name: string; value: string }>) ?? [];
+  const pairing = parsePairing(product.pairing);
   const { model, exact } = deriveModel(
     options.map((o) => ({ name: o.name, values: o.values })),
     variants.map((v) => ({
       price: Number(v.price),
-      selectedOptions:
-        (v.selectedOptions as Array<{ name: string; value: string }>) ?? [],
+      selectedOptions: optionsOf(v),
     })),
   );
 
@@ -86,6 +92,7 @@ export default async function EditProductPage({
       <ProductEditor
         key={product.updatedAt.toISOString()}
         collections={collectionRows}
+        pairable={pairable}
         stats={{
           units30d: Number(stats?.units ?? 0),
           revenue30d: Number(stats?.revenue ?? 0),
@@ -113,7 +120,26 @@ export default async function EditProductPage({
           collectionIds: links.map((l) => l.collectionId),
           pricing: model,
           pricingExact: exact,
+          pairing: pairing
+            ? {
+                ...pairing,
+                firstProductId: product.pairFirstProductId ?? "",
+                secondProductId: product.pairSecondProductId ?? "",
+              }
+            : null,
         }}
+        stockPanel={
+          <StockEditor
+            key={variants.map((v) => `${v.id}:${v.stockQuantity}`).join(",")}
+            productId={product.id}
+            variants={variants.map((v) => ({
+              id: v.id,
+              selectedOptions: optionsOf(v),
+              trackInventory: v.trackInventory,
+              stockQuantity: v.stockQuantity,
+            }))}
+          />
+        }
       />
     </Page>
   );

@@ -8,18 +8,18 @@ import {
 import { db } from "lib/db";
 import { getCart as getCartById } from "lib/db/queries";
 import { abandonedCarts } from "lib/db/schema";
-import type { Cart } from "lib/types/commerce";
+import { lineKey } from "lib/pairing";
+import type { Cart, CartItem } from "lib/types/commerce";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
+
+const keyOf = (line: CartItem) => lineKey(line.merchandise.id, line.pair?.id);
 
 const buildCartSignature = (cart: Cart | undefined) =>
   JSON.stringify(
     (cart?.lines || [])
-      .map((line) => ({
-        merchandiseId: line.merchandise.id,
-        quantity: line.quantity,
-      }))
-      .sort((a, b) => a.merchandiseId.localeCompare(b.merchandiseId)),
+      .map((line) => ({ key: keyOf(line), quantity: line.quantity }))
+      .sort((a, b) => a.key.localeCompare(b.key)),
   );
 
 export async function POST(request: NextRequest) {
@@ -72,14 +72,12 @@ export async function POST(request: NextRequest) {
     const shouldReplace = sourceSignature !== currentSignature;
 
     if (shouldReplace) {
-      // Compare/replace by merchandise variant id to preserve product identity
-      // across carts where line ids are session-specific.
-      const sourceByVariantId = new Map(
-        sourceCart.lines.map((line) => [line.merchandise.id, line.quantity]),
-      );
+      // Compare/replace by variant (and Hers pair, for couples sets) to keep
+      // product identity across carts where line ids are session-specific.
+      const sourceKeys = new Set(sourceCart.lines.map(keyOf));
 
       const lineIdsToRemove = currentCart.lines
-        .filter((line) => !sourceByVariantId.has(line.merchandise.id))
+        .filter((line) => !sourceKeys.has(keyOf(line)))
         .map((line) => line.id)
         // Cart lines from local-first optimistic state can temporarily miss ids.
         .filter((lineId): lineId is string => Boolean(lineId));
@@ -88,31 +86,30 @@ export async function POST(request: NextRequest) {
         currentCart = await removeFromCart(lineIdsToRemove);
       }
 
-      const linesToUpdate: Array<{
-        id: string;
+      type LineInput = {
         merchandiseId: string;
+        pairMerchandiseId: string | null;
         quantity: number;
-      }> = [];
-      const linesToAdd: Array<{ merchandiseId: string; quantity: number }> = [];
+      };
+      const linesToUpdate: Array<LineInput & { id: string }> = [];
+      const linesToAdd: LineInput[] = [];
 
       for (const sourceLine of sourceCart.lines) {
         const existingLine = currentCart.lines.find(
-          (line) => line.merchandise.id === sourceLine.merchandise.id,
+          (line) => keyOf(line) === keyOf(sourceLine),
         );
+        const input = {
+          merchandiseId: sourceLine.merchandise.id,
+          pairMerchandiseId: sourceLine.pair?.id ?? null,
+          quantity: sourceLine.quantity,
+        };
 
         if (existingLine?.id) {
           if (existingLine.quantity !== sourceLine.quantity) {
-            linesToUpdate.push({
-              id: existingLine.id,
-              merchandiseId: sourceLine.merchandise.id,
-              quantity: sourceLine.quantity,
-            });
+            linesToUpdate.push({ id: existingLine.id, ...input });
           }
         } else {
-          linesToAdd.push({
-            merchandiseId: sourceLine.merchandise.id,
-            quantity: sourceLine.quantity,
-          });
+          linesToAdd.push(input);
         }
       }
 

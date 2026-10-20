@@ -1,6 +1,7 @@
 import { ProductEditor } from "components/admin/products/product-editor";
 import { Page } from "components/admin/ui";
 import { asc } from "drizzle-orm";
+import { getPairableProducts } from "lib/admin/couples";
 import { authOptions } from "lib/auth";
 import { db } from "lib/db";
 import { collections } from "lib/db/schema";
@@ -11,15 +12,19 @@ export default async function NewProductPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/admin/login");
 
-  const collectionRows = await db
-    .select({ id: collections.id, title: collections.title })
-    .from(collections)
-    .orderBy(asc(collections.title));
+  const [collectionRows, pairable] = await Promise.all([
+    db
+      .select({ id: collections.id, title: collections.title })
+      .from(collections)
+      .orderBy(asc(collections.title)),
+    getPairableProducts(),
+  ]);
 
   return (
     <Page className="pt-0 lg:pt-0">
       <ProductEditor
         collections={collectionRows}
+        pairable={pairable}
         initial={{
           title: "",
           handle: "",
@@ -38,6 +43,7 @@ export default async function NewProductPage() {
             colorPrices: {},
           },
           pricingExact: true,
+          pairing: null,
         }}
       />
     </Page>

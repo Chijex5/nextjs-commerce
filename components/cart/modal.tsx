@@ -18,8 +18,9 @@ import {
   getCouponCustomerKey,
   getStoredCoupon,
 } from "lib/coupon-storage";
+import { setTitle } from "lib/pairing";
 import { calculateShippingAmount } from "lib/shipping";
-import type { CartItem, Product } from "lib/types/commerce";
+import type { CartItem } from "lib/types/commerce";
 import { createUrl } from "lib/utils";
 import {
   ChevronDown,
@@ -38,7 +39,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
 import { redirectToCheckout } from "./actions";
-import { useCart } from "./cart-context";
+import { cartLineKey, useCart } from "./cart-context";
 import CouponInput from "./coupon-input";
 import OpenCart from "./open-cart";
 
@@ -67,7 +68,7 @@ export default function CartModal({
   /** Custom trigger; defaults to the bag icon button. Pass null for none. */
   trigger?: ((open: () => void, quantity: number) => ReactNode) | null;
 } = {}) {
-  const { cart, updateCartItem, addCartItem, setCartItemQuantity } = useCart();
+  const { cart, updateCartItem, restoreCartItem } = useCart();
   const { data: session, status } = useUserSession();
   const mounted = useMounted();
   const [isOpen, setIsOpen] = useState(false);
@@ -104,8 +105,9 @@ export default function CartModal({
   const shippingPreview = useMemo(() => {
     if (!cart || !shippingAddress?.state) return null;
     const subtotal = parseFloat(cart.cost.subtotalAmount.amount);
+    // Pairs, as checkout counts them: a couples set is two.
     const totalQuantity = cart.lines.reduce(
-      (sum, line) => sum + line.quantity,
+      (sum, line) => sum + line.quantity * (line.pair ? 2 : 1),
       0,
     );
     return calculateShippingAmount({
@@ -332,28 +334,11 @@ export default function CartModal({
     formatNaira({ amount: String(amount), currencyCode });
 
   const removeLine = (line: CartItem) => {
-    const unit = Number(line.cost.totalAmount.amount) / line.quantity;
-    const quantity = line.quantity;
-    updateCartItem(line.merchandise.id, "delete");
+    updateCartItem(cartLineKey(line), "delete");
     toast(`${line.merchandise.product.title} removed`, {
       action: {
         label: "Undo",
-        onClick: () => {
-          addCartItem(
-            {
-              id: line.merchandise.id,
-              title: line.merchandise.title,
-              availableForSale: true,
-              selectedOptions: line.merchandise.selectedOptions,
-              price: {
-                amount: String(unit),
-                currencyCode: line.cost.totalAmount.currencyCode,
-              },
-            },
-            line.merchandise.product as unknown as Product,
-          );
-          if (quantity > 1) setCartItemQuantity(line.merchandise.id, quantity);
-        },
+        onClick: () => restoreCartItem({ ...line, id: undefined }),
       },
     });
   };
@@ -421,12 +406,15 @@ export default function CartModal({
                 <ul className="flex-1 overflow-y-auto overscroll-contain px-5">
                   {lines.map((item) => {
                     const params = {} as MerchandiseSearchParams;
-                    item.merchandise.selectedOptions.forEach(
-                      ({ name, value }) => {
-                        if (value !== DEFAULT_OPTION)
-                          params[name.toLowerCase()] = value;
-                      },
-                    );
+                    const key = cartLineKey(item);
+                    // A set links to its couple listing, which has no options.
+                    if (!item.pair)
+                      item.merchandise.selectedOptions.forEach(
+                        ({ name, value }) => {
+                          if (value !== DEFAULT_OPTION)
+                            params[name.toLowerCase()] = value;
+                        },
+                      );
                     const href = createUrl(
                       `/product/${item.merchandise.product.handle}`,
                       new URLSearchParams(params),
@@ -435,7 +423,7 @@ export default function CartModal({
 
                     return (
                       <li
-                        key={item.id ?? item.merchandise.id}
+                        key={item.id ?? key}
                         className="animate-fade-in flex gap-4 border-b border-line py-5"
                       >
                         <Link
@@ -468,7 +456,15 @@ export default function CartModal({
                               {formatNaira(item.cost.totalAmount)}
                             </span>
                           </div>
-                          {item.merchandise.title !== DEFAULT_OPTION ? (
+                          {item.pair ? (
+                            <p className="label mt-1 text-fg-3">
+                              {setTitle(
+                                item.merchandise.selectedOptions,
+                                item.pair.selectedOptions,
+                                item.pair.labels,
+                              )}
+                            </p>
+                          ) : item.merchandise.title !== DEFAULT_OPTION ? (
                             <p className="label mt-1 text-fg-3">
                               {item.merchandise.selectedOptions
                                 .map((o) => `${o.name} ${o.value}`)
@@ -483,10 +479,7 @@ export default function CartModal({
                                 onClick={() =>
                                   item.quantity <= 1
                                     ? removeLine(item)
-                                    : updateCartItem(
-                                        item.merchandise.id,
-                                        "minus",
-                                      )
+                                    : updateCartItem(key, "minus")
                                 }
                                 className="grid h-full w-9 place-items-center active:bg-plate"
                               >
@@ -498,9 +491,7 @@ export default function CartModal({
                               <button
                                 type="button"
                                 aria-label="Increase quantity"
-                                onClick={() =>
-                                  updateCartItem(item.merchandise.id, "plus")
-                                }
+                                onClick={() => updateCartItem(key, "plus")}
                                 className="grid h-full w-9 place-items-center active:bg-plate"
                               >
                                 <Plus className="size-3.5" />

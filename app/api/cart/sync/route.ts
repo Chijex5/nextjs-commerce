@@ -6,10 +6,13 @@ import {
   updateCart,
 } from "lib/database";
 import { isMockData } from "lib/data/source";
+import { lineKey } from "lib/pairing";
 import { NextRequest, NextResponse } from "next/server";
 
 type SyncItem = {
   merchandiseId: string;
+  /** The Hers variant when the line is a couples set. */
+  pairMerchandiseId?: string | null;
   quantity: number;
 };
 
@@ -38,12 +41,17 @@ export async function POST(request: NextRequest) {
 
     for (const item of items) {
       const merchandiseId = item?.merchandiseId;
+      const pairMerchandiseId =
+        typeof item?.pairMerchandiseId === "string" && item.pairMerchandiseId
+          ? item.pairMerchandiseId
+          : null;
       const quantity = Math.max(0, Math.floor(item?.quantity ?? 0));
 
       if (!merchandiseId) continue;
 
+      const key = lineKey(merchandiseId, pairMerchandiseId);
       const existingLine = cart.lines.find(
-        (line) => line.merchandise.id === merchandiseId,
+        (line) => lineKey(line.merchandise.id, line.pair?.id) === key,
       );
 
       if (quantity === 0) {
@@ -58,6 +66,7 @@ export async function POST(request: NextRequest) {
           {
             id: existingLine.id,
             merchandiseId,
+            pairMerchandiseId,
             quantity,
           },
         ]);
@@ -65,6 +74,7 @@ export async function POST(request: NextRequest) {
         cart = await addToCart([
           {
             merchandiseId,
+            pairMerchandiseId,
             quantity,
           },
         ]);

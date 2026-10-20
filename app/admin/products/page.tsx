@@ -51,12 +51,13 @@ const hasImage = exists(
     .from(productImages)
     .where(eq(productImages.productId, products.id)),
 );
-const hasVariant = exists(
+// A couple listing has no variants of its own: it sells its two products'.
+const hasVariant = sql`(${products.pairing} is not null or ${exists(
   db
     .select({ x: sql`1` })
     .from(productVariants)
     .where(eq(productVariants.productId, products.id)),
-);
+)})`;
 const inCollection = exists(
   db
     .select({ x: sql`1` })
@@ -96,7 +97,7 @@ const SORTS = {
   newest: desc(products.createdAt),
   updated: desc(products.updatedAt),
   title: asc(products.title),
-  "best-selling": sql`(select coalesce(sum(oi.quantity), 0) from order_items oi join orders o on o.id = oi.order_id
+  "best-selling": sql`(select coalesce(sum(oi.quantity * (case when oi.pair_variant_id is null then 1 else 2 end)), 0) from order_items oi join orders o on o.id = oi.order_id
      where oi.product_id = ${products.id} and o.status <> 'cancelled'
        and o.created_at >= now() - interval '30 days') desc`,
 } as const;
@@ -240,7 +241,7 @@ export default async function ProductsPage({
           )
           .where(inArray(productCollections.productId, ids)),
         db.execute(sql`
-          select oi.product_id, coalesce(sum(oi.quantity), 0) as units, coalesce(sum(oi.total_amount), 0) as revenue
+          select oi.product_id, coalesce(sum(oi.quantity * (case when oi.pair_variant_id is null then 1 else 2 end)), 0) as units, coalesce(sum(oi.total_amount), 0) as revenue
           from order_items oi join orders o on o.id = oi.order_id
           where o.status <> 'cancelled' and o.created_at >= now() - interval '30 days'
             and oi.product_id in (${sql.join(

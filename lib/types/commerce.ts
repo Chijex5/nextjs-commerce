@@ -2,6 +2,7 @@
  * Storefront domain types shared by the data layer and UI. (These started
  * life as Shopify's shapes; the Shopify client itself is gone.)
  */
+import type { PairingConfig } from "lib/pairing";
 
 export type Money = {
   amount: string;
@@ -42,6 +43,20 @@ export type CartItem = {
     }[];
     product: CartProduct;
   };
+  /**
+   * A couple set: the second pair, bought with `merchandise` (the first).
+   * `merchandise.product` is then the couple listing.
+   */
+  pair?: CartLineVariant & { labels?: [string, string] };
+};
+
+export type CartLineVariant = {
+  id: string;
+  title: string;
+  selectedOptions: {
+    name: string;
+    value: string;
+  }[];
 };
 
 export type Cart = {
@@ -116,4 +131,11 @@ export type Product = {
   seo: SEO;
   tags: string[];
   updatedAt: string;
+  /** Set when this is a couple listing (lib/pairing.ts). */
+  pairing?: PairingConfig | null;
+  /**
+   * A couple listing's two products, when both are on sale. A couple
+   * listing has no variants of its own: customers pick one of each.
+   */
+  couple?: { first: Product; second: Product } | null;
 };

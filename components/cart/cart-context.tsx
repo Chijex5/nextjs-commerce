@@ -1,5 +1,6 @@
 "use client";
 
+import { lineKey, setUnitPrice } from "lib/pairing";
 import type {
     Cart,
     CartItem,
@@ -19,17 +20,37 @@ import React, {
 
 type UpdateType = "plus" | "minus" | "delete";
 
+/** Identifies a bag line: its variant, plus the second pair for a couple set. */
+export const cartLineKey = (line: CartItem) =>
+  lineKey(line.merchandise.id, line.pair?.id);
+
 type CartContextType = {
   cart: Cart | undefined;
-  addCartItem: (variant: ProductVariant, product: Product) => void;
-  updateCartItem: (merchandiseId: string, updateType: UpdateType) => void;
-  setCartItemQuantity: (merchandiseId: string, quantity: number) => void;
+  /**
+   * Adds one. For a couple set, `product` is the couple listing, `variant`
+   * the first pair and `pair` the second.
+   */
+  addCartItem: (
+    variant: ProductVariant,
+    product: Product,
+    pair?: ProductVariant,
+  ) => void;
+  /** Puts a removed line back as it was (undo). */
+  restoreCartItem: (line: CartItem) => void;
+  updateCartItem: (key: string, updateType: UpdateType) => void;
+  setCartItemQuantity: (key: string, quantity: number) => void;
   clearCart: () => void;
   replaceCart: (nextCart: Cart | undefined) => void;
   syncPendingCount: number;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+
+type PendingSync = {
+  merchandiseId: string;
+  pairMerchandiseId: string | null;
+  quantity: number;
+};
 
 const LOCAL_CART_STORAGE_KEY = "local-first-cart";
 const DEFAULT_CURRENCY_CODE = "NGN";
@@ -106,6 +127,37 @@ function safeWriteLocalCart(cart: Cart | undefined): void {
   }
 }
 
+/** The line with its quantity changed (0 removes it), totals recomputed. */
+function withQuantity(cart: Cart, key: string, quantity: number): Cart {
+  const currencyCode =
+    cart.cost.totalAmount.currencyCode || DEFAULT_CURRENCY_CODE;
+  const nextLines =
+    quantity <= 0
+      ? cart.lines.filter((line) => cartLineKey(line) !== key)
+      : cart.lines.map((line) => {
+          if (cartLineKey(line) !== key) return line;
+          const unitPrice = String(
+            Number(line.cost.totalAmount.amount) / line.quantity,
+          );
+          return {
+            ...line,
+            quantity,
+            cost: {
+              ...line.cost,
+              totalAmount: {
+                ...line.cost.totalAmount,
+                amount: calculateItemCost(quantity, unitPrice),
+              },
+            },
+          };
+        });
+  return {
+    ...cart,
+    lines: nextLines,
+    ...computeCartTotals(nextLines, currencyCode),
+  };
+}
+
 export function CartProvider({
   children,
   cartPromise,
@@ -119,7 +171,7 @@ export function CartProvider({
   );
   const cartRef = useRef<Cart | undefined>(normalizeCart(serverCart));
   const [syncPendingCount, setSyncPendingCount] = useState(0);
-  const pendingQuantitiesRef = useRef<Map<string, number>>(new Map());
+  const pendingQuantitiesRef = useRef<Map<string, PendingSync>>(new Map());
   const isSyncingRef = useRef(false);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -127,15 +179,21 @@ export function CartProvider({
     cartRef.current = cart;
   }, [cart]);
 
+  // Bag edits read and write the ref synchronously, so quick taps build on
+  // each other instead of on a render that hasn't happened yet.
+  const commit = useCallback((next: Cart | undefined) => {
+    cartRef.current = next;
+    setCart(next);
+    safeWriteLocalCart(next);
+  }, []);
+
   const flushSyncQueue = useCallback(async () => {
     if (isSyncingRef.current) return;
     if (pendingQuantitiesRef.current.size === 0) return;
 
     isSyncingRef.current = true;
 
-    const payload = Array.from(pendingQuantitiesRef.current.entries()).map(
-      ([merchandiseId, quantity]) => ({ merchandiseId, quantity }),
-    );
+    const payload = Array.from(pendingQuantitiesRef.current.values());
     pendingQuantitiesRef.current.clear();
     setSyncPendingCount(0);
 
@@ -155,12 +213,16 @@ export function CartProvider({
       const result = (await response.json()) as { cart?: Cart | null };
       if (result.cart) {
         const normalized = normalizeCart(result.cart);
+        cartRef.current = normalized;
         setCart(normalized);
         safeWriteLocalCart(normalized);
       }
     } catch (error) {
       for (const item of payload) {
-        pendingQuantitiesRef.current.set(item.merchandiseId, item.quantity);
+        pendingQuantitiesRef.current.set(
+          lineKey(item.merchandiseId, item.pairMerchandiseId),
+          item,
+        );
       }
       setSyncPendingCount(pendingQuantitiesRef.current.size);
     } finally {
@@ -174,8 +236,13 @@ export function CartProvider({
   }, []);
 
   const queueQuantitySync = useCallback(
-    (merchandiseId: string, quantity: number) => {
-      pendingQuantitiesRef.current.set(merchandiseId, Math.max(0, quantity));
+    (line: CartItem, quantity: number) => {
+      const merchandiseId = line.merchandise.id;
+      const pairMerchandiseId = line.pair?.id ?? null;
+      pendingQuantitiesRef.current.set(
+        lineKey(merchandiseId, pairMerchandiseId),
+        { merchandiseId, pairMerchandiseId, quantity: Math.max(0, quantity) },
+      );
       setSyncPendingCount(pendingQuantitiesRef.current.size);
 
       if (syncTimerRef.current) {
@@ -190,185 +257,131 @@ export function CartProvider({
   );
 
   const setCartItemQuantity = useCallback(
-    (merchandiseId: string, quantity: number) => {
-      const nextQuantityForQueue = Math.max(0, quantity);
-      setCart((prev) => {
-        const current = normalizeCart(prev);
-        const currencyCode =
-          current.cost.totalAmount.currencyCode || DEFAULT_CURRENCY_CODE;
-        const existing = current.lines.find(
-          (line) => line.merchandise.id === merchandiseId,
-        );
+    (key: string, quantity: number) => {
+      const target = normalizeCart(cartRef.current).lines.find(
+        (line) => cartLineKey(line) === key,
+      );
+      if (!target) return;
+      const nextQuantity = Math.max(0, quantity);
 
-        if (!existing) return current;
-
-        const nextQuantity = Math.max(0, quantity);
-        const unitPrice = String(
-          Number(existing.cost.totalAmount.amount) / existing.quantity,
-        );
-
-        const nextLines =
-          nextQuantity === 0
-            ? current.lines.filter(
-                (line) => line.merchandise.id !== merchandiseId,
-              )
-            : current.lines.map((line) =>
-                line.merchandise.id === merchandiseId
-                  ? {
-                      ...line,
-                      quantity: nextQuantity,
-                      cost: {
-                        ...line.cost,
-                        totalAmount: {
-                          ...line.cost.totalAmount,
-                          amount: calculateItemCost(nextQuantity, unitPrice),
-                        },
-                      },
-                    }
-                  : line,
-              );
-
-        const nextCart = {
-          ...current,
-          lines: nextLines,
-          ...computeCartTotals(nextLines, currencyCode),
-        };
-
-        safeWriteLocalCart(nextCart);
-        return nextCart;
-      });
-
-      queueQuantitySync(merchandiseId, nextQuantityForQueue);
+      commit(withQuantity(normalizeCart(cartRef.current), key, nextQuantity));
+      queueQuantitySync(target, nextQuantity);
     },
-    [queueQuantitySync],
+    [commit, queueQuantitySync],
   );
 
   const updateCartItem = useCallback(
-    (merchandiseId: string, updateType: UpdateType) => {
-      let queuedQuantity = 0;
+    (key: string, updateType: UpdateType) => {
+      const target = normalizeCart(cartRef.current).lines.find(
+        (line) => cartLineKey(line) === key,
+      );
+      if (!target) return;
+      const nextQuantity = Math.max(
+        0,
+        updateType === "plus"
+          ? target.quantity + 1
+          : updateType === "minus"
+            ? target.quantity - 1
+            : 0,
+      );
 
-      setCart((prev) => {
-        const current = normalizeCart(prev);
-        const target = current.lines.find(
-          (line) => line.merchandise.id === merchandiseId,
-        );
-        if (!target) return current;
-
-        const nextQuantity =
-          updateType === "plus"
-            ? target.quantity + 1
-            : updateType === "minus"
-              ? target.quantity - 1
-              : 0;
-
-        const currencyCode =
-          current.cost.totalAmount.currencyCode || DEFAULT_CURRENCY_CODE;
-        const unitPrice = String(
-          Number(target.cost.totalAmount.amount) / target.quantity,
-        );
-
-        const nextLines =
-          nextQuantity <= 0
-            ? current.lines.filter(
-                (line) => line.merchandise.id !== merchandiseId,
-              )
-            : current.lines.map((line) =>
-                line.merchandise.id === merchandiseId
-                  ? {
-                      ...line,
-                      quantity: nextQuantity,
-                      cost: {
-                        ...line.cost,
-                        totalAmount: {
-                          ...line.cost.totalAmount,
-                          amount: calculateItemCost(nextQuantity, unitPrice),
-                        },
-                      },
-                    }
-                  : line,
-              );
-
-        const nextCart = {
-          ...current,
-          lines: nextLines,
-          ...computeCartTotals(nextLines, currencyCode),
-        };
-
-        queuedQuantity = Math.max(0, nextQuantity);
-
-        safeWriteLocalCart(nextCart);
-        return nextCart;
-      });
-
-      queueQuantitySync(merchandiseId, queuedQuantity);
+      commit(withQuantity(normalizeCart(cartRef.current), key, nextQuantity));
+      queueQuantitySync(target, nextQuantity);
     },
-    [queueQuantitySync],
+    [commit, queueQuantitySync],
   );
 
   const addCartItem = useCallback(
-    (variant: ProductVariant, product: Product) => {
-      let queuedQuantity = 1;
+    (variant: ProductVariant, product: Product, pair?: ProductVariant) => {
+      const set = pair && product.pairing ? pair : undefined;
+      const key = lineKey(variant.id, set?.id);
+      const unitPrice = set
+        ? String(
+            setUnitPrice(
+              Number(variant.price.amount),
+              Number(set.price.amount),
+              product.pairing!,
+            ),
+          )
+        : variant.price.amount;
 
-      setCart((prev) => {
-        const current = normalizeCart(prev);
-        const currencyCode =
-          variant.price.currencyCode ||
-          current.cost.totalAmount.currencyCode ||
-          DEFAULT_CURRENCY_CODE;
-        const existing = current.lines.find(
-          (line) => line.merchandise.id === variant.id,
-        );
-        const nextQuantity = (existing?.quantity ?? 0) + 1;
+      const current = normalizeCart(cartRef.current);
+      const currencyCode =
+        variant.price.currencyCode ||
+        current.cost.totalAmount.currencyCode ||
+        DEFAULT_CURRENCY_CODE;
+      const existing = current.lines.find((line) => cartLineKey(line) === key);
+      const nextQuantity = (existing?.quantity ?? 0) + 1;
 
-        const updatedLine: CartItem = {
-          id: existing?.id,
-          quantity: nextQuantity,
-          cost: {
-            totalAmount: {
-              amount: calculateItemCost(nextQuantity, variant.price.amount),
-              currencyCode,
-            },
+      const updatedLine: CartItem = {
+        id: existing?.id,
+        quantity: nextQuantity,
+        cost: {
+          totalAmount: {
+            amount: calculateItemCost(nextQuantity, unitPrice),
+            currencyCode,
           },
-          merchandise: {
-            id: variant.id,
-            title: variant.title,
-            selectedOptions: variant.selectedOptions,
-            product: {
-              id: product.id,
-              handle: product.handle,
-              title: product.title,
-              featuredImage: product.featuredImage,
-            },
+        },
+        merchandise: {
+          id: variant.id,
+          title: variant.title,
+          selectedOptions: variant.selectedOptions,
+          product: {
+            id: product.id,
+            handle: product.handle,
+            title: product.title,
+            featuredImage: product.featuredImage,
           },
-        };
+        },
+        ...(set
+          ? {
+              pair: {
+                id: set.id,
+                title: set.title,
+                selectedOptions: set.selectedOptions,
+                labels: product.pairing!.labels,
+              },
+            }
+          : {}),
+      };
 
-        const nextLines = existing
-          ? current.lines.map((line) =>
-              line.merchandise.id === variant.id ? updatedLine : line,
-            )
-          : [...current.lines, updatedLine];
-
-        const nextCart = {
-          ...current,
-          lines: nextLines,
-          ...computeCartTotals(nextLines, currencyCode),
-        };
-
-        queuedQuantity = nextQuantity;
-
-        safeWriteLocalCart(nextCart);
-        return nextCart;
+      const nextLines = existing
+        ? current.lines.map((line) =>
+            cartLineKey(line) === key ? updatedLine : line,
+          )
+        : [...current.lines, updatedLine];
+      commit({
+        ...current,
+        lines: nextLines,
+        ...computeCartTotals(nextLines, currencyCode),
       });
-
-      queueQuantitySync(variant.id, queuedQuantity);
+      queueQuantitySync(updatedLine, nextQuantity);
     },
-    [queueQuantitySync],
+    [commit, queueQuantitySync],
+  );
+
+  const restoreCartItem = useCallback(
+    (line: CartItem) => {
+      const key = cartLineKey(line);
+      const current = normalizeCart(cartRef.current);
+      const currencyCode =
+        current.cost.totalAmount.currencyCode || DEFAULT_CURRENCY_CODE;
+      const nextLines = [
+        ...current.lines.filter((l) => cartLineKey(l) !== key),
+        line,
+      ];
+      commit({
+        ...current,
+        lines: nextLines,
+        ...computeCartTotals(nextLines, currencyCode),
+      });
+      queueQuantitySync(line, line.quantity);
+    },
+    [commit, queueQuantitySync],
   );
 
   const clearCart = useCallback(() => {
-    const lineIdsToClear = (cartRef.current?.lines || []).map(
-      (line) => line.merchandise.id,
-    );
+    const linesToClear = cartRef.current?.lines || [];
 
     if (syncTimerRef.current) {
       clearTimeout(syncTimerRef.current);
@@ -378,18 +391,16 @@ export function CartProvider({
     pendingQuantitiesRef.current.clear();
     setSyncPendingCount(0);
 
-    for (const lineId of lineIdsToClear) {
-      queueQuantitySync(lineId, 0);
+    for (const line of linesToClear) {
+      queueQuantitySync(line, 0);
     }
 
-    setCart((prev) => {
-      const currencyCode =
-        normalizeCart(prev).cost?.totalAmount?.currencyCode ||
-        DEFAULT_CURRENCY_CODE;
-      const emptyCart = createEmptyCart(currencyCode);
-      safeWriteLocalCart(undefined);
-      return emptyCart;
-    });
+    const currencyCode =
+      normalizeCart(cartRef.current).cost?.totalAmount?.currencyCode ||
+      DEFAULT_CURRENCY_CODE;
+    cartRef.current = createEmptyCart(currencyCode);
+    setCart(cartRef.current);
+    safeWriteLocalCart(undefined);
   }, [queueQuantitySync]);
 
   const replaceCart = useCallback((nextCart: Cart | undefined) => {
@@ -400,17 +411,16 @@ export function CartProvider({
     pendingQuantitiesRef.current.clear();
     setSyncPendingCount(0);
 
-    const normalized = normalizeCart(nextCart);
-    setCart(normalized);
-    safeWriteLocalCart(normalized);
-  }, []);
+    commit(normalizeCart(nextCart));
+  }, [commit]);
 
   useEffect(() => {
     const localCart = safeReadLocalCart();
     if (localCart) {
+      cartRef.current = localCart;
       setCart(localCart);
       for (const line of localCart.lines) {
-        queueQuantitySync(line.merchandise.id, line.quantity);
+        queueQuantitySync(line, line.quantity);
       }
       return;
     }
@@ -433,6 +443,7 @@ export function CartProvider({
       value={{
         cart,
         addCartItem,
+        restoreCartItem,
         updateCartItem,
         setCartItemQuantity,
         clearCart,

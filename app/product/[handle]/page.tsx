@@ -1,11 +1,16 @@
 import Footer from "components/layout/footer";
 import { ProductCard } from "components/product/product-card";
+import {
+  CoupleOffers,
+  CouplePurchase,
+} from "components/product/couple-purchase";
 import { ProductGallery } from "components/product/product-gallery";
 import { ProductPurchase } from "components/product/product-purchase";
 import { ProductReviewsSection } from "components/product/product-reviews-section";
 import Prose from "components/prose";
 import { HIDDEN_PRODUCT_TAG } from "lib/constants";
 import {
+  getCoupleOffers,
   getProductReviews,
   getProductView,
   getRelatedProducts,
@@ -61,9 +66,10 @@ export default async function ProductPage(props: Props) {
   const product = await getProductView(params.handle);
   if (!product) return notFound();
 
-  const [reviews, related] = await Promise.all([
+  const [reviews, related, coupleOffers] = await Promise.all([
     getProductReviews(product.id),
     getRelatedProducts(product),
+    getCoupleOffers(product),
   ]);
   const rating = Number(reviews.averageRating);
   const hasRating =
@@ -126,7 +132,12 @@ export default async function ProductPage(props: Props) {
                 </a>
               ) : null}
 
-              <ProductPurchase product={product} />
+              {product.pairing ? (
+                <CouplePurchase product={product} />
+              ) : (
+                <ProductPurchase product={product} />
+              )}
+              <CoupleOffers product={product} listings={coupleOffers} />
 
               <p className="mt-5 text-sm text-fg-2">
                 Delivered anywhere in Nigeria — the fee for your state is shown
@@ -279,7 +290,7 @@ function productJsonLd(
       priceCurrency: product.priceRange.minVariantPrice.currencyCode,
       highPrice: product.priceRange.maxVariantPrice.amount,
       lowPrice: product.priceRange.minVariantPrice.amount,
-      offerCount: product.variants.length,
+      offerCount: product.couple ? 1 : product.variants.length,
     },
   };
   if (rating !== null) {

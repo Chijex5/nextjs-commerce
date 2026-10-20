@@ -66,6 +66,29 @@ export const ColorPriceSchema = z.record(
     ),
 );
 
+const PairLabelSchema = z
+  .string()
+  .trim()
+  .min(1, "Name both pairs")
+  .max(20, "Pair names can be at most 20 characters");
+
+/** A couple listing: two products sold together, and the set discount. */
+export const PairingSchema = z
+  .object({
+    firstProductId: z.string().uuid("Choose the first product"),
+    secondProductId: z.string().uuid("Choose the second product"),
+    labels: z.tuple([PairLabelSchema, PairLabelSchema]),
+    discountType: z.enum(["fixed", "percentage"]),
+    discountValue: z.coerce
+      .number()
+      .nonnegative("Set discount cannot be negative")
+      .max(999999999),
+  })
+  .refine((p) => p.discountType !== "percentage" || p.discountValue <= 90, {
+    message: "A percentage set discount can be at most 90%",
+    path: ["discountValue"],
+  });
+
 /* ─── Product Creation/Update Schema ──────────────────────────────────── */
 
 export const CreateProductSchema = z.object({
@@ -118,6 +141,11 @@ export const CreateProductSchema = z.object({
     .array(z.string().uuid("Invalid collection ID"))
     .optional()
     .default([]),
+  /**
+   * Makes this a couple listing (only when creating it); on an existing
+   * couple listing, updates its products and discount.
+   */
+  pairing: PairingSchema.optional(),
 });
 
 /* ─── CSV Import Schema ──────────────────────────────────────────────── */

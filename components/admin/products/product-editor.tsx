@@ -4,6 +4,11 @@ import ImageCropModal from "components/admin/ImageCropModal";
 import { Panel, StatList, StatRow, StatusPill } from "components/admin/ui";
 import { uploadImage } from "components/admin/ui/image-upload";
 import { RichTextEditor } from "components/admin/ui/rich-text-editor";
+import {
+  CouplesPair,
+  type CoupleDraft,
+  type PairableProduct,
+} from "./couples-pair";
 import { buttonClass } from "components/ui/button";
 import clsx from "clsx";
 import { money, pairs, timeAgo } from "lib/admin/format";
@@ -38,7 +43,8 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { MAX_PERCENT } from "lib/pairing";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 const MAX_IMAGES = 8;
@@ -59,6 +65,8 @@ export type ProductEditorValues = {
   pricing: PricingModel;
   /** False when saved prices can't be shown as simple rules. */
   pricingExact: boolean;
+  /** Set for a couple listing: two products sold together as a set. */
+  pairing: CoupleDraft | null;
 };
 
 export type ProductStats = {
@@ -145,10 +153,16 @@ export function ProductEditor({
   initial,
   collections,
   stats,
+  stockPanel,
+  pairable = [],
 }: {
   initial: ProductEditorValues;
   collections: Array<{ id: string; title: string }>;
   stats?: ProductStats;
+  /** Products a couple set can be made from. */
+  pairable?: PairableProduct[];
+  /** Saved separately (stock changes without rebuilding variants). */
+  stockPanel?: ReactNode;
 }) {
   const router = useRouter();
   const isNew = !initial.id;
@@ -200,7 +214,20 @@ export function ProductEditor({
       return toast.error(
         "The URL can only use lowercase letters, numbers and hyphens",
       );
-    if (pricingTouched) {
+    const couple = v.pairing;
+    if (couple) {
+      if (!couple.firstProductId || !couple.secondProductId)
+        return toast.error("Choose both products in the couple set");
+      if (couple.firstProductId === couple.secondProductId)
+        return toast.error("Choose two different products");
+      if (!couple.labels[0].trim() || !couple.labels[1].trim())
+        return toast.error("Name both pairs (e.g. His and Hers)");
+      if (
+        couple.discountType === "percentage" &&
+        couple.discountValue > MAX_PERCENT
+      )
+        return toast.error(`A set discount can be at most ${MAX_PERCENT}%`);
+    } else if (pricingTouched) {
       if (!(p.basePrice > 0)) return toast.error("Set a price");
       if (!p.sizes.length && !p.colors.length)
         return toast.error("Add at least one size or colour");
@@ -224,10 +251,19 @@ export function ProductEditor({
         isFeatured: i === 0,
       })),
       collectionIds: v.collectionIds,
-      basePrice: p.basePrice,
+      // A couple listing has no sizes or prices of its own.
+      ...(couple
+        ? {
+            pairing: {
+              ...couple,
+              labels: couple.labels.map((l) => l.trim()),
+            },
+          }
+        : {}),
+      basePrice: couple ? 0 : p.basePrice,
       // Variants are only rebuilt when sizes/colours are sent, so untouched
       // pricing (including prices set in the bulk editor) is left alone.
-      ...(pricingTouched
+      ...(pricingTouched && !couple
         ? {
             sizes: p.sizes,
             colors: p.colors,
@@ -356,28 +392,39 @@ export function ProductEditor({
 
           <Photos images={v.images} onChange={(images) => set({ images })} />
 
-          <Panel
-            title="Sizes, colours & prices"
-            description="Every size and colour combination becomes something a customer can pick. Check the table below before saving."
-          >
-            {!v.pricingExact && !pricingTouched ? (
-              <div className="mb-5 flex items-start gap-3 border border-amber-500/50 bg-amber-500/5 p-4 text-sm">
-                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
-                <div>
-                  <p className="font-medium text-fg">
-                    Some prices were set individually
-                  </p>
-                  <p className="mt-0.5 text-fg-2">
-                    They can't be shown as simple rules, so they're kept as they
-                    are. Changing anything below replaces them with the rules
-                    you set here.
-                  </p>
+          <CouplesPair
+            value={v.pairing}
+            products={pairable}
+            isNew={isNew}
+            onChange={(pairing) => set({ pairing })}
+          />
+
+          {v.pairing ? null : (
+            <Panel
+              title="Sizes, colours & prices"
+              description="Every size and colour combination becomes something a customer can pick. Check the table below before saving."
+            >
+              {!v.pricingExact && !pricingTouched ? (
+                <div className="mb-5 flex items-start gap-3 border border-amber-500/50 bg-amber-500/5 p-4 text-sm">
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+                  <div>
+                    <p className="font-medium text-fg">
+                      Some prices were set individually
+                    </p>
+                    <p className="mt-0.5 text-fg-2">
+                      They can't be shown as simple rules, so they're kept as
+                      they are. Changing anything below replaces them with the
+                      rules you set here.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ) : null}
-            <Pricing model={v.pricing} onChange={setPricing} />
-            <VariantTable variants={variants} />
-          </Panel>
+              ) : null}
+              <Pricing model={v.pricing} onChange={setPricing} />
+              <VariantTable variants={variants} />
+            </Panel>
+          )}
+
+          {v.pairing ? null : stockPanel}
         </div>
 
         <aside className="space-y-6">

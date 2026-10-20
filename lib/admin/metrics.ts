@@ -78,8 +78,9 @@ async function salesTotals(start: Date, end: Date): Promise<SalesTotals> {
     where o.created_at >= ${utc(start)} and o.created_at < ${utc(end)}
   `);
 
+  // Units are pairs: a couples set line (pair_variant_id set) is two.
   const [units] = await rows<Record<string, unknown>>(sql`
-    select coalesce(sum(oi.quantity), 0) as units
+    select coalesce(sum(oi.quantity * (case when oi.pair_variant_id is null then 1 else 2 end)), 0) as units
     from order_items oi
     join orders o on o.id = oi.order_id
     where o.created_at >= ${utc(start)} and o.created_at < ${utc(end)} and ${SALE}
@@ -240,7 +241,7 @@ export async function getTopProducts(
   }>(sql`
     select oi.product_id, max(oi.product_title) as title,
       coalesce(sum(oi.total_amount), 0) as revenue,
-      coalesce(sum(oi.quantity), 0) as units
+      coalesce(sum(oi.quantity * (case when oi.pair_variant_id is null then 1 else 2 end)), 0) as units
     from order_items oi
     join orders o on o.id = oi.order_id
     where o.created_at >= ${utc(range.start)} and o.created_at < ${utc(range.end)} and ${SALE}
