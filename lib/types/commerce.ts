@@ -43,8 +43,11 @@ export type CartItem = {
     }[];
     product: CartProduct;
   };
-  /** A couples set: the Hers pair bought with `merchandise` (His). */
-  pair?: CartLineVariant;
+  /**
+   * A couple set: the second pair, bought with `merchandise` (the first).
+   * `merchandise.product` is then the couple listing.
+   */
+  pair?: CartLineVariant & { labels?: [string, string] };
 };
 
 export type CartLineVariant = {
@@ -128,6 +131,11 @@ export type Product = {
   seo: SEO;
   tags: string[];
   updatedAt: string;
-  /** Set when sold as a his + hers couples pair (lib/pairing.ts). */
+  /** Set when this is a couple listing (lib/pairing.ts). */
   pairing?: PairingConfig | null;
+  /**
+   * A couple listing's two products, when both are on sale. A couple
+   * listing has no variants of its own: customers pick one of each.
+   */
+  couple?: { first: Product; second: Product } | null;
 };

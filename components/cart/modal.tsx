@@ -18,7 +18,7 @@ import {
   getCouponCustomerKey,
   getStoredCoupon,
 } from "lib/coupon-storage";
-import { HERS, HIS, pairLabel } from "lib/pairing";
+import { setTitle } from "lib/pairing";
 import { calculateShippingAmount } from "lib/shipping";
 import type { CartItem } from "lib/types/commerce";
 import { createUrl } from "lib/utils";
@@ -407,12 +407,14 @@ export default function CartModal({
                   {lines.map((item) => {
                     const params = {} as MerchandiseSearchParams;
                     const key = cartLineKey(item);
-                    item.merchandise.selectedOptions.forEach(
-                      ({ name, value }) => {
-                        if (value !== DEFAULT_OPTION)
-                          params[name.toLowerCase()] = value;
-                      },
-                    );
+                    // A set links to its couple listing, which has no options.
+                    if (!item.pair)
+                      item.merchandise.selectedOptions.forEach(
+                        ({ name, value }) => {
+                          if (value !== DEFAULT_OPTION)
+                            params[name.toLowerCase()] = value;
+                        },
+                      );
                     const href = createUrl(
                       `/product/${item.merchandise.product.handle}`,
                       new URLSearchParams(params),
@@ -456,9 +458,11 @@ export default function CartModal({
                           </div>
                           {item.pair ? (
                             <p className="label mt-1 text-fg-3">
-                              Couple set · {HIS}{" "}
-                              {pairLabel(item.merchandise.selectedOptions)} ·{" "}
-                              {HERS} {pairLabel(item.pair.selectedOptions)}
+                              {setTitle(
+                                item.merchandise.selectedOptions,
+                                item.pair.selectedOptions,
+                                item.pair.labels,
+                              )}
                             </p>
                           ) : item.merchandise.title !== DEFAULT_OPTION ? (
                             <p className="label mt-1 text-fg-3">

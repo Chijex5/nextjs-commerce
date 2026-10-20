@@ -3,7 +3,6 @@
 import { Panel } from "components/admin/ui";
 import { buttonClass } from "components/ui/button";
 import clsx from "clsx";
-import { HERS, HIS, wearerOf } from "lib/pairing";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -23,8 +22,7 @@ const unique = (values: string[]) => [...new Set(values)];
 
 /**
  * Made to order (never sells out) or kept in stock (sells until the count
- * hits zero). Couples pairs get a His grid and a Hers grid: a set takes one
- * pair from each.
+ * hits zero). Couple sets sold from this product take from the same counts.
  */
 export function StockEditor({
   productId,
@@ -49,23 +47,17 @@ export function StockEditor({
       (v) => tracked && (counts[v.id] ?? 0) !== (v.stockQuantity ?? 0),
     );
 
-  const groups = useMemo(() => {
-    const couples = variants.some((v) => wearerOf(v.selectedOptions));
-    const of = (list: StockVariant[], label: string | null) => ({
-      label,
-      list,
-      sizes: unique(list.map((v) => opt(v, "size"))),
-      colors: unique(list.map((v) => opt(v, "color"))),
-    });
-    return couples
-      ? [HIS, HERS].map((w) =>
-          of(
-            variants.filter((v) => wearerOf(v.selectedOptions) === w),
-            w,
-          ),
-        )
-      : [of(variants, null)];
-  }, [variants]);
+  const groups = useMemo(
+    () => [
+      {
+        label: null as string | null,
+        list: variants,
+        sizes: unique(variants.map((v) => opt(v, "size"))),
+        colors: unique(variants.map((v) => opt(v, "color"))),
+      },
+    ],
+    [variants],
+  );
 
   const total = variants.reduce((n, v) => n + (counts[v.id] ?? 0), 0);
 

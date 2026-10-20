@@ -6,7 +6,8 @@ import { asc, eq, sql } from "drizzle-orm";
 import { deriveModel } from "lib/admin/product-pricing";
 import { authOptions } from "lib/auth";
 import { db } from "lib/db";
-import { HERS, parsePairing, wearerOf } from "lib/pairing";
+import { getPairableProducts } from "lib/admin/couples";
+import { parsePairing } from "lib/pairing";
 import {
   collections,
   productCollections,
@@ -37,7 +38,7 @@ export default async function EditProductPage({
     .limit(1);
   if (!product) notFound();
 
-  const [images, variants, options, links, collectionRows, [stats]] =
+  const [images, variants, options, links, collectionRows, [stats], pairable] =
     await Promise.all([
       db
         .select()
@@ -67,6 +68,7 @@ export default async function EditProductPage({
       from order_items oi join orders o on o.id = oi.order_id
       where oi.product_id = ${id}::uuid and o.status <> 'cancelled'
     `) as unknown as Promise<Array<Record<string, unknown>>>,
+      getPairableProducts(),
     ]);
 
   // Featured image first: the shop treats the first image as the main one.
@@ -77,12 +79,12 @@ export default async function EditProductPage({
   const optionsOf = (v: (typeof variants)[number]) =>
     (v.selectedOptions as Array<{ name: string; value: string }>) ?? [];
   const pairing = parsePairing(product.pairing);
-  // A couples pair's prices are set once for both wearers: read them off His.
   const { model, exact } = deriveModel(
     options.map((o) => ({ name: o.name, values: o.values })),
-    variants
-      .filter((v) => !pairing || wearerOf(optionsOf(v)) !== HERS)
-      .map((v) => ({ price: Number(v.price), selectedOptions: optionsOf(v) })),
+    variants.map((v) => ({
+      price: Number(v.price),
+      selectedOptions: optionsOf(v),
+    })),
   );
 
   return (
@@ -90,6 +92,7 @@ export default async function EditProductPage({
       <ProductEditor
         key={product.updatedAt.toISOString()}
         collections={collectionRows}
+        pairable={pairable}
         stats={{
           units30d: Number(stats?.units ?? 0),
           revenue30d: Number(stats?.revenue ?? 0),
@@ -117,7 +120,13 @@ export default async function EditProductPage({
           collectionIds: links.map((l) => l.collectionId),
           pricing: model,
           pricingExact: exact,
-          pairing,
+          pairing: pairing
+            ? {
+                ...pairing,
+                firstProductId: product.pairFirstProductId ?? "",
+                secondProductId: product.pairSecondProductId ?? "",
+              }
+            : null,
         }}
         stockPanel={
           <StockEditor

@@ -17,7 +17,11 @@ export default function AbandonedCartTracker() {
     const items = cart.lines.map((line) => ({
       productTitle: line.merchandise.product.title,
       variantTitle: line.pair
-        ? setTitle(line.merchandise.selectedOptions, line.pair.selectedOptions)
+        ? setTitle(
+            line.merchandise.selectedOptions,
+            line.pair.selectedOptions,
+            line.pair.labels,
+          )
         : line.merchandise.title,
       quantity: line.quantity,
       price: parseFloat(line.cost.totalAmount.amount),

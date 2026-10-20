@@ -3,7 +3,7 @@ import { CreateProductSchema } from "@/lib/validation/product-schema";
 import { validateAndSanitizeDescription } from "@/lib/validation/sanitize";
 import { asc, eq, inArray } from "drizzle-orm";
 import { requireAdminSession } from "lib/admin-auth";
-import { splitByWearer, WEARER_OPTION } from "lib/admin/product-variants";
+import { coupleLinkError } from "lib/admin/couples";
 import { db } from "lib/db";
 import {
     collections,
@@ -216,6 +216,17 @@ export async function POST(request: Request) {
       sanitizedHtml = sanitizationResult.sanitized;
     }
 
+    const couple = validatedData.pairing;
+    if (couple) {
+      const linkError = await coupleLinkError(couple);
+      if (linkError) {
+        return NextResponse.json(
+          { error: linkError, details: linkError },
+          { status: 400 },
+        );
+      }
+    }
+
     // Ensure handle is unique (generateUniqueHandle checks for conflicts)
     const finalHandle = await generateUniqueHandle(validatedData.handle);
 
@@ -237,7 +248,17 @@ export async function POST(request: Request) {
           seoTitle: bodyWithSanitized.seoTitle || `${bodyWithSanitized.title} - D'FOOTPRINT`,
           seoDescription: bodyWithSanitized.seoDescription,
           tags: bodyWithSanitized.tags,
-          pairing: bodyWithSanitized.pairing ?? null,
+          ...(couple
+            ? {
+                pairing: {
+                  discountType: couple.discountType,
+                  discountValue: couple.discountValue,
+                  labels: couple.labels,
+                },
+                pairFirstProductId: couple.firstProductId,
+                pairSecondProductId: couple.secondProductId,
+              }
+            : {}),
         })
         .returning();
 
@@ -268,15 +289,9 @@ export async function POST(request: Request) {
         );
       }
 
-      const sizes = bodyWithSanitized.sizes || [];
-      const colors = bodyWithSanitized.colors || [];
-      const couples = Boolean(bodyWithSanitized.pairing);
-
-      if (couples) {
-        await tx
-          .insert(productOptions)
-          .values({ productId: createdProduct.id, ...WEARER_OPTION });
-      }
+      // A couple listing has no sizes or variants: it sells its two products'.
+      const sizes = couple ? [] : bodyWithSanitized.sizes || [];
+      const colors = couple ? [] : bodyWithSanitized.colors || [];
 
       if (sizes.length > 0) {
         await tx.insert(productOptions).values({
@@ -369,7 +384,7 @@ export async function POST(request: Request) {
             selectedOptions: [{ name: "Color", value: color }],
           });
         }
-      } else {
+      } else if (!couple) {
         variants.push({
           productId: createdProduct.id,
           title: "Default",
@@ -381,9 +396,7 @@ export async function POST(request: Request) {
       }
 
       if (variants.length > 0) {
-        await tx
-          .insert(productVariants)
-          .values(couples ? splitByWearer(variants) : variants);
+        await tx.insert(productVariants).values(variants);
       }
 
       if (bodyWithSanitized.collectionIds.length > 0) {

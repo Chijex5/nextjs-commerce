@@ -232,6 +232,21 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
   return product;
 }
 
+/** Live couple listings that include the product. */
+export async function getCoupleListingsFor(
+  productId: string,
+): Promise<Product[]> {
+  "use cache";
+  cacheTag(TAGS.products);
+  cacheLife("days");
+
+  const listings = await dbQueries.getCoupleListingsFor(productId);
+  return listings.filter(
+    (listing) =>
+      listing.availableForSale && !listing.tags.includes(HIDDEN_PRODUCT_TAG),
+  );
+}
+
 export async function getProductRecommendations(
   productId: string,
 ): Promise<Product[]> {

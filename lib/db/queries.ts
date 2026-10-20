@@ -6,6 +6,7 @@ import {
     eq,
     ilike,
     inArray,
+    isNotNull,
     isNull,
     notInArray,
     or,
@@ -13,7 +14,7 @@ import {
     type SQL,
 } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { HERS, HIS, parsePairing, setUnitPrice, wearerOf } from "lib/pairing";
+import { parsePairing, setUnitPrice, withCouple } from "lib/pairing";
 import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "../image-constants";
 import type {
     Cart,
@@ -43,8 +44,10 @@ import {
     reviews,
 } from "./schema";
 
-// The Hers pair of a couples set line.
+// A couple set line: its second pair, and the couple listing it came from.
 const pairVariants = alias(productVariants, "pair_variants");
+const coupleProducts = alias(products, "couple_products");
+const coupleImages = alias(productImages, "couple_images");
 
 const CART_EXPIRY_MS = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 function getCartExpiryDate(): Date {
@@ -66,9 +69,11 @@ export async function reshapeDbProduct(
 }
 
 // Batch helper: load relations for all products in 3 bulk queries instead of 3N queries.
+// Couple listings also get their two products (one more batch).
 export async function reshapeDbProducts(
   dbProductList: typeof products.$inferSelect[],
   includeRelations: boolean = true,
+  withCouples: boolean = true,
 ): Promise<Product[]> {
   if (!dbProductList.length) return [];
 
@@ -102,7 +107,7 @@ export async function reshapeDbProducts(
     }
   }
 
-  return dbProductList.map((dbProduct) => {
+  const shaped: Product[] = dbProductList.map((dbProduct) => {
     const dbVariants = variantsByProductId.get(dbProduct.id) ?? [];
     const dbImages = imagesByProductId.get(dbProduct.id) ?? [];
     const dbOpts = optionsByProductId.get(dbProduct.id) ?? [];
@@ -173,6 +178,57 @@ export async function reshapeDbProducts(
       pairing: parsePairing(dbProduct.pairing),
     };
   });
+
+  if (!includeRelations || !withCouples) return shaped;
+  const componentIds = [
+    ...new Set(
+      dbProductList.flatMap((p) =>
+        p.pairing
+          ? [p.pairFirstProductId, p.pairSecondProductId].filter(
+              (id): id is string => Boolean(id),
+            )
+          : [],
+      ),
+    ),
+  ];
+  if (!dbProductList.some((p) => p.pairing)) return shaped;
+  const componentRows = componentIds.length
+    ? await db.select().from(products).where(inArray(products.id, componentIds))
+    : [];
+  // Not recursive: a couple listing can't be part of another.
+  const components = new Map(
+    (await reshapeDbProducts(componentRows, true, false))
+      .filter((p) => !p.pairing)
+      .map((p) => [p.id, p]),
+  );
+  return shaped.map((product, i) => {
+    const row = dbProductList[i]!;
+    return withCouple(
+      product,
+      components.get(row.pairFirstProductId ?? ""),
+      components.get(row.pairSecondProductId ?? ""),
+    );
+  });
+}
+
+/** Live couple listings that include the product (for its page). */
+export async function getCoupleListingsFor(productId: string): Promise<Product[]> {
+  const rows = await db
+    .select()
+    .from(products)
+    .where(
+      and(
+        eq(products.availableForSale, true),
+        isNotNull(products.pairing),
+        or(
+          eq(products.pairFirstProductId, productId),
+          eq(products.pairSecondProductId, productId),
+        ),
+      ),
+    )
+    .orderBy(asc(products.createdAt))
+    .limit(4);
+  return (await reshapeDbProducts(rows)).filter((p) => p.couple);
 }
 
 async function reshapeDbCart(
@@ -187,6 +243,8 @@ async function reshapeDbCart(
       pair: pairVariants,
       product: products,
       image: productImages,
+      couple: coupleProducts,
+      coupleImage: coupleImages,
     })
     .from(cartLines)
     .innerJoin(
@@ -202,16 +260,36 @@ async function reshapeDbCart(
         eq(productImages.isFeatured, true),
       ),
     )
+    .leftJoin(coupleProducts, eq(cartLines.coupleProductId, coupleProducts.id))
+    .leftJoin(
+      coupleImages,
+      and(
+        eq(coupleImages.productId, coupleProducts.id),
+        eq(coupleImages.isFeatured, true),
+      ),
+    )
     .where(eq(cartLines.cartId, dbCart.id))
     .orderBy(asc(cartLines.createdAt));
 
-  const lines: CartItem[] = dbLines.map(({ line, variant, pair, product, image }) => ({
+  const seenLines = new Set<string>();
+  const uniqueLines = dbLines.filter(({ line }) => {
+    if (seenLines.has(line.id)) return false; // more than one featured image
+    seenLines.add(line.id);
+    return true;
+  });
+
+  const lines: CartItem[] = uniqueLines.map(({ line, variant, pair, couple, coupleImage, ...row }) => {
+    // A set shows as its couple listing (with a pair's photo if it has none).
+    const product = couple ?? row.product;
+    const image = (couple && coupleImage) || row.image;
+    return {
     ...(pair
       ? {
           pair: {
             id: pair.id,
             title: pair.title,
             selectedOptions: pair.selectedOptions as CartLineVariant["selectedOptions"],
+            ...(couple ? { labels: parsePairing(couple.pairing)?.labels } : {}),
           },
         }
       : {}),
@@ -242,7 +320,8 @@ async function reshapeDbCart(
         },
       },
     },
-  }));
+  };
+  });
 
   return {
     id: dbCart.id,
@@ -518,10 +597,16 @@ export async function getProducts({
   if (sortKey === "CREATED_AT" || sortKey === "CREATED") {
     primaryOrder = reverse ? desc(products.createdAt) : asc(products.createdAt);
   } else if (sortKey === "PRICE") {
-    const minVariantPrice = sql<number>`(
-      SELECT COALESCE(MIN(${productVariants.price}), 0)
+    // A couple listing has no variants: sort it by both pairs together.
+    const minPriceOf = (productId: SQL | typeof products.id) => sql`(
+      SELECT MIN(${productVariants.price})
       FROM ${productVariants}
-      WHERE ${productVariants.productId} = ${products.id}
+      WHERE ${productVariants.productId} = ${productId}
+    )`;
+    const minVariantPrice = sql<number>`COALESCE(
+      ${minPriceOf(products.id)},
+      ${minPriceOf(sql`${products.pairFirstProductId}`)} + ${minPriceOf(sql`${products.pairSecondProductId}`)},
+      0
     )`;
     primaryOrder = reverse ? desc(minVariantPrice) : asc(minVariantPrice);
   }
@@ -937,10 +1022,10 @@ export async function getCartBySessionId(
 /** Most of one pair anyone sensibly puts in a bag. */
 const MAX_LINE_QUANTITY = 20;
 
-/** A bag line as the client sends it: a pair, or a His + Hers set. */
+/** A bag line as the client sends it: a pair, or a couple set. */
 export type CartLineInput = {
   merchandiseId: string;
-  /** The Hers variant when the line is a couples set. */
+  /** The second pair's variant when the line is a couple set. */
   pairMerchandiseId?: string | null;
   quantity: number;
 };
@@ -950,7 +1035,6 @@ async function loadVariant(variantId: string) {
     .select({
       variant: productVariants,
       productOnSale: products.availableForSale,
-      pairing: products.pairing,
     })
     .from(productVariants)
     .innerJoin(products, eq(productVariants.productId, products.id))
@@ -961,44 +1045,62 @@ async function loadVariant(variantId: string) {
   const maxQuantity = variant.trackInventory
     ? Math.min(variant.stockQuantity ?? 0, MAX_LINE_QUANTITY)
     : MAX_LINE_QUANTITY;
-  return maxQuantity > 0 ? { variant, maxQuantity, pairing: row.pairing } : null;
+  return maxQuantity > 0 ? { variant, maxQuantity } : null;
+}
+
+/** The live couple listing selling these two products together. */
+async function findCoupleListing(firstProductId: string, secondProductId: string) {
+  const [couple] = await db
+    .select({ id: products.id, pairing: products.pairing })
+    .from(products)
+    .where(
+      and(
+        eq(products.availableForSale, true),
+        isNotNull(products.pairing),
+        eq(products.pairFirstProductId, firstProductId),
+        eq(products.pairSecondProductId, secondProductId),
+      ),
+    )
+    .limit(1);
+  const pairing = parsePairing(couple?.pairing);
+  return couple && pairing ? { id: couple.id, pairing } : null;
 }
 
 /**
  * What a bag line can be right now: its unit price and how many may go in.
- * Null when it (or, for a set, either pair) is off sale or sold out, or the
- * set isn't a valid His + Hers of one couples product.
+ * Null when it (or, for a set, either pair) is off sale or sold out, or no
+ * live couple listing sells the two products together.
  */
 async function getPurchasableLine(variantId: string, pairVariantId?: string | null) {
-  const his = await loadVariant(variantId);
-  if (!his) return null;
+  const first = await loadVariant(variantId);
+  if (!first) return null;
   if (!pairVariantId) {
     return {
-      unitPrice: Number(his.variant.price),
-      maxQuantity: his.maxQuantity,
-      currencyCode: his.variant.currencyCode,
+      unitPrice: Number(first.variant.price),
+      maxQuantity: first.maxQuantity,
+      currencyCode: first.variant.currencyCode,
+      coupleProductId: null,
     };
   }
 
-  const hers = await loadVariant(pairVariantId);
-  const pairing = parsePairing(his.pairing);
-  if (
-    !hers ||
-    !pairing ||
-    hers.variant.productId !== his.variant.productId ||
-    wearerOf(his.variant.selectedOptions as SelectedOptions) !== HIS ||
-    wearerOf(hers.variant.selectedOptions as SelectedOptions) !== HERS
-  ) {
-    return null;
-  }
+  const second = await loadVariant(pairVariantId);
+  if (!second) return null;
+  const couple = await findCoupleListing(
+    first.variant.productId,
+    second.variant.productId,
+  );
+  if (!couple) return null;
   return {
-    unitPrice: setUnitPrice(Number(his.variant.price), Number(hers.variant.price), pairing),
-    maxQuantity: Math.min(his.maxQuantity, hers.maxQuantity),
-    currencyCode: his.variant.currencyCode,
+    unitPrice: setUnitPrice(
+      Number(first.variant.price),
+      Number(second.variant.price),
+      couple.pairing,
+    ),
+    maxQuantity: Math.min(first.maxQuantity, second.maxQuantity),
+    currencyCode: first.variant.currencyCode,
+    coupleProductId: couple.id,
   };
 }
-
-type SelectedOptions = Array<{ name: string; value: string }>;
 
 export async function addToCart(
   cartId: string,
@@ -1038,6 +1140,7 @@ export async function addToCart(
         cartId,
         productVariantId: line.merchandiseId,
         pairVariantId: pairId,
+        coupleProductId: purchasable.coupleProductId,
         quantity,
         totalAmount,
         currencyCode: purchasable.currencyCode,

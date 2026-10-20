@@ -1,4 +1,5 @@
 import {
+  getCoupleListingsFor,
   getProduct,
   getProductRecommendations,
   getProductReviewAggregate,
@@ -65,6 +66,12 @@ export async function getProductView(
 export async function getProductReviews(id: string): Promise<ReviewAggregate> {
   if (isMockData) return { averageRating: null, reviewCount: 0 };
   return getProductReviewAggregate(id);
+}
+
+/** Couple sets this product is part of (none for a couple listing). */
+export async function getCoupleOffers(product: Product): Promise<Product[]> {
+  if (isMockData || product.pairing) return [];
+  return getCoupleListingsFor(product.id);
 }
 
 export async function getRelatedProducts(

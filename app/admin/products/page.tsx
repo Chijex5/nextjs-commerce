@@ -51,12 +51,13 @@ const hasImage = exists(
     .from(productImages)
     .where(eq(productImages.productId, products.id)),
 );
-const hasVariant = exists(
+// A couple listing has no variants of its own: it sells its two products'.
+const hasVariant = sql`(${products.pairing} is not null or ${exists(
   db
     .select({ x: sql`1` })
     .from(productVariants)
     .where(eq(productVariants.productId, products.id)),
-);
+)})`;
 const inCollection = exists(
   db
     .select({ x: sql`1` })

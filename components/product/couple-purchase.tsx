@@ -5,67 +5,93 @@ import { useCart } from "components/cart/cart-context";
 import { formatNaira } from "components/product/product-card";
 import { RestockAlert } from "components/product/product-purchase";
 import { trackAddToCart, trackProductView } from "lib/analytics";
-import {
-  HERS,
-  HIS,
-  setSaving,
-  setUnitPrice,
-  wearerOf,
-  type Wearer,
-} from "lib/pairing";
+import { setSaving, setUnitPrice } from "lib/pairing";
 import type { Product, ProductVariant } from "lib/types/commerce";
-import { Check } from "lucide-react";
+import { ArrowUpRight, Check } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-type Mode = "set" | Wearer;
+/** The set, or one side on its own. */
+type Mode = "set" | 0 | 1;
 
 const opt = (v: ProductVariant, name: string) =>
   v.selectedOptions.find((o) => o.name.toLowerCase() === name)?.value ?? "";
+
+const unique = (values: string[]) => [...new Set(values)].filter(Boolean);
 
 const naira = (amount: number) =>
   formatNaira({ amount: String(amount), currencyCode: "NGN" });
 
 type Choice = { size?: string; color?: string };
 
+type Side = {
+  product: Product;
+  label: string;
+  sizes: string[];
+  colors: string[];
+};
+
+function sideOf(product: Product, label: string): Side {
+  return {
+    product,
+    label,
+    sizes: unique(product.variants.map((v) => opt(v, "size"))),
+    colors: unique(product.variants.map((v) => opt(v, "color"))),
+  };
+}
+
+const onlyColor = (side: Side) =>
+  side.colors.length === 1 ? side.colors[0] : undefined;
+
+function resolve(side: Side, pick: Choice) {
+  const color = pick.color ?? onlyColor(side);
+  return side.product.variants.find(
+    (v) =>
+      (!side.sizes.length || opt(v, "size") === pick.size) &&
+      (!side.colors.length || opt(v, "color") === color),
+  );
+}
+
+/** Does any pair on this side fit the pick, with `size`/`color` swapped in? */
+function isAvailable(side: Side, pick: Choice, size?: string, color?: string) {
+  return side.product.variants.some(
+    (v) =>
+      v.availableForSale &&
+      (!side.sizes.length ||
+        opt(v, "size") === (size ?? pick.size ?? opt(v, "size"))) &&
+      (!side.colors.length ||
+        opt(v, "color") ===
+          (color ?? pick.color ?? onlyColor(side) ?? opt(v, "color"))),
+  );
+}
+
 /**
- * A couples pair: his + hers as a set (cheaper than both singly), or one
- * pair on its own. Each wearer picks a size and, if there's a choice, a
- * colour; hers follows his colour unless the customer mixes them.
+ * A couple listing: one pair from each of its two products as a set (cheaper
+ * than both singly), or either pair on its own. Each side keeps its own
+ * sizes, colours and prices; the second side's colour follows the first's
+ * unless the customer mixes them.
  */
 export function CouplePurchase({ product }: { product: Product }) {
   const { addCartItem } = useCart();
   const pairing = product.pairing!;
+  const couple = product.couple;
   const pickerRef = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<Mode>("set");
-  const [his, setHis] = useState<Choice>({});
-  const [hers, setHers] = useState<Choice>({});
+  const [picks, setPicks] = useState<[Choice, Choice]>([{}, {}]);
   const [mixColours, setMixColours] = useState(false);
   const [added, setAdded] = useState(false);
   const [nudge, setNudge] = useState(false);
 
-  const byWearer = useMemo(() => {
-    const of = (w: Wearer) =>
-      product.variants.filter((v) => wearerOf(v.selectedOptions) === w);
-    return { [HIS]: of(HIS), [HERS]: of(HERS) } as Record<
-      Wearer,
-      ProductVariant[]
-    >;
-  }, [product.variants]);
-
-  const sizes = useMemo(
+  const sides = useMemo(
     () =>
-      [...new Set(product.variants.map((v) => opt(v, "size")))].filter(Boolean),
-    [product.variants],
+      couple
+        ? ([
+            sideOf(couple.first, pairing.labels[0]),
+            sideOf(couple.second, pairing.labels[1]),
+          ] as const)
+        : null,
+    [couple, pairing.labels],
   );
-  const colors = useMemo(
-    () =>
-      [...new Set(product.variants.map((v) => opt(v, "color")))].filter(
-        Boolean,
-      ),
-    [product.variants],
-  );
-  const onlyColor = colors.length === 1 ? colors[0] : undefined;
 
   useEffect(() => {
     trackProductView({
@@ -75,59 +101,71 @@ export function CouplePurchase({ product }: { product: Product }) {
     });
   }, [product.id, product.title, product.priceRange.minVariantPrice.amount]);
 
-  const resolve = (w: Wearer, pick: Choice) => {
-    const color = pick.color ?? onlyColor;
-    return byWearer[w].find(
-      (v) =>
-        (!sizes.length || opt(v, "size") === pick.size) &&
-        (!colors.length || opt(v, "color") === color),
+  if (!sides) {
+    return (
+      <p className="mt-6 border border-line p-4 text-sm text-fg-2">
+        This set isn&apos;t available right now.
+      </p>
     );
-  };
+  }
 
-  const hersPick: Choice = mixColours ? hers : { ...hers, color: his.color };
-  const hisVariant = resolve(HIS, his);
-  const hersVariant = resolve(HERS, hersPick);
-  const single = mode === HIS ? hisVariant : hersVariant;
+  // The second side wears the first's colour, when it comes in it.
+  const follows =
+    mode === "set" &&
+    !mixColours &&
+    sides[1].colors.length > 1 &&
+    Boolean(picks[0].color) &&
+    sides[1].colors.includes(picks[0].color!);
+  const effective: [Choice, Choice] = [
+    picks[0],
+    follows ? { ...picks[1], color: picks[0].color } : picks[1],
+  ];
+  const variants = [
+    resolve(sides[0], effective[0]),
+    resolve(sides[1], effective[1]),
+  ] as const;
+  const setPick = (i: 0 | 1, pick: Choice) =>
+    setPicks((p) => (i === 0 ? [pick, p[1]] : [p[0], pick]));
+
   const chosen:
-    | { single: ProductVariant }
-    | { his: ProductVariant; hers: ProductVariant }
+    | { single: ProductVariant; side: Side }
+    | { first: ProductVariant; second: ProductVariant }
     | null =
     mode === "set"
-      ? hisVariant && hersVariant
-        ? { his: hisVariant, hers: hersVariant }
+      ? variants[0] && variants[1]
+        ? { first: variants[0], second: variants[1] }
         : null
-      : single
-        ? { single }
+      : variants[mode]
+        ? { single: variants[mode]!, side: sides[mode] }
         : null;
 
-  // Cheapest pair of each wearer, for the price before sizes are picked.
-  const cheapest = (w: Wearer) =>
-    byWearer[w].length
-      ? Math.min(...byWearer[w].map((v) => Number(v.price.amount)))
-      : 0;
-  const hisPrice = Number(hisVariant?.price.amount ?? cheapest(HIS));
-  const hersPrice = Number(hersVariant?.price.amount ?? cheapest(HERS));
-  const setPrice = setUnitPrice(hisPrice, hersPrice, pairing);
-  const saving = setSaving(hisPrice, hersPrice, pairing);
-  const price = mode === "set" ? setPrice : mode === HIS ? hisPrice : hersPrice;
+  // Before a size is picked, price from each side's cheapest pair.
+  const priceOf = (i: 0 | 1) =>
+    Number(
+      variants[i]?.price.amount ??
+        sides[i].product.priceRange.minVariantPrice.amount,
+    );
+  const prices = [priceOf(0), priceOf(1)] as const;
+  const setPrice = setUnitPrice(prices[0], prices[1], pairing);
+  const saving = setSaving(prices[0], prices[1], pairing);
+  const price = mode === "set" ? setPrice : prices[mode];
 
   const unavailable =
     !product.availableForSale ||
     (chosen &&
       ("single" in chosen
         ? !chosen.single.availableForSale
-        : !chosen.his.availableForSale || !chosen.hers.availableForSale));
+        : !chosen.first.availableForSale || !chosen.second.availableForSale));
 
-  const missing = (() => {
-    const need = (w: Wearer, pick: Choice) =>
-      sizes.length && !pick.size
-        ? `${w.toLowerCase()} size`
-        : colors.length > 1 && !pick.color
-          ? `${w.toLowerCase()} colour`
-          : null;
-    if (mode === "set") return need(HIS, his) ?? need(HERS, hersPick);
-    return need(mode, mode === HIS ? his : hersPick);
-  })();
+  const need = (i: 0 | 1) => {
+    const side = sides[i];
+    const pick = effective[i];
+    const who = side.label.toLowerCase();
+    if (side.sizes.length && !pick.size) return `${who} size`;
+    if (side.colors.length > 1 && !pick.color) return `${who} colour`;
+    return null;
+  };
+  const missing = mode === "set" ? (need(0) ?? need(1)) : need(mode);
 
   const add = () => {
     if (!chosen) {
@@ -140,11 +178,11 @@ export function CouplePurchase({ product }: { product: Product }) {
       return;
     }
     if (unavailable) return;
-    if ("single" in chosen) addCartItem(chosen.single, product);
-    else addCartItem(chosen.his, product, chosen.hers);
+    if ("single" in chosen) addCartItem(chosen.single, chosen.side.product);
+    else addCartItem(chosen.first, product, chosen.second);
     trackAddToCart({
-      id: "single" in chosen ? chosen.single.id : chosen.his.id,
-      name: product.title,
+      id: "single" in chosen ? chosen.single.id : chosen.first.id,
+      name: "single" in chosen ? chosen.side.product.title : product.title,
       price,
       quantity: 1,
     });
@@ -184,92 +222,92 @@ export function CouplePurchase({ product }: { product: Product }) {
     </button>
   );
 
-  const isAvailable = (
-    w: Wearer,
-    pick: Choice,
-    size?: string,
-    color?: string,
-  ) =>
-    byWearer[w].some(
-      (v) =>
-        v.availableForSale &&
-        (!sizes.length ||
-          opt(v, "size") === (size ?? pick.size ?? opt(v, "size"))) &&
-        (!colors.length ||
-          opt(v, "color") ===
-            (color ?? pick.color ?? onlyColor ?? opt(v, "color"))),
-    );
+  const canMix =
+    mode === "set" && sides[0].colors.length > 1 && sides[1].colors.length > 1;
 
-  const wearerPicker = (
-    w: Wearer,
-    pick: Choice,
-    onPick: (p: Choice) => void,
-    colourFollowsHis = false,
-  ) => (
-    <div className="space-y-5">
-      {colors.length > 1 ? (
-        <fieldset>
-          <legend className="label mb-3 flex w-full justify-between">
-            <span>
-              {w} colour
-              {pick.color ? (
-                <span className="text-fg-3"> — {pick.color}</span>
+  const picker = (i: 0 | 1) => {
+    const side = sides[i];
+    const pick = effective[i];
+    const followsFirst = i === 1 && follows;
+    return (
+      <div className="space-y-5">
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="text-sm font-medium text-fg">
+            {side.label}
+            <span className="text-fg-3"> · {side.product.title}</span>
+          </p>
+          <Link
+            href={`/product/${side.product.handle}`}
+            className="label inline-flex shrink-0 items-center gap-1 text-fg-3 hover:text-fg"
+          >
+            View <ArrowUpRight className="size-3" />
+          </Link>
+        </div>
+        {side.colors.length > 1 ? (
+          <fieldset>
+            <legend className="label mb-3 flex w-full justify-between">
+              <span>
+                {side.label} colour
+                {pick.color ? (
+                  <span className="text-fg-3"> — {pick.color}</span>
+                ) : null}
+              </span>
+              {i === 1 && canMix ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!mixColours && follows)
+                      setPick(1, { ...picks[1], color: picks[0].color });
+                    setMixColours((x) => !x);
+                  }}
+                  className="link-underline text-fg-3"
+                >
+                  {mixColours ? "Match colours" : "Mix colours"}
+                </button>
               ) : null}
-            </span>
-            {w === HERS && mode === "set" ? (
-              <button
-                type="button"
-                onClick={() => {
-                  if (!mixColours) setHers((x) => ({ ...x, color: his.color }));
-                  setMixColours((x) => !x);
-                }}
-                className="link-underline text-fg-3"
-              >
-                {mixColours ? "Match his colour" : "Mix colours"}
-              </button>
-            ) : null}
-          </legend>
-          {colourFollowsHis ? (
-            <p className="text-sm text-fg-2">
-              {his.color ? `Same as his: ${his.color}` : "Same as his"}
-            </p>
-          ) : (
+            </legend>
+            {followsFirst ? (
+              <p className="text-sm text-fg-2">
+                Same as {sides[0].label.toLowerCase()}: {pick.color}
+              </p>
+            ) : (
+              <OptionGrid
+                values={side.colors}
+                active={pick.color}
+                nudge={nudge && !pick.color}
+                isAvailable={(c) => isAvailable(side, pick, undefined, c)}
+                label={`${side.label} colour`}
+                onChoose={(color) => setPick(i, { ...picks[i], color })}
+              />
+            )}
+          </fieldset>
+        ) : null}
+        {side.sizes.length ? (
+          <fieldset>
+            <legend className="label mb-3 flex w-full justify-between">
+              <span>
+                {side.label} size
+                {pick.size ? (
+                  <span className="text-fg-3"> — {pick.size}</span>
+                ) : null}
+              </span>
+              <Link href="/sizing-guide" className="link-underline text-fg-3">
+                Size guide
+              </Link>
+            </legend>
             <OptionGrid
-              values={colors}
-              active={pick.color}
-              nudge={nudge && !pick.color}
-              isAvailable={(c) => isAvailable(w, pick, undefined, c)}
-              label={`${w} colour`}
-              onChoose={(color) => onPick({ ...pick, color })}
+              values={side.sizes}
+              active={pick.size}
+              nudge={nudge && !pick.size}
+              isAvailable={(s) => isAvailable(side, pick, s)}
+              label={`${side.label} size`}
+              onChoose={(size) => setPick(i, { ...picks[i], size })}
             />
-          )}
-        </fieldset>
-      ) : null}
-      {sizes.length ? (
-        <fieldset>
-          <legend className="label mb-3 flex w-full justify-between">
-            <span>
-              {w} size
-              {pick.size ? (
-                <span className="text-fg-3"> — {pick.size}</span>
-              ) : null}
-            </span>
-            <Link href="/sizing-guide" className="link-underline text-fg-3">
-              Size guide
-            </Link>
-          </legend>
-          <OptionGrid
-            values={sizes}
-            active={pick.size}
-            nudge={nudge && !pick.size}
-            isAvailable={(s) => isAvailable(w, pick, s)}
-            label={`${w} size`}
-            onChoose={(size) => onPick({ ...pick, size })}
-          />
-        </fieldset>
-      ) : null}
-    </div>
-  );
+          </fieldset>
+        ) : null}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -278,7 +316,7 @@ export function CouplePurchase({ product }: { product: Product }) {
         {mode === "set" && saving > 0 ? (
           <>
             <span className="text-fg-3 line-through">
-              {naira(hisPrice + hersPrice)}
+              {naira(prices[0] + prices[1])}
             </span>
             <span className="text-sm text-fg-2">Save {naira(saving)}</span>
           </>
@@ -293,8 +331,8 @@ export function CouplePurchase({ product }: { product: Product }) {
         {(
           [
             ["set", "Couple set"],
-            [HIS, "His only"],
-            [HERS, "Hers only"],
+            [0, `${sides[0].label} only`],
+            [1, `${sides[1].label} only`],
           ] as const
         ).map(([value, text]) => (
           <button
@@ -304,7 +342,7 @@ export function CouplePurchase({ product }: { product: Product }) {
             aria-checked={mode === value}
             onClick={() => setMode(value)}
             className={clsx(
-              "h-12 text-sm transition-colors",
+              "h-12 truncate px-1 text-sm transition-colors",
               mode === value ? "bg-fg text-canvas" : "text-fg-2 hover:text-fg",
             )}
           >
@@ -314,11 +352,9 @@ export function CouplePurchase({ product }: { product: Product }) {
       </div>
 
       <div ref={pickerRef} className="mt-8 space-y-8">
-        {mode !== HERS ? wearerPicker(HIS, his, setHis) : null}
+        {mode !== 1 ? picker(0) : null}
         {mode === "set" ? <hr className="border-line" /> : null}
-        {mode !== HIS
-          ? wearerPicker(HERS, hersPick, setHers, mode === "set" && !mixColours)
-          : null}
+        {mode !== 0 ? picker(1) : null}
       </div>
 
       <div className="mt-8 hidden md:block">{button}</div>
@@ -333,6 +369,56 @@ export function CouplePurchase({ product }: { product: Product }) {
         <div className="flex-1">{button}</div>
       </div>
     </>
+  );
+}
+
+/** On a single pair's page: "Also sold as a couple set" with the saving. */
+export function CoupleOffers({
+  product,
+  listings,
+}: {
+  product: Product;
+  listings: Product[];
+}) {
+  if (!listings.length) return null;
+  return (
+    <div className="mt-6 space-y-2">
+      {listings.map((listing) => {
+        const couple = listing.couple!;
+        const partner =
+          couple.first.id === product.id ? couple.second : couple.first;
+        const pairing = listing.pairing!;
+        const saving =
+          pairing.discountType === "percentage"
+            ? pairing.discountValue > 0
+              ? `${pairing.discountValue}%`
+              : null
+            : pairing.discountValue > 0
+              ? naira(pairing.discountValue)
+              : null;
+        return (
+          <Link
+            key={listing.id}
+            href={`/product/${listing.handle}`}
+            className="group flex items-center justify-between gap-4 border border-line p-4 hover:border-fg"
+          >
+            <span className="min-w-0">
+              <span className="label block text-fg-3">
+                Also sold as a couple set
+              </span>
+              <span className="mt-1 block text-sm text-fg">
+                With {partner.title}, from{" "}
+                {naira(Number(listing.priceRange.minVariantPrice.amount))}
+                {saving ? (
+                  <span className="text-fg-2"> · save {saving}</span>
+                ) : null}
+              </span>
+            </span>
+            <ArrowUpRight className="size-4 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </Link>
+        );
+      })}
+    </div>
   );
 }
 

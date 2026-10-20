@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { carryStock, splitByWearer } from "lib/admin/product-variants";
+import { carryStock } from "lib/admin/product-variants";
 import { stockShortfalls } from "lib/checkout/stock";
 import {
   lineKey,
@@ -8,8 +8,9 @@ import {
   setSaving,
   setTitle,
   setUnitPrice,
-  wearerOf,
+  withCouple,
 } from "lib/pairing";
+import type { Product } from "lib/types/commerce";
 
 describe("couples set pricing", () => {
   it("takes a fixed naira discount off both pairs", () => {
@@ -39,32 +40,38 @@ describe("couples set pricing", () => {
     expect(parsePairing(null)).toBeNull();
     expect(
       parsePairing({ discountType: "percentage", discountValue: 150 }),
-    ).toEqual({ discountType: "percentage", discountValue: 90 });
-    expect(parsePairing({ discountValue: "abc" })).toEqual({
+    ).toEqual({
+      discountType: "percentage",
+      discountValue: 90,
+      labels: ["His", "Hers"],
+    });
+    expect(
+      parsePairing({ discountValue: "abc", labels: ["  Groom ", ""] }),
+    ).toEqual({
       discountType: "fixed",
       discountValue: 0,
+      labels: ["Groom", "Hers"],
     });
   });
 });
 
 describe("couples set lines", () => {
   const his = [
-    { name: "Wearer", value: "His" },
     { name: "Size", value: "43" },
     { name: "Color", value: "Black" },
   ];
   const hers = [
-    { name: "Wearer", value: "Hers" },
     { name: "Size", value: "38" },
     { name: "Color", value: "Tan" },
   ];
 
   it("names both pairs", () => {
-    expect(wearerOf(his)).toBe("His");
-    expect(wearerOf([{ name: "Size", value: "40" }])).toBeNull();
     expect(pairLabel(his)).toBe("43 / Black");
     expect(setTitle(his, hers)).toBe(
       "Couple set · His 43 / Black · Hers 38 / Tan",
+    );
+    expect(setTitle(his, [], ["Groom", "Bride"])).toBe(
+      "Couple set · Groom 43 / Black · Bride",
     );
   });
 
@@ -138,54 +145,96 @@ describe("stock across the bag", () => {
   });
 });
 
-describe("admin variant rebuild", () => {
-  it("makes every size and colour for His and Hers", () => {
-    const rows = splitByWearer([
-      {
-        title: "43 / Black",
-        selectedOptions: [
-          { name: "Size", value: "43" },
-          { name: "Color", value: "Black" },
-        ],
-      },
-    ]);
-    expect(rows.map((r) => r.title)).toEqual([
-      "His / 43 / Black",
-      "Hers / 43 / Black",
-    ]);
-    expect(rows[1]!.selectedOptions[0]).toEqual({
-      name: "Wearer",
-      value: "Hers",
-    });
+describe("couple listing", () => {
+  const product = (
+    id: string,
+    min: number,
+    max: number,
+    image = "",
+  ): Product => ({
+    id,
+    handle: id,
+    availableForSale: true,
+    title: id,
+    description: "",
+    descriptionHtml: "",
+    options: [],
+    priceRange: {
+      minVariantPrice: { amount: String(min), currencyCode: "NGN" },
+      maxVariantPrice: { amount: String(max), currencyCode: "NGN" },
+    },
+    variants: [],
+    featuredImage: { url: image, altText: "", width: 1, height: 1 },
+    images: image ? [{ url: image, altText: "", width: 1, height: 1 }] : [],
+    seo: { title: id, description: "" },
+    tags: [],
+    updatedAt: "",
+  });
+  const listing = {
+    ...product("set", 0, 0),
+    pairing: parsePairing({ discountType: "fixed", discountValue: 5000 }),
+  };
+
+  it("prices the set from both products, men's dearer than women's", () => {
+    const men = product("men", 30000, 34000, "/men.jpg");
+    const women = product("women", 22000, 24000, "/women.jpg");
+    const view = withCouple(listing, men, women);
+    expect(view.couple).toEqual({ first: men, second: women });
+    expect(view.priceRange.minVariantPrice.amount).toBe("47000");
+    expect(view.priceRange.maxVariantPrice.amount).toBe("53000");
+    // No photos of its own: shows both pairs'.
+    expect(view.images.map((i) => i.url)).toEqual(["/men.jpg", "/women.jpg"]);
+    expect(view.featuredImage.url).toBe("/men.jpg");
   });
 
+  it("drops out of the shop when either product is missing or hidden", () => {
+    const men = product("men", 30000, 30000);
+    const hidden = {
+      ...product("women", 22000, 22000),
+      availableForSale: false,
+    };
+    expect(withCouple(listing, men, hidden)).toMatchObject({
+      couple: null,
+      availableForSale: false,
+    });
+    expect(withCouple(listing, men, undefined).availableForSale).toBe(false);
+    expect(withCouple(listing, men, men).couple).toBeNull();
+  });
+
+  it("leaves ordinary products alone", () => {
+    const men = product("men", 30000, 30000);
+    expect(withCouple(men, undefined, undefined)).toBe(men);
+  });
+});
+
+describe("admin variant rebuild", () => {
   it("keeps counted stock when variants are rebuilt", () => {
     const next = carryStock(
       [
         {
-          title: "His / 43",
+          title: "43 / Black",
           availableForSale: true,
           selectedOptions: [
-            { name: "Wearer", value: "His" },
             { name: "Size", value: "43" },
+            { name: "Color", value: "Black" },
           ],
         },
         {
-          title: "His / 44",
+          title: "44 / Black",
           availableForSale: true,
           selectedOptions: [
-            { name: "Wearer", value: "His" },
             { name: "Size", value: "44" },
+            { name: "Color", value: "Black" },
           ],
         },
       ],
       [
         {
-          title: "His / 43",
+          title: "43 / Black",
           // Saved in a different order: still the same variant.
           selectedOptions: [
+            { name: "Color", value: "Black" },
             { name: "Size", value: "43" },
-            { name: "Wearer", value: "His" },
           ],
           trackInventory: true,
           stockQuantity: 0,

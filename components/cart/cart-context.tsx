@@ -20,13 +20,16 @@ import React, {
 
 type UpdateType = "plus" | "minus" | "delete";
 
-/** Identifies a bag line: its variant, plus the Hers pair for a couples set. */
+/** Identifies a bag line: its variant, plus the second pair for a couple set. */
 export const cartLineKey = (line: CartItem) =>
   lineKey(line.merchandise.id, line.pair?.id);
 
 type CartContextType = {
   cart: Cart | undefined;
-  /** Adds one; pass `pair` (the Hers variant) to add a couples set. */
+  /**
+   * Adds one. For a couple set, `product` is the couple listing, `variant`
+   * the first pair and `pair` the second.
+   */
   addCartItem: (
     variant: ProductVariant,
     product: Product,
@@ -336,6 +339,7 @@ export function CartProvider({
                 id: set.id,
                 title: set.title,
                 selectedOptions: set.selectedOptions,
+                labels: product.pairing!.labels,
               },
             }
           : {}),

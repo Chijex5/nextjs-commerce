@@ -2,29 +2,12 @@
  * Helpers for the admin product routes, which rebuild every variant when
  * sizes, colours or prices are saved.
  */
-import { HIS, HERS, WEARER, WEARERS } from "lib/pairing";
 
 type Option = { name: string; value: string };
 type VariantDraft = { title: string; selectedOptions?: unknown };
 
 const optionsOf = (v: VariantDraft) =>
   Array.isArray(v.selectedOptions) ? (v.selectedOptions as Option[]) : [];
-
-/**
- * A couples pair sells every size and colour to both wearers: one His and
- * one Hers variant per combination, each with its own stock.
- */
-export function splitByWearer<T extends VariantDraft>(variants: T[]): T[] {
-  return variants.flatMap((variant) =>
-    WEARERS.map((wearer) => ({
-      ...variant,
-      title: variant.title ? `${wearer} / ${variant.title}` : wearer,
-      selectedOptions: [{ name: WEARER, value: wearer }, ...optionsOf(variant)],
-    })),
-  );
-}
-
-export const WEARER_OPTION = { name: WEARER, values: [HIS, HERS] };
 
 const signature = (v: VariantDraft) =>
   optionsOf(v)

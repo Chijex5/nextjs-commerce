@@ -11,14 +11,7 @@ import {
   products,
   productVariants,
 } from "lib/db/schema";
-import {
-  HERS,
-  HIS,
-  parsePairing,
-  setTitle,
-  setUnitPrice,
-  wearerOf,
-} from "lib/pairing";
+import { parsePairing, setTitle, setUnitPrice } from "lib/pairing";
 import {
   calculateShippingAmount,
   type ShippingAddressInfo,
@@ -74,7 +67,12 @@ export type CheckoutQuote = {
 
 const money = (n: number) => Math.round(n * 100) / 100;
 
+// A couple set line: its second pair, that pair's product, and the couple
+// listing the set was bought from (which the line is shown and sold as).
 const pairVariants = alias(productVariants, "pair_variants");
+const pairProducts = alias(products, "pair_products");
+const coupleProducts = alias(products, "couple_products");
+const coupleImages = alias(productImages, "couple_images");
 
 type Options = Array<{ name: string; value: string }>;
 type VariantRow = typeof productVariants.$inferSelect;
@@ -100,8 +98,11 @@ export async function quoteCheckout(input: {
       line: cartLines,
       variant: productVariants,
       pair: pairVariants,
+      pairProduct: pairProducts,
       product: products,
       image: productImages.url,
+      couple: coupleProducts,
+      coupleImage: coupleImages.url,
     })
     .from(cartLines)
     .innerJoin(
@@ -109,12 +110,21 @@ export async function quoteCheckout(input: {
       eq(cartLines.productVariantId, productVariants.id),
     )
     .leftJoin(pairVariants, eq(cartLines.pairVariantId, pairVariants.id))
+    .leftJoin(pairProducts, eq(pairVariants.productId, pairProducts.id))
     .innerJoin(products, eq(productVariants.productId, products.id))
     .leftJoin(
       productImages,
       and(
         eq(productImages.productId, products.id),
         eq(productImages.isFeatured, true),
+      ),
+    )
+    .leftJoin(coupleProducts, eq(cartLines.coupleProductId, coupleProducts.id))
+    .leftJoin(
+      coupleImages,
+      and(
+        eq(coupleImages.productId, coupleProducts.id),
+        eq(coupleImages.isFeatured, true),
       ),
     )
     .where(eq(cartLines.cartId, input.cartId))
@@ -142,21 +152,32 @@ export async function quoteCheckout(input: {
     })),
   );
 
-  for (const { line, variant, pair, product, image } of unique) {
-    const pairing = parsePairing(product.pairing);
+  for (const row of unique) {
+    const { line, variant, pair, pairProduct, couple } = row;
+    // A set is sold as its couple listing; a single as its own product.
+    const product = couple ?? row.product;
+    const image = (couple && row.coupleImage) || row.image;
+    const pairing = parsePairing(couple?.pairing);
     const isSet = Boolean(line.pairVariantId);
     const validSet =
       !isSet ||
-      (pair &&
-        pairing &&
-        pair.productId === product.id &&
-        wearerOf(variant.selectedOptions as Options) === HIS &&
-        wearerOf(pair.selectedOptions as Options) === HERS);
+      Boolean(
+        pair &&
+          pairProduct &&
+          couple &&
+          pairing &&
+          couple.availableForSale &&
+          couple.pairFirstProductId === row.product.id &&
+          couple.pairSecondProductId === pairProduct.id,
+      );
     const parts = pair ? [variant, pair] : [variant];
+    const partProducts = pairProduct
+      ? [row.product, pairProduct]
+      : [row.product];
 
     if (
       !validSet ||
-      !product.availableForSale ||
+      partProducts.some((p) => !p.availableForSale) ||
       parts.some((v) => !v.availableForSale)
     ) {
       issues.push({
@@ -194,6 +215,7 @@ export async function quoteCheckout(input: {
         ? setTitle(
             variant.selectedOptions as Options,
             pair.selectedOptions as Options,
+            pairing!.labels,
           )
         : variant.title,
       quantity: line.quantity,
@@ -203,8 +225,11 @@ export async function quoteCheckout(input: {
       image: image ?? null,
     });
     // A stocked pair ships straight away; made-to-order waits on the bench.
-    const stocked = parts.every((v) => v.trackInventory);
-    productionDays.push(stocked ? 0 : product.productionDays);
+    parts.forEach((v, i) =>
+      productionDays.push(
+        v.trackInventory ? 0 : (partProducts[i]?.productionDays ?? null),
+      ),
+    );
   }
 
   // Pairs, not lines: a set is two (shipping is charged per pair).

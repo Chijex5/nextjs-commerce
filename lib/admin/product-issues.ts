@@ -30,8 +30,18 @@ const blank = (column: SQL | AnyPgColumn) =>
 
 const live = eq(products.availableForSale, true);
 
+/** A couple listing: no variants of its own, it sells two other products'. */
+const isCouple = sql`${products.pairing} is not null`;
+
+/** The linked product exists, is on sale and has a size that can be bought. */
+const buyableLink = (column: AnyPgColumn) => sql`exists (
+  select 1 from ${products} p join ${productVariants} v on v.product_id = p.id
+  where p.id = ${column} and p.available_for_sale and v.available_for_sale
+)`;
+
 const ISSUE_CONDITIONS = {
-  unbuyable: not(variantWhere(eq(productVariants.availableForSale, true))),
+  // A couple listing can't be bought when either of its products can't.
+  unbuyable: sql`(case when ${isCouple} then not (${buyableLink(products.pairFirstProductId)} and ${buyableLink(products.pairSecondProductId)}) else ${not(variantWhere(eq(productVariants.availableForSale, true)))} end)`,
   "zero-price": variantWhere(
     and(
       eq(productVariants.availableForSale, true),

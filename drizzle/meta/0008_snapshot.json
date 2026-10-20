@@ -1,5 +1,5 @@
 {
-  "id": "40d73d2a-b52f-4524-aa65-08319f9a45ec",
+  "id": "bc2564f1-2925-4dbc-a2b9-d078af0ed99d",
   "prevId": "5690dc3d-b142-4731-9d1f-a5e54435c375",
   "version": "7",
   "dialect": "postgresql",
@@ -739,6 +739,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "couple_product_id": {
+          "name": "couple_product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "quantity": {
           "name": "quantity",
           "type": "integer",
@@ -855,6 +861,19 @@
           "tableTo": "product_variants",
           "columnsFrom": [
             "pair_variant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "cart_lines_couple_product_id_products_id_fk": {
+          "name": "cart_lines_couple_product_id_products_id_fk",
+          "tableFrom": "cart_lines",
+          "tableTo": "products",
+          "columnsFrom": [
+            "couple_product_id"
           ],
           "columnsTo": [
             "id"
@@ -5110,6 +5129,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "pair_first_product_id": {
+          "name": "pair_first_product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pair_second_product_id": {
+          "name": "pair_second_product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -5155,9 +5186,66 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "products_pair_first_product_id_idx": {
+          "name": "products_pair_first_product_id_idx",
+          "columns": [
+            {
+              "expression": "pair_first_product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "products_pair_second_product_id_idx": {
+          "name": "products_pair_second_product_id_idx",
+          "columns": [
+            {
+              "expression": "pair_second_product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "products_pair_first_product_id_products_id_fk": {
+          "name": "products_pair_first_product_id_products_id_fk",
+          "tableFrom": "products",
+          "tableTo": "products",
+          "columnsFrom": [
+            "pair_first_product_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "products_pair_second_product_id_products_id_fk": {
+          "name": "products_pair_second_product_id_products_id_fk",
+          "tableFrom": "products",
+          "tableTo": "products",
+          "columnsFrom": [
+            "pair_second_product_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "products_handle_unique": {

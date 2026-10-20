@@ -64,11 +64,21 @@ export const products = pgTable(
      */
     productionDays: integer("production_days"),
     /**
-     * Set when this is a couples pair (his + hers sold as a set or singly):
-     * `{ discountType: "fixed" | "percentage", discountValue }`. See
+     * Set when this is a couple listing: two other products sold together
+     * at a discount, `{ discountType: "fixed" | "percentage", discountValue,
+     * labels }`. A couple listing has no variants of its own. See
      * lib/pairing.ts.
      */
     pairing: jsonb("pairing"),
+    /** A couple listing's two products (each still sold on its own). */
+    pairFirstProductId: uuid("pair_first_product_id").references(
+      (): AnyPgColumn => products.id,
+      { onDelete: "set null" },
+    ),
+    pairSecondProductId: uuid("pair_second_product_id").references(
+      (): AnyPgColumn => products.id,
+      { onDelete: "set null" },
+    ),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -79,6 +89,12 @@ export const products = pgTable(
   (table) => ({
     tagsIdx: index("products_tags_idx").using("gin", table.tags),
     createdAtIdx: index("products_created_at_idx").on(table.createdAt),
+    pairFirstIdx: index("products_pair_first_product_id_idx").on(
+      table.pairFirstProductId,
+    ),
+    pairSecondIdx: index("products_pair_second_product_id_idx").on(
+      table.pairSecondProductId,
+    ),
     productionDaysCheck: check(
       "products_production_days_check",
       sql`${table.productionDays} is null or ${table.productionDays} >= 0`,
@@ -247,9 +263,14 @@ export const cartLines = pgTable(
     productVariantId: uuid("product_variant_id")
       .references(() => productVariants.id, { onDelete: "cascade" })
       .notNull(),
-    /** A couples set: the Hers pair bought with product_variant_id (His). */
+    /** A couple set: the second pair, bought with product_variant_id. */
     pairVariantId: uuid("pair_variant_id").references(
       () => productVariants.id,
+      { onDelete: "cascade" },
+    ),
+    /** A couple set: the couple listing it was bought from. */
+    coupleProductId: uuid("couple_product_id").references(
+      () => products.id,
       { onDelete: "cascade" },
     ),
     quantity: integer("quantity").default(1).notNull(),
@@ -846,8 +867,9 @@ export const orderItems = pgTable(
       { onDelete: "set null" },
     ),
     /**
-     * A couples set: the Hers pair (product_variant_id is His). One row,
-     * quantity in sets; variant_title spells out both pairs.
+     * A couple set: the second pair (product_variant_id is the first, and
+     * product_id the couple listing). One row, quantity in sets;
+     * variant_title spells out both pairs.
      */
     pairVariantId: uuid("pair_variant_id").references(
       () => productVariants.id,

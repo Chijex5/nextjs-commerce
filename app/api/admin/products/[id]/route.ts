@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
-import {
-  carryStock,
-  splitByWearer,
-  WEARER_OPTION,
-} from "lib/admin/product-variants";
+import { coupleLinkError } from "lib/admin/couples";
+import { carryStock } from "lib/admin/product-variants";
 import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "lib/image-constants";
 import { db } from "lib/db";
 import {
@@ -240,10 +237,33 @@ export async function PUT(
       finalHandle = await generateUniqueHandle(validatedData.handle);
     }
 
+    const [existing] = await db
+      .select({ pairing: products.pairing })
+      .from(products)
+      .where(eq(products.id, id))
+      .limit(1);
+    if (!existing) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+    // Couple listing or not is fixed at creation: a couple listing has no
+    // sizes, and an ordinary product's sizes may be in bags and orders.
+    const isCouple = Boolean(existing.pairing);
+    const couple = isCouple ? validatedData.pairing : undefined;
+    if (couple) {
+      const linkError = await coupleLinkError({ ...couple, selfId: id });
+      if (linkError) {
+        return NextResponse.json(
+          { error: linkError, details: linkError },
+          { status: 400 },
+        );
+      }
+    }
+
     const bodyWithSanitized = {
       ...validatedData,
       handle: finalHandle,
       descriptionHtml: sanitizedHtml,
+      ...(isCouple ? { sizes: undefined, colors: undefined } : {}),
     };
 
     const product = await db.transaction(async (tx) => {
@@ -258,8 +278,16 @@ export async function PUT(
           seoTitle: bodyWithSanitized.seoTitle,
           seoDescription: bodyWithSanitized.seoDescription,
           tags: bodyWithSanitized.tags || [],
-          ...(bodyWithSanitized.pairing !== undefined
-            ? { pairing: bodyWithSanitized.pairing }
+          ...(couple
+            ? {
+                pairing: {
+                  discountType: couple.discountType,
+                  discountValue: couple.discountValue,
+                  labels: couple.labels,
+                },
+                pairFirstProductId: couple.firstProductId,
+                pairSecondProductId: couple.secondProductId,
+              }
             : {}),
           updatedAt: new Date(),
         })
@@ -304,13 +332,6 @@ export async function PUT(
 
         const sizes = bodyWithSanitized.sizes || [];
         const colors = bodyWithSanitized.colors || [];
-        const couples = Boolean(updatedProduct?.pairing);
-
-        if (couples) {
-          await tx
-            .insert(productOptions)
-            .values({ productId: id, ...WEARER_OPTION });
-        }
 
         if (sizes.length > 0) {
           await tx.insert(productOptions).values({
@@ -419,12 +440,7 @@ export async function PUT(
         if (variants.length > 0) {
           await tx
             .insert(productVariants)
-            .values(
-              carryStock(
-                couples ? splitByWearer(variants) : variants,
-                variantRows,
-              ),
-            );
+            .values(carryStock(variants, variantRows));
         }
       }
 
