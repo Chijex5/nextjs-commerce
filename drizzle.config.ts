@@ -1,5 +1,4 @@
 import "dotenv/config";
-import "./lib/db/network";
 import { config } from "dotenv";
 import { defineConfig } from "drizzle-kit";
 
