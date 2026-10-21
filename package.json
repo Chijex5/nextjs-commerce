@@ -16,7 +16,8 @@
     "db:seed": "tsx lib/db/scripts/seed.ts",
     "db:create-admin": "tsx lib/db/scripts/create-admin.ts",
     "payments:backfill": "tsx scripts/backfill-paystack-payments.ts",
-    "payments:recover": "tsx scripts/recover-paystack-payment.ts"
+    "payments:recover": "tsx scripts/recover-paystack-payment.ts",
+    "images:remove-bg": ".venv-images/bin/python scripts/remove-backgrounds.py"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",

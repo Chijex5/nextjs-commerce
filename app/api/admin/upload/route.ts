@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "lib/admin-auth";
+import {
+  canRemoveBackground,
+  fitCutoutToProductCanvas,
+  removeBackground,
+} from "lib/admin/background-removal";
 import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "lib/image-constants";
 import { v2 as cloudinary } from "cloudinary";
 import sharp from "sharp";
+
+// Background removal polls Cloudinary until the cut-out is ready.
+export const maxDuration = 60;
 
 const OUTPUT_QUALITY = 90;
 const MAX_UPLOAD_BYTES = 15 * 1024 * 1024; // 15 MB
@@ -55,12 +63,39 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
+    let processedBuffer: Buffer | null = null;
+    let backgroundRemoved = false;
+    let warning: string | undefined;
+
+    if (formData.get("removeBackground") === "1") {
+      if (await canRemoveBackground()) {
+        try {
+          const cutout = await removeBackground(
+            buffer,
+            session.user.id ?? null,
+          );
+          processedBuffer = await fitCutoutToProductCanvas(
+            cutout,
+            OUTPUT_QUALITY,
+          );
+          backgroundRemoved = true;
+        } catch (error) {
+          console.error("Background removal error:", error);
+          warning =
+            "Couldn't remove the background, so the photo was uploaded as it is.";
+        }
+      } else {
+        warning =
+          "Background removal limit reached, so the photo was uploaded as it is.";
+      }
+    }
+
     // Use `contain` on a white canvas instead of an attention-based `cover`
     // crop: footwear is long and low, and cropping to fill the frame routinely
     // sliced off toes/heels. Padding keeps the whole shoe in view with a clean,
     // consistent background. A light sharpen + normalise lifts perceived
     // quality, and metadata is stripped so no EXIF/GPS ships to customers.
-    const processedBuffer = await sharp(buffer)
+    processedBuffer ??= await sharp(buffer)
       .rotate()
       .resize({
         width: PRODUCT_IMAGE_WIDTH,
@@ -96,6 +131,8 @@ export async function POST(request: Request) {
       publicId: result.public_id,
       width: result.width || PRODUCT_IMAGE_WIDTH,
       height: result.height || PRODUCT_IMAGE_HEIGHT,
+      backgroundRemoved,
+      ...(warning ? { warning } : {}),
     });
   } catch (error) {
     console.error("Upload error:", error);

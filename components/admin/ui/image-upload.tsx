@@ -8,17 +8,26 @@ import { toast } from "sonner";
 
 const MAX_BYTES = 8 * 1024 * 1024;
 
-/** Upload one image through /api/admin/upload (Cloudinary) and return its URL. */
-export async function uploadImage(file: File): Promise<string> {
+/**
+ * Upload one image through /api/admin/upload (Cloudinary) and return its URL.
+ * With `removeBackground`, Cloudinary cuts the product out first; if that
+ * fails the server uploads the photo as it is and we surface its warning.
+ */
+export async function uploadImage(
+  file: File,
+  { removeBackground = false }: { removeBackground?: boolean } = {},
+): Promise<string> {
   if (file.size > MAX_BYTES)
     throw new Error(
       "That image is over 8 MB. Export a smaller version and try again.",
     );
   const body = new FormData();
   body.append("file", file);
+  if (removeBackground) body.append("removeBackground", "1");
   const res = await fetch("/api/admin/upload", { method: "POST", body });
   const data = await res.json().catch(() => ({}));
   if (!res.ok || !data?.url) throw new Error(data?.error || "Upload failed");
+  if (data.warning) toast.warning(data.warning);
   return data.url as string;
 }
 
