@@ -5,7 +5,7 @@ import {
   fitCutoutToProductCanvas,
   removeBackground,
 } from "lib/admin/background-removal";
-import { isProductMediaId } from "lib/admin/media-library";
+import { publicIdFromUrl } from "lib/admin/media-library";
 import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "lib/image-constants";
 import { v2 as cloudinary } from "cloudinary";
 import sharp from "sharp";
@@ -41,17 +41,24 @@ export async function POST(request: Request) {
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
-    const publicId = formData.get("publicId");
+    const sourceUrl = formData.get("sourceUrl");
 
-    // A photo already on Cloudinary (picked from the media library) is only
-    // re-processed to cut its background out; otherwise it's used as it is.
+    // A product photo already on Cloudinary (from the media library, or one
+    // a product shows) is only re-processed to cut its background out.
     let existing: { url: string; width: number; height: number } | null = null;
     let buffer: Buffer;
 
-    if (publicId !== null) {
-      if (!isProductMediaId(publicId)) {
+    if (sourceUrl !== null) {
+      const publicId = publicIdFromUrl(
+        sourceUrl,
+        process.env.CLOUDINARY_CLOUD_NAME,
+      );
+      if (!publicId) {
         return NextResponse.json(
-          { error: "That isn't a product photo." },
+          {
+            error:
+              "Only product photos stored on Cloudinary can be edited here.",
+          },
           { status: 400 },
         );
       }
@@ -130,7 +137,6 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         url: existing.url,
-        publicId,
         width: existing.width || PRODUCT_IMAGE_WIDTH,
         height: existing.height || PRODUCT_IMAGE_HEIGHT,
         backgroundRemoved,

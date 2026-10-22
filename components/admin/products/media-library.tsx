@@ -4,9 +4,10 @@ import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import clsx from "clsx";
 import { withTransform, type MediaItem } from "lib/admin/media-library";
 import { PRODUCT_IMAGE_ASPECT } from "lib/image-constants";
-import { Check, Loader2, X } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { Check, Loader2, WandSparkles, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { buttonClass } from "components/ui/button";
+import { BackgroundRemoverDialog } from "./background-remover";
 
 const THUMB = "c_fill,w_300,h_400,q_auto,f_auto";
 
@@ -20,7 +21,7 @@ export function MediaLibraryModal({
   room,
   exclude,
   onPick,
-  footer,
+  onBackgroundRemoved,
 }: {
   open: boolean;
   onClose: () => void;
@@ -29,8 +30,8 @@ export function MediaLibraryModal({
   /** URLs already on this product. */
   exclude: string[];
   onPick: (items: MediaItem[]) => void;
-  /** Extra controls under the grid (the background removal toggle). */
-  footer?: ReactNode;
+  /** Called after a background removal, so usage can be refreshed. */
+  onBackgroundRemoved?: () => void;
 }) {
   const [items, setItems] = useState<MediaItem[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -39,6 +40,7 @@ export function MediaLibraryModal({
   const [error, setError] = useState<string | null>(null);
   const [unusedOnly, setUnusedOnly] = useState(true);
   const [selected, setSelected] = useState<MediaItem[]>([]);
+  const [editing, setEditing] = useState<MediaItem | null>(null);
 
   async function load(next?: string) {
     setLoading(true);
@@ -79,6 +81,14 @@ export function MediaLibraryModal({
           ? [...x, m]
           : x,
     );
+
+  // Swap a photo for its cut-out, keeping its place in the grid and selection.
+  const replace = (from: MediaItem, to: MediaItem) => {
+    const swap = (list: MediaItem[]) =>
+      list.map((m) => (m.publicId === from.publicId ? to : m));
+    setItems(swap);
+    setSelected(swap);
+  };
 
   return (
     <Dialog open={open} onClose={onClose} className="relative z-50">
@@ -137,7 +147,7 @@ export function MediaLibraryModal({
                   const on = isSelected(m);
                   const full = !on && selected.length >= room;
                   return (
-                    <li key={m.publicId}>
+                    <li key={m.publicId} className="relative">
                       <button
                         type="button"
                         onClick={() => toggle(m)}
@@ -163,12 +173,22 @@ export function MediaLibraryModal({
                             <Check className="size-3.5" />
                           </span>
                         ) : null}
-                        {m.usedBy ? (
+                        {m.usedBy && !on ? (
                           <span className="absolute inset-x-0 bottom-0 truncate bg-black/60 px-1.5 py-0.5 text-left text-[10px] text-white">
                             {m.usedBy}
                           </span>
                         ) : null}
                       </button>
+                      {on ? (
+                        <button
+                          type="button"
+                          onClick={() => setEditing(m)}
+                          className="absolute inset-x-1.5 bottom-1.5 flex items-center justify-center gap-1 bg-canvas/95 px-1.5 py-1.5 text-[11px] font-semibold text-fg shadow hover:bg-fg hover:text-canvas"
+                        >
+                          <WandSparkles className="size-3.5 shrink-0" />
+                          <span className="truncate">Remove background</span>
+                        </button>
+                      ) : null}
                     </li>
                   );
                 })}
@@ -191,8 +211,10 @@ export function MediaLibraryModal({
             ) : null}
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-line p-4 sm:flex-row sm:items-end sm:justify-between">
-            <div className="min-w-0">{footer}</div>
+          <div className="flex flex-col gap-3 border-t border-line p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-fg-3">
+              Select a photo to remove its background before adding it.
+            </p>
             <div className="flex shrink-0 justify-end gap-2">
               <button
                 type="button"
@@ -212,6 +234,20 @@ export function MediaLibraryModal({
               </button>
             </div>
           </div>
+          <BackgroundRemoverDialog
+            src={editing?.url ?? null}
+            onClose={() => setEditing(null)}
+            onUsed={onBackgroundRemoved}
+            onApply={(photo) => {
+              if (editing)
+                replace(editing, {
+                  ...photo,
+                  bytes: 0,
+                  createdAt: new Date().toISOString(),
+                  usedBy: null,
+                });
+            }}
+          />
         </DialogPanel>
       </div>
     </Dialog>
