@@ -5,6 +5,7 @@ import {
   fitCutoutToProductCanvas,
   removeBackground,
 } from "lib/admin/background-removal";
+import { isProductMediaId } from "lib/admin/media-library";
 import { PRODUCT_IMAGE_HEIGHT, PRODUCT_IMAGE_WIDTH } from "lib/image-constants";
 import { v2 as cloudinary } from "cloudinary";
 import sharp from "sharp";
@@ -39,29 +40,62 @@ export async function POST(request: Request) {
     }
 
     const formData = await request.formData();
-    const file = formData.get("file") as File;
+    const file = formData.get("file") as File | null;
+    const publicId = formData.get("publicId");
 
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    // A photo already on Cloudinary (picked from the media library) is only
+    // re-processed to cut its background out; otherwise it's used as it is.
+    let existing: { url: string; width: number; height: number } | null = null;
+    let buffer: Buffer;
+
+    if (publicId !== null) {
+      if (!isProductMediaId(publicId)) {
+        return NextResponse.json(
+          { error: "That isn't a product photo." },
+          { status: 400 },
+        );
+      }
+      const resource = await cloudinary.api
+        .resource(publicId, { resource_type: "image" })
+        .catch(() => null);
+      if (!resource?.secure_url) {
+        return NextResponse.json(
+          { error: "That photo is no longer on Cloudinary." },
+          { status: 404 },
+        );
+      }
+      existing = {
+        url: resource.secure_url,
+        width: resource.width,
+        height: resource.height,
+      };
+      const res = await fetch(resource.secure_url, { cache: "no-store" });
+      if (!res.ok) throw new Error(`Couldn't fetch ${publicId}`);
+      buffer = Buffer.from(await res.arrayBuffer());
+    } else {
+      if (!file) {
+        return NextResponse.json(
+          { error: "No file provided" },
+          { status: 400 },
+        );
+      }
+
+      if (file.size > MAX_UPLOAD_BYTES) {
+        return NextResponse.json(
+          { error: "Image is too large. Maximum size is 15 MB." },
+          { status: 413 },
+        );
+      }
+
+      if (file.type && !ALLOWED_MIME.has(file.type)) {
+        return NextResponse.json(
+          { error: "Unsupported image type." },
+          { status: 415 },
+        );
+      }
+
+      buffer = Buffer.from(await file.arrayBuffer());
     }
-
-    if (file.size > MAX_UPLOAD_BYTES) {
-      return NextResponse.json(
-        { error: "Image is too large. Maximum size is 15 MB." },
-        { status: 413 },
-      );
-    }
-
-    if (file.type && !ALLOWED_MIME.has(file.type)) {
-      return NextResponse.json(
-        { error: "Unsupported image type." },
-        { status: 415 },
-      );
-    }
-
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
 
     let processedBuffer: Buffer | null = null;
     let backgroundRemoved = false;
@@ -81,13 +115,27 @@ export async function POST(request: Request) {
           backgroundRemoved = true;
         } catch (error) {
           console.error("Background removal error:", error);
-          warning =
-            "Couldn't remove the background, so the photo was uploaded as it is.";
+          warning = existing
+            ? "Couldn't remove the background, so the photo was kept as it is."
+            : "Couldn't remove the background, so the photo was uploaded as it is.";
         }
       } else {
-        warning =
-          "Background removal limit reached, so the photo was uploaded as it is.";
+        warning = existing
+          ? "Background removal limit reached, so the photo was kept as it is."
+          : "Background removal limit reached, so the photo was uploaded as it is.";
       }
+    }
+
+    if (existing && !backgroundRemoved) {
+      return NextResponse.json({
+        success: true,
+        url: existing.url,
+        publicId,
+        width: existing.width || PRODUCT_IMAGE_WIDTH,
+        height: existing.height || PRODUCT_IMAGE_HEIGHT,
+        backgroundRemoved,
+        ...(warning ? { warning } : {}),
+      });
     }
 
     // Use `contain` on a white canvas instead of an attention-based `cover`

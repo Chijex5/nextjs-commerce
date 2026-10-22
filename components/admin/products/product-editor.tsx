@@ -2,16 +2,21 @@
 
 import ImageCropModal from "components/admin/ImageCropModal";
 import { Panel, StatList, StatRow, StatusPill } from "components/admin/ui";
-import { uploadImage } from "components/admin/ui/image-upload";
+import {
+  removeBackgroundFromExisting,
+  uploadImage,
+} from "components/admin/ui/image-upload";
 import { RichTextEditor } from "components/admin/ui/rich-text-editor";
 import {
   CouplesPair,
   type CoupleDraft,
   type PairableProduct,
 } from "./couples-pair";
+import { MediaLibraryModal } from "./media-library";
 import { buttonClass } from "components/ui/button";
 import clsx from "clsx";
 import { money, pairs, timeAgo } from "lib/admin/format";
+import type { MediaItem } from "lib/admin/media-library";
 import {
   previewVariants,
   sizeRange,
@@ -33,6 +38,7 @@ import {
   ArrowLeft,
   ArrowRight,
   ExternalLink,
+  Images,
   ImagePlus,
   Loader2,
   Plus,
@@ -631,6 +637,7 @@ function Photos({
   const [src, setSrc] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [removeBg, setRemoveBg] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   // undefined while loading, null if the usage check failed.
   const [bgUsage, setBgUsage] = useState<BgUsage | null | undefined>();
   const done = useRef<Img[]>([]);
@@ -727,6 +734,41 @@ function Photos({
       nextInQueue([]);
     }
   }
+
+  async function onLibraryPick(picked: MediaItem[]) {
+    setLibraryOpen(false);
+    const cutOut = removeBg && bgAvailable;
+    const added: Img[] = [];
+    for (const [i, m] of picked.entries()) {
+      if (!cutOut) {
+        added.push({ url: m.url, width: m.width, height: m.height });
+        continue;
+      }
+      setBusy(
+        picked.length > 1
+          ? `Removing background (${i + 1} of ${picked.length})…`
+          : "Removing background…",
+      );
+      try {
+        added.push(await removeBackgroundFromExisting(m.publicId));
+      } catch (e) {
+        toast.error((e as Error).message);
+      }
+    }
+    setBusy(null);
+    if (cutOut) void loadBgUsage();
+    onChange([...images, ...added].slice(0, MAX_IMAGES));
+  }
+
+  const bgToggle = (label: string) => (
+    <BackgroundToggle
+      checked={removeBg && bgAvailable}
+      available={bgAvailable}
+      onChange={setRemoveBg}
+      usage={bgUsage}
+      label={label}
+    />
+  );
 
   const move = (i: number, dir: -1 | 1) => {
     const next = [...images];
@@ -826,36 +868,27 @@ function Photos({
           </li>
         ) : null}
       </ul>
-      <div className="mt-4 border-t border-line pt-3">
-        <label
-          className={clsx(
-            "flex items-center gap-3 text-sm",
-            bgAvailable ? "cursor-pointer" : "cursor-not-allowed text-fg-3",
-          )}
+      {images.length < MAX_IMAGES ? (
+        <button
+          type="button"
+          disabled={!!busy}
+          onClick={() => setLibraryOpen(true)}
+          className="label mt-3 inline-flex items-center gap-1.5 text-fg-3 hover:text-fg disabled:opacity-50"
         >
-          <input
-            type="checkbox"
-            checked={removeBg && bgAvailable}
-            disabled={!bgAvailable}
-            onChange={(e) => setRemoveBg(e.target.checked)}
-            className="size-4"
-          />
-          Remove background on new photos
-        </label>
-        <p className="mt-1 pl-7 text-xs text-fg-3">
-          {bgUsage === undefined
-            ? "Checking usage…"
-            : bgUsage === null
-              ? "Couldn't check usage, so this is unavailable right now."
-              : !bgUsage.configured
-                ? "Cloudinary isn't set up, so this is unavailable."
-                : `${bgUsage.used} of ${bgUsage.limit} used in the last ${bgUsage.windowDays} days` +
-                  (bgUsage.remaining === 0 ? " — limit reached." : ".") +
-                  (bgUsage.account
-                    ? ` Cloudinary plan ${Math.round(bgUsage.account.usedPercent)}% used.`
-                    : "")}
-        </p>
+          <Images className="size-3.5" /> Choose from uploaded photos
+        </button>
+      ) : null}
+      <div className="mt-4 border-t border-line pt-3">
+        {bgToggle("Remove background on new photos")}
       </div>
+      <MediaLibraryModal
+        open={libraryOpen}
+        onClose={() => setLibraryOpen(false)}
+        room={MAX_IMAGES - images.length}
+        exclude={images.map((img) => img.url)}
+        onPick={onLibraryPick}
+        footer={bgToggle("Remove background on the photos I pick")}
+      />
       <input
         ref={inputRef}
         type="file"
@@ -880,6 +913,54 @@ function Photos({
         onConfirm={onCropped}
       />
     </Panel>
+  );
+}
+
+function BackgroundToggle({
+  checked,
+  available,
+  onChange,
+  usage,
+  label,
+}: {
+  checked: boolean;
+  available: boolean;
+  onChange: (on: boolean) => void;
+  /** undefined while loading, null if the usage check failed. */
+  usage: BgUsage | null | undefined;
+  label: string;
+}) {
+  return (
+    <div>
+      <label
+        className={clsx(
+          "flex items-center gap-3 text-sm",
+          available ? "cursor-pointer" : "cursor-not-allowed text-fg-3",
+        )}
+      >
+        <input
+          type="checkbox"
+          checked={checked}
+          disabled={!available}
+          onChange={(e) => onChange(e.target.checked)}
+          className="size-4"
+        />
+        {label}
+      </label>
+      <p className="mt-1 pl-7 text-xs text-fg-3">
+        {usage === undefined
+          ? "Checking usage…"
+          : usage === null
+            ? "Couldn't check usage, so this is unavailable right now."
+            : !usage.configured
+              ? "Cloudinary isn't set up, so this is unavailable."
+              : `${usage.used} of ${usage.limit} used in the last ${usage.windowDays} days` +
+                (usage.remaining === 0 ? " — limit reached." : ".") +
+                (usage.account
+                  ? ` Cloudinary plan ${Math.round(usage.account.usedPercent)}% used.`
+                  : "")}
+      </p>
+    </div>
   );
 }
 

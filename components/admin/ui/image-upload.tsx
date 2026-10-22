@@ -31,6 +31,24 @@ export async function uploadImage(
   return data.url as string;
 }
 
+/**
+ * Cut the background out of a photo already on Cloudinary (from the media
+ * library). The server stores the cut-out as a new photo; if removal fails
+ * it hands back the original and we surface its warning.
+ */
+export async function removeBackgroundFromExisting(
+  publicId: string,
+): Promise<{ url: string; width: number; height: number }> {
+  const body = new FormData();
+  body.append("publicId", publicId);
+  body.append("removeBackground", "1");
+  const res = await fetch("/api/admin/upload", { method: "POST", body });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data?.url) throw new Error(data?.error || "Upload failed");
+  if (data.warning) toast.warning(data.warning);
+  return { url: data.url, width: data.width, height: data.height };
+}
+
 /** Click or drop to upload a single image. Shows the current image with a remove button. */
 export function ImageUpload({
   value,
