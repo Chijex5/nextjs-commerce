@@ -269,10 +269,9 @@ export const cartLines = pgTable(
       { onDelete: "cascade" },
     ),
     /** A couple set: the couple listing it was bought from. */
-    coupleProductId: uuid("couple_product_id").references(
-      () => products.id,
-      { onDelete: "cascade" },
-    ),
+    coupleProductId: uuid("couple_product_id").references(() => products.id, {
+      onDelete: "cascade",
+    }),
     quantity: integer("quantity").default(1).notNull(),
     totalAmount: decimal("total_amount", { precision: 10, scale: 2 })
       .default("0.00")
@@ -1780,5 +1779,27 @@ export const customRequestMessagesRelations = relations(
       fields: [customRequestMessages.requestId],
       references: [customOrderRequests.id],
     }),
+  }),
+);
+
+// One row per Cloudinary background removal, so the admin can see how much of
+// the plan's quota has been used. Cloudinary bills each removal as 75
+// transformations whether or not the result is kept.
+export const backgroundRemovals = pgTable(
+  "background_removals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    adminUserId: uuid("admin_user_id").references(() => adminUsers.id, {
+      onDelete: "set null",
+    }),
+    succeeded: boolean("succeeded").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    createdAtIdx: index("background_removals_created_at_idx").on(
+      table.createdAt,
+    ),
   }),
 );

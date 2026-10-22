@@ -56,3 +56,6 @@ next-env.d.ts
 /.vscode/*
 /.vscode/launch.json
 /.vscode/settings.json
+# Local background-removal tool (scripts/remove-backgrounds.py)
+/.venv-images/
+/product-photos/

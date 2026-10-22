@@ -51,6 +51,15 @@ const MAX_IMAGES = 8;
 
 type Img = { url: string; width: number; height: number };
 
+type BgUsage = {
+  configured: boolean;
+  used: number;
+  limit: number;
+  remaining: number;
+  windowDays: number;
+  account: { usedPercent: number } | null;
+};
+
 export type ProductEditorValues = {
   id?: string;
   title: string;
@@ -621,7 +630,22 @@ function Photos({
   const [queue, setQueue] = useState<File[]>([]);
   const [src, setSrc] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [removeBg, setRemoveBg] = useState(false);
+  // undefined while loading, null if the usage check failed.
+  const [bgUsage, setBgUsage] = useState<BgUsage | null | undefined>();
   const done = useRef<Img[]>([]);
+
+  const loadBgUsage = () =>
+    fetch("/api/admin/background-removal")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((u: BgUsage | null) => setBgUsage(u))
+      .catch(() => setBgUsage(null));
+
+  useEffect(() => {
+    void loadBgUsage();
+  }, []);
+
+  const bgAvailable = !!bgUsage?.configured && bgUsage.remaining > 0;
 
   useEffect(
     () => () => {
@@ -683,9 +707,10 @@ function Photos({
       current.name.replace(/\.[^.]+$/, "") + ".webp",
       { type: blob.type || "image/webp" },
     );
-    setBusy("Uploading…");
+    const cutOut = removeBg && bgAvailable;
+    setBusy(cutOut ? "Removing background…" : "Uploading…");
     try {
-      const url = await uploadImage(file);
+      const url = await uploadImage(file, { removeBackground: cutOut });
       done.current.push({
         url,
         width: PRODUCT_IMAGE_WIDTH,
@@ -695,6 +720,7 @@ function Photos({
       toast.error((e as Error).message);
     }
     setBusy(null);
+    if (cutOut) void loadBgUsage();
     if (rest.length) nextInQueue(rest);
     else {
       onChange([...images, ...done.current]);
@@ -800,6 +826,36 @@ function Photos({
           </li>
         ) : null}
       </ul>
+      <div className="mt-4 border-t border-line pt-3">
+        <label
+          className={clsx(
+            "flex items-center gap-3 text-sm",
+            bgAvailable ? "cursor-pointer" : "cursor-not-allowed text-fg-3",
+          )}
+        >
+          <input
+            type="checkbox"
+            checked={removeBg && bgAvailable}
+            disabled={!bgAvailable}
+            onChange={(e) => setRemoveBg(e.target.checked)}
+            className="size-4"
+          />
+          Remove background on new photos
+        </label>
+        <p className="mt-1 pl-7 text-xs text-fg-3">
+          {bgUsage === undefined
+            ? "Checking usage…"
+            : bgUsage === null
+              ? "Couldn't check usage, so this is unavailable right now."
+              : !bgUsage.configured
+                ? "Cloudinary isn't set up, so this is unavailable."
+                : `${bgUsage.used} of ${bgUsage.limit} used in the last ${bgUsage.windowDays} days` +
+                  (bgUsage.remaining === 0 ? " — limit reached." : ".") +
+                  (bgUsage.account
+                    ? ` Cloudinary plan ${Math.round(bgUsage.account.usedPercent)}% used.`
+                    : "")}
+        </p>
+      </div>
       <input
         ref={inputRef}
         type="file"
