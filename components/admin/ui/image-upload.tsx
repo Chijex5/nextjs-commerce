@@ -32,21 +32,38 @@ export async function uploadImage(
 }
 
 /**
- * Cut the background out of a photo already on Cloudinary (from the media
- * library). The server stores the cut-out as a new photo; if removal fails
- * it hands back the original and we surface its warning.
+ * Cut the background out of a product photo already on Cloudinary. The
+ * server stores the cut-out as a new photo and leaves the original alone.
  */
 export async function removeBackgroundFromExisting(
-  publicId: string,
-): Promise<{ url: string; width: number; height: number }> {
+  sourceUrl: string,
+): Promise<{ url: string; width: number; height: number; publicId: string }> {
   const body = new FormData();
-  body.append("publicId", publicId);
+  body.append("sourceUrl", sourceUrl);
   body.append("removeBackground", "1");
   const res = await fetch("/api/admin/upload", { method: "POST", body });
   const data = await res.json().catch(() => ({}));
   if (!res.ok || !data?.url) throw new Error(data?.error || "Upload failed");
-  if (data.warning) toast.warning(data.warning);
-  return { url: data.url, width: data.width, height: data.height };
+  if (!data.backgroundRemoved)
+    throw new Error(
+      data.warning?.replace(/, so .*$/, ".") ||
+        "Couldn't remove the background.",
+    );
+  return {
+    url: data.url,
+    width: data.width,
+    height: data.height,
+    publicId: data.publicId,
+  };
+}
+
+/** Throw away a photo we uploaded but ended up not using. */
+export function discardUpload(publicId: string) {
+  void fetch("/api/admin/upload", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ publicId }),
+  }).catch(() => {});
 }
 
 /** Click or drop to upload a single image. Shows the current image with a remove button. */

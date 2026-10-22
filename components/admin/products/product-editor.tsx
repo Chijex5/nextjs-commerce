@@ -2,16 +2,14 @@
 
 import ImageCropModal from "components/admin/ImageCropModal";
 import { Panel, StatList, StatRow, StatusPill } from "components/admin/ui";
-import {
-  removeBackgroundFromExisting,
-  uploadImage,
-} from "components/admin/ui/image-upload";
+import { uploadImage } from "components/admin/ui/image-upload";
 import { RichTextEditor } from "components/admin/ui/rich-text-editor";
 import {
   CouplesPair,
   type CoupleDraft,
   type PairableProduct,
 } from "./couples-pair";
+import { BackgroundRemoverDialog } from "./background-remover";
 import { MediaLibraryModal } from "./media-library";
 import { buttonClass } from "components/ui/button";
 import clsx from "clsx";
@@ -44,6 +42,7 @@ import {
   Plus,
   Star,
   Trash2,
+  WandSparkles,
   X,
 } from "lucide-react";
 import Image from "next/image";
@@ -638,6 +637,8 @@ function Photos({
   const [busy, setBusy] = useState<string | null>(null);
   const [removeBg, setRemoveBg] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  // Index of the photo open in the background remover.
+  const [editing, setEditing] = useState<number | null>(null);
   // undefined while loading, null if the usage check failed.
   const [bgUsage, setBgUsage] = useState<BgUsage | null | undefined>();
   const done = useRef<Img[]>([]);
@@ -735,40 +736,19 @@ function Photos({
     }
   }
 
-  async function onLibraryPick(picked: MediaItem[]) {
+  function onLibraryPick(picked: MediaItem[]) {
     setLibraryOpen(false);
-    const cutOut = removeBg && bgAvailable;
-    const added: Img[] = [];
-    for (const [i, m] of picked.entries()) {
-      if (!cutOut) {
-        added.push({ url: m.url, width: m.width, height: m.height });
-        continue;
-      }
-      setBusy(
-        picked.length > 1
-          ? `Removing background (${i + 1} of ${picked.length})…`
-          : "Removing background…",
-      );
-      try {
-        added.push(await removeBackgroundFromExisting(m.publicId));
-      } catch (e) {
-        toast.error((e as Error).message);
-      }
-    }
-    setBusy(null);
-    if (cutOut) void loadBgUsage();
-    onChange([...images, ...added].slice(0, MAX_IMAGES));
+    onChange(
+      [
+        ...images,
+        ...picked.map((m) => ({
+          url: m.url,
+          width: m.width,
+          height: m.height,
+        })),
+      ].slice(0, MAX_IMAGES),
+    );
   }
-
-  const bgToggle = (label: string) => (
-    <BackgroundToggle
-      checked={removeBg && bgAvailable}
-      available={bgAvailable}
-      onChange={setRemoveBg}
-      usage={bgUsage}
-      label={label}
-    />
-  );
 
   const move = (i: number, dir: -1 | 1) => {
     const next = [...images];
@@ -831,12 +811,20 @@ function Photos({
                   </IconBtn>
                 ) : null}
               </div>
-              <IconBtn
-                label="Remove photo"
-                onClick={() => onChange(images.filter((_, j) => j !== i))}
-              >
-                <Trash2 className="size-3.5" />
-              </IconBtn>
+              <div className="flex">
+                <IconBtn
+                  label="Edit photo (remove background)"
+                  onClick={() => setEditing(i)}
+                >
+                  <WandSparkles className="size-3.5" />
+                </IconBtn>
+                <IconBtn
+                  label="Remove photo"
+                  onClick={() => onChange(images.filter((_, j) => j !== i))}
+                >
+                  <Trash2 className="size-3.5" />
+                </IconBtn>
+              </div>
             </div>
           </li>
         ))}
@@ -879,7 +867,13 @@ function Photos({
         </button>
       ) : null}
       <div className="mt-4 border-t border-line pt-3">
-        {bgToggle("Remove background on new photos")}
+        <BackgroundToggle
+          checked={removeBg && bgAvailable}
+          available={bgAvailable}
+          onChange={setRemoveBg}
+          usage={bgUsage}
+          label="Remove background on new photos"
+        />
       </div>
       <MediaLibraryModal
         open={libraryOpen}
@@ -887,7 +881,22 @@ function Photos({
         room={MAX_IMAGES - images.length}
         exclude={images.map((img) => img.url)}
         onPick={onLibraryPick}
-        footer={bgToggle("Remove background on the photos I pick")}
+        onBackgroundRemoved={loadBgUsage}
+      />
+      <BackgroundRemoverDialog
+        src={editing === null ? null : (images[editing]?.url ?? null)}
+        onClose={() => setEditing(null)}
+        onUsed={loadBgUsage}
+        onApply={(photo) => {
+          if (editing === null) return;
+          onChange(
+            images.map((img, j) =>
+              j === editing
+                ? { url: photo.url, width: photo.width, height: photo.height }
+                : img,
+            ),
+          );
+        }}
       />
       <input
         ref={inputRef}
